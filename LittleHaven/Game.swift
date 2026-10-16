@@ -49,6 +49,14 @@ struct Game: Codable {
     var inside = false
     var facing = 0
     var steps = 0
+    var motel: Motel?
+    var readyToWake: Bool { motel == nil && (coins >= Self.housePrice || ownsHouse) }
+
+    mutating func wakeUp() {
+        guard readyToWake else { return }
+        motel = Motel()
+        inside = false
+    }
 
     var nearby: Neighbor? {
         guard !inside else { return nil }
@@ -96,6 +104,7 @@ struct Game: Codable {
         return game
     }
     func save(to defaults: UserDefaults = .standard) {
+        guard motel?.canSave ?? true else { return }
         if let data = try? JSONEncoder().encode(self) { defaults.set(data, forKey: "littlehaven.save.v1") }
     }
 }

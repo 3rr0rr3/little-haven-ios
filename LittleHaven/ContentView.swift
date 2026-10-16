@@ -5,7 +5,7 @@ extension Color {
 }
 
 struct ContentView: View {
-    @State private var game = Game.load()
+    @State private var game = ContentView.initialGame()
     @State private var conversation: Neighbor?
     @State private var message: String?
     @State private var showHouse = false
@@ -17,7 +17,48 @@ struct ContentView: View {
     private let cream = Color(hex: 0xF5E7C8)
     private let gold = Color(hex: 0xEFC977)
 
+    private static func initialGame() -> Game {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("--ui-fresh") {
+            UserDefaults.standard.removeObject(forKey: "littlehaven.save.v1")
+            return Game()
+        }
+        if args.contains("--ui-wake") || args.contains("--ui-motel") || args.contains("--ui-motel-risk") || args.contains("--ui-motel-preview") {
+            var fresh = Game()
+            fresh.coins = 545
+            if !args.contains("--ui-wake") { fresh.wakeUp() }
+            fresh.save()
+            if args.contains("--ui-motel-risk") || args.contains("--ui-motel-preview") {
+                _ = fresh.motel?.checkIn(guestID: 10, roomID: 0)
+                fresh.save()
+                _ = fresh.motel?.enter(0)
+                fresh.motel?.visit?.alert = args.contains("--ui-motel-risk") ? 98 : 10
+            }
+            return fresh
+        }
+        #endif
+        return Game.load()
+    }
+
     var body: some View {
+        Group {
+            if game.motel != nil {
+                MotelView(game: $game)
+            } else if game.readyToWake {
+                WakeUpView {
+                    conversation = nil
+                    heldDirection = nil
+                    game.wakeUp()
+                    game.save()
+                }
+            } else {
+                townBody
+            }
+        }
+    }
+
+    private var townBody: some View {
         GeometryReader { geometry in
             VStack(spacing: 12) {
                 HStack(alignment: .center) {
@@ -183,7 +224,7 @@ struct ContentView: View {
         NavigationStack {
             List {
                 Section("A place to call home") {
-                    Text(game.ownsHouse ? "You bought the Willow Cottage! Visit your home whenever you like." : "Raise 500 coins by asking the seven neighbors for help. Each can contribute once. Buy the cottage in the northeast, then step inside.")
+                    Text(game.ownsHouse ? "You bought the Willow Cottage! Visit your home whenever you like." : "Raise 500 coins by asking the seven neighbors for help. Each can contribute once. Then a new chapter begins.")
                     Text("Press and hold a direction to keep walking. Release to stop. Stand one tile beside a person and tap TALK. Buildings, trees, and the pond block your way.")
                 }
                 Section("Your neighbors / \(game.gifts.count)/7") {
@@ -210,7 +251,7 @@ struct ContentView: View {
     }
 }
 
-private struct HoldDirection: View {
+struct HoldDirection: View {
     let symbol: String
     let label: String
     let isActive: Bool

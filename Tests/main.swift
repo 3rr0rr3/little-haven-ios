@@ -50,3 +50,135 @@ defaults.set(Data("broken".utf8), forKey: "littlehaven.save.v1")
 require(Game.load(from: defaults).coins == 0, "Corrupt save must recover")
 defaults.removePersistentDomain(forName: "LittleHaven.Tests")
 print("PASS: reachability, gifts, purchase, interior, collision, persistence, corrupt save")
+
+func motelRules() {
+    var dream = Game()
+    dream.wakeUp()
+    require(dream.motel == nil, "Cannot wake before prologue completes")
+    dream.coins = 500
+    require(dream.readyToWake, "Reaching the fund must unlock wake-up")
+    dream.wakeUp()
+    require(dream.motel?.rooms.count == 3 && dream.motel?.cash == 180, "Start with exactly three rooms and working capital")
+    dream.motel!.cash = 222
+    dream.wakeUp()
+    require(dream.motel?.cash == 222, "Wake-up cannot reset a running motel")
+
+    var business = Motel()
+    require(!business.expand(), "Expansion requires funds")
+    let guest = business.waiting[0]
+    require(business.checkIn(guestID: guest.id, roomID: 0), "Guest can check into a ready room")
+    require(business.cash == 260 && business.occupancy == 1, "Check-in pays the agreed stay exactly once")
+    require(!business.checkIn(guestID: guest.id, roomID: 1), "Cannot charge one guest twice")
+    require(!business.checkIn(guestID: business.waiting[0].id, roomID: 0), "Cannot double-book a room")
+    require(!business.decorate(roomID: 0, theme: 2), "Do not redecorate occupied rooms")
+    require(!business.clean(0), "Cannot clean an occupied room")
+    require(business.expand() && business.rooms.count == 4 && business.cash == 10, "Expansion creates one room and charges its price")
+    require(!business.upgrade(roomID: 1), "Upgrades cannot overdraw cash")
+    require(business.nextDay(), "End day at the desk")
+    require(business.rooms[0].dirty && business.rooms[0].guest == nil, "One-night guests leave a dirty room")
+    require(!business.checkIn(guestID: business.waiting[0].id, roomID: 0), "Dirty rooms cannot be rented")
+    require(business.clean(0) && business.rooms[0].available, "Free cleaning prevents a money softlock")
+    require(business.checkIn(guestID: business.waiting[0].id, roomID: 0), "Cleaned rooms can be rented again")
+
+    var decor = Motel()
+    decor.cash = 2000
+    require(decor.decorate(roomID: 0, theme: 2) && decor.rooms[0].theme == 2, "Room colors are customizable")
+    let balance = decor.cash
+    require(!decor.decorate(roomID: 0, theme: 2) && decor.cash == balance, "Selected paint is not charged twice")
+    require(!decor.decorate(roomID: 0, theme: 9), "Invalid palette indices rejected")
+    require(decor.upgrade(roomID: 0) && decor.rate(for: decor.rooms[0]) == 110, "Room furnishing improves nightly rate")
+    require(decor.decorate(roomID: nil, theme: 3) && decor.officeTheme == 3, "Office color is independent")
+    require(decor.upgrade(roomID: nil) && decor.rate(for: decor.rooms[0]) == 125, "Office upgrade improves all rates")
+    require(decor.rooms[1].theme == 0, "Room themes stay independent")
+    decor.cash = 10000
+    while !decor.goalReached { require(decor.expand(), "Expansion should reach the nine-room goal") }
+    require(decor.rooms.count == 9 && !decor.expand(), "Motel goal caps construction at nine rooms")
+
+    var stays = Motel()
+    let longStay = stays.waiting[1]
+    require(stays.checkIn(guestID: longStay.id, roomID: 1), "Two-night guest can check in")
+    require(stays.cash == 340, "Two-night stay is prepaid")
+    _ = stays.nextDay()
+    require(stays.rooms[1].guest != nil && stays.rooms[1].nightsLeft == 1, "Two-night guest stays another night")
+    _ = stays.nextDay()
+    require(stays.rooms[1].guest == nil && stays.rooms[1].dirty, "Two-night stay checks out on its due day")
+
+    // Confirm all loot can be approached and the room exit is reachable.
+    var seen: Set<Tile> = [Tile(x: 4, y: 7)]
+    var frontier = Array(seen)
+    var at = 0
+    while at < frontier.count {
+        let tile = frontier[at]; at += 1
+        for (dx, dy) in [(1,0),(-1,0),(0,1),(0,-1)] {
+            let next = Tile(x: tile.x + dx, y: tile.y + dy)
+            if !RoomVisit.blocked(next), seen.insert(next).inserted { frontier.append(next) }
+        }
+    }
+    require(seen.contains(Tile(x: 4, y: 8)), "Interior exit reachable")
+    for item in RoomVisit.lootTiles { require(seen.contains { $0.distance(to: item) == 1 }, "All belongings reachable") }
+
+    var theft = Motel()
+    _ = theft.checkIn(guestID: 10, roomID: 0)
+    let legalCash = theft.cash
+    require(theft.enter(0) && theft.visit?.sneaking == true, "Occupied rooms start a stealth visit")
+    require(!theft.nextDay() && !theft.expand(), "No managing the motel during a break-in")
+    require(!theft.steal(), "Cannot steal belongings remotely")
+    theft.move(dx: 1, dy: 0)
+    theft.move(dx: 0, dy: -1)
+    require(theft.visit?.nearbyLoot == 1, "Actual movement reaches the watch")
+    require(theft.steal(), "Player can steal nearby belongings")
+    require(!theft.steal(), "Belongings can only be taken once")
+    require(theft.cash == legalCash, "Loot is not banked while inside")
+    theft.leave()
+    require(theft.visit != nil, "Cannot teleport to the exit")
+    theft.move(dx: 0, dy: 1)
+    theft.move(dx: -1, dy: 0)
+    theft.move(dx: 0, dy: 1)
+    require(theft.visit == nil && theft.cash == legalCash + 70, "Escaping banks the stolen item")
+    _ = theft.enter(0)
+    theft.move(dx: 1, dy: 0)
+    theft.move(dx: 0, dy: -1)
+    require(!theft.steal(), "Re-entering does not duplicate a stolen item")
+
+    var checkpoint = Game()
+    checkpoint.coins = 545
+    checkpoint.wakeUp()
+    _ = checkpoint.motel!.checkIn(guestID: 10, roomID: 0)
+    let defaults = UserDefaults(suiteName: "LittleHaven.MotelTests")!
+    checkpoint.save(to: defaults)
+    let savedData = defaults.data(forKey: "littlehaven.save.v1")
+    checkpoint.motel!.cash += 123
+    _ = checkpoint.motel!.enter(0)
+    checkpoint.save(to: defaults)
+    require(defaults.data(forKey: "littlehaven.save.v1") == savedData, "Sneaking cannot overwrite checkpoint")
+    checkpoint.motel!.visit!.alert = 98
+    checkpoint.motel!.tick()
+    require(checkpoint.motel!.caught, "Full suspicion triggers game over")
+    let frozen = checkpoint.motel!.visit!.player
+    checkpoint.motel!.move(dx: -1, dy: 0)
+    checkpoint.motel!.leave()
+    checkpoint.save(to: defaults)
+    require(checkpoint.motel!.visit!.player == frozen, "Caught players cannot move or escape")
+    require(defaults.data(forKey: "littlehaven.save.v1") == savedData, "Game over cannot overwrite checkpoint")
+    let restored = Game.load(from: defaults)
+    require(restored.motel?.cash == 260 && restored.motel?.occupancy == 1 && restored.motel?.visit == nil && restored.motel?.caught == false, "Restore returns to the exact safe checkpoint")
+
+    var seenByGuest = Motel()
+    _ = seenByGuest.checkIn(guestID: 10, roomID: 0)
+    _ = seenByGuest.enter(0)
+    seenByGuest.visit!.player = Tile(x: 5, y: 3)
+    seenByGuest.tick()
+    require(seenByGuest.caught, "Getting too close to the guest triggers game over")
+
+    // Legacy save format has no motel field: players keep their prologue progress.
+    let legacy = #"{"player":{"x":15,"y":7},"coins":45,"gifts":[0,1,2,3,4,5,6],"ownsHouse":true,"inside":false,"facing":0,"steps":10}"#
+    defaults.set(Data(legacy.utf8), forKey: "littlehaven.save.v1")
+    var migrated = Game.load(from: defaults)
+    require(migrated.readyToWake && migrated.gifts.count == 7, "Old cottage owners migrate into wake-up scene")
+    migrated.wakeUp()
+    migrated.save(to: defaults)
+    require(Game.load(from: defaults).motel?.rooms.count == 3, "Motel saves round trip")
+    defaults.removePersistentDomain(forName: "LittleHaven.MotelTests")
+    print("PASS: motel economy, occupancy, customization, expansion, interior paths, theft, detection, checkpoint rollback, legacy saves")
+}
+motelRules()

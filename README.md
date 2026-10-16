@@ -1,33 +1,54 @@
-# Little Haven
+# Little Haven - Motel Chapter
 
-A small, original pixel-style town RPG for iPhone. Arrive in Willow Town with no coins, ask seven neighbors for help, and buy a cottage of your own.
+An original iPhone game with cut-paper cartoon characters. Begin in a cozy town, then wake up to a very different job: running a roadside motel.
 
-## Play
+## The town dream
 
-- Press and hold a direction button to keep walking; release to stop. Both the character and camera glide between tiles. Movement stops when menus open or the app becomes inactive.
-- Stand next to a neighbor and tap **TALK**, then ask for help buying a house.
-- Each neighbor contributes once. Together they offer 545 fictional coins.
-- The blue-roof cottage in the northeast costs 500 coins. Stand at its entrance and tap **COTTAGE** to purchase it.
-- After buying it, tap **ENTER** to visit your furnished home. Walk through the southern door to leave.
-- The journal tracks contributions and offers a confirmed new-game reset. Progress saves automatically on your device.
+Walk with the press-and-hold direction controls. Stand beside the seven neighbors, tap TALK, and ask for help with your cottage fund. When you collect at least 500 fictional coins, the dream fades into the wake-up scene.
 
-The characters use an original cut-paper cartoon design with oversized heads, wide eyes, coats, and mitten hands. All characters, map art, and dialogue are original, drawn directly with SwiftUI Canvas. Inspired by the feel of classic handheld town RPGs; no Pokemon assets, trademarks, music, or game data are included. No network access, advertising, accounts, purchases, or real-money donations.
+Existing saves from version 1.1 keep their progress. If you already bought the cottage, the update takes you straight to the wake-up scene.
 
-## iPhone IPA
+## Run your motel
 
-Download `LittleHaven-unsigned.ipa` from this repository's Releases. Requires iOS 17 or later. This is an **unsigned device build**: it must be signed using an Apple account or valid signing certificate through a compatible sideloading tool before installation. It cannot be installed by simply tapping the file. Device installation is not verified by CI.
+- Start with rooms 101-103 and 180 coins of working capital.
+- Check arriving guests into clean, empty rooms. The entire one- or two-night stay is paid at check-in.
+- End the day for new arrivals and checkouts. Vacated rooms need free manual cleaning.
+- Choose four wall palettes for each room and your office. Paint changes cost 25 coins.
+- Upgrade each room's furnishings twice. Upgrades cost 90, then 180 coins, and each adds 30 to the nightly rate.
+- Upgrade your office twice for 120, then 240 coins. Each adds 15 to every room's nightly rate and attracts another daily arrival.
+- Build additional rooms, starting at 250 coins with costs rising by 150 per room. Reach nine rooms to complete the expansion goal, then continue running the business.
 
-Every push to main runs game logic tests, compiles the iPhone app, verifies the arm64 iPhoneOS executable, and publishes an IPA and SHA-256 checksum in a prerelease. GitHub's macOS runner provides Xcode; no Apple signing credentials are stored in this repository.
+## Sneak into occupied rooms
+
+Choose Sneak inside on an occupied room. Use the same hold controls to move around its interior. Approach the highlighted suitcase, watch, or camera and take it, then get back to the southern door.
+
+Suspicion rises every second and with movement and theft. Reaching 100 percent, or moving next to the patrolling guest, triggers game over. Stolen belongings only become coins after you escape. Items cannot be collected twice during the same stay.
+
+## Saving and game over
+
+The town prologue saves automatically. The motel uses explicit checkpoints: tap Save at desk, or End day to save the following morning. Room visits and game-over states cannot overwrite that checkpoint.
+
+After getting caught, choose Load last save. Your cash, guests, room upgrades, and construction return to the saved state. Closing the app also resumes from the latest checkpoint. Keep the app installed and use the same bundle identifier and signing identity when updating to preserve local saves.
+
+## SideStore and IPA
+
+Source URL:
+
+https://raw.githubusercontent.com/3rr0rr3/little-haven-ios/main/sideStore.json
+
+Download the latest successful IPA from Releases. Requires iOS 17 or later. The device build is unsigned; sign it through your sideloading tool before installing. Physical-device installation has not been verified.
+
+GitHub Actions runs model tests, compiles the arm64 iPhoneOS app, exercises controls and motel interactions in an iPhone simulator, captures chapter previews, verifies the IPA, publishes a release, and updates the SideStore feed with its exact version and size.
 
 ## Development
 
-Open `LittleHaven.xcodeproj` in Xcode, choose the `LittleHaven` scheme and an iPhone simulator, then Run. For a signed physical-device build, select your own development team and a unique bundle identifier in Signing & Capabilities.
+Open LittleHaven.xcodeproj in Xcode, select the LittleHaven scheme and an iPhone simulator, then Run. Select your own team and signing configuration for a signed device build.
 
-Run the platform-independent logic checks on macOS:
+Run the platform-independent game tests on macOS:
 
-```sh
-swiftc LittleHaven/Game.swift Tests/main.swift -o /tmp/little-haven-tests
+~~~sh
+swiftc LittleHaven/Game.swift LittleHaven/Motel.swift Tests/main.swift -o /tmp/little-haven-tests
 /tmp/little-haven-tests
-```
+~~~
 
-The game is a compact, complete first adventure, with exploration and dialogue rather than combat. Saves use local UserDefaults; deleting the app may delete progress.
+All characters, artwork and dialogue are original. No network access, advertising, accounts, or real-money purchases. All coins and theft mechanics are fictional gameplay.
