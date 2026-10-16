@@ -11,6 +11,9 @@ struct ContentView: View {
     @State private var showHouse = false
     @State private var showJournal = false
     @State private var reset = false
+    @State private var heldDirection: Tile?
+    @Environment(\.scenePhase) private var scenePhase
+    private let stepDuration = 0.16
     private let cream = Color(hex: 0xF5E7C8)
     private let gold = Color(hex: 0xEFC977)
 
@@ -20,12 +23,12 @@ struct ContentView: View {
                 HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("LITTLE HAVEN").font(.system(size: 22, weight: .black, design: .rounded)).tracking(2)
-                        Text(game.inside ? "YOUR COTTAGE · HOME AT LAST" : "WILLOW TOWN · A NEW BEGINNING")
+                        Text(game.inside ? "YOUR COTTAGE � HOME AT LAST" : "WILLOW TOWN � A NEW BEGINNING")
                             .font(.system(size: 9, weight: .bold, design: .monospaced)).tracking(1)
                             .foregroundStyle(cream.opacity(0.6))
                     }
                     Spacer(minLength: 4)
-                    Button { showJournal = true } label: { Image(systemName: "book.closed.fill").frame(width: 44, height: 44).background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14)) }
+                    Button { stopMoving(); showJournal = true } label: { Image(systemName: "book.closed.fill").frame(width: 44, height: 44).background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14)) }
                         .accessibilityLabel("Open journal")
                 }
                 HStack {
@@ -39,13 +42,17 @@ struct ContentView: View {
                 }.padding(14).background(Color(hex: 0x283D36), in: RoundedRectangle(cornerRadius: 16))
 
                 ZStack(alignment: .topLeading) {
-                    TownCanvas(game: game)
+                    TownCanvas(game: game, playerX: Double(game.player.x), playerY: Double(game.player.y))
+                        .animation(.linear(duration: stepDuration), value: game.player)
+                        .id(game.inside)
                     Text(game.inside ? "HOME, SWEET HOME" : "WILLOW TOWN")
                         .font(.system(size: 9, weight: .black, design: .monospaced)).tracking(1.5)
                         .padding(9).background(Color(hex: 0x203A30).opacity(0.9), in: Capsule()).padding(10)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 20))
                 .overlay(RoundedRectangle(cornerRadius: 20).stroke(cream.opacity(0.15), lineWidth: 2))
+                .accessibilityElement(children: .ignore)
+                .accessibilityIdentifier("townMap")
                 .accessibilityLabel(game.inside ? "Inside your cottage" : "Town map. Your position: column \(game.player.x), row \(game.player.y)")
                 .frame(maxHeight: .infinity)
 
@@ -80,6 +87,21 @@ struct ContentView: View {
             }.padding(.horizontal, 18).padding(.vertical, 10)
             .foregroundStyle(cream).background(Color(hex: 0x172A25))
         }
+        .task(id: heldDirection) {
+            guard let direction = heldDirection else { return }
+            while !Task.isCancelled && scenePhase == .active {
+                guard conversation == nil, message == nil, !showHouse, !showJournal else { break }
+                let wasInside = game.inside
+                game.move(dx: direction.x, dy: direction.y)
+                if wasInside != game.inside { stopMoving(); break }
+                do { try await Task.sleep(for: .seconds(stepDuration)) }
+                catch { break }
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { stopMoving() }
+        }
+        .onDisappear { stopMoving() }
         .sheet(item: $conversation) { person in
             dialogue(person)
                 .presentationDetents([.height(340)]).presentationDragIndicator(.visible)
@@ -95,7 +117,7 @@ struct ContentView: View {
             }
             Button("Keep exploring", role: .cancel) { }
         } message: {
-            Text(game.ownsHouse ? "Your own little corner of Little Haven. Welcome home." : game.coins >= 500 ? "A sunny room, a warm bed, and a fresh start. Ready to make it yours?" : "FOR SALE · 500 coins\nYou need \(500 - game.coins) more. Ask the townspeople if they can help with your cottage fund.")
+            Text(game.ownsHouse ? "Your own little corner of Little Haven. Welcome home." : game.coins >= 500 ? "A sunny room, a warm bed, and a fresh start. Ready to make it yours?" : "FOR SALE � 500 coins\nYou need \(500 - game.coins) more. Ask the townspeople if they can help with your cottage fund.")
         }
         .alert("Little Haven", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
             Button("Continue") { message = nil }
@@ -104,17 +126,31 @@ struct ContentView: View {
 
     private var hint: String {
         if game.inside { return "You made it home. Walk down through the door to go outside." }
-        if let person = game.nearby { return "\(person.name), the \(person.role.lowercased()) · Tap TALK" }
-        if game.atHouse { return game.ownsHouse ? "Your cottage · Tap ENTER" : "Cottage for sale · Tap COTTAGE" }
-        return game.coins >= 500 && !game.ownsHouse ? "Your fund is ready! Find the cottage in the northeast." : "Walk beside a neighbor, then tap TALK to ask for help."
+        if let person = game.nearby { return "\(person.name), the \(person.role.lowercased()) � Tap TALK" }
+        if game.atHouse { return game.ownsHouse ? "Your cottage � Tap ENTER" : "Cottage for sale � Tap COTTAGE" }
+        return game.coins >= 500 && !game.ownsHouse ? "Your fund is ready! Find the cottage in the northeast." : "Hold an arrow to walk. Stand beside a neighbor to TALK."
     }
     private func direction(_ symbol: String, dx: Int, dy: Int, label: String) -> some View {
-        Button { game.move(dx: dx, dy: dy); game.save() } label: {
-            Image(systemName: symbol).font(.system(size: 16, weight: .black)).frame(width: 44, height: 40)
-                .background(Color(hex: 0x344B40), in: RoundedRectangle(cornerRadius: 10))
-        }.accessibilityLabel(label)
+        HoldDirection(symbol: symbol, label: label, isActive: heldDirection == Tile(x: dx, y: dy)) { pressed in
+            let direction = Tile(x: dx, y: dy)
+            if pressed {
+                guard scenePhase == .active, conversation == nil, message == nil, !showHouse, !showJournal else { return }
+                heldDirection = direction
+            } else if heldDirection == direction {
+                stopMoving()
+            }
+        } singleStep: {
+            stopMoving()
+            game.move(dx: dx, dy: dy)
+            game.save()
+        }
+    }
+    private func stopMoving() {
+        heldDirection = nil
+        game.save()
     }
     private func interact() {
+        stopMoving()
         if let person = game.nearby { conversation = person }
         else if game.atHouse { showHouse = true }
         else { message = game.inside ? "A little bed, a well-loved rug, and room for new memories. This is your home now." : "Move right next to a neighbor to talk. Look for the people with a gold dot above their heads. The cottage is in the northeast." }
@@ -122,7 +158,7 @@ struct ContentView: View {
     private func dialogue(_ person: Neighbor) -> some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack {
-                Image(systemName: "person.crop.square.fill").font(.system(size: 42)).foregroundStyle(Color(hex: person.color))
+                PaperPortrait(color: person.color, variant: person.id).frame(width: 54, height: 62)
                 VStack(alignment: .leading) {
                     Text(person.name).font(.title2.bold())
                     Text(person.role.uppercased()).font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(gold)
@@ -139,7 +175,7 @@ struct ContentView: View {
                 } label: { Text("Could you help me buy a house?").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(15) }
                     .foregroundStyle(Color(hex: 0x172A25)).background(gold, in: RoundedRectangle(cornerRadius: 14))
             } else {
-                Label("\(person.gift) coins contributed · Thank you!", systemImage: "heart.fill").font(.subheadline.bold()).foregroundStyle(gold)
+                Label("\(person.gift) coins contributed � Thank you!", systemImage: "heart.fill").font(.subheadline.bold()).foregroundStyle(gold)
             }
         }.padding(24).foregroundStyle(cream).presentationBackground(Color(hex: 0x263D33))
     }
@@ -148,17 +184,17 @@ struct ContentView: View {
             List {
                 Section("A place to call home") {
                     Text(game.ownsHouse ? "You bought the Willow Cottage! Visit your home whenever you like." : "Raise 500 coins by asking the seven neighbors for help. Each can contribute once. Buy the cottage in the northeast, then step inside.")
-                    Text("Use the direction buttons to walk. Stand one tile beside a person and tap TALK. Buildings, trees, and the pond block your way.")
+                    Text("Press and hold a direction to keep walking. Release to stop. Stand one tile beside a person and tap TALK. Buildings, trees, and the pond block your way.")
                 }
-                Section("Your neighbors · \(game.gifts.count)/7") {
+                Section("Your neighbors � \(game.gifts.count)/7") {
                     ForEach(Town.neighbors) { person in
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(person.name + " · " + person.role).font(.headline)
+                                Text(person.name + " � " + person.role).font(.headline)
                                 Text("Column \(person.tile.x), row \(person.tile.y)").font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Text(game.gifts.contains(person.id) ? "+\(person.gift) ✓" : "Say hello").foregroundStyle(gold).font(.caption.bold())
+                            Text(game.gifts.contains(person.id) ? "+\(person.gift) �" : "Say hello").foregroundStyle(gold).font(.caption.bold())
                         }
                     }
                 }
@@ -171,5 +207,31 @@ struct ContentView: View {
                     Button("Start over", role: .destructive) { game = Game(); game.save(); showJournal = false }
                 }
         }.tint(gold)
+    }
+}
+
+private struct HoldDirection: View {
+    let symbol: String
+    let label: String
+    let isActive: Bool
+    let changed: (Bool) -> Void
+    let singleStep: () -> Void
+    @GestureState private var pressed = false
+
+    var body: some View {
+        Image(systemName: symbol)
+            .font(.system(size: 16, weight: .black))
+            .frame(width: 44, height: 40)
+            .background(Color(hex: isActive ? 0x65866B : 0x344B40), in: RoundedRectangle(cornerRadius: 10))
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0)
+                .updating($pressed) { value, state, _ in
+                    state = CGRect(x: -12, y: -12, width: 68, height: 64).contains(value.location)
+                })
+            .onChange(of: pressed) { _, value in changed(value) }
+            .accessibilityLabel(label)
+            .accessibilityHint("Hold to keep walking; activate to take one step.")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(singleStep)
     }
 }

@@ -4,14 +4,14 @@ A small, original pixel-style town RPG for iPhone. Arrive in Willow Town with no
 
 ## Play
 
-- Use the direction buttons to explore. The camera follows you.
+- Press and hold a direction button to keep walking; release to stop. Both the character and camera glide between tiles. Movement stops when menus open or the app becomes inactive.
 - Stand next to a neighbor and tap **TALK**, then ask for help buying a house.
 - Each neighbor contributes once. Together they offer 545 fictional coins.
 - The blue-roof cottage in the northeast costs 500 coins. Stand at its entrance and tap **COTTAGE** to purchase it.
 - After buying it, tap **ENTER** to visit your furnished home. Walk through the southern door to leave.
 - The journal tracks contributions and offers a confirmed new-game reset. Progress saves automatically on your device.
 
-All characters, map art, and dialogue are original, drawn directly with SwiftUI Canvas. Inspired by the feel of classic handheld town RPGs; no Pokemon assets, trademarks, music, or game data are included. No network access, advertising, accounts, purchases, or real-money donations.
+The characters use an original cut-paper cartoon design with oversized heads, wide eyes, coats, and mitten hands. All characters, map art, and dialogue are original, drawn directly with SwiftUI Canvas. Inspired by the feel of classic handheld town RPGs; no Pokemon assets, trademarks, music, or game data are included. No network access, advertising, accounts, purchases, or real-money donations.
 
 ## iPhone IPA
 

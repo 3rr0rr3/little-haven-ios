@@ -22,13 +22,15 @@ jobs:
         run: |
           set -euo pipefail
           xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath device-build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
-      - name: Simulator launch and screenshot
+      - name: Test hold controls in simulator and capture preview
         run: |
           set -euo pipefail
           DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
           xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -sdk iphonesimulator -destination "id=$DEVICE" -derivedDataPath sim-build CODE_SIGNING_ALLOWED=NO build
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test
+          xcrun simctl uninstall "$DEVICE" com.littlehaven.town
           xcrun simctl status_bar "$DEVICE" override --time '9:41' --dataNetwork wifi --wifiMode active --wifiBars 3 --batteryState charged --batteryLevel 100
           xcrun simctl install "$DEVICE" sim-build/Build/Products/Debug-iphonesimulator/LittleHaven.app
           xcrun simctl launch "$DEVICE" com.littlehaven.town
@@ -58,4 +60,4 @@ jobs:
           set -euo pipefail
           TAG="sideload-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
           printf '%s\n' 'Little Haven: an original town RPG for iPhone, iOS 17+.' 'Ask neighbors for coins, buy your cottage, and explore your new home.' 'Unsigned arm64 iPhoneOS build. Sign with your Apple account or certificate through a compatible sideloader before installing. Physical-device installation has not been verified.' 'Includes game logic checks and an iPhone simulator launch preview.' > release-notes.txt
-          gh release create "$TAG" LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png --target "$GITHUB_SHA" --title "Little Haven — iPhone build ${GITHUB_RUN_NUMBER}" --prerelease --notes-file release-notes.txt
+          gh release create "$TAG" LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png --target "$GITHUB_SHA" --title "Little Haven - iPhone build ${GITHUB_RUN_NUMBER}" --prerelease --notes-file release-notes.txt
