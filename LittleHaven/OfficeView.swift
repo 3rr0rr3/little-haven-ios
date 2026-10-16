@@ -19,7 +19,7 @@ struct OfficeReceptionView: View {
             let scale = min(proxy.size.width / 240, proxy.size.height / 240)
             let origin = CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-office",revision:"family-\(motel.officeTheme)",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme)) }
+                RPGSceneView(mapID:"family-office",revision:"family-\(Airb&b.officeTheme)",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme)) }
                 target(.player,"Front desk",OfficeReception.clerk,scale,origin)
                 target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin)
                 target(.samhil,"Talk to Samhil",Tile(x:11,y:9),scale,origin)

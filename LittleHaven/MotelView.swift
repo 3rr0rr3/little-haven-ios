@@ -17,7 +17,7 @@ struct WakeUpView: View {
                 }
             }.frame(height: 245)
             Text("You wake up.\nThe keys were real.").font(.system(size: 31, weight: .bold, design: .rounded)).multilineTextAlignment(.center)
-            Text("The town, the coins, the little house... a dream.\nOn your desk: three room keys and the deed to a tired roadside motel.\n\nYour first guests are already outside.")
+            Text("The town, the coins, the little house... a dream.\nOn your desk: three room keys and the deed to a tired roadside Airb&b.\n\nYour first guests are already outside.")
                 .font(.body).foregroundStyle(.white.opacity(0.7)).multilineTextAlignment(.center)
             Button("Start my first shift", action: begin).buttonStyle(MotelButtonStyle()).accessibilityIdentifier("wakeUp")
         }.padding(28)
@@ -53,6 +53,7 @@ struct MotelView: View {
     @State private var confirmRestore = false
     @State private var toast: String?
     @State private var family: OfficeTap?
+    @State private var showPolice = false
     @State private var showIncident = false
     private var motel: Motel { game.motel ?? Motel() }
     private var mapIdentity: String { motel.visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue }
@@ -66,7 +67,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
@@ -79,6 +80,8 @@ struct MotelView: View {
             change { $0.initializeWorld() }
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--ui-dialogue") { family = .hildarelys }
+            if ProcessInfo.processInfo.arguments.contains("--ui-police") { showPolice = true }
+            if ProcessInfo.processInfo.arguments.contains("--ui-hiring") { panel = .staff }
             #endif
         }
         .task(id: movement) {
@@ -147,22 +150,28 @@ struct MotelView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(motel.mapName).font(.system(size: 20, weight: .black, design: .rounded))
-                    Text("DAY \(motel.day) / \(motel.occupancy) GUESTS / \(motel.rooms.count) ROOMS")
+                    Text("DAY \(Airb&b.day) / \(Airb&b.occupancy) GUESTS / \(Airb&b.rooms.count) ROOMS")
                         .font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(gold)
                 }
                 Spacer(minLength: 4)
-                Label("\(motel.cash)", systemImage: "circle.circle.fill").font(.system(size: 18, weight: .heavy, design: .monospaced)).foregroundStyle(gold).accessibilityElement(children: .ignore).accessibilityLabel("Cash \(motel.cash) coins").accessibilityIdentifier("motelCash")
-                Button { stop(); showMap = true } label: { Image(systemName: "map.fill").frame(width: 36, height: 40) }.accessibilityLabel("Motel map")
+                Label("\(Airb&b.cash)", systemImage: "circle.circle.fill").font(.system(size: 18, weight: .heavy, design: .monospaced)).foregroundStyle(gold).accessibilityElement(children: .ignore).accessibilityLabel("Cash \(Airb&b.cash) coins").accessibilityIdentifier("motelCash")
+                Button { stop(); showMap = true } label: { Image(systemName: "map.fill").frame(width: 36, height: 40) }.accessibilityLabel("Airb&b map")
                 Button { stop(); showPause = true } label: { Image(systemName: "pause.fill").frame(width: 28, height: 40) }.accessibilityLabel("Pause game")
             }
             HStack {
                 Button { stop(); panel = .reviews } label: { Text(motel.reviewAverage.map { String(format:"★ %.1f",$0) } ?? "★ NEW") }.accessibilityIdentifier("openReviews")
                 Spacer()
-                Button("STAFF \(motel.operationsState.workers.count)") { stop(); panel = .staff }.accessibilityIdentifier("openStaff")
+                Button("HIRE / TEAM \(Airb&b.operationsState.workers.count)") { stop(); panel = .staff }.accessibilityIdentifier("openStaff")
                 if let incident = motel.operationsState.incident {
                     Button("! \(incident.kind.rawValue.uppercased()) / \(incident.remaining)s") { stop(); showIncident = true }.foregroundStyle(Color(hex:0xEE9E78)).accessibilityIdentifier("incidentAlarm")
                 }
             }.font(.system(size:10,weight:.bold,design:.monospaced)).foregroundStyle(gold)
+            if let police = motel.business.police {
+                Button { stop(); showPolice = true } label: {
+                    Label(police.arrived ? "POLICE HERE - FINE / BRIBE" : "POLICE ON THE WAY",systemImage:"light.beacon.max.fill")
+                        .font(.system(size:11,weight:.heavy)).frame(maxWidth:.infinity).padding(9).background(Color(hex:0x6A3D3D))
+                }.accessibilityIdentifier("policeAlarm")
+            }
             ZStack(alignment: .bottom) {
                 scene
                     .clipShape(RoundedRectangle(cornerRadius: 20))
@@ -187,10 +196,7 @@ struct MotelView: View {
             if motel.isAtReception {
                 HStack(spacing: 10) {
                     Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("TAP PEOPLE & OBJECTS").font(.system(size: 9, weight: .bold, design: .monospaced))
-                        Text(motel.worldState.hasCleaningKit ? "Cleaning kit ready" : "Tools are in the left closet").font(.caption2).foregroundStyle(cream.opacity(0.7))
-                    }
+                    Button("Hire employees") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")
                 }.frame(height: 65)
             } else {
             HStack(spacing: 16) {
@@ -211,8 +217,22 @@ struct MotelView: View {
         }.padding(.horizontal, 16).padding(.vertical, 10)
     }
 
+    private func policeDialogue(_ police: PoliceCase) -> some View {
+        var choices: [DialogueChoice] = []
+        if police.arrived {
+            choices.append(DialogueChoice(title:"Pay fine / \(police.fine)",action:{ change { _ = $0.payPoliceFine() }; showPolice = false }))
+            if !police.bribeTried && motel.cash >= 80 {
+                choices.append(DialogueChoice(title:"Risk a bribe / 80",action:{ change { _ = $0.tryPoliceBribe() }; if motel.business.police == nil { showPolice = false } }))
+            }
+        }
+        let detail = police.arrived ? "\(police.guest) died in the \(police.cause.rawValue) emergency. Your fine is \(police.fine) coins. Bribery may be refused and increase the fine. Unpaid fines are deducted from future room income. \(police.message)" : "An officer is walking from the road to reception after a guest death. Keep the grounds safe. Talk once the officer arrives."
+        return GameDialogue(speaker:"Officer Vega",text:detail,portrait:AnyView(PaperPortrait(color:0x54739C,variant:0)),choices:choices) { showPolice = false }
+    }
+
     @ViewBuilder private var worldOverlay: some View {
-                if let family {
+                if showPolice, let police = motel.business.police {
+                    policeDialogue(police).padding(12)
+                } else if let family {
                     GameDialogue(speaker:familyTitle,text:familyMessage,portrait:familyPortrait(family),choices:familyChoices(family)) { self.family = nil }.padding(12)
                 } else if showIncident, let incident = motel.operationsState.incident {
                     GameDialogue(speaker:incident.kind.title,text:incident.kind.detail,portrait:AnyView(Image(systemName:"exclamationmark.triangle.fill").font(.largeTitle).foregroundStyle(gold)),choices:incidentChoices(incident.kind)) { showIncident = false }.padding(12)
@@ -222,7 +242,7 @@ struct MotelView: View {
                         showSneak = false; confirmSneak = nil
                     })]) { showSneak = false; confirmSneak = nil }.padding(12)
                 } else if confirmRest {
-                    GameDialogue(speaker:"End the day?",text:"Guests check out, reviews arrive, and wages are paid. Any active emergency counts as ignored. Your morning is saved.",portrait:AnyView(PaperPortrait(color:0xC7D0D4,variant:7)),choices:[DialogueChoice(title:"Sleep until morning",action:{
+                    GameDialogue(speaker:"End the day?",text:"Guests check out, reviews arrive, and wages are paid. An ignored emergency can kill a guest. Police cases must be settled before sleeping. Your morning is saved.",portrait:AnyView(PaperPortrait(color:0xC7D0D4,variant:7)),choices:[DialogueChoice(title:"Sleep until morning",action:{
                         change { _ = $0.restAtBed() }; game.save(); confirmRest = false; toast = "Morning checkpoint saved."
                     })]) { confirmRest = false }.padding(12)
                 } else if confirmRestore {
@@ -241,7 +261,7 @@ struct MotelView: View {
             MotelRPGView(motel: motel, workProgress: workProgress)
                 .animation(.linear(duration: movementDuration), value: tile).id(mapIdentity)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(motel.mapName). Column \(tile.x), row \(tile.y).")
+                .accessibilityLabel("\(Airb&b.mapName). Column \(tile.x), row \(tile.y).")
                 .accessibilityValue("\(room.dirty ? "Cleaning \(room.cleanedTasks?.count ?? 0)/3" : "Ready for guests"). Theme \(room.theme). Furnishings \(room.furniture).")
                 .accessibilityIdentifier("motelWorld")
         } else if motel.isAtReception {
@@ -251,8 +271,8 @@ struct MotelView: View {
                 .animation(.linear(duration: movementDuration), value: tile)
                 .animation(.linear(duration: 0.35), value: motel.worldState.tick).id(mapIdentity)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("MOTEL GROUNDS. Column \(tile.x), row \(tile.y).")
-                .accessibilityValue("\(motel.worldState.travellers.count) guests walking to their destinations.")
+                .accessibilityLabel("Airb&b GROUNDS. Column \(tile.x), row \(tile.y).")
+                .accessibilityValue("\(Airb&b.worldState.travellers.count) guests walking to their destinations.")
                 .accessibilityIdentifier("motelWorld")
         }
     }
@@ -309,12 +329,12 @@ struct MotelView: View {
         case .paint: return "Choose wall paint here. 25 coins per change."
         case .furniture: return "Upgrade the bed and room furnishings here to improve its nightly rate."
         case .desk: return "Your front desk: save a checkpoint or upgrade the office."
-        case .save: return "Logbook: save your current motel, guests and upgrades."
+        case .save: return "Logbook: save your current Airb&b, guests and upgrades."
         case .rest: return "Your bed: end the day, handle checkouts and save the next morning."
         case .tools: return "Pick up a mop, fresh sheets and bin bags for cleaning."
         case .office: return "Office entrance. Walk through the door or tap ENTER."
         case .exit: return "Walk through the lower door to go outside."
-        case .construction: return "Build room \(101 + motel.rooms.count) here for \(motel.expansionCost) coins."
+        case .construction: return "Build room \(101 + Airb&b.rooms.count) here for \(Airb&b.expansionCost) coins."
         case .loot(let item): return "\(RoomVisit.lootNames[item]): +\(RoomVisit.lootValues[item]) coins, +\(RoomVisit.lootNoise[item]) suspicion. Escape to keep it."
         case .none:
             if motel.visit?.sneaking == true { return "Avoid the guest. Take belongings and return to the door before suspicion reaches 100%." }
@@ -364,7 +384,7 @@ struct MotelView: View {
                                 Button { selectedRoom = room.id } label: {
                                     VStack(spacing: 4) {
                                         RoomIllustration(theme: room.theme, level: room.furniture, office: false).frame(width: 70, height: 48)
-                                        Text("\(room.number) / \(motel.rate(for: room) * guest.nights) coins").font(.system(size: 10, weight: .bold))
+                                        Text("\(room.number) / \(Airb&b.rate(for: room) * guest.nights) coins").font(.system(size: 10, weight: .bold))
                                     }.padding(7).background(selectedRoom == room.id ? gold.opacity(0.3) : .white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
                                 }.accessibilityIdentifier("chooseRoom\(room.id)")
                             }
@@ -382,7 +402,10 @@ struct MotelView: View {
             case .staff:
                 StaffPanel(motel:motel) { role in change { _ = $0.hire(role) } }
             case .reviews:
-                ReviewsPanel(motel:motel)
+                VStack(alignment:.leading,spacing:6) {
+                    Text("Safety deaths: \(Airb&b.business.deaths) / Lost daily bookings: \(Airb&b.bookingPenalty) / Fine balance: \(Airb&b.business.debt)").font(.caption)
+                    ReviewsPanel(motel:motel)
+                }
             case .roomUpgrades:
                 RoomUpgradesPanel(motel:motel) { id in change { _ = $0.upgradeFromDesk(id) } }
             case .paint(let roomID):
@@ -407,7 +430,7 @@ struct MotelView: View {
                 }.font(.caption.bold()).foregroundStyle(gold).padding(.bottom,6)
                 HStack {
                     Button("Save checkpoint", action: saveHere).buttonStyle(MotelButtonStyle()).accessibilityIdentifier("saveCheckpoint")
-                    Button("Upgrade / \((motel.officeLevel + 1) * 120)") {
+                    Button("Upgrade / \((Airb&b.officeLevel + 1) * 120)") {
                         change { _ = $0.furnishNearby() }; panel = nil
                     }.buttonStyle(MotelButtonStyle(subdued: true)).disabled(motel.officeLevel >= 2 || motel.cash < (motel.officeLevel + 1) * 120)
                 }
@@ -415,7 +438,7 @@ struct MotelView: View {
             case .construction:
                 HStack {
                     RoomIllustration(theme: 0, level: 0, office: false).frame(width: 88, height: 70).clipShape(RoundedRectangle(cornerRadius: 8))
-                    Text("Room \(101 + motel.rooms.count)\n\(motel.expansionCost) coins\n\(motel.rooms.count)/9 rooms built").font(.subheadline.bold())
+                    Text("Room \(101 + Airb&b.rooms.count)\n\(Airb&b.expansionCost) coins\n\(Airb&b.rooms.count)/9 rooms built").font(.subheadline.bold())
                 }
                 Button("Build this room") {
                     change { _ = $0.buildNearby() }; panel = nil
@@ -431,15 +454,15 @@ struct MotelView: View {
         case .reviews: return "Guest reviews"
         case .roomUpgrades: return "Room upgrades"
         case .desk: return "Front desk"
-        case .construction: return "Motel expansion"
+        case .construction: return "Airb&b expansion"
         }
     }
     private var pauseSheet: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("On a break").font(.title.bold())
-            Text("Move around the motel to do your work. Visit the desk or logbook to save, the tools closet for a mop, and your bed for the next day. Clean all three messes inside a vacated room before renting it again.").font(.body)
+            Text("Move around the Airb&b to do your work. Visit the desk or logbook to save, the tools closet for a mop, and your bed for the next day. Clean all three messes inside a vacated room before renting it again.").font(.body)
             Text("Getting caught while stealing means loading your latest checkpoint. Changes since that save will be lost.").font(.subheadline).foregroundStyle(.secondary)
-            Button("Back to the motel") { showPause = false }.buttonStyle(MotelButtonStyle())
+            Button("Back to the Airb&b") { showPause = false }.buttonStyle(MotelButtonStyle())
             Button("Load last save") { showPause = false; confirmRestore = true }.buttonStyle(MotelButtonStyle(subdued: true))
         }.padding(24).foregroundStyle(cream).presentationBackground(Color(hex: 0x172A25))
     }

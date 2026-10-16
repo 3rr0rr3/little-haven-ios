@@ -43,7 +43,29 @@ struct MotelIncident: Codable {
     let limit = 90
     var remaining: Int { max(0,limit-elapsed) }
 }
+struct PoliceCase: Codable {
+    let number: Int
+    let guest: String
+    let cause: ChaosKind
+    var tile = MotelGrounds.gate
+    var arrived = false
+    var fine = 200
+    var bribeTried = false
+    var acceptsBribe = Bool.random()
+    var message = ""
+}
+struct BusinessConsequences: Codable {
+    var deaths = 0
+    var reputationLoss = 0
+    var finesPaid = 0
+    var bribesAccepted = 0
+    var bribesRejected = 0
+    var debt = 0
+    var police: PoliceCase?
+}
 struct MotelOperations: Codable {
+    var consequences: BusinessConsequences?
+    var colorsAssigned: Bool?
     var tick = 0
     var nextIncidentTick = 45
     var incidentsStarted = 0
@@ -66,11 +88,11 @@ extension Motel {
     }
     mutating func prepareChaosClock() {
         var state = operationsState
-        if occupancy == 1 && state.incidentsStarted == 0 { state.nextIncidentTick = state.tick + 40 }
+        if occupancy == 1 && state.incidentsStarted == 0 { state.nextIncidentTick = state.tick + 25 }
         operations = state
     }
     @discardableResult mutating func hire(_ role: StaffRole) -> Bool {
-        guard isAtReception, canSave, cash >= role.hireCost, !operationsState.workers.contains(where: { $0.role == role }) else { return false }
+        guard canSave, cash >= role.hireCost, !operationsState.workers.contains(where: { $0.role == role }) else { return false }
         var state = operationsState
         cash -= role.hireCost
         state.workers.append(MotelWorker(role:role,tile:role.home))
@@ -80,13 +102,7 @@ extension Motel {
     }
     mutating func payStaffForDay() {
         var state = operationsState
-        if state.incident != nil {
-            for room in rooms { if let guest = room.guest { state.guestPenalties[guest.id,default:0] += 2 } }
-            cash = max(0,cash-40)
-            state.incidentsMissed += 1
-            state.incident = nil
-            state.nextIncidentTick = state.tick + 60
-        }
+        if state.incident != nil { failIncident(&state) }
         for i in state.workers.indices {
             let wage = state.workers[i].role.wage
             state.workers[i].active = cash >= wage
@@ -105,7 +121,7 @@ extension Motel {
         let theft = room.stolen.isEmpty ? 0 : 3
         let stars = max(1,min(5,4 + min(1,room.furniture) - penalty - theft))
         let text: String
-        if theft > 0 { text = "My belongings disappeared. I cannot recommend this motel." }
+        if theft > 0 { text = "My belongings disappeared. I cannot recommend this Airb&b." }
         else if penalty > 0 { text = "The trouble outside was not handled in time. It spoiled my stay." }
         else if stars == 5 { text = "Lovely upgraded room and a peaceful stay. I would come back!" }
         else { text = "A clean room and a friendly welcome. Good value for the night." }
@@ -122,7 +138,7 @@ extension Motel {
         var state = operationsState
         state.incident = nil
         state.incidentsResolved += 1
-        state.nextIncidentTick = state.tick + 60
+        state.nextIncidentTick = state.tick + 30
         operations = state
         lastEvent = "You handled the emergency. Guests can relax again."
         return true
@@ -131,7 +147,7 @@ extension Motel {
         guard !caught else { return }
         var state = operationsState
         state.tick += 1
-        if state.incident == nil && occupancy > 0 && state.tick >= state.nextIncidentTick {
+        if state.incident == nil && state.consequences?.police == nil && occupancy > 0 && state.tick >= state.nextIncidentTick {
             let kind = ChaosKind.allCases[state.incidentsStarted % ChaosKind.allCases.count]
             state.incidentsStarted += 1
             state.incident = MotelIncident(kind:kind)
@@ -141,12 +157,7 @@ extension Motel {
             incident.elapsed += 1
             state.incident = incident
             if incident.elapsed >= incident.limit {
-                for room in rooms { if let guest = room.guest { state.guestPenalties[guest.id,default:0] += 2 } }
-                cash = max(0,cash-40)
-                state.incidentsMissed += 1
-                state.incident = nil
-                state.nextIncidentTick = state.tick + 60
-                lastEvent = "The incident was handled too late. -40 coins in repairs; guests may leave bad reviews."
+                failIncident(&state)
             }
         }
         var occupied = Set(waiting.filter { $0.id != reception.visitor?.guest.id }.map { MotelGrounds.guestTile($0.id) } + worldState.travellers.map(\.player))
@@ -174,7 +185,7 @@ extension Motel {
                 if state.incident!.staffProgress >= 8 {
                     state.incident = nil
                     state.incidentsResolved += 1
-                    state.nextIncidentTick = state.tick + 60
+                    state.nextIncidentTick = state.tick + 30
                     lastEvent = "\(worker.role.name) handled the emergency. Your guests are safe."
                 }
             } else if let roomID = worker.roomID, let roomIndex = rooms.firstIndex(where: { $0.id == roomID }) {
@@ -190,6 +201,90 @@ extension Motel {
             state.workers[index] = worker
             occupied.insert(worker.tile)
         }
+        if var police = state.consequences?.police {
+            if police.tile == Tile(x:6,y:10) { police.arrived = true }
+            else if let next = MotelGrounds.nextStep(from:police.tile,to:Tile(x:6,y:10),avoiding:[]) { police.tile = next }
+            state.consequences!.police = police
+        }
         operations = state
+    }
+}
+
+extension Motel {
+    var business: BusinessConsequences { operationsState.consequences ?? BusinessConsequences() }
+    var bookingPenalty: Int { min(4,business.reputationLoss / 2) }
+    mutating func assignRoomColors() {
+        var state = operationsState
+        guard state.colorsAssigned != true else { return }
+        for i in rooms.indices where rooms[i].theme == 0 { rooms[i].theme = rooms[i].id % Self.themeColors.count }
+        state.colorsAssigned = true
+        operations = state
+    }
+    private mutating func failIncident(_ state: inout MotelOperations) {
+        guard let incident = state.incident else { return }
+        for room in rooms { if let guest = room.guest { state.guestPenalties[guest.id,default:0] += 2 } }
+        cash = max(0,cash-40)
+        state.incidentsMissed += 1
+        state.incident = nil
+        state.nextIncidentTick = state.tick + 30
+        guard let index = rooms.firstIndex(where: { $0.guest != nil }), let guest = rooms[index].guest else {
+            lastEvent = "The emergency caused damage. Repairs cost 40 coins."
+            return
+        }
+        var consequences = state.consequences ?? BusinessConsequences()
+        consequences.deaths += 1
+        consequences.reputationLoss += 4
+        consequences.police = PoliceCase(number:consequences.deaths,guest:guest.name,cause:incident.kind)
+        state.consequences = consequences
+        state.guestPenalties.removeValue(forKey:guest.id)
+        state.reviews.insert(GuestReview(id:"fatal-\(consequences.deaths)",guest:"Concerned guest",day:day,room:rooms[index].number,stars:1,text:"A guest died during an ignored emergency. This Airb&b needs to take safety seriously."),at:0)
+        state.reviews = Array(state.reviews.prefix(30))
+        rooms[index].guest = nil; rooms[index].nightsLeft = 0
+        rooms[index].dirty = true; rooms[index].cleanedTasks = []; rooms[index].stolen = []
+        world?.travellers.removeAll { $0.id == guest.id }
+        if world?.reception?.visitor?.guest.id == guest.id { world?.reception?.visitor = nil }
+        lastEvent = "\(guest.name) died in the \(incident.kind.rawValue) emergency. Police are coming. Reputation fell and future bookings will drop."
+    }
+    @discardableResult mutating func payPoliceFine() -> Bool {
+        var state = operationsState
+        guard var consequences = state.consequences, let police = consequences.police, police.arrived else { return false }
+        let paid = min(cash,police.fine)
+        cash -= paid
+        consequences.finesPaid += paid
+        consequences.debt += police.fine-paid
+        consequences.police = nil
+        state.consequences = consequences; operations = state
+        lastEvent = consequences.debt > 0 ? "Fine recorded. \(consequences.debt) coins remain due; future room payments repay the balance." : "Fine paid. The officer leaves. The safety record still affects bookings."
+        return true
+    }
+    @discardableResult mutating func tryPoliceBribe() -> Bool {
+        var state = operationsState
+        guard var consequences = state.consequences, var police = consequences.police,
+              police.arrived, !police.bribeTried, cash >= 80 else { return false }
+        cash -= 80
+        police.bribeTried = true
+        // Decide once at dispatch and persist the outcome across save reloads.
+        if police.acceptsBribe {
+            consequences.bribesAccepted += 1
+            consequences.reputationLoss += 1
+            consequences.police = nil
+            lastEvent = "The officer took 80 coins and closed the fine. Rumors about the payoff hurt your reputation."
+        } else {
+            consequences.bribesRejected += 1
+            consequences.reputationLoss += 2
+            police.fine += 150
+            police.message = "Bribery refused. Your fine is now \(police.fine) coins. The attempted payoff is on your record."
+            consequences.police = police
+            lastEvent = police.message
+        }
+        state.consequences = consequences; operations = state
+        return true
+    }
+    mutating func repayBusinessDebt() {
+        var state = operationsState
+        guard var consequences = state.consequences, consequences.debt > 0 else { return }
+        let payment = min(cash,consequences.debt)
+        cash -= payment; consequences.debt -= payment; consequences.finesPaid += payment
+        state.consequences = consequences; operations = state
     }
 }

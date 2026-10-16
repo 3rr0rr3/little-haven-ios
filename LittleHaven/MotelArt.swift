@@ -18,8 +18,8 @@ enum InteriorArt {
             context.fill(Path(CGRect(x: x, y: y, width: w, height: h)), with: .color(Color(hex: color)))
         }
         rect(0, 0, 144, 144, 0x4A6457)
-        rect(16, 16, 112, 112, 0xBA9B75)
-        for y in stride(from: 32, to: 128, by: 16) { rect(16, Double(y), 112, 0.6, 0xA78A66) }
+        rect(16, 16, 112, 112, office ? 0xBA9B75 : [UInt32(0xBAAA84),0xD3AF98,0xA4BBC2,0xB5A4BC][theme])
+        for y in stride(from: 32, to: 128, by: 16) { rect(16, Double(y), 112, 0.6, office ? 0xA78A66 : Motel.themeColors[theme]) }
         rect(0, 0, 144, 32, Motel.themeColors[theme])
         rect(0, 0, 16, 144, Motel.themeColors[theme])
         rect(128, 0, 16, 144, Motel.themeColors[theme])
@@ -223,7 +223,7 @@ struct MotelGroundsCanvas: View, Animatable {
                 let o = MotelGrounds.roomOrigin(index)
                 if index < motel.rooms.count {
                     let room = motel.rooms[index]
-                    building(o, 6, 4, MotelGrounds.roomDoor(index), "\(room.number) / \(room.guest != nil ? "GUEST" : room.dirty ? "DIRTY" : "VACANT")", 0xB47E65, Motel.themeColors[room.theme])
+                    building(o, 6, 4, MotelGrounds.roomDoor(index), "\(room.number) / \(room.guest != nil ? "GUEST" : room.dirty ? "DIRTY" : "VACANT")", Motel.themeColors[room.theme], Motel.themeColors[room.theme])
                     let door = MotelGrounds.roomDoor(index)
                     rect(Double(door.x * 16 + 19), Double(door.y * 16 - 13), 3, 3, room.guest != nil ? 0xD7927A : room.dirty ? 0xD9AF5C : 0x8AA96A)
                 } else {
@@ -257,7 +257,7 @@ struct MotelGroundsCanvas: View, Animatable {
             rect(Double(sign.x * 16 + 6), Double(sign.y * 16), 4, 19, 0x7D6D50)
             rect(Double(sign.x * 16 - 12), Double(sign.y * 16 - 7), 40, 20, 0x3A594C)
             label("BUILD", Double(sign.x * 16 + 8), Double(sign.y * 16 - 1), 4, 0xF0CC7F)
-            label("\(motel.expansionCost)", Double(sign.x * 16 + 8), Double(sign.y * 16 + 6), 4, 0xF0CC7F)
+            label("\(Airb&b.expansionCost)", Double(sign.x * 16 + 8), Double(sign.y * 16 + 6), 4, 0xF0CC7F)
             rect(15, 505, 62, 25, 0x3E5E50)
             label("LITTLE HAVEN", 46, 514, 4); label("MOTOR INN", 46, 522, 4)
             struct Actor {
@@ -341,7 +341,7 @@ struct MotelPocketMap: View {
     let motel: Motel
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Motel grounds").font(.title.bold())
+            Text("Airb&b grounds").font(.title.bold())
             Text("Walk to places to interact. This map does not teleport you.").font(.subheadline).foregroundStyle(.secondary)
             HStack(alignment: .top, spacing: 12) {
                 VStack(spacing: 12) {
@@ -363,7 +363,7 @@ struct MotelPocketMap: View {
                 }.frame(maxWidth: .infinity)
             }
             Text("PARKING / ROAD").font(.caption.monospaced().bold()).frame(maxWidth: .infinity).padding().background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
-            Text("You are in \(motel.mapName.lowercased()), column \(motel.actorTile.x), row \(motel.actorTile.y).").font(.footnote)
+            Text("You are in \(Airb&b.mapName.lowercased()), column \(Airb&b.actorTile.x), row \(Airb&b.actorTile.y).").font(.footnote)
             Text("Office: desk = save or upgrade; bed = next day; closet = cleaning kit; paint cabinet = wall colors. Rooms: hold work near mess to clean, use the bed to upgrade furnishings, and use the paint cabinet for colors.").font(.footnote).foregroundStyle(.secondary)
         }.padding(24).foregroundStyle(Color(hex: 0xF5E7C8)).presentationBackground(Color(hex: 0x172A25))
     }

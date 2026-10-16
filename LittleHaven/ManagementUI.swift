@@ -51,6 +51,7 @@ struct StaffPanel: View {
     let hire: (StaffRole) -> Void
     var body: some View {
         ScrollView { VStack(alignment:.leading,spacing:14) {
+            Text("HIRE EMPLOYEES").font(.headline).foregroundStyle(Color(hex:0xEFC977))
             Text("First shift included. Wages are paid each morning. Unpaid staff rest until the next paid shift.").font(.caption)
             ForEach(StaffRole.allCases) { role in
                 let worker = motel.operationsState.workers.first { $0.role == role }
@@ -61,11 +62,11 @@ struct StaffPanel: View {
                         Text(role.duty).font(.caption)
                         Text("\(role.wage) coins/day").font(.caption.monospaced()).foregroundStyle(Color(hex:0xEFC977))
                         if let worker { Text(worker.active ? "On duty" : "Off duty: unpaid shift").font(.caption.bold()) }
-                        else { Button("Hire \(role.name) / \(role.hireCost)") { hire(role) }.buttonStyle(MotelButtonStyle()).disabled(!motel.isAtReception || motel.cash < role.hireCost).accessibilityIdentifier("hire_"+role.rawValue) }
+                        else { Button("Hire \(role.name) / \(role.hireCost)") { hire(role) }.buttonStyle(MotelButtonStyle()).disabled(motel.cash < role.hireCost).accessibilityIdentifier("hire_"+role.rawValue) }
                     }
                 }
             }
-            if !motel.isAtReception { Text("Hire new staff at the office desk.").font(.caption) }
+            if !motel.isAtReception { Text("Hire staff here from anywhere on the grounds.").font(.caption) }
         } }.frame(maxHeight:330)
     }
 }
@@ -96,7 +97,7 @@ struct RoomUpgradesPanel: View {
                     RoomIllustration(theme:room.theme,level:room.furniture,office:false).frame(width:58,height:58)
                     VStack(alignment:.leading,spacing:4) {
                         Text("ROOM \(room.number) / TIER \(room.furniture)").font(.caption.monospaced().bold())
-                        Text("\(motel.rate(for:room)) coins/night").font(.caption)
+                        Text("\(Airb&b.rate(for:room)) coins/night").font(.caption)
                         if room.furniture < 2 {
                             Button("Upgrade / \((room.furniture+1)*90)") { upgrade(room.id) }.buttonStyle(MotelButtonStyle()).disabled(room.guest != nil || motel.cash < (room.furniture+1)*90).accessibilityIdentifier("deskUpgrade_\(room.id)")
                         } else { Text("Fully upgraded").font(.caption.bold()) }

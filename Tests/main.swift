@@ -371,9 +371,9 @@ func managementRules() {
     bad.initializeWorld(); _ = bad.checkIn(guestID:10,roomID:0)
     bad.operations!.incident = MotelIncident(kind:.fire,elapsed:89)
     bad.tickManagement()
-    require(bad.operationsState.incidentsMissed == 1 && bad.operationsState.guestPenalties[10] == 2, "Ignoring an emergency affects staying guests")
+    require(bad.operationsState.incidentsMissed == 1 && bad.business.deaths == 1 && bad.rooms[0].guest == nil, "Ignoring an emergency affects staying guests")
     _ = bad.nextDay()
-    require(bad.operationsState.reviews.first?.stars == 2, "Unresolved chaos creates a bad checkout review")
+    require(bad.operationsState.reviews.first?.stars == 1, "Unresolved chaos creates a bad checkout review")
     var theft = Motel()
     _ = theft.checkIn(guestID:10,roomID:0); theft.rooms[0].stolen = [0]
     _ = theft.nextDay()
@@ -413,3 +413,42 @@ func managementRules() {
     print("PASS: good and bad checkout reviews, theft reviews, hiring costs, wages, autonomous cleaning, all staff emergency responses, manual intervention, persistence and migration")
 }
 managementRules()
+
+func policeRules() {
+    for kind in ChaosKind.allCases {
+        var m = Motel(); m.initializeWorld(); _ = m.checkIn(guestID:10,roomID:0)
+        m.operations!.incident = MotelIncident(kind:kind,elapsed:89)
+        m.tickManagement()
+        require(m.business.deaths == 1 && m.business.police?.cause == kind, "Each neglected emergency can kill a guest and dispatch police")
+        require(m.occupancy == 0 && m.rooms[0].dirty && m.operationsState.reviews.first?.stars == 1, "Fatality removes guest and damages safety rating")
+        require(!m.nextDay() && !m.payPoliceFine(), "Cannot sleep past police or pay before arrival")
+        for _ in 0..<100 { m.tickManagement() }
+        require(m.business.police?.arrived == true, "Officer walks from road to reception")
+        m.operations!.consequences!.police!.acceptsBribe = false
+        m.cash = 1000
+        require(m.tryPoliceBribe() && m.cash == 920 && m.business.police?.fine == 350, "Refused bribe costs money and increases fine")
+        require(!m.tryPoliceBribe(), "Cannot repeat a rejected bribe")
+        require(m.payPoliceFine() && m.cash == 570 && m.business.police == nil, "Fine clears once")
+        require(!m.payPoliceFine(), "Cannot pay twice")
+        require(m.nextDay() && m.waiting.count == 1, "Reputation damage reduces daily bookings")
+    }
+    var accepted = Motel(); accepted.initializeWorld(); accepted.cash = 500
+    accepted.operations!.consequences = BusinessConsequences(deaths:2,police:PoliceCase(number:2,guest:"Robin",cause:.fire,arrived:true,acceptsBribe:true))
+    require(accepted.tryPoliceBribe() && accepted.cash == 420 && accepted.business.bribesAccepted == 1 && accepted.business.police == nil, "Accepted bribe clears fine but leaves reputation damage")
+    var debt = Motel(); debt.initializeWorld(); debt.cash = 20
+    debt.operations!.consequences = BusinessConsequences(police:PoliceCase(number:1,guest:"Sasha",cause:.pool,arrived:true))
+    require(debt.payPoliceFine() && debt.cash == 0 && debt.business.debt == 180, "Unfunded fine creates debt without blocking play")
+    _ = debt.checkIn(guestID:10,roomID:0)
+    require(debt.cash == 0 && debt.business.debt == 100, "Room payments repay fine debt")
+    let data = try! JSONEncoder().encode(debt)
+    let loaded = try! JSONDecoder().decode(Motel.self,from:data)
+    require(loaded.business.debt == 100, "Legal consequences persist")
+    var colors = Motel(); colors.initializeWorld()
+    require(Set(colors.rooms.map(\.theme)).count == 3, "Starting rooms have different colors")
+    colors.rooms[1].theme = 0; colors.initializeWorld()
+    require(colors.rooms[1].theme == 0, "Player repainting survives migration")
+    _ = colors.leaveReception(); colors.cash = 500
+    require(colors.hire(.cleaner), "Hiring is available outside the office")
+    print("PASS: fatalities, police arrival, fine debt, accepted and rejected bribes, booking penalties, persisted consequences, room colors and accessible hiring")
+}
+policeRules()

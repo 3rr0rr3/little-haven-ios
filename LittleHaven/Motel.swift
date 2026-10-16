@@ -17,6 +17,7 @@ struct MotelRoom: Codable, Identifiable {
     var stolen: Set<Int> = []
     var cleanedTasks: Set<Int>?
     var number: Int { 101 + id }
+    init(id: Int) { self.id = id; self.theme = id % 4 }
     var available: Bool { guest == nil && !dirty }
 }
 struct RoomVisit: Codable {
@@ -83,6 +84,7 @@ struct Motel: Codable {
         rooms[roomIndex].nightsLeft = guest.nights
         rooms[roomIndex].stolen = []
         cash += payment
+        repayBusinessDebt()
         guestsServed += 1
         prepareChaosClock()
         lastEvent = "\(guest.name) checked into room \(rooms[roomIndex].number). +\(payment) coins."
@@ -134,11 +136,11 @@ struct Motel: Codable {
         guard canSave, !goalReached, cash >= expansionCost else { return false }
         cash -= expansionCost
         rooms.append(MotelRoom(id: rooms.count))
-        lastEvent = goalReached ? "Nine rooms! You built Little Haven into a thriving motel. Keep running it as long as you like." : "Room \(rooms.last!.number) is built and ready for its first guest."
+        lastEvent = goalReached ? "Nine rooms! You built Little Haven into a thriving Airb&b. Keep running it as long as you like." : "Room \(rooms.last!.number) is built and ready for its first guest."
         return true
     }
     @discardableResult mutating func nextDay() -> Bool {
-        guard canSave else { return false }
+        guard canSave, business.police == nil else { return false }
         day += 1
         payStaffForDay()
         var departures = 0
@@ -153,7 +155,7 @@ struct Motel: Codable {
                 departures += 1
             }
         }
-        waiting = Self.arrivals(day: day, count: min(rooms.count + 1 + officeLevel, 10))
+        waiting = Self.arrivals(day: day, count: max(1,min(rooms.count + 1 + officeLevel, 10) - bookingPenalty))
         lastEvent = "Day \(day): \(departures) checkouts. Clean the empty rooms and welcome new arrivals."
         return true
     }
@@ -200,7 +202,7 @@ struct Motel: Codable {
         guard let roomVisit = visit, roomVisit.sneaking else { return }
         if roomVisit.alert >= 100 || (guestPresent(in: roomVisit.roomID) && roomVisit.player.distance(to: roomVisit.guestTile) <= 1) {
             caught = true
-            lastEvent = "The guest caught you inside their room. Your motel story ends here."
+            lastEvent = "The guest caught you inside their room. Your Airb&b story ends here."
         }
     }
     mutating func leave() {

@@ -80,7 +80,7 @@ extension Motel {
     var actorFacing: Int { visit?.facing ?? worldState.facing }
     var mapName: String {
         if let visit, let room = rooms.first(where: { $0.id == visit.roomID }) { return "ROOM \(room.number)" }
-        return worldState.place == .office ? "YOUR OFFICE" : "MOTEL GROUNDS"
+        return worldState.place == .office ? "YOUR OFFICE" : "Airb&b GROUNDS"
     }
     var cleaningTarget: Int? {
         guard let visit, !visit.sneaking, let room = rooms.first(where: { $0.id == visit.roomID }), room.dirty else { return nil }
@@ -112,6 +112,7 @@ extension Motel {
         return .none
     }
     mutating func initializeWorld() {
+        assignRoomColors()
         if world == nil { world = MotelWorldState() }
         if world!.reception == nil { world!.reception = OfficeReception() }
         if world!.place == .office && visit == nil { world!.player = OfficeReception.clerk }
@@ -223,7 +224,7 @@ extension Motel {
         return expand()
     }
     @discardableResult mutating func restAtBed() -> Bool {
-        guard isAtReception || nearbyAction == .rest else { return false }
+        guard business.police == nil, isAtReception || nearbyAction == .rest else { return false }
         let departures = rooms.compactMap { room -> MotelWalker? in
             guard let guest = room.guest, room.nightsLeft == 1 else { return nil }
             let start = MotelGrounds.roomDoor(room.id)
@@ -231,7 +232,7 @@ extension Motel {
         }
         guard nextDay() else { return false }
         initializeWorld()
-        world!.travellers = departures
+        world!.travellers = departures.filter { $0.name != business.police?.guest }
         world!.reception = OfficeReception()
         world!.place = .office; world!.player = OfficeReception.clerk
         return true

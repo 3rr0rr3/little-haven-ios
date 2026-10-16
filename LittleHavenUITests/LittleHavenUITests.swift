@@ -41,7 +41,7 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["office_door"].tap()
         let world = app.otherElements["motelWorld"]
         XCTAssertTrue(world.waitForExistence(timeout:10))
-        XCTAssertTrue(world.label.contains("MOTEL GROUNDS"))
+        XCTAssertTrue(world.label.contains("Airb&b GROUNDS"))
         let before = world.label
         app.buttons["Walk east"].press(forDuration:0.45)
         XCTAssertNotEqual(world.label,before)
@@ -114,14 +114,14 @@ final class LittleHavenUITests: XCTestCase {
     }
 
     func testCaughtRestoresLastCheckpoint() {
-        let app = launch("--ui-motel-risk")
+        let app = launch("--ui-Airb&b-risk")
         let restore = app.buttons["restoreCheckpoint"]
         XCTAssertTrue(restore.waitForExistence(timeout: 12))
         capture(app, "Caught while sneaking")
         restore.tap()
         let world = app.otherElements["motelWorld"]
         XCTAssertTrue(world.waitForExistence(timeout: 8))
-        XCTAssertTrue(world.label.contains("MOTEL GROUNDS"))
+        XCTAssertTrue(world.label.contains("Airb&b GROUNDS"))
         XCTAssertTrue(cash(app).contains("260"), "Unexpected cash counter: \(cash(app))")
     }
 
@@ -152,6 +152,24 @@ final class LittleHavenUITests: XCTestCase {
             app.buttons[action].tap()
             XCTAssertFalse(app.buttons["incidentAlarm"].exists)
         }
+    }
+    func testPoliceFineAndBribe() {
+        let app = launch("--ui-police")
+        XCTAssertTrue(app.buttons["Risk a bribe / 80"].waitForExistence(timeout:10))
+        app.buttons["Risk a bribe / 80"].tap()
+        XCTAssertTrue(cash(app).contains("780"))
+        XCTAssertTrue(app.buttons["Pay fine / 350"].waitForExistence(timeout:3))
+        capture(app,"Police refuse bribe after a fatal emergency")
+        app.buttons["Pay fine / 350"].tap()
+        XCTAssertTrue(cash(app).contains("430"))
+        XCTAssertFalse(app.buttons["policeAlarm"].exists)
+    }
+    func testProminentHiringButton() {
+        let app = launch("--ui-operations")
+        XCTAssertTrue(app.buttons["hireEmployees"].waitForExistence(timeout:10))
+        app.buttons["hireEmployees"].tap()
+        XCTAssertTrue(app.buttons["hire_cleaner"].waitForExistence(timeout:3))
+        capture(app,"Visible hiring panel")
     }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()

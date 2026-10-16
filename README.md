@@ -81,3 +81,7 @@ From the desk, hire Luna (housekeeper, 100 coins, 15/day), Mateo (groundskeeper,
 When guests are staying, incidents periodically occur outside: a courtyard fire, a guest falling in the pool, or a fight near reception. Follow the persistent alarm, walk to the scene and use HELP to intervene, or let matching hired staff respond. Incidents have a 90-second active-play deadline; ignored events cost up to 40 coins and can produce bad reviews. Dialogue and management panels pause simulation time. Office reception and the family remain unchanged.
 
 Character conversations and game decisions now appear as portrait dialogue boxes within the scene, rather than system iPhone alerts.
+## Airb&b chaos (6.0)
+Neglected fires, pool accidents and fights can kill an occupied guest. Officer Vega walks in from the road. Pay the 200-coin fine (any shortfall becomes debt paid from room revenue), or risk 80 coins on a bribe. Refusal adds 150 to the fine and further reputation damage. Legal cases, debt and outcomes are saved. A fatality adds a safety review and reduces future daily bookings; emergency cycles now begin sooner. Police cases must be settled before sleeping. Deaths are presented without gore.
+
+Use the large **Hire employees** button beside **Front desk**, or **HIRE / TEAM** at the top from any location. Three roles remain available with daily wages. Rooms start in distinct colors; painting changes both interior accents/flooring and exterior walls. Existing uncustomized rooms receive colors once; later paint choices are preserved.
