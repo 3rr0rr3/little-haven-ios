@@ -86,6 +86,21 @@ struct MotelRoomCanvas: View, Animatable {
                 for i in 0..<4 {
                     context.fill(Path(CGRect(x: Double(paint.x * 16 + 3 + i * 3), y: Double(paint.y * 16 + 3), width: 2, height: 5)), with: .color(Color(hex: Motel.themeColors[i])))
                 }
+                // Furniture occupies the same tiles that block movement in empty rooms.
+                for index in RoomVisit.lootTiles.indices {
+                    let tile = RoomVisit.lootTiles[index]
+                    let px = Double(tile.x * 16), py = Double(tile.y * 16)
+                    if index == 2 {
+                        context.fill(Path(ellipseIn: CGRect(x: px + 3, y: py + 4, width: 10, height: 11)), with: .color(Color(hex: 0x7C8E7A)))
+                        context.stroke(Path(ellipseIn: CGRect(x: px + 3, y: py + 3, width: 10, height: 4)), with: .color(Color(hex: 0xD0CFAD)), lineWidth: 0.7)
+                    } else {
+                        context.fill(Path(CGRect(x: px + 2, y: py + 3, width: 12, height: 12)), with: .color(Color(hex: 0x8C6D50)))
+                        context.fill(Path(CGRect(x: px + 1, y: py + 2, width: 14, height: 3)), with: .color(Color(hex: 0xB99C70)))
+                        if index == 1 {
+                            context.fill(Path(CGRect(x: px + 5, y: py + 3, width: 6, height: 3)), with: .color(Color(hex: 0xE8D7AF)))
+                        }
+                    }
+                }
                 if room.dirty {
                     for task in MotelGrounds.cleaningTiles.indices where !(room.cleanedTasks ?? []).contains(task) {
                         let tile = MotelGrounds.cleaningTiles[task]

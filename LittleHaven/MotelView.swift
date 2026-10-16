@@ -221,6 +221,7 @@ struct MotelView: View {
                 .animation(.linear(duration: 0.35), value: motel.worldState.tick).id(mapIdentity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("MOTEL GROUNDS. Column \(tile.x), row \(tile.y).")
+                .accessibilityValue("\(motel.worldState.travellers.count) guests walking to their destinations.")
                 .accessibilityIdentifier("motelWorld")
         }
     }

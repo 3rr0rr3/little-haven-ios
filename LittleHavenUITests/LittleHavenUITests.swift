@@ -31,7 +31,7 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["wakeUp"].tap()
         let world = app.otherElements["motelWorld"]
         XCTAssertTrue(world.waitForExistence(timeout: 10))
-        XCTAssertTrue(world.label.contains("YOUR OFFICE"))
+        XCTAssertTrue(world.label.contains("YOUR OFFICE"), "Unexpected location: \(world.label)")
         step("west", 2, app)
         step("north", 2, app)
         app.buttons["worldAction"].tap()
@@ -67,10 +67,15 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["chargeGuest"].tap()
         XCTAssertTrue(cash(app).contains("420"), "Unexpected cash counter: \(cash(app))")
         capture(app, "Clients in the physical motel grounds")
+        let guestsArrived = XCTNSPredicateExpectation(predicate: NSPredicate { object, _ in
+            guard let element = object as? XCUIElement else { return false }
+            return (element.value as? String ?? "").contains("0 guests walking")
+        }, object: world)
+        XCTAssertEqual(XCTWaiter.wait(for: [guestsArrived], timeout: 25), .completed, "Guests must finish walking to their assigned rooms before the return path is used")
         step("north", 1, app)
         step("east", 1, app)
         step("north", 1, app)
-        XCTAssertTrue(world.label.contains("YOUR OFFICE"))
+        XCTAssertTrue(world.label.contains("YOUR OFFICE"), "Unexpected location: \(world.label)")
         step("north", 2, app)
         app.buttons["worldAction"].tap()
         app.buttons["saveCheckpoint"].tap()
@@ -78,7 +83,7 @@ final class LittleHavenUITests: XCTestCase {
         app.launchArguments = ["--ui-testing"]
         app.launch()
         XCTAssertTrue(world.waitForExistence(timeout: 10))
-        XCTAssertTrue(world.label.contains("YOUR OFFICE"))
+        XCTAssertTrue(world.label.contains("YOUR OFFICE"), "Unexpected location: \(world.label)")
         XCTAssertTrue(world.label.contains("Column 4, row 5"))
         XCTAssertTrue(cash(app).contains("420"), "Unexpected cash counter: \(cash(app))")
     }
