@@ -67,6 +67,7 @@ struct MotelRoomCanvas: View, Animatable {
     var x: Double
     var y: Double
     var guestPresent = true
+    var workProgress = 0.0
     var animatableData: AnimatablePair<Double, Double> {
         get { AnimatablePair(x, y) }
         set { x = newValue.first; y = newValue.second }
@@ -115,6 +116,21 @@ struct MotelRoomCanvas: View, Animatable {
                 PaperPerson.draw(context: &context, x: Double(tile.x * 16), y: Double(tile.y * 16), color: guest.color, variant: guest.id % 8, facing: 0, walk: 0)
             }
             PaperPerson.draw(context: &context, x: x * 16, y: y * 16, color: 0x6AACA3, variant: 7, facing: visit.facing, walk: sin((x + y) * .pi * 2))
+            if workProgress > 0 {
+                let scrub = sin(workProgress * .pi * 8) * 2
+                let px = x * 16, py = y * 16
+                var handle = Path()
+                handle.move(to: CGPoint(x: px + 12, y: py + 7))
+                handle.addLine(to: CGPoint(x: px + 21 + scrub, y: py + 18))
+                context.stroke(handle, with: .color(Color(hex: 0xC7AA76)), lineWidth: 1.4)
+                context.fill(Path(ellipseIn: CGRect(x: px + 16 + scrub, y: py + 15, width: 11, height: 4)), with: .color(Color(hex: 0xB7D2B7)))
+                for sparkle in 0..<3 {
+                    let sx = px + 19 + Double(sparkle * 3) + scrub
+                    let sy = py + 9 + Double(sparkle % 2) * 3
+                    context.fill(Path(CGRect(x: sx, y: sy, width: 1, height: 3)), with: .color(Color(hex: 0xFFF0AD)))
+                    context.fill(Path(CGRect(x: sx - 1, y: sy + 1, width: 3, height: 1)), with: .color(Color(hex: 0xFFF0AD)))
+                }
+            }
             context.draw(Text("EXIT").font(.system(size: 4, weight: .black, design: .monospaced)).foregroundColor(Color(hex: 0x425E4B)), at: CGPoint(x: 72, y: 137))
         }
     }

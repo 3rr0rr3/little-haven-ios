@@ -305,3 +305,14 @@ func worldRules() {
     print("PASS: grounds and entrance reachability, physical payments, guest paths, collisions, hands-on cleaning, object customization, construction, sleep, world checkpoints")
 }
 worldRules()
+
+var crossingDoor = Motel()
+crossingDoor.initializeWorld()
+crossingDoor.world!.place = .grounds
+crossingDoor.world!.player = Tile(x: 15, y: 8)
+crossingDoor.moveActor(dx: 1, dy: 0)
+require(crossingDoor.visit == nil, "Walking along a room frontage must not enter the room")
+crossingDoor.moveActor(dx: 0, dy: 1)
+crossingDoor.moveActor(dx: 0, dy: -1)
+require(crossingDoor.visit?.roomID == 0, "Walking into a vacant room door enters it")
+print("PASS: directional room entrances")

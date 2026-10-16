@@ -61,11 +61,11 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.buttons["chargeGuest"].waitForExistence(timeout: 5))
         app.buttons["chooseRoom0"].tap()
         app.buttons["chargeGuest"].tap()
-        XCTAssertTrue(cash(app).contains("260"))
+        XCTAssertTrue(cash(app).contains("260"), "Unexpected cash counter: \(cash(app))")
         app.buttons["worldAction"].tap()
         app.buttons["chooseRoom1"].tap()
         app.buttons["chargeGuest"].tap()
-        XCTAssertTrue(cash(app).contains("420"))
+        XCTAssertTrue(cash(app).contains("420"), "Unexpected cash counter: \(cash(app))")
         capture(app, "Clients in the physical motel grounds")
         step("north", 1, app)
         step("east", 1, app)
@@ -80,7 +80,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(world.waitForExistence(timeout: 10))
         XCTAssertTrue(world.label.contains("YOUR OFFICE"))
         XCTAssertTrue(world.label.contains("Column 4, row 5"))
-        XCTAssertTrue(cash(app).contains("420"))
+        XCTAssertTrue(cash(app).contains("420"), "Unexpected cash counter: \(cash(app))")
     }
 
     func testPhysicalRoomCleaning() {
@@ -132,7 +132,7 @@ final class LittleHavenUITests: XCTestCase {
         let world = app.otherElements["motelWorld"]
         XCTAssertTrue(world.waitForExistence(timeout: 8))
         XCTAssertTrue(world.label.contains("MOTEL GROUNDS"))
-        XCTAssertTrue(cash(app).contains("260"))
+        XCTAssertTrue(cash(app).contains("260"), "Unexpected cash counter: \(cash(app))")
     }
 
     private func launch(_ fixture: String) -> XCUIApplication {

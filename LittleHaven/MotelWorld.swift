@@ -159,13 +159,13 @@ extension Motel {
                 guard !MotelGrounds.blocked(tile), !occupied.contains(tile) else { world = state; return }
             }
         }
-        if next == MotelGrounds.officeDoor {
+        if next == MotelGrounds.officeDoor && dy < 0 {
             state.place = .office; state.player = Tile(x: 4, y: 7)
             world = state; return
         }
         state.player = next
         world = state
-        if let room = rooms.first(where: { MotelGrounds.roomDoor($0.id) == next && $0.guest == nil }) { _ = enter(room.id) }
+        if dy < 0, let room = rooms.first(where: { MotelGrounds.roomDoor($0.id) == next && $0.guest == nil }) { _ = enter(room.id) }
     }
     @discardableResult mutating func useEntrance() -> Bool {
         initializeWorld()

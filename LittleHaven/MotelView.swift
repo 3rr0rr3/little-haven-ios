@@ -54,6 +54,7 @@ struct MotelView: View {
     @State private var toast: String?
     private var motel: Motel { game.motel ?? Motel() }
     private var mapIdentity: String { motel.visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue }
+    private var movementDuration: Double { movement.map { $0.x != 0 && $0.y != 0 ? 0.19 : 0.14 } ?? 0.14 }
     private let cream = Color(hex: 0xF5E7C8)
     private let gold = Color(hex: 0xEFC977)
     private var testingUI: Bool {
@@ -152,7 +153,7 @@ struct MotelView: View {
                         .font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(gold)
                 }
                 Spacer(minLength: 4)
-                Label("\(motel.cash)", systemImage: "circle.circle.fill").font(.system(size: 18, weight: .heavy, design: .monospaced)).foregroundStyle(gold).accessibilityIdentifier("motelCash")
+                Label("\(motel.cash)", systemImage: "circle.circle.fill").font(.system(size: 18, weight: .heavy, design: .monospaced)).foregroundStyle(gold).accessibilityElement(children: .ignore).accessibilityLabel("Cash \(motel.cash) coins").accessibilityIdentifier("motelCash")
                 Button { stop(); showMap = true } label: { Image(systemName: "map.fill").frame(width: 36, height: 40) }.accessibilityLabel("Motel map")
                 Button { stop(); showPause = true } label: { Image(systemName: "pause.fill").frame(width: 28, height: 40) }.accessibilityLabel("Pause game")
             }
@@ -202,21 +203,21 @@ struct MotelView: View {
     @ViewBuilder private var scene: some View {
         let tile = motel.actorTile
         if let visit = motel.visit, let room = motel.rooms.first(where: { $0.id == visit.roomID }) {
-            MotelRoomCanvas(room: room, visit: visit, x: Double(tile.x), y: Double(tile.y), guestPresent: motel.guestPresent(in: room.id))
-                .animation(.linear(duration: 0.14), value: tile).id(mapIdentity)
+            MotelRoomCanvas(room: room, visit: visit, x: Double(tile.x), y: Double(tile.y), guestPresent: motel.guestPresent(in: room.id), workProgress: workProgress)
+                .animation(.linear(duration: movementDuration), value: tile).id(mapIdentity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(motel.mapName). Column \(tile.x), row \(tile.y).")
                 .accessibilityValue("\(room.dirty ? "Cleaning \(room.cleanedTasks?.count ?? 0)/3" : "Ready for guests"). Theme \(room.theme). Furnishings \(room.furniture).")
                 .accessibilityIdentifier("motelWorld")
         } else if motel.worldState.place == .office {
             MotelOfficeCanvas(motel: motel, x: Double(tile.x), y: Double(tile.y))
-                .animation(.linear(duration: 0.14), value: tile).id(mapIdentity)
+                .animation(.linear(duration: movementDuration), value: tile).id(mapIdentity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("YOUR OFFICE. Column \(tile.x), row \(tile.y).")
                 .accessibilityIdentifier("motelWorld")
         } else {
             MotelGroundsCanvas(motel: motel, x: Double(tile.x), y: Double(tile.y), npcTick: Double(motel.worldState.tick))
-                .animation(.linear(duration: 0.14), value: tile)
+                .animation(.linear(duration: movementDuration), value: tile)
                 .animation(.linear(duration: 0.35), value: motel.worldState.tick).id(mapIdentity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("MOTEL GROUNDS. Column \(tile.x), row \(tile.y).")
