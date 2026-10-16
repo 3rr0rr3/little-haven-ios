@@ -12,6 +12,7 @@ struct RPGActor {
     var name = ""
     var marker = ""
     var duration = 0.14
+    var danger = false
 }
 
 struct RPGSceneView: UIViewRepresentable {
@@ -133,6 +134,15 @@ final class RPGScene: SKScene {
                 node.removeAction(forKey: "move")
                 node.run(.move(to: target, duration: actor.duration), withKey: "move")
             }
+            if actor.danger && node.childNode(withName: "detection") == nil {
+                let ring = SKShapeNode(circleOfRadius: 15)
+                ring.name = "detection"
+                ring.position = CGPoint(x: 0, y: -4)
+                ring.strokeColor = UIColor.red.withAlphaComponent(0.45)
+                ring.lineWidth = 0.8
+                ring.zPosition = -1
+                node.addChild(ring)
+            }
             node.zPosition = CGFloat(actor.tile.y * 16)
             node.childNode(withName: "caption")?.removeFromParent()
             let caption = [actor.name, actor.marker].filter { !$0.isEmpty }.joined(separator: " ")
@@ -222,7 +232,7 @@ struct MotelRPGView: View {
                 RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.id % 8, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: 0.35)
             }
         } else if let room, let guest = room.guest, let visit, motel.guestPresent(in: room.id) {
-            actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.id % 8))
+            actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.id % 8, danger: true))
         }
         return RPGSceneView(mapID: mapID, revision: revision, mapSize: CGSize(width: interior ? 144 : 640, height: interior ? 144 : 608), columns: 14, interior: interior, actors: actors, working: workProgress > 0) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }
