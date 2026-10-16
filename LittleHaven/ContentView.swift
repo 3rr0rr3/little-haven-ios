@@ -59,13 +59,13 @@ struct ContentView: View {
             UserDefaults.standard.removeObject(forKey: "littlehaven.save.v1")
             return Game()
         }
-        if args.contains(where: { $0.hasPrefix("--ui-world") || $0.hasPrefix("--ui-Airb&b") || $0 == "--ui-wake" }) {
+        if args.contains(where: { $0.hasPrefix("--ui-world") || $0.hasPrefix("--ui-motel") || $0 == "--ui-wake" }) {
             var fresh = Game()
             fresh.coins = 545
             if !args.contains("--ui-wake") {
                 fresh.wakeUp()
                 fresh.motel!.initializeWorld()
-                if args.contains("--ui-Airb&b") {
+                if args.contains("--ui-motel") {
                     fresh.motel!.world!.place = .grounds
                     fresh.motel!.world!.player = Tile(x: 12, y: 10)
                 }
@@ -84,13 +84,13 @@ struct ContentView: View {
                     fresh.motel!.world!.place = .grounds
                     fresh.motel!.world!.player = Tile(x: 12, y: 27)
                 }
-                if args.contains("--ui-Airb&b-risk") || args.contains("--ui-Airb&b-preview") {
+                if args.contains("--ui-motel-risk") || args.contains("--ui-motel-preview") {
                     _ = fresh.motel!.checkIn(guestID: 10, roomID: 0)
                     fresh.motel!.world!.place = .grounds
                     fresh.motel!.world!.player = Tile(x: 16, y: 9)
                     fresh.save()
                     _ = fresh.motel!.enter(0)
-                    fresh.motel!.visit!.alert = args.contains("--ui-Airb&b-risk") ? 98 : 10
+                    fresh.motel!.visit!.alert = args.contains("--ui-motel-risk") ? 98 : 10
                     return fresh
                 }
             }

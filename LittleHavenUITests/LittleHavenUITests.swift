@@ -114,7 +114,7 @@ final class LittleHavenUITests: XCTestCase {
     }
 
     func testCaughtRestoresLastCheckpoint() {
-        let app = launch("--ui-Airb&b-risk")
+        let app = launch("--ui-motel-risk")
         let restore = app.buttons["restoreCheckpoint"]
         XCTAssertTrue(restore.waitForExistence(timeout: 12))
         capture(app, "Caught while sneaking")
