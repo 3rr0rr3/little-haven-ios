@@ -11,18 +11,27 @@
       "bundleIdentifier": "com.littlehaven.town",
       "developerName": "3rr0rr3",
       "subtitle": "Walk, work and build your motel.",
-      "localizedDescription": "Wake up and walk freely around a roadside motel, its office, pool, parking and guest rooms. Meet arriving clients, assign rooms and collect their payments. Pick up tools at the office, then make beds, collect trash and mop spills inside each vacated room. Interact with paint cabinets, beds, the front desk and construction plots to customize and expand your property. Guests walk to their rooms and depart along the grounds. Sneak into occupied rooms, take belongings and escape before being caught. Save at the office or sleep to create checkpoints. Original cut-paper cartoon characters and smooth eight-direction movement.",
+      "localizedDescription": "Wake up and walk freely around a roadside motel, its office, pool, parking and guest rooms. Meet arriving clients, assign rooms and collect their payments. Pick up tools at the office, then make beds, collect trash and mop spills inside each vacated room. Interact with paint cabinets, beds, the front desk and construction plots to customize and expand your property. Guests walk to their rooms and depart along the grounds. Sneak into occupied rooms, take belongings and escape before being caught. Save at the office or sleep to create checkpoints. Original pixel-art RPG characters and smooth eight-direction movement.",
       "iconURL": "https://raw.githubusercontent.com/3rr0rr3/little-haven-ios/main/LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
       "tintColor": "4C8C85",
       "category": "games",
       "screenshotURLs": [
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-8-1/LittleHaven-motel.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-8-1/LittleHaven-cleaning.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-8-1/LittleHaven-stealth.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-8-1/LittleHaven-wake.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-8-1/LittleHaven-preview.png"
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-9-1/LittleHaven-motel.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-9-1/LittleHaven-cleaning.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-9-1/LittleHaven-stealth.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-9-1/LittleHaven-wake.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-9-1/LittleHaven-preview.png"
       ],
       "versions": [
+        {
+          "version": "3.1",
+          "buildVersion": "5",
+          "date": "2026-10-16",
+          "localizedDescription": "Autumn RPG art update: pixel characters, textured scenery and timber buildings. Explore the grounds and interiors with a movement stick, meet clients and collect payments in person, carry cleaning tools, make beds, collect trash, mop spills, customize physical rooms and expand the property. Existing motel saves are supported.",
+          "downloadURL": "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-9-1/LittleHaven-unsigned.ipa",
+          "size": 423947,
+          "minOSVersion": "17.0"
+        },
         {
           "version": "3.0",
           "buildVersion": "4",
