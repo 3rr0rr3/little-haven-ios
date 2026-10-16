@@ -1,0 +1,39 @@
+{
+  "name": "Little Haven",
+  "identifier": "com.3rr0rr3.littlehaven.source",
+  "sourceURL": "https://raw.githubusercontent.com/3rr0rr3/little-haven-ios/main/sideStore.json",
+  "subtitle": "A cozy town RPG for iPhone",
+  "website": "https://github.com/3rr0rr3/little-haven-ios",
+  "tintColor": "4C8C85",
+  "apps": [
+    {
+      "name": "Little Haven",
+      "bundleIdentifier": "com.littlehaven.town",
+      "developerName": "3rr0rr3",
+      "subtitle": "Meet neighbors. Find your home.",
+      "localizedDescription": "Explore Willow Town, ask seven neighbors for coins, and buy your own cottage. Features cut-paper cartoon characters, smooth press-and-hold movement, and automatic local saves.",
+      "iconURL": "https://raw.githubusercontent.com/3rr0rr3/little-haven-ios/main/LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
+      "tintColor": "4C8C85",
+      "category": "games",
+      "screenshotURLs": [
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-4-1/LittleHaven-preview.png"
+      ],
+      "versions": [
+        {
+          "version": "1.1",
+          "buildVersion": "2",
+          "date": "2026-10-16",
+          "localizedDescription": "New cut-paper cartoon characters and matching portraits. Hold an arrow to walk smoothly; release to stop.",
+          "downloadURL": "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-4-1/LittleHaven-unsigned.ipa",
+          "size": 141498,
+          "minOSVersion": "17.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
+    }
+  ],
+  "news": []
+}
