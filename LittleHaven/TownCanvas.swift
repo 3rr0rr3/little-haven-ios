@@ -17,22 +17,22 @@ struct TownCanvas: View, Animatable {
             let mapH = game.inside ? 9 : Town.height
             let offsetX = game.inside ? (size.width - CGFloat(mapW) * unit) / 2 : -max(0, min(CGFloat(playerX) - columns / 2 + 0.5, CGFloat(mapW) - columns)) * unit
             let offsetY = game.inside ? (size.height - CGFloat(mapH) * unit) / 2 : -max(0, min(CGFloat(playerY) - rows / 2 + 0.5, max(0, CGFloat(mapH) - rows))) * unit
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: game.inside ? 0x26352D : 0x79A863)))
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: game.inside ? 0x26352D : 0xA68A49)))
             context.translateBy(x: offsetX, y: offsetY)
             context.scaleBy(x: unit / 16, y: unit / 16)
 
             func rect(_ x: Double, _ y: Double, _ w: Double, _ h: Double, _ color: UInt32) {
-                context.fill(Path(CGRect(x: x, y: y, width: w, height: h)), with: .color(Color(hex: color)))
+                RPGArt.rect(context: &context, x: x, y: y, w: w, h: h, color: color)
             }
             func text(_ value: String, _ x: Double, _ y: Double, _ color: UInt32, _ fontSize: Double = 4) {
                 context.draw(Text(value).font(.system(size: fontSize, weight: .black, design: .monospaced)).foregroundColor(Color(hex: color)), at: CGPoint(x: x, y: y))
             }
             func tree(_ x: Double, _ y: Double) {
                 rect(x + 6, y + 10, 5, 7, 0x6C6550)
-                rect(x + 2, y + 4, 14, 10, 0x35644B)
-                rect(x, y + 2, 14, 8, 0x477B50)
-                rect(x + 3, y - 2, 9, 10, 0x578D56)
-                rect(x + 4, y, 5, 2, 0x76A55F)
+                rect(x + 2, y + 4, 14, 10, 0x55404B)
+                rect(x, y + 2, 14, 8, 0x75505A)
+                rect(x + 3, y - 2, 9, 10, 0x91634F)
+                rect(x + 4, y, 5, 2, 0xB08455)
             }
             func person(_ x: Double, _ y: Double, _ color: UInt32, _ player: Bool, _ donated: Bool, _ variant: Int = 0) {
                 let walk = player ? sin((playerX + playerY) * .pi * 2) : 0
@@ -74,12 +74,12 @@ struct TownCanvas: View, Animatable {
                     for x in 0..<Town.width {
                         let px = Double(x * 16), py = Double(y * 16)
                         let path = (9...10).contains(x) || (7...8).contains(y) || (18...19).contains(y) || (x == 6 && (9...17).contains(y)) || (y == 16 && x >= 10) || (x == 15 && (7...12).contains(y))
-                        rect(px, py, 16, 16, path ? 0xD3C399 : ((x + y) % 3 == 0 ? 0x83AE68 : 0x7CA761))
+                        rect(px, py, 16, 16, path ? 0x927354 : ((x + y) % 3 == 0 ? 0xB79B51 : 0xAE914A))
                         if path {
-                            if (x + y) % 3 == 0 { rect(px + 3, py + 9, 3, 1, 0xC2AF86); rect(px + 12, py + 4, 2, 1, 0xE3D1A6) }
+                            if (x + y) % 3 == 0 { rect(px + 3, py + 9, 3, 1, 0x7D614B); rect(px + 12, py + 4, 2, 1, 0xAC8B61) }
                         } else {
-                            rect(px + Double((x * 7 + y) % 11), py + 10, 2, 2, 0x90B774)
-                            if (x * 3 + y * 7) % 13 == 0 { rect(px + 7, py + 7, 2, 3, 0x568951); rect(px + 6, py + 5, 4, 3, y % 2 == 0 ? 0xEBC88D : 0xDFA4A0) }
+                            rect(px + Double((x * 7 + y) % 11), py + 10, 2, 2, 0xD0AD60)
+                            if (x * 3 + y * 7) % 13 == 0 { rect(px + 7, py + 7, 2, 3, 0x886C3D); rect(px + 6, py + 5, 4, 3, y % 2 == 0 ? 0xEBC88D : 0xDFA4A0) }
                         }
                     }
                 }
@@ -94,10 +94,11 @@ struct TownCanvas: View, Animatable {
                 for (index, b) in Town.buildings.enumerated() {
                     let x = Double(b.0 * 16), y = Double(b.1 * 16), w = Double((b.2 - b.0 + 1) * 16), h = Double((b.3 - b.1 + 1) * 16)
                     rect(x + 3, y + h - 3, w + 3, 7, 0x658D55)
-                    rect(x + 3, y + 22, w - 6, h - 22, 0xEAD6AC)
+                    rect(x + 3, y + 22, w - 6, h - 22, 0xBEA779)
                     rect(x + 3, y + h - 6, w - 6, 6, 0xB59D7D)
-                    rect(x, y + 5, w, 23, index == 1 ? 0x597F80 : 0xB77160)
-                    rect(x + 4, y, w - 8, 7, index == 1 ? 0x759C95 : 0xD28C70)
+                    rect(x, y + 5, w, 23, index == 1 ? 0x597F80 : 0x79564F)
+                    rect(x + 4, y, w - 8, 7, index == 1 ? 0x759C95 : 0xA37C5C)
+                    RPGArt.timber(context: &context, x: x, y: y, w: w, h: h)
                     for line in 0..<3 { rect(x, y + 10 + Double(line * 7), w, 2, index == 1 ? 0x496C6D : 0x985D51) }
                     rect(x + 10, y + 33, 12, 13, 0x7B9F9B)
                     rect(x + 15, y + 33, 2, 13, 0xF7E9C7)
@@ -150,72 +151,80 @@ struct PaperPortrait: View {
     }
 }
 
-// Layered geometric paper shapes: round heads, wide eyes, mitten hands and short coats.
+// Original 16-pixel RPG sprites, drawn on an integer grid for crisp scaling.
 enum PaperPerson {
     static func draw(context: inout GraphicsContext, x: Double, y: Double,
                      color: UInt32, variant: Int, facing: Int, walk: Double) {
-        let ink: UInt32 = 0x343333
-        let skin: UInt32 = variant == 2 || variant == 4 ? 0xD6A477 : 0xF0C9A0
-        let hair: UInt32 = [0x795334, 0x52362B, 0x554432, 0xA15D3A, 0x493A30, 0xBA8C48, 0xC2BDB0, 0x594537][variant % 8]
-        let bob = abs(walk) * 0.35
-        func shape(_ path: Path, _ fill: UInt32, _ outline: Bool = true) {
-            context.fill(path, with: .color(Color(hex: fill)))
-            if outline { context.stroke(path, with: .color(Color(hex: ink)), lineWidth: 0.28) }
-        }
-        func oval(_ dx: Double, _ dy: Double, _ w: Double, _ h: Double, _ fill: UInt32, _ outline: Bool = true) {
-            shape(Path(ellipseIn: CGRect(x: x + dx, y: y + dy - bob, width: w, height: h)), fill, outline)
-        }
-        func box(_ dx: Double, _ dy: Double, _ w: Double, _ h: Double, _ fill: UInt32) {
-            shape(Path(CGRect(x: x + dx, y: y + dy - bob, width: w, height: h)), fill)
-        }
-        func line(_ points: [CGPoint], _ tint: UInt32, _ width: Double = 0.3) {
-            var path = Path()
-            for (i, point) in points.enumerated() {
-                let p = CGPoint(x: x + point.x, y: y + point.y - bob)
-                if i == 0 { path.move(to: p) } else { path.addLine(to: p) }
-            }
-            context.stroke(path, with: .color(Color(hex: tint)), lineWidth: width)
-        }
-        oval(1.5, 14, 13, 2.5, 0x638658, false)
-        box(3.7, 12, 4.1, 3.1 + walk * 0.4, 0x3D4754)
-        box(8.2, 12, 4.1, 3.1 - walk * 0.4, 0x3D4754)
-        oval(2.8, 14 + walk * 0.4, 5.2, 1.8, 0x302F30)
-        oval(8, 14 - walk * 0.4, 5.2, 1.8, 0x302F30)
-        var coat = Path()
-        coat.move(to: CGPoint(x: x + 4, y: y + 5 - bob))
-        coat.addQuadCurve(to: CGPoint(x: x + 1.8, y: y + 13 - bob), control: CGPoint(x: x + 1, y: y + 8 - bob))
-        coat.addQuadCurve(to: CGPoint(x: x + 14.2, y: y + 13 - bob), control: CGPoint(x: x + 8, y: y + 15 - bob))
-        coat.addQuadCurve(to: CGPoint(x: x + 12, y: y + 5 - bob), control: CGPoint(x: x + 15, y: y + 8 - bob))
-        coat.closeSubpath()
-        shape(coat, color)
-        line([CGPoint(x: 8, y: 7), CGPoint(x: 8, y: 13.7)], ink)
-        for button in 0..<3 { oval(8.7, 8.2 + Double(button) * 1.7, 0.5, 0.5, ink, false) }
-        oval(0.6, 9 + walk * 0.7, 3.5, 3.7, skin)
-        oval(11.9, 9 - walk * 0.7, 3.5, 3.7, skin)
-        if variant == 1 || variant == 3 || variant == 6 { oval(1, -4.5, 14, 13.5, hair) }
-        oval(1.7, -5, 12.6, 12.5, skin)
-        if facing == 3 {
-            oval(1.8, -5, 12.4, 11.6, hair)
-        } else {
-            oval(3.2, -1.6, 4.6, 5.1, 0xFFFCED)
-            oval(8.1, -1.6, 4.6, 5.1, 0xFFFCED)
-            let look = facing == 1 ? -0.55 : facing == 2 ? 0.55 : 0
-            oval(5.5 + look, 0.5, 0.75, 1, ink, false)
-            oval(9.3 + look, 0.5, 0.75, 1, ink, false)
-            line([CGPoint(x: 6.1, y: 5), CGPoint(x: 8, y: 5.4), CGPoint(x: 9.9, y: 5)], ink, 0.35)
-            if variant == 3 || variant == 6 {
-                context.stroke(Path(ellipseIn: CGRect(x: x + 3.1, y: y - 1.7 - bob, width: 4.8, height: 5.3)), with: .color(Color(hex: ink)), lineWidth: 0.45)
-                context.stroke(Path(ellipseIn: CGRect(x: x + 8, y: y - 1.7 - bob, width: 4.8, height: 5.3)), with: .color(Color(hex: ink)), lineWidth: 0.45)
+        let hair: UInt32 = [0x69452F,0x392D32,0xB48346,0x8F4936,0x433441,0xD6B86A,0xC6BFA4,0x44343B][variant % 8]
+        let skin: UInt32 = variant == 2 || variant == 4 ? 0xBD875E : 0xE7BC8E
+        let palette: [Character: UInt32] = ["#":0x302A32,"h":hair,"H":RPGArt.shade(hair, 24),"s":skin,"S":0xF5D6A5,"e":0x292B32,"c":color,"C":RPGArt.shade(color, 28),"d":RPGArt.shade(color, -35),"b":0x66503E,"p":0x3B3B4B,"w":0xD7C6A0]
+        let front = ["     ######     ","    #HHHhhh#    ","   #HHHhhhhh#   ","   #Hhhhhhhh#   ","   #hssssssh#   ","   #sSeS eSs#   ","    #ssssss#    ","     #sSs#      ","    #CCwCc#     ","   #sCcwccs#    ","   #sccwccs#    ","    #ddbdd#     ","    #ppppp#     ","    #pp#pp#     ","    ### ###     "]
+        let back = ["     ######     ","    #HHHhhh#    ","   #HHHhhhhh#   ","   #Hhhhhhhh#   ","   #hhhhhhhh#   ","    #hhhhhh#    ","     #hhhh#     ","     #ddd#      ","    #CCCCC#     ","   #sCccccs#    ","   #scccccs#    ","    #ddbdd#     ","    #ppppp#     ","    #pp#pp#     ","    ### ###     "]
+        let side = ["     ######     ","    #HHHhhh#    ","    #HHhhhh#    ","    #Hhhhhh#    ","    #sssshh#    ","   #sSeshhh#    ","    #ssshh#     ","     #ss#       ","    #CCCc#      ","    #CCss#      ","    #ccss#      ","    #ddbd#      ","     #ppp#      ","     #p#p#      ","     ## ##      "]
+        var shadow = Path()
+        shadow.addRect(CGRect(x:x+3,y:y+14,width:10,height:2))
+        context.fill(shadow, with:.color(Color.black.opacity(0.24)))
+        let sprite = facing == 3 ? back : facing == 1 || facing == 2 ? side : front
+        let step = walk > 0.3 ? 1.0 : walk < -0.3 ? -1.0 : 0
+        for (row,line) in sprite.enumerated() {
+            for (col,key) in line.enumerated() {
+                guard let tint = palette[key] else { continue }
+                let mirrored = facing == 2 ? 15-col : col
+                let foot = row >= 12 ? (col < 8 ? step : -step) : 0
+                context.fill(Path(CGRect(x:x+Double(mirrored),y:y+Double(row)-1+foot,width:1,height:1)),with:.color(Color(hex:tint)))
             }
         }
-        if variant == 7 || variant == 2 || variant == 5 {
-            oval(1.6, -6, 12.8, 5.2, variant == 7 ? 0x4C8C85 : color)
-            box(1.3, -2.5, 13.4, 1.7, variant == 7 ? 0xE8BC65 : 0xE9DFBA)
-            oval(6.4, -7.5, 3.2, 2.6, variant == 7 ? 0xE8BC65 : color)
-        } else {
-            oval(2, -5.5, 12, 3.7, hair)
-            if variant == 1 { oval(10.8, -6.5, 4, 4, hair) }
-            if variant == 4 { line([CGPoint(x: 5.6, y: 4.1), CGPoint(x: 10.4, y: 4.1)], hair, 0.8) }
+    }
+}
+
+// Deterministic pixel materials: no random flickering while the camera moves.
+enum RPGArt {
+    static func shade(_ color: UInt32, _ amount: Int) -> UInt32 {
+        func channel(_ shift: UInt32) -> UInt32 { UInt32(max(0,min(255,Int((color >> shift) & 255)+amount))) }
+        return channel(16) << 16 | channel(8) << 8 | channel(0)
+    }
+    static func rect(context: inout GraphicsContext, x: Double, y: Double, w: Double, h: Double, color: UInt32) {
+        func pixel(_ px: Double,_ py: Double,_ pw: Double,_ ph: Double,_ tint: UInt32) {
+            context.fill(Path(CGRect(x:px,y:py,width:pw,height:ph)),with:.color(Color(hex:tint)))
+        }
+        pixel(x,y,w,h,color)
+        guard w >= 8, h >= 7 else { return }
+        let seed = Int(x*13+y*31) & 65535
+        for row in 0..<Int(h/2) {
+            for col in 0..<Int(w/2) {
+                let noise = (col*73+row*151+col*row*19+seed) % 97
+                if noise < 26 {
+                    pixel(x+Double(col*2),y+Double(row*2),noise % 3 == 0 ? 2 : 1,1,shade(color,noise % 2 == 0 ? 13 : -15))
+                }
+            }
+        }
+        if w == 16 && h == 16 && [UInt32(0xAF914B),0xB99B53,0xAE914A,0xB79B51,0x947658,0x927354].contains(color) {
+            for i in 0..<6 {
+                let px = x + Double((seed+i*7)%14)
+                let py = y + Double((seed/7+i*11)%14)
+                let leaf: UInt32 = i % 3 == 0 ? 0xCA8050 : i % 3 == 1 ? 0xD6AF5E : 0x79613F
+                pixel(px,py,2,1,leaf); pixel(px+1,py+1,2,1,leaf)
+            }
+        }
+        // Broken grain and seams on larger wooden surfaces.
+        if w > 25 && h > 12 {
+            for row in stride(from: 6, to: Int(h), by: 7) {
+                pixel(x,y+Double(row),w,1,shade(color,-23))
+                for col in stride(from: (row % 3)*5+3, to: Int(w)-4, by: 17) {
+                    pixel(x+Double(col),y+Double(row)-3,4,1,shade(color,16))
+                }
+            }
+        }
+    }
+    static func timber(context: inout GraphicsContext, x: Double, y: Double, w: Double, h: Double) {
+        func r(_ dx:Double,_ dy:Double,_ width:Double,_ height:Double,_ tint:UInt32) {
+            rect(context:&context,x:x+dx,y:y+dy,w:width,h:height,color:tint)
+        }
+        r(2,24,3,h-24,0x44382F); r(w-5,24,3,h-24,0x44382F)
+        r(2,h-5,w-4,3,0x5D4733)
+        for col in stride(from: 8, to: Int(w)-6, by: 11) {
+            r(Double(col),6,1,17,0x47363D)
+            for row in stride(from: 7, to: 23, by: 5) { r(Double(col)+1,Double(row),8,1,0xB38962) }
         }
     }
 }
