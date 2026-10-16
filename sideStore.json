@@ -2,7 +2,7 @@
   "name": "Little Haven",
   "identifier": "com.3rr0rr3.littlehaven.source",
   "sourceURL": "https://raw.githubusercontent.com/3rr0rr3/little-haven-ios/main/sideStore.json",
-  "subtitle": "A cozy town RPG for iPhone",
+  "subtitle": "A town dream and a roadside motel",
   "website": "https://github.com/3rr0rr3/little-haven-ios",
   "tintColor": "4C8C85",
   "apps": [
@@ -10,15 +10,27 @@
       "name": "Little Haven",
       "bundleIdentifier": "com.littlehaven.town",
       "developerName": "3rr0rr3",
-      "subtitle": "Meet neighbors. Find your home.",
-      "localizedDescription": "Explore Willow Town, ask seven neighbors for coins, and buy your own cottage. Features cut-paper cartoon characters, smooth press-and-hold movement, and automatic local saves.",
+      "subtitle": "Your motel. Your rules. Your risk.",
+      "localizedDescription": "Begin with a cozy town dream. Raise the cottage fund and wake up with the keys to a three-room motel. Check in guests, clean rooms, customize furnishings and wall colors, upgrade your office, and build a nine-room business. Sneak into occupied rooms to take belongings, watch suspicion, avoid the guest, and escape by the door. Getting caught ends the run; load your last safe checkpoint. Save at the desk or start the next day. Original cut-paper cartoon characters and smooth hold-to-walk controls.",
       "iconURL": "https://raw.githubusercontent.com/3rr0rr3/little-haven-ios/main/LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
       "tintColor": "4C8C85",
       "category": "games",
       "screenshotURLs": [
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-4-1/LittleHaven-preview.png"
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-5-1/LittleHaven-motel.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-5-1/LittleHaven-stealth.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-5-1/LittleHaven-wake.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-5-1/LittleHaven-preview.png"
       ],
       "versions": [
+        {
+          "version": "2.0",
+          "buildVersion": "3",
+          "date": "2026-10-16",
+          "localizedDescription": "The motel chapter: wake up after the town prologue, manage three rooms, welcome guests, customize rooms and office, expand to nine rooms, and risk sneaking into occupied rooms. Getting caught restores your last checkpoint.",
+          "downloadURL": "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-5-1/LittleHaven-unsigned.ipa",
+          "size": 354122,
+          "minOSVersion": "17.0"
+        },
         {
           "version": "1.1",
           "buildVersion": "2",
