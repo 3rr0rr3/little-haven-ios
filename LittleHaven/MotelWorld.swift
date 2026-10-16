@@ -35,18 +35,7 @@ enum MotelGrounds {
     }
     static func guestTile(_ id: Int) -> Tile { Tile(x: 4 + (id % 5) * 2, y: 11 + ((id % 10) / 5) * 2) }
     static func blocked(_ tile: Tile) -> Bool {
-        if tile.x < 1 || tile.x >= width - 1 || tile.y < 1 || tile.y >= height - 1 { return true }
-        if (3...10).contains(tile.x) && (3...8).contains(tile.y) { return true }
-        if (3...9).contains(tile.x) && (18...22).contains(tile.y) { return true }
-        if tile == sign { return true }
-        for id in 0..<9 {
-            let o = roomOrigin(id)
-            if (o.x...(o.x + 5)).contains(tile.x) && (o.y...(o.y + 3)).contains(tile.y) { return true }
-        }
-        for x in [17, 25, 33] {
-            if (x...(x + 2)).contains(tile.x) && (30...31).contains(tile.y) { return true }
-        }
-        return false
+        RPGMaps.grounds.blocked(tile)
     }
     static func nextStep(from start: Tile, to target: Tile, avoiding: Set<Tile>) -> Tile? {
         if start == target { return nil }
@@ -77,9 +66,7 @@ enum MotelGrounds {
     static let paint = Tile(x: 7, y: 5)
     static let logbook = Tile(x: 6, y: 2)
     static func officeBlocked(_ tile: Tile) -> Bool {
-        if tile == Tile(x: 4, y: 8) { return false }
-        if !(1...7).contains(tile.x) || !(2...7).contains(tile.y) { return true }
-        return tile == bed || tile == Tile(x: 3, y: 2) || tile == tools || tile == paint || tile == logbook || ((3...5).contains(tile.x) && tile.y == 4)
+        RPGMaps.office.blocked(tile)
     }
     static let cleaningTiles = [Tile(x: 3, y: 2), Tile(x: 2, y: 6), Tile(x: 5, y: 5)]
     static let cleaningNames = ["Make bed", "Collect trash", "Mop spill"]
@@ -116,11 +103,16 @@ extension Motel {
             return .none
         }
         if worldState.place == .office {
-            if player.distance(to: MotelGrounds.desk) <= 1 { return .desk }
-            if player.distance(to: MotelGrounds.logbook) <= 1 { return .save }
-            if player.distance(to: MotelGrounds.bed) <= 1 { return .rest }
-            if player.distance(to: MotelGrounds.tools) <= 1 { return .tools }
-            if player.distance(to: MotelGrounds.paint) <= 1 { return .paint(nil) }
+            for event in RPGMaps.office.events(at: player, trigger: .action) {
+                switch event.id {
+                case "desk": return .desk
+                case "save": return .save
+                case "rest": return .rest
+                case "tools": return .tools
+                case "paint": return .paint(nil)
+                default: break
+                }
+            }
             if player.distance(to: Tile(x: 4, y: 8)) <= 1 { return .exit }
             return .none
         }

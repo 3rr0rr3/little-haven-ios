@@ -1,0 +1,81 @@
+import Foundation
+
+// Engine-neutral map database, shared by movement, events and pathfinding.
+// Coordinates are top-left tile coordinates, matching RPG Maker conventions.
+struct RPGRegion: Codable {
+    let x: Int
+    let y: Int
+    let width: Int
+    let height: Int
+    func contains(_ tile: Tile) -> Bool {
+        tile.x >= x && tile.y >= y && tile.x < x + width && tile.y < y + height
+    }
+}
+struct RPGMapEvent: Codable {
+    enum Trigger: String, Codable { case action, playerTouch }
+    let id: String
+    let tile: Tile
+    let trigger: Trigger
+    var destination: String? = nil
+    var arrival: Tile? = nil
+}
+struct RPGMapDefinition: Codable {
+    let id: String
+    let width: Int
+    let height: Int
+    let walkable: RPGRegion
+    var obstacles: [RPGRegion] = []
+    var passages: Set<Tile> = []
+    var events: [RPGMapEvent] = []
+
+    func blocked(_ tile: Tile, occupied: Set<Tile> = []) -> Bool {
+        guard tile.x >= 0, tile.y >= 0, tile.x < width, tile.y < height else { return true }
+        if occupied.contains(tile) { return true }
+        if passages.contains(tile) { return false }
+        return !walkable.contains(tile) || obstacles.contains { $0.contains(tile) }
+    }
+    func canStep(from: Tile, dx: Int, dy: Int, occupied: Set<Tile> = []) -> Bool {
+        guard abs(dx) <= 1, abs(dy) <= 1, dx != 0 || dy != 0 else { return false }
+        let target = Tile(x: from.x + dx, y: from.y + dy)
+        guard !blocked(target, occupied: occupied) else { return false }
+        return dx == 0 || dy == 0 || (!blocked(Tile(x: from.x + dx, y: from.y), occupied: occupied) && !blocked(Tile(x: from.x, y: from.y + dy), occupied: occupied))
+    }
+    func events(at tile: Tile, trigger: RPGMapEvent.Trigger) -> [RPGMapEvent] {
+        events.filter { $0.trigger == trigger && (trigger == .action ? tile.distance(to: $0.tile) <= 1 : tile == $0.tile) }
+    }
+}
+enum RPGMaps {
+    static let town = RPGMapDefinition(id: "town", width: 20, height: 23,
+        walkable: RPGRegion(x: 1, y: 1, width: 18, height: 21),
+        obstacles: [RPGRegion(x: 2,y: 3,width: 4,height: 4), RPGRegion(x: 13,y: 3,width: 5,height: 4), RPGRegion(x: 2,y: 11,width: 4,height: 3), RPGRegion(x: 14,y: 13,width: 4,height: 3)],
+        events: [RPGMapEvent(id: "cottage-door", tile: Tile(x: 15,y: 7), trigger: .action, destination: "cottage", arrival: Tile(x: 4,y: 6))])
+    static let cottage = RPGMapDefinition(id: "cottage", width: 9, height: 9,
+        walkable: RPGRegion(x: 1,y: 2,width: 7,height: 6),
+        obstacles: [RPGRegion(x: 1,y: 2,width: 2,height: 2),RPGRegion(x: 6,y: 2,width: 1,height: 1)],
+        passages: [Tile(x: 4,y: 8)], events: [RPGMapEvent(id: "exit",tile: Tile(x: 4,y: 8),trigger: .playerTouch,destination: "town",arrival: Tile(x: 15,y: 7))])
+    static let office = RPGMapDefinition(id: "office", width: 9,height: 9,
+        walkable: RPGRegion(x: 1,y: 2,width: 7,height: 6),
+        obstacles: [RPGRegion(x: 2,y: 2,width: 2,height: 1),RPGRegion(x: 1,y: 5,width: 1,height: 1),RPGRegion(x: 7,y: 5,width: 1,height: 1),RPGRegion(x: 6,y: 2,width: 1,height: 1),RPGRegion(x: 3,y: 4,width: 3,height: 1)],
+        passages: [Tile(x: 4,y: 8)], events: [
+            RPGMapEvent(id: "exit",tile: Tile(x: 4,y: 8),trigger: .playerTouch,destination: "grounds",arrival: Tile(x: 6,y: 10)),
+            RPGMapEvent(id: "desk",tile: Tile(x: 4,y: 4),trigger: .action),
+            RPGMapEvent(id: "tools",tile: Tile(x: 1,y: 5),trigger: .action),
+            RPGMapEvent(id: "paint",tile: Tile(x: 7,y: 5),trigger: .action),
+            RPGMapEvent(id: "save",tile: Tile(x: 6,y: 2),trigger: .action),
+            RPGMapEvent(id: "rest",tile: Tile(x: 2,y: 2),trigger: .action)])
+    static let room = RPGMapDefinition(id: "room",width: 9,height: 9,
+        walkable: RPGRegion(x: 1,y: 2,width: 7,height: 6),
+        obstacles: [RPGRegion(x: 2,y: 2,width: 2,height: 1),RPGRegion(x: 7,y: 2,width: 1,height: 1),RPGRegion(x: 2,y: 3,width: 1,height: 1),RPGRegion(x: 6,y: 6,width: 1,height: 1),RPGRegion(x: 2,y: 6,width: 1,height: 1)],
+        passages: [Tile(x: 4,y: 8)], events: [RPGMapEvent(id: "exit",tile: Tile(x: 4,y: 8),trigger: .playerTouch,destination: "grounds")])
+    static let grounds: RPGMapDefinition = {
+        var obstacles = [RPGRegion(x: 3,y: 3,width: 8,height: 6),RPGRegion(x: 3,y: 18,width: 7,height: 5),RPGRegion(x: 12,y: 26,width: 1,height: 1)]
+        var events = [RPGMapEvent(id: "office",tile: Tile(x: 6,y: 9),trigger: .action,destination: "office",arrival: Tile(x: 4,y: 7)),RPGMapEvent(id: "construction",tile: Tile(x: 12,y: 26),trigger: .action)]
+        for id in 0..<9 {
+            let x = 14 + id % 3 * 8, y = 4 + id / 3 * 9
+            obstacles.append(RPGRegion(x: x,y: y,width: 6,height: 4))
+            events.append(RPGMapEvent(id: "room-\(id)",tile: Tile(x: x+2,y: y+4),trigger: .action,destination: "room-\(id)",arrival: Tile(x: 4,y: 7)))
+        }
+        for x in [17,25,33] { obstacles.append(RPGRegion(x: x,y: 30,width: 3,height: 2)) }
+        return RPGMapDefinition(id: "grounds",width: 40,height: 38,walkable: RPGRegion(x: 1,y: 1,width: 38,height: 36),obstacles: obstacles,events: events)
+    }()
+}

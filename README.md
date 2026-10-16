@@ -50,10 +50,18 @@ Open LittleHaven.xcodeproj in Xcode and choose an iPhone simulator. For a signed
 Run game-rule tests on macOS:
 
 ~~~sh
-swiftc LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
+swiftc LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
 /tmp/little-haven-tests
 ~~~
 
 GitHub Actions runs game-rule tests, simulator tests for walking, payments, cleaning, customization, construction and checkpoint recovery, builds and verifies the IPA, captures chapter screenshots, publishes a release, and refreshes the SideStore feed.
 
 All characters, artwork and dialogue are original. There are no ads, accounts, network access, or real-money purchases in the app. All coins and theft mechanics are fictional gameplay.
+
+## Native RPG engine
+
+Version 3.2 restores the original cut-paper characters and scenery from 3.0. The playable town, cottage, motel grounds, office and rooms now run in SpriteKit scenes. Independent actor nodes have cached directional artwork, walk cycles, depth ordering, and a following camera. Scenery is cached per map revision rather than redrawn every frame. SwiftUI provides the touch controls and dialogs.
+
+RPGMap.swift defines serializable map boundaries, collision regions, passages, object events and map transfer metadata. These definitions drive game collision and office event dispatch. RPGScene.swift presents the maps and actors. Existing Codable game models remain authoritative for payments, cleaning, stealth and checkpoints, preserving save compatibility.
+
+This is a custom iPhone-native RPG foundation using Apple's SpriteKit. It is not RPG Maker, Pok�mon Essentials, or compatible with their project files. No proprietary RPG Maker runtime is included.

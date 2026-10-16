@@ -107,7 +107,7 @@ struct ContentView: View {
                 }.padding(14).background(Color(hex: 0x283D36), in: RoundedRectangle(cornerRadius: 16))
 
                 ZStack(alignment: .topLeading) {
-                    TownCanvas(game: game, playerX: Double(game.player.x), playerY: Double(game.player.y))
+                    TownRPGView(game: game)
                         .animation(.linear(duration: stepDuration), value: game.player)
                         .id(game.inside)
                     Text(game.inside ? "HOME, SWEET HOME" : "WILLOW TOWN")

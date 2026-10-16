@@ -203,20 +203,20 @@ struct MotelView: View {
     @ViewBuilder private var scene: some View {
         let tile = motel.actorTile
         if let visit = motel.visit, let room = motel.rooms.first(where: { $0.id == visit.roomID }) {
-            MotelRoomCanvas(room: room, visit: visit, x: Double(tile.x), y: Double(tile.y), guestPresent: motel.guestPresent(in: room.id), workProgress: workProgress)
+            MotelRPGView(motel: motel, workProgress: workProgress)
                 .animation(.linear(duration: movementDuration), value: tile).id(mapIdentity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(motel.mapName). Column \(tile.x), row \(tile.y).")
                 .accessibilityValue("\(room.dirty ? "Cleaning \(room.cleanedTasks?.count ?? 0)/3" : "Ready for guests"). Theme \(room.theme). Furnishings \(room.furniture).")
                 .accessibilityIdentifier("motelWorld")
         } else if motel.worldState.place == .office {
-            MotelOfficeCanvas(motel: motel, x: Double(tile.x), y: Double(tile.y))
+            MotelRPGView(motel: motel)
                 .animation(.linear(duration: movementDuration), value: tile).id(mapIdentity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("YOUR OFFICE. Column \(tile.x), row \(tile.y).")
                 .accessibilityIdentifier("motelWorld")
         } else {
-            MotelGroundsCanvas(motel: motel, x: Double(tile.x), y: Double(tile.y), npcTick: Double(motel.worldState.tick))
+            MotelRPGView(motel: motel)
                 .animation(.linear(duration: movementDuration), value: tile)
                 .animation(.linear(duration: 0.35), value: motel.worldState.tick).id(mapIdentity)
                 .accessibilityElement(children: .ignore)

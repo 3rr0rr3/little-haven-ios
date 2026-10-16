@@ -37,9 +37,7 @@ struct RoomVisit: Codable {
     static let lootNoise = [16, 24, 32]
     var nearbyLoot: Int? { Self.lootTiles.indices.first { player.distance(to: Self.lootTiles[$0]) <= 1 } }
     static func blocked(_ tile: Tile) -> Bool {
-        if tile == Tile(x: 4, y: 8) { return false }
-        if !(1...7).contains(tile.x) || !(2...7).contains(tile.y) { return true }
-        return tile == MotelGrounds.roomPaint || tile == Tile(x: 2, y: 2) || tile == Tile(x: 3, y: 2) || lootTiles.contains(tile)
+        RPGMaps.room.blocked(tile)
     }
 }
 struct Motel: Codable {

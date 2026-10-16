@@ -33,10 +33,7 @@ enum Town {
     // Inclusive building footprints; doors are approached from the path below.
     static let buildings = [(2, 3, 5, 6), (13, 3, 17, 6), (2, 11, 5, 13)]
     static func blocked(_ t: Tile) -> Bool {
-        if t.x < 1 || t.x >= width - 1 || t.y < 1 || t.y >= height - 1 { return true }
-        if buildings.contains(where: { t.x >= $0.0 && t.x <= $0.2 && t.y >= $0.1 && t.y <= $0.3 }) { return true }
-        if (14...17).contains(t.x) && (13...15).contains(t.y) { return true }
-        return neighbors.contains(where: { $0.tile == t })
+        RPGMaps.town.blocked(t, occupied: Set(neighbors.map(\.tile)))
     }
 }
 
@@ -73,8 +70,7 @@ struct Game: Codable {
                 player = Town.door
                 return
             }
-            guard (1...7).contains(next.x), (2...7).contains(next.y) else { return }
-            guard !((1...2).contains(next.x) && (2...3).contains(next.y)), next != Tile(x: 6, y: 2) else { return }
+            guard !RPGMaps.cottage.blocked(next) else { return }
         } else if Town.blocked(next) { return }
         player = next
         steps += 1

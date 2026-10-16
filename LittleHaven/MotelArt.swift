@@ -15,10 +15,10 @@ struct RoomIllustration: View {
 enum InteriorArt {
     static func draw(context: inout GraphicsContext, theme: Int, level: Int, office: Bool) {
         func rect(_ x: Double, _ y: Double, _ w: Double, _ h: Double, _ color: UInt32) {
-            RPGArt.rect(context: &context, x: x, y: y, w: w, h: h, color: color)
+            context.fill(Path(CGRect(x: x, y: y, width: w, height: h)), with: .color(Color(hex: color)))
         }
         rect(0, 0, 144, 144, 0x4A6457)
-        rect(16, 16, 112, 112, 0x98734F)
+        rect(16, 16, 112, 112, 0xBA9B75)
         for y in stride(from: 32, to: 128, by: 16) { rect(16, Double(y), 112, 0.6, 0xA78A66) }
         rect(0, 0, 144, 32, Motel.themeColors[theme])
         rect(0, 0, 16, 144, Motel.themeColors[theme])
@@ -68,6 +68,7 @@ struct MotelRoomCanvas: View, Animatable {
     var y: Double
     var guestPresent = true
     var workProgress = 0.0
+    var sceneryOnly = false
     var animatableData: AnimatablePair<Double, Double> {
         get { AnimatablePair(x, y) }
         set { x = newValue.first; y = newValue.second }
@@ -128,9 +129,9 @@ struct MotelRoomCanvas: View, Animatable {
             if guestPresent, let guest = room.guest {
                 let tile = visit.guestTile
                 context.stroke(Path(ellipseIn: CGRect(x: Double(tile.x * 16 - 7), y: Double(tile.y * 16 - 5), width: 30, height: 28)), with: .color(.red.opacity(0.45)), lineWidth: 0.8)
-                PaperPerson.draw(context: &context, x: Double(tile.x * 16), y: Double(tile.y * 16), color: guest.color, variant: guest.id % 8, facing: 0, walk: 0)
+                if !sceneryOnly { PaperPerson.draw(context: &context, x: Double(tile.x * 16), y: Double(tile.y * 16), color: guest.color, variant: guest.id % 8, facing: 0, walk: 0) }
             }
-            PaperPerson.draw(context: &context, x: x * 16, y: y * 16, color: 0x6AACA3, variant: 7, facing: visit.facing, walk: sin((x + y) * .pi * 2))
+            if !sceneryOnly { PaperPerson.draw(context: &context, x: x * 16, y: y * 16, color: 0x6AACA3, variant: 7, facing: visit.facing, walk: sin((x + y) * .pi * 2)) }
             if workProgress > 0 {
                 let scrub = sin(workProgress * .pi * 8) * 2
                 let px = x * 16, py = y * 16
@@ -156,44 +157,46 @@ struct MotelGroundsCanvas: View, Animatable {
     var x: Double
     var y: Double
     var npcTick: Double
+    var sceneryOnly = false
+    var fullMap = false
     var animatableData: AnimatablePair<AnimatablePair<Double, Double>, Double> {
         get { AnimatablePair(AnimatablePair(x, y), npcTick) }
         set { x = newValue.first.first; y = newValue.first.second; npcTick = newValue.second }
     }
     var body: some View {
         Canvas { context, size in
-            let unit = max(22, floor(size.width / 14))
+            let unit = fullMap ? 16.0 : max(22, floor(size.width / 14))
             let columns = size.width / unit
             let rows = size.height / unit
-            let cameraX = max(0, min(CGFloat(x) - columns / 2 + 0.5, CGFloat(MotelGrounds.width) - columns))
-            let cameraY = max(0, min(CGFloat(y) - rows / 2 + 0.5, max(0, CGFloat(MotelGrounds.height) - rows)))
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: 0xAF914B)))
+            let cameraX = fullMap ? 0 : max(0, min(CGFloat(x) - columns / 2 + 0.5, CGFloat(MotelGrounds.width) - columns))
+            let cameraY = fullMap ? 0 : max(0, min(CGFloat(y) - rows / 2 + 0.5, max(0, CGFloat(MotelGrounds.height) - rows)))
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: 0x7EAA68)))
             context.translateBy(x: -cameraX * unit, y: -cameraY * unit)
             context.scaleBy(x: unit / 16, y: unit / 16)
             func rect(_ px: Double, _ py: Double, _ w: Double, _ h: Double, _ color: UInt32) {
-                RPGArt.rect(context: &context, x: px, y: py, w: w, h: h, color: color)
+                context.fill(Path(CGRect(x: px, y: py, width: w, height: h)), with: .color(Color(hex: color)))
             }
             func label(_ text: String, _ px: Double, _ py: Double, _ size: Double = 4, _ tint: UInt32 = 0xF6E7C4) {
                 context.draw(Text(text).font(.system(size: size, weight: .black, design: .monospaced)).foregroundColor(Color(hex: tint)), at: CGPoint(x: px, y: py))
             }
-            for row in max(0, Int(cameraY)-1)..<min(MotelGrounds.height, Int(cameraY+rows)+2) {
-                for col in max(0, Int(cameraX)-1)..<min(MotelGrounds.width, Int(cameraX+columns)+2) {
+            for row in 0..<MotelGrounds.height {
+                for col in 0..<MotelGrounds.width {
                     let px = Double(col * 16), py = Double(row * 16)
                     let paved = col >= 11 && (7...34).contains(row) || (col >= 2 && col <= 12 && (9...15).contains(row)) || ((5...7).contains(col) && row >= 9)
                     let road = row >= 35
-                    rect(px, py, 16, 16, road ? 0x666F69 : paved ? 0x947658 : (col + row) % 3 == 0 ? 0xB99B53 : 0xAF914B)
+                    rect(px, py, 16, 16, road ? 0x666F69 : paved ? 0xD0C39D : (col + row) % 3 == 0 ? 0x86AE6D : 0x7EAA68)
                     if road && row == 36 && col % 3 != 0 { rect(px + 2, py + 6, 12, 1, 0xF2D69C) }
                     if !paved && !road {
-                        rect(px + Double((col * 7 + row) % 13), py + 11, 2, 1, 0xDBB768)
+                        rect(px + Double((col * 7 + row) % 13), py + 11, 2, 1, 0x9BBC79)
                         if (col * 3 + row * 11) % 37 == 0 {
                             rect(px + 7, py + 6, 2, 5, 0x668E54); rect(px + 6, py + 5, 4, 3, 0xE9BC96)
                         }
-                    } else if !road && (col + row) % 4 == 0 { rect(px + 3, py + 7, 2, 1, 0x795E49) }
+                    } else if !road && (col + row) % 4 == 0 { rect(px + 3, py + 7, 2, 1, 0xBDAF8C) }
                     if col == 0 || col == MotelGrounds.width - 1 || row == 0 || row == MotelGrounds.height - 1 {
                         rect(px + 6, py + 8, 4, 9, 0x7C6B50)
-                        rect(px + 1, py + 1, 14, 12, 0x61454F)
-                        rect(px + 3, py - 1, 10, 10, 0x82575A)
-                        rect(px + 5, py, 5, 3, 0xB0805B)
+                        rect(px + 1, py + 1, 14, 12, 0x4E7851)
+                        rect(px + 3, py - 1, 10, 10, 0x66935C)
+                        rect(px + 5, py, 5, 3, 0x85A567)
                     }
                 }
             }
@@ -205,7 +208,6 @@ struct MotelGroundsCanvas: View, Animatable {
                 rect(px, py + 4, w, 21, roof)
                 rect(px + 4, py, w - 8, 6, roof)
                 for line in 0..<3 { rect(px, py + 9 + Double(line * 6), w, 1, 0x795E50) }
-                RPGArt.timber(context: &context, x: px, y: py, w: w, h: h)
                 let dx = Double(door.x * 16), dy = Double(door.y * 16)
                 rect(dx, py + h - 20, 16, 20, 0x6C6651)
                 rect(dx + 11, py + h - 11, 2, 2, 0xF3D18B)
@@ -216,12 +218,12 @@ struct MotelGroundsCanvas: View, Animatable {
                 rect(px + 9, py + 28, w - 18, 8, 0x425E50)
                 label(name, px + w / 2, py + 32, 4)
             }
-            building(Tile(x: 3, y: 3), 8, 6, MotelGrounds.officeDoor, "OFFICE / RECEPTION", 0x6E6260, 0xBDA377)
+            building(Tile(x: 3, y: 3), 8, 6, MotelGrounds.officeDoor, "OFFICE / RECEPTION", 0x739998, 0xE2CEA4)
             for index in 0..<9 {
                 let o = MotelGrounds.roomOrigin(index)
                 if index < motel.rooms.count {
                     let room = motel.rooms[index]
-                    building(o, 6, 4, MotelGrounds.roomDoor(index), "\(room.number) / \(room.guest != nil ? "GUEST" : room.dirty ? "DIRTY" : "VACANT")", 0x79534E, Motel.themeColors[room.theme])
+                    building(o, 6, 4, MotelGrounds.roomDoor(index), "\(room.number) / \(room.guest != nil ? "GUEST" : room.dirty ? "DIRTY" : "VACANT")", 0xB47E65, Motel.themeColors[room.theme])
                     let door = MotelGrounds.roomDoor(index)
                     rect(Double(door.x * 16 + 19), Double(door.y * 16 - 13), 3, 3, room.guest != nil ? 0xD7927A : room.dirty ? 0xD9AF5C : 0x8AA96A)
                 } else {
@@ -273,7 +275,7 @@ struct MotelGroundsCanvas: View, Animatable {
                 actors.append(Actor(x: px, y: py, color: walker.color, variant: walker.id % 8, facing: facing, name: "", isPlayer: false))
             }
             actors.append(Actor(x: x, y: y, color: 0x6AACA3, variant: 7, facing: motel.actorFacing, name: "", isPlayer: true))
-            for actor in actors.sorted(by: { $0.y < $1.y }) {
+            for actor in actors.filter({ _ in !sceneryOnly }).sorted(by: { $0.y < $1.y }) {
                 PaperPerson.draw(context: &context, x: actor.x * 16, y: actor.y * 16, color: actor.color, variant: actor.variant, facing: actor.facing, walk: sin((actor.x + actor.y) * .pi * 2))
                 if !actor.name.isEmpty {
                     label(actor.name, actor.x * 16 + 8, actor.y * 16 - 10, 3.6, 0x304D3D)
@@ -285,6 +287,7 @@ struct MotelGroundsCanvas: View, Animatable {
 }
 
 struct MotelOfficeCanvas: View, Animatable {
+    var sceneryOnly = false
     let motel: Motel
     var x: Double
     var y: Double
@@ -299,12 +302,12 @@ struct MotelOfficeCanvas: View, Animatable {
             context.translateBy(x: (size.width - 144 * scale) / 2, y: (size.height - 144 * scale) / 2)
             context.scaleBy(x: scale, y: scale)
             func rect(_ px: Double, _ py: Double, _ w: Double, _ h: Double, _ color: UInt32) {
-                RPGArt.rect(context: &context, x: px, y: py, w: w, h: h, color: color)
+                context.fill(Path(CGRect(x: px, y: py, width: w, height: h)), with: .color(Color(hex: color)))
             }
             func label(_ text: String, _ px: Double, _ py: Double, _ tint: UInt32 = 0xEEDDB9) {
                 context.draw(Text(text).font(.system(size: 3.5, weight: .black, design: .monospaced)).foregroundColor(Color(hex: tint)), at: CGPoint(x: px, y: py))
             }
-            rect(0, 0, 144, 144, 0x9C7A54)
+            rect(0, 0, 144, 144, 0xB69A73)
             for row in 2..<9 { rect(0, Double(row * 16), 144, 0.6, 0x9B825F) }
             let wall = Motel.themeColors[motel.officeTheme]
             rect(0, 0, 144, 32, wall); rect(0, 0, 16, 144, wall); rect(128, 0, 16, 144, wall)
@@ -322,13 +325,13 @@ struct MotelOfficeCanvas: View, Animatable {
             rect(113, 80, 13, 16, 0x81674D)
             for i in 0..<4 { rect(114 + Double(i * 3), 84, 2, 5, Motel.themeColors[i]) }
             label("PAINT", 119, 77, 0x3F5E4B)
-            rect(98, 32, 12, 14, 0x82694E); rect(100, 34, 8, 10, 0xAC8B61)
+            rect(98, 32, 12, 14, 0x82694E); rect(100, 34, 8, 10, 0xE3D1A6)
             label("SAVE", 104, 27, 0x3F5E4B)
             if motel.officeLevel > 0 {
                 rect(34, 101, 21, 15, 0x987B87); rect(35, 99, 19, 4, 0xBA9FAC)
                 rect(110, 41, 10, 9, 0x6F8C50); rect(113, 49, 5, 7, 0x8E6E4A)
             }
-            PaperPerson.draw(context: &context, x: x * 16, y: y * 16, color: 0x6AACA3, variant: 7, facing: motel.actorFacing, walk: sin((x + y) * .pi * 2))
+            if !sceneryOnly { PaperPerson.draw(context: &context, x: x * 16, y: y * 16, color: 0x6AACA3, variant: 7, facing: motel.actorFacing, walk: sin((x + y) * .pi * 2)) }
             label("EXIT", 72, 137, 0x425E4B)
         }
     }

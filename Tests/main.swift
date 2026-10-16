@@ -316,3 +316,12 @@ crossingDoor.moveActor(dx: 0, dy: 1)
 crossingDoor.moveActor(dx: 0, dy: -1)
 require(crossingDoor.visit?.roomID == 0, "Walking into a vacant room door enters it")
 print("PASS: directional room entrances")
+
+// Shared engine maps preserve collision, portals and event triggers.
+require(RPGMaps.grounds.blocked(Tile(x: 3,y: 18)), "Engine map blocks pool water")
+require(!RPGMaps.grounds.canStep(from: Tile(x: 3,y: 17),dx: -1,dy: 1), "Engine prevents diagonal corner cutting")
+require(RPGMaps.office.events(at: Tile(x: 2,y: 5),trigger: .action).first?.id == "tools", "Engine dispatches adjacent object events")
+require(RPGMaps.office.events(at: Tile(x: 4,y: 8),trigger: .playerTouch).first?.destination == "grounds", "Engine defines linked map transfer")
+let mapRoundTrip = try! JSONDecoder().decode(RPGMapDefinition.self, from: JSONEncoder().encode(RPGMaps.grounds))
+require(mapRoundTrip.events.count == 11 && mapRoundTrip.blocked(Tile(x: 14,y: 4)), "Map database serializes events and collision")
+print("PASS: RPG map collision, events, transfers and map serialization")
