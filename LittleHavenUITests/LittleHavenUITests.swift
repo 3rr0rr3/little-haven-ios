@@ -94,7 +94,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(world.waitForExistence(timeout: 10))
         XCTAssertTrue((world.value as? String ?? "").contains("Cleaning 0/3"))
         app.buttons["worldAction"].press(forDuration: 1.8)
-        XCTAssertTrue((world.value as? String ?? "").contains("Cleaning 1/3"))
+        XCTAssertTrue((world.value as? String ?? "").contains("Cleaning 1/3"), "Cleaning result: \(world.value ?? "missing"), position: \(world.label)")
         step("east", 1, app)
         step("south", 2, app)
         app.buttons["worldAction"].press(forDuration: 1.8)

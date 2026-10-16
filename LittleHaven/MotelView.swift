@@ -98,11 +98,15 @@ struct MotelView: View {
             guard working, motel.worldState.hasCleaningKit, let target = motel.cleaningTarget else { return }
             let start = motel.actorTile
             workProgress = 0
-            for step in 1...14 {
-                do { try await Task.sleep(for: .seconds(0.1)) } catch { workProgress = 0; return }
+            let clock = ContinuousClock()
+            let started = clock.now
+            while workProgress < 1 {
+                do { try await Task.sleep(for: .seconds(0.05)) } catch { workProgress = 0; return }
                 guard !Task.isCancelled, working, !paused, scenePhase == .active,
                       motel.actorTile == start, motel.cleaningTarget == target else { workProgress = 0; return }
-                workProgress = Double(step) / 14
+                let elapsed = started.duration(to: clock.now).components
+                let seconds = Double(elapsed.seconds) + Double(elapsed.attoseconds) / 1e18
+                workProgress = min(1, seconds / 1.4)
             }
             change { _ = $0.cleanNearbyTask() }
             working = false
