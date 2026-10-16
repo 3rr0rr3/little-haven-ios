@@ -23,7 +23,7 @@ struct ContentView: View {
                 HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("LITTLE HAVEN").font(.system(size: 22, weight: .black, design: .rounded)).tracking(2)
-                        Text(game.inside ? "YOUR COTTAGE � HOME AT LAST" : "WILLOW TOWN � A NEW BEGINNING")
+                        Text(game.inside ? "YOUR COTTAGE / HOME AT LAST" : "WILLOW TOWN / A NEW BEGINNING")
                             .font(.system(size: 9, weight: .bold, design: .monospaced)).tracking(1)
                             .foregroundStyle(cream.opacity(0.6))
                     }
@@ -117,7 +117,7 @@ struct ContentView: View {
             }
             Button("Keep exploring", role: .cancel) { }
         } message: {
-            Text(game.ownsHouse ? "Your own little corner of Little Haven. Welcome home." : game.coins >= 500 ? "A sunny room, a warm bed, and a fresh start. Ready to make it yours?" : "FOR SALE � 500 coins\nYou need \(500 - game.coins) more. Ask the townspeople if they can help with your cottage fund.")
+            Text(game.ownsHouse ? "Your own little corner of Little Haven. Welcome home." : game.coins >= 500 ? "A sunny room, a warm bed, and a fresh start. Ready to make it yours?" : "FOR SALE / 500 coins\nYou need \(500 - game.coins) more. Ask the townspeople if they can help with your cottage fund.")
         }
         .alert("Little Haven", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
             Button("Continue") { message = nil }
@@ -126,8 +126,8 @@ struct ContentView: View {
 
     private var hint: String {
         if game.inside { return "You made it home. Walk down through the door to go outside." }
-        if let person = game.nearby { return "\(person.name), the \(person.role.lowercased()) � Tap TALK" }
-        if game.atHouse { return game.ownsHouse ? "Your cottage � Tap ENTER" : "Cottage for sale � Tap COTTAGE" }
+        if let person = game.nearby { return "\(person.name), the \(person.role.lowercased()) / Tap TALK" }
+        if game.atHouse { return game.ownsHouse ? "Your cottage / Tap ENTER" : "Cottage for sale / Tap COTTAGE" }
         return game.coins >= 500 && !game.ownsHouse ? "Your fund is ready! Find the cottage in the northeast." : "Hold an arrow to walk. Stand beside a neighbor to TALK."
     }
     private func direction(_ symbol: String, dx: Int, dy: Int, label: String) -> some View {
@@ -175,7 +175,7 @@ struct ContentView: View {
                 } label: { Text("Could you help me buy a house?").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(15) }
                     .foregroundStyle(Color(hex: 0x172A25)).background(gold, in: RoundedRectangle(cornerRadius: 14))
             } else {
-                Label("\(person.gift) coins contributed � Thank you!", systemImage: "heart.fill").font(.subheadline.bold()).foregroundStyle(gold)
+                Label("\(person.gift) coins contributed / Thank you!", systemImage: "heart.fill").font(.subheadline.bold()).foregroundStyle(gold)
             }
         }.padding(24).foregroundStyle(cream).presentationBackground(Color(hex: 0x263D33))
     }
@@ -186,15 +186,15 @@ struct ContentView: View {
                     Text(game.ownsHouse ? "You bought the Willow Cottage! Visit your home whenever you like." : "Raise 500 coins by asking the seven neighbors for help. Each can contribute once. Buy the cottage in the northeast, then step inside.")
                     Text("Press and hold a direction to keep walking. Release to stop. Stand one tile beside a person and tap TALK. Buildings, trees, and the pond block your way.")
                 }
-                Section("Your neighbors � \(game.gifts.count)/7") {
+                Section("Your neighbors / \(game.gifts.count)/7") {
                     ForEach(Town.neighbors) { person in
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(person.name + " � " + person.role).font(.headline)
+                                Text(person.name + " / " + person.role).font(.headline)
                                 Text("Column \(person.tile.x), row \(person.tile.y)").font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Text(game.gifts.contains(person.id) ? "+\(person.gift) �" : "Say hello").foregroundStyle(gold).font(.caption.bold())
+                            Text(game.gifts.contains(person.id) ? "+\(person.gift) OK" : "Say hello").foregroundStyle(gold).font(.caption.bold())
                         }
                     }
                 }
