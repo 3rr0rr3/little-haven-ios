@@ -182,3 +182,126 @@ func motelRules() {
     print("PASS: motel economy, occupancy, customization, expansion, interior paths, theft, detection, checkpoint rollback, legacy saves")
 }
 motelRules()
+
+func worldRules() {
+    // Every physical entrance and construction plot must connect to the grounds.
+    var seen: Set<Tile> = [MotelGrounds.officeDoor]
+    var frontier = Array(seen)
+    var index = 0
+    while index < frontier.count {
+        let tile = frontier[index]; index += 1
+        for (dx, dy) in [(0,1),(1,0),(-1,0),(0,-1)] {
+            let next = Tile(x: tile.x + dx, y: tile.y + dy)
+            if !MotelGrounds.blocked(next), seen.insert(next).inserted { frontier.append(next) }
+        }
+    }
+    for room in 0..<9 { require(seen.contains(MotelGrounds.roomDoor(room)), "Every room plot needs a walkable entrance") }
+    require(seen.contains(MotelGrounds.gate), "Road gate reachable")
+    require(seen.contains { $0.distance(to: MotelGrounds.sign) == 1 }, "Build sign approachable")
+    for guest in Motel.arrivals(day: 1, count: 10) { require(seen.contains(MotelGrounds.guestTile(guest.id)), "Guest waiting points reachable") }
+
+    var walk = Motel()
+    walk.initializeWorld()
+    require(walk.worldState.place == .office, "Start the shift inside the office")
+    require(!walk.chargeGuest(10, roomID: 0), "Cannot charge customers remotely")
+    require(!walk.collectTools(), "Cannot collect cleaning tools remotely")
+    walk.moveActor(dx: 0, dy: 1)
+    require(walk.worldState.place == .grounds && walk.actorTile == Tile(x: 6, y: 10), "Office door leads onto the actual grounds")
+    walk.moveActor(dx: -1, dy: 0)
+    walk.moveActor(dx: 0, dy: 1)
+    require(walk.nearbyAction == .guest(10), "Walk beside the waiting guest to talk")
+    require(!walk.chargeGuest(11, roomID: 0), "Cannot charge a different guest through the nearby interaction")
+    require(walk.chargeGuest(10, roomID: 0) && walk.cash == 260, "Nearby payment assigns the room and charges exactly once")
+    require(!walk.guestPresent(in: 0) && walk.worldState.travellers.count == 1, "Guest must walk to the room before appearing inside")
+    for _ in 0..<150 {
+        walk.tickWorld()
+        for actor in walk.worldState.travellers { require(!MotelGrounds.blocked(actor.player), "Guests cannot walk through buildings or water") }
+        if walk.worldState.travellers.isEmpty { break }
+    }
+    require(walk.worldState.travellers.isEmpty && walk.guestPresent(in: 0), "Guest pathfinding reaches the assigned room")
+    walk.moveActor(dx: 1, dy: 0)
+    require(walk.actorTile == Tile(x: 5, y: 11), "Cannot walk through a waiting customer")
+    walk.moveActor(dx: 0, dy: -1)
+    walk.moveActor(dx: 1, dy: -1)
+    require(walk.worldState.place == .office, "Diagonal movement can reach an unobstructed doorway")
+    walk.world!.player = Tile(x: 4, y: 5)
+    walk.moveActor(dx: 0, dy: -1)
+    require(walk.actorTile == Tile(x: 4, y: 5) && walk.atSavePoint, "Office desk has collision and a nearby save point")
+    walk.world!.player = Tile(x: 2, y: 5)
+    require(walk.collectTools() && walk.worldState.hasCleaningKit, "Cleaning kit is collected at the actual closet")
+
+    var service = Motel()
+    service.initializeWorld()
+    service.rooms[0].dirty = true
+    require(!service.cleanNearbyTask(), "Cannot clean a room from the office")
+    service.world!.place = .grounds
+    service.world!.player = Tile(x: 16, y: 9)
+    require(service.useEntrance() && service.visit?.roomID == 0, "Walk through a room's own entrance")
+    service.visit!.player = Tile(x: 3, y: 3)
+    require(service.cleaningTarget == 0 && !service.cleanNearbyTask(), "Cleaning requires supplies")
+    service.world!.hasCleaningKit = true
+    require(service.cleanNearbyTask() && service.rooms[0].dirty, "Making the bed does not remotely clean the whole room")
+    require(!service.cleanNearbyTask(), "Finished cleaning tasks cannot be repeated")
+    service.moveActor(dx: 1, dy: 0)
+    service.moveActor(dx: 0, dy: 1)
+    service.moveActor(dx: 0, dy: 1)
+    require(service.cleaningTarget == 2 && service.cleanNearbyTask(), "Walk to the actual spill to mop it")
+    service.moveActor(dx: -1, dy: 0)
+    service.moveActor(dx: 0, dy: 1)
+    require(service.cleaningTarget == 1 && service.cleanNearbyTask(), "Walk to the trash to collect it")
+    require(!service.rooms[0].dirty && service.rooms[0].cleanedTasks?.count == 3, "Only all three physical tasks make a room rentable")
+    require(!service.paintNearby(2), "Cannot repaint from across the room")
+    service.visit!.player = Tile(x: 6, y: 2)
+    require(service.paintNearby(2) && service.rooms[0].theme == 2 && service.cash == 155, "Paint cabinet changes the room for its stated cost")
+    require(!service.paintNearby(2), "No duplicate paint charges")
+    service.visit!.player = Tile(x: 3, y: 3)
+    require(service.furnishNearby() && service.rooms[0].furniture == 1 && service.cash == 65, "Bed interaction upgrades furnishings")
+    service.visit!.player = Tile(x: 4, y: 7)
+    require(service.useEntrance() && service.visit == nil && service.actorTile == Tile(x: 16, y: 9), "Leaving a room returns to that room on the grounds")
+    service.world!.place = .office
+    service.world!.player = Tile(x: 6, y: 5)
+    require(service.paintNearby(1) && service.officeTheme == 1, "Office paint has its own physical cabinet")
+
+    var build = Motel()
+    build.initializeWorld()
+    build.cash = 600
+    require(!build.buildNearby(), "No remote construction menu")
+    build.world!.place = .grounds
+    build.world!.player = Tile(x: 12, y: 27)
+    require(build.buildNearby() && build.rooms.count == 4 && build.cash == 350, "Construction sign expands the physical motel")
+    build.world!.player = Tile(x: 3, y: 17)
+    build.moveActor(dx: -1, dy: 1)
+    require(build.actorTile == Tile(x: 3, y: 17), "Diagonal movement cannot cut pool corners")
+    build.world!.player = Tile(x: 2, y: 19)
+    build.moveActor(dx: 1, dy: 0)
+    require(build.actorTile == Tile(x: 2, y: 19), "Pool water blocks movement")
+
+    var morning = Motel()
+    morning.initializeWorld()
+    _ = morning.checkIn(guestID: 10, roomID: 0)
+    require(!morning.restAtBed(), "Next day requires walking to the bed")
+    morning.world!.player = Tile(x: 2, y: 3)
+    require(morning.restAtBed() && morning.day == 2 && morning.rooms[0].dirty, "Sleeping advances stays and creates physical room work")
+    require(morning.worldState.travellers.count == 1, "Checked-out guests walk toward the exit")
+
+    let defaults = UserDefaults(suiteName: "LittleHaven.WorldTests")!
+    var checkpoint = Game()
+    checkpoint.coins = 545
+    checkpoint.wakeUp()
+    checkpoint.motel = service
+    checkpoint.save(to: defaults)
+    let saved = Game.load(from: defaults)
+    require(saved.motel?.world?.hasCleaningKit == true && saved.motel?.rooms[0].theme == 2 && saved.motel?.rooms[0].cleanedTasks?.count == 3, "Tools, room work and position persist in checkpoints")
+    var legacy = Game()
+    legacy.coins = 545
+    legacy.wakeUp()
+    legacy.motel!.cash = 333
+    legacy.motel!.world = nil
+    legacy.save(to: defaults)
+    var migrated = Game.load(from: defaults).motel!
+    migrated.initializeWorld()
+    require(migrated.cash == 333 && migrated.rooms.count == 3 && migrated.worldState.place == .office, "Existing motel saves keep their business and gain a walkable office")
+    defaults.removePersistentDomain(forName: "LittleHaven.WorldTests")
+    print("PASS: grounds and entrance reachability, physical payments, guest paths, collisions, hands-on cleaning, object customization, construction, sleep, world checkpoints")
+}
+worldRules()

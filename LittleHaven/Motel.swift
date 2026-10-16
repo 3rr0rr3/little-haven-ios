@@ -15,6 +15,7 @@ struct MotelRoom: Codable, Identifiable {
     var nightsLeft = 0
     var dirty = false
     var stolen: Set<Int> = []
+    var cleanedTasks: Set<Int>?
     var number: Int { 101 + id }
     var available: Bool { guest == nil && !dirty }
 }
@@ -38,7 +39,7 @@ struct RoomVisit: Codable {
     static func blocked(_ tile: Tile) -> Bool {
         if tile == Tile(x: 4, y: 8) { return false }
         if !(1...7).contains(tile.x) || !(2...7).contains(tile.y) { return true }
-        return tile == Tile(x: 2, y: 2) || tile == Tile(x: 3, y: 2) || lootTiles.contains(tile)
+        return tile == MotelGrounds.roomPaint || tile == Tile(x: 2, y: 2) || tile == Tile(x: 3, y: 2) || lootTiles.contains(tile)
     }
 }
 struct Motel: Codable {
@@ -56,6 +57,7 @@ struct Motel: Codable {
     var lastEvent = "Three rooms. One desk. A fresh start."
     var guestsServed = 0
     var totalStolen = 0
+    var world: MotelWorldState?
     var expansionCost: Int { 250 + (rooms.count - 3) * 150 }
     var occupancy: Int { rooms.filter { $0.guest != nil }.count }
     var goalReached: Bool { rooms.count >= Self.goal }
@@ -90,6 +92,7 @@ struct Motel: Codable {
         guard canSave, let index = rooms.firstIndex(where: { $0.id == roomID }),
               rooms[index].guest == nil, rooms[index].dirty else { return false }
         rooms[index].dirty = false
+        rooms[index].cleanedTasks = Set(MotelGrounds.cleaningTiles.indices)
         lastEvent = "Room \(rooms[index].number) is ready. A little elbow grease costs nothing."
         return true
     }
@@ -143,6 +146,7 @@ struct Motel: Codable {
             if rooms[index].nightsLeft == 0 {
                 rooms[index].guest = nil
                 rooms[index].dirty = true
+                rooms[index].cleanedTasks = []
                 rooms[index].stolen = []
                 departures += 1
             }
@@ -164,10 +168,14 @@ struct Motel: Codable {
         detect()
     }
     mutating func move(dx: Int, dy: Int) {
-        guard !caught, var roomVisit = visit, abs(dx) + abs(dy) == 1 else { return }
+        guard !caught, var roomVisit = visit, abs(dx) <= 1, abs(dy) <= 1, dx != 0 || dy != 0 else { return }
         roomVisit.facing = dy > 0 ? 0 : dx < 0 ? 1 : dx > 0 ? 2 : 3
         let next = Tile(x: roomVisit.player.x + dx, y: roomVisit.player.y + dy)
         guard !RoomVisit.blocked(next) else { visit = roomVisit; return }
+        if dx != 0 && dy != 0 {
+            guard !RoomVisit.blocked(Tile(x: roomVisit.player.x + dx, y: roomVisit.player.y)),
+                  !RoomVisit.blocked(Tile(x: roomVisit.player.x, y: roomVisit.player.y + dy)) else { visit = roomVisit; return }
+        }
         if next == Tile(x: 4, y: 8) { leave(); return }
         roomVisit.player = next
         if roomVisit.sneaking { roomVisit.alert = min(100, roomVisit.alert + 3) }
@@ -188,7 +196,7 @@ struct Motel: Codable {
     }
     private mutating func detect() {
         guard let roomVisit = visit, roomVisit.sneaking else { return }
-        if roomVisit.alert >= 100 || roomVisit.player.distance(to: roomVisit.guestTile) <= 1 {
+        if roomVisit.alert >= 100 || (guestPresent(in: roomVisit.roomID) && roomVisit.player.distance(to: roomVisit.guestTile) <= 1) {
             caught = true
             lastEvent = "The guest caught you inside their room. Your motel story ends here."
         }
@@ -203,5 +211,11 @@ struct Motel: Codable {
         totalStolen += roomVisit.pocket
         lastEvent = roomVisit.pocket > 0 ? "You slipped out with \(roomVisit.pocket) coins worth of belongings. Save at the desk to keep this progress." : "Back outside. The desk is waiting."
         visit = nil
+        if world != nil {
+            let door = MotelGrounds.roomDoor(roomVisit.roomID)
+            world!.place = .grounds
+            world!.player = Tile(x: door.x, y: door.y + 1)
+            world!.facing = 0
+        }
     }
 }

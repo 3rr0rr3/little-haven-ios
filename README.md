@@ -1,54 +1,59 @@
-# Little Haven - Motel Chapter
+# Little Haven - Walkable Motel
 
-An original iPhone game with cut-paper cartoon characters. Begin in a cozy town, then wake up to a very different job: running a roadside motel.
+An original iPhone RPG with cut-paper cartoon characters, a town dream, and a motel you run by walking around its grounds and interiors.
 
-## The town dream
+## Start the shift
 
-Walk with the press-and-hold direction controls. Stand beside the seven neighbors, tap TALK, and ask for help with your cottage fund. When you collect at least 500 fictional coins, the dream fades into the wake-up scene.
+Complete the town's 500-coin cottage fund to wake up in your motel office. Existing cottage owners see the wake-up scene, and existing version 2.0 motel saves keep their cash, rooms and upgrades.
 
-Existing saves from version 1.1 keep their progress. If you already bought the cottage, the update takes you straight to the wake-up scene.
+Use the movement stick to walk in eight directions, or press and hold the arrow controls. The camera follows your character outdoors. Buildings, cars, water, people and furniture block your path.
 
-## Run your motel
+## Work in the world
 
-- Start with rooms 101-103 and 180 coins of working capital.
-- Check arriving guests into clean, empty rooms. The entire one- or two-night stay is paid at check-in.
-- End the day for new arrivals and checkouts. Vacated rooms need free manual cleaning.
-- Choose four wall palettes for each room and your office. Paint changes cost 25 coins.
-- Upgrade each room's furnishings twice. Upgrades cost 90, then 180 coins, and each adds 30 to the nightly rate.
-- Upgrade your office twice for 120, then 240 coins. Each adds 15 to every room's nightly rate and attracts another daily arrival.
-- Build additional rooms, starting at 250 coins with costs rising by 150 per room. Reach nine rooms to complete the expansion goal, then continue running the business.
+There is no motel management dashboard. Walk to a person or object and use the context action button.
 
-## Sneak into occupied rooms
+- Office door: walk through to enter or leave the office.
+- Waiting clients outside reception: talk, choose a clean empty room, collect payment, and hand over a key. Guests then walk to their rooms.
+- Room doors: enter empty rooms to work inside. Enter occupied rooms quietly to sneak.
+- Office tools closet: collect your mop, fresh sheets and bin bags.
+- Dirty rooms: stand beside the unmade bed, trash and floor spill. Hold the work button for each task. Only a fully serviced room can be rented again.
+- Paint cabinets inside rooms and the office: choose a wall color for 25 coins.
+- Beds in guest rooms: upgrade furnishings, increasing the nightly rate.
+- Front desk: upgrade the office or save your checkpoint.
+- Office logbook: save your checkpoint.
+- Office bed: sleep until morning, advance stays, handle checkouts and save. Departing clients walk toward the road.
+- Build sign or next construction plot: build another physical room. Grow from three rooms to nine.
+- Map button: inspect the property layout and instructions without teleporting.
 
-Choose Sneak inside on an occupied room. Use the same hold controls to move around its interior. Approach the highlighted suitcase, watch, or camera and take it, then get back to the southern door.
+Guests pay for their full one- or two-night stay at check-in. Room furniture upgrades add 30 to that room's nightly rate; office upgrades add 15 to all rooms' nightly rates and attract extra arrivals. Cleaning supplies are free, so an empty wallet cannot prevent you from preparing rooms.
 
-Suspicion rises every second and with movement and theft. Reaching 100 percent, or moving next to the patrolling guest, triggers game over. Stolen belongings only become coins after you escape. Items cannot be collected twice during the same stay.
+## Sneaking
 
-## Saving and game over
+Occupied rooms have highlighted belongings. Move beside them to take them, keep away from the guest, and return to the lower exit. Suspicion rises with time, movement and theft. Reaching 100 percent or getting too close to the guest means game over. Stolen items become money only after you escape.
 
-The town prologue saves automatically. The motel uses explicit checkpoints: tap Save at desk, or End day to save the following morning. Room visits and game-over states cannot overwrite that checkpoint.
+## Checkpoints
 
-After getting caught, choose Load last save. Your cash, guests, room upgrades, and construction return to the saved state. Closing the app also resumes from the latest checkpoint. Keep the app installed and use the same bundle identifier and signing identity when updating to preserve local saves.
+The town saves automatically. In the motel, save at the office desk or logbook, or sleep to save the next morning. Cleaning progress, tools, room colors, upgrades, client stays and your position are saved. Room visits and game over never overwrite your safe checkpoint.
 
-## SideStore and IPA
+If caught, load your last save. Changes made since that checkpoint are lost. Closing the app also resumes from the last saved checkpoint.
 
-Source URL:
+## SideStore / IPA
 
-https://raw.githubusercontent.com/3rr0rr3/little-haven-ios/main/sideStore.json
+Source: https://raw.githubusercontent.com/3rr0rr3/little-haven-ios/main/sideStore.json
 
-Download the latest successful IPA from Releases. Requires iOS 17 or later. The device build is unsigned; sign it through your sideloading tool before installing. Physical-device installation has not been verified.
-
-GitHub Actions runs model tests, compiles the arm64 iPhoneOS app, exercises controls and motel interactions in an iPhone simulator, captures chapter previews, verifies the IPA, publishes a release, and updates the SideStore feed with its exact version and size.
+Download the latest successful build from Releases, or refresh the existing SideStore source. Requires iOS 17 or later. The IPA is an unsigned arm64 iPhoneOS build; your sideloading tool signs it for installation. Physical-device installation has not been verified.
 
 ## Development
 
-Open LittleHaven.xcodeproj in Xcode, select the LittleHaven scheme and an iPhone simulator, then Run. Select your own team and signing configuration for a signed device build.
+Open LittleHaven.xcodeproj in Xcode and choose an iPhone simulator. For a signed device build, use your own signing configuration.
 
-Run the platform-independent game tests on macOS:
+Run game-rule tests on macOS:
 
 ~~~sh
-swiftc LittleHaven/Game.swift LittleHaven/Motel.swift Tests/main.swift -o /tmp/little-haven-tests
+swiftc LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
 /tmp/little-haven-tests
 ~~~
 
-All characters, artwork and dialogue are original. No network access, advertising, accounts, or real-money purchases. All coins and theft mechanics are fictional gameplay.
+GitHub Actions runs game-rule tests, simulator tests for walking, payments, cleaning, customization, construction and checkpoint recovery, builds and verifies the IPA, captures chapter screenshots, publishes a release, and refreshes the SideStore feed.
+
+All characters, artwork and dialogue are original. There are no ads, accounts, network access, or real-money purchases in the app. All coins and theft mechanics are fictional gameplay.

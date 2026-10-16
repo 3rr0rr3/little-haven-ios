@@ -21,15 +21,15 @@ entry = {
     "version": version,
     "buildVersion": build,
     "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-    "localizedDescription": "The motel chapter: wake up after the town prologue, manage three rooms, welcome guests, customize rooms and office, expand to nine rooms, and risk sneaking into occupied rooms. Getting caught restores your last checkpoint.",
+    "localizedDescription": "The walkable motel: explore the grounds and interiors with a movement stick, meet clients and collect payments in person, carry cleaning tools, make beds, collect trash, mop spills, customize physical rooms and expand the property. Existing motel saves are supported.",
     "downloadURL": f"{asset_base}/LittleHaven-unsigned.ipa",
     "size": pathlib.Path("LittleHaven-unsigned.ipa").stat().st_size,
     "minOSVersion": info["MinimumOSVersion"],
 }
 app["versions"] = [entry] + [item for item in app["versions"] if item["version"] != version or item.get("buildVersion") != build]
-app["subtitle"] = "Your motel. Your rules. Your risk."
-app["localizedDescription"] = "Begin with a cozy town dream. Raise the cottage fund and wake up with the keys to a three-room motel. Check in guests, clean rooms, customize furnishings and wall colors, upgrade your office, and build a nine-room business. Sneak into occupied rooms to take belongings, watch suspicion, avoid the guest, and escape by the door. Getting caught ends the run; load your last safe checkpoint. Save at the desk or start the next day. Original cut-paper cartoon characters and smooth hold-to-walk controls."
-app["screenshotURLs"] = [f"{asset_base}/LittleHaven-motel.png", f"{asset_base}/LittleHaven-stealth.png", f"{asset_base}/LittleHaven-wake.png", f"{asset_base}/LittleHaven-preview.png"]
+app["subtitle"] = "Walk, work and build your motel."
+app["localizedDescription"] = "Wake up and walk freely around a roadside motel, its office, pool, parking and guest rooms. Meet arriving clients, assign rooms and collect their payments. Pick up tools at the office, then make beds, collect trash and mop spills inside each vacated room. Interact with paint cabinets, beds, the front desk and construction plots to customize and expand your property. Guests walk to their rooms and depart along the grounds. Sneak into occupied rooms, take belongings and escape before being caught. Save at the office or sleep to create checkpoints. Original cut-paper cartoon characters and smooth eight-direction movement."
+app["screenshotURLs"] = [f"{asset_base}/LittleHaven-motel.png", f"{asset_base}/LittleHaven-cleaning.png", f"{asset_base}/LittleHaven-stealth.png", f"{asset_base}/LittleHaven-wake.png", f"{asset_base}/LittleHaven-preview.png"]
 source["subtitle"] = "A town dream and a roadside motel"
 body = {
     "message": f"Update SideStore feed for Little Haven {version} [skip ci]",

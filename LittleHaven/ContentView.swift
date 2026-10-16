@@ -24,23 +24,47 @@ struct ContentView: View {
             UserDefaults.standard.removeObject(forKey: "littlehaven.save.v1")
             return Game()
         }
-        if args.contains("--ui-wake") || args.contains("--ui-motel") || args.contains("--ui-motel-risk") || args.contains("--ui-motel-preview") {
+        if args.contains(where: { $0.hasPrefix("--ui-world") || $0.hasPrefix("--ui-motel") || $0 == "--ui-wake" }) {
             var fresh = Game()
             fresh.coins = 545
-            if !args.contains("--ui-wake") { fresh.wakeUp() }
-            fresh.save()
-            if args.contains("--ui-motel-risk") || args.contains("--ui-motel-preview") {
-                _ = fresh.motel?.checkIn(guestID: 10, roomID: 0)
-                fresh.save()
-                _ = fresh.motel?.enter(0)
-                fresh.motel?.visit?.alert = args.contains("--ui-motel-risk") ? 98 : 10
+            if !args.contains("--ui-wake") {
+                fresh.wakeUp()
+                fresh.motel!.initializeWorld()
+                if args.contains("--ui-motel") {
+                    fresh.motel!.world!.place = .grounds
+                    fresh.motel!.world!.player = Tile(x: 12, y: 10)
+                }
+                if args.contains("--ui-world-clean") || args.contains("--ui-world-decor") {
+                    fresh.motel!.world!.hasCleaningKit = true
+                    fresh.motel!.world!.place = .grounds
+                    fresh.motel!.world!.player = Tile(x: 16, y: 9)
+                    fresh.motel!.rooms[0].dirty = args.contains("--ui-world-clean")
+                    fresh.save()
+                    _ = fresh.motel!.enter(0)
+                    fresh.motel!.visit!.player = args.contains("--ui-world-clean") ? Tile(x: 3, y: 3) : Tile(x: 6, y: 2)
+                    return fresh
+                }
+                if args.contains("--ui-world-build") {
+                    fresh.motel!.cash = 600
+                    fresh.motel!.world!.place = .grounds
+                    fresh.motel!.world!.player = Tile(x: 12, y: 27)
+                }
+                if args.contains("--ui-motel-risk") || args.contains("--ui-motel-preview") {
+                    _ = fresh.motel!.checkIn(guestID: 10, roomID: 0)
+                    fresh.motel!.world!.place = .grounds
+                    fresh.motel!.world!.player = Tile(x: 16, y: 9)
+                    fresh.save()
+                    _ = fresh.motel!.enter(0)
+                    fresh.motel!.visit!.alert = args.contains("--ui-motel-risk") ? 98 : 10
+                    return fresh
+                }
             }
+            fresh.save()
             return fresh
         }
         #endif
         return Game.load()
     }
-
     var body: some View {
         Group {
             if game.motel != nil {

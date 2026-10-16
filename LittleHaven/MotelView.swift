@@ -35,287 +35,359 @@ struct MotelButtonStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.65 : 1)
     }
 }
-private struct RoomChoice: Identifiable { let id: Int }
 
+private enum MotelPanel: Equatable { case guest(Int), paint(Int?), desk, construction }
 struct MotelView: View {
     @Binding var game: Game
     @Environment(\.scenePhase) private var scenePhase
-    @State private var tab = 0
-    @State private var booking: MotelGuest?
-    @State private var decorating: RoomChoice?
-    @State private var officeEditor = false
-    @State private var confirmDay = false
+    @State private var movement: Tile?
+    @State private var working = false
+    @State private var workProgress = 0.0
+    @State private var panel: MotelPanel?
+    @State private var selectedRoom: Int?
+    @State private var showMap = false
+    @State private var showPause = false
+    @State private var confirmRest = false
+    @State private var confirmSneak: Int?
+    @State private var showSneak = false
     @State private var confirmRestore = false
-    @State private var entry: RoomChoice?
-    @State private var showEntry = false
-    @State private var held: Tile?
-    @State private var notice: String?
+    @State private var toast: String?
     private var motel: Motel { game.motel ?? Motel() }
+    private var mapIdentity: String { motel.visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue }
     private let cream = Color(hex: 0xF5E7C8)
     private let gold = Color(hex: 0xEFC977)
-    private var tickKey: String { "\(motel.visit?.roomID ?? -1)-\(scenePhase)" }
+    private var testingUI: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("--ui-testing")
+        #else
+        return false
+        #endif
+    }
+    private var paused: Bool { panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
             if motel.caught { gameOver }
-            else if let visit = motel.visit { roomScene(visit) }
-            else { management }
+            else { worldScreen }
         }
         .foregroundStyle(cream).background(Color(hex: 0x172A25))
-        .task(id: held) {
-            guard let direction = held else { return }
-            while !Task.isCancelled && scenePhase == .active && motel.visit != nil && !motel.caught {
-                change { $0.move(dx: direction.x, dy: direction.y) }
-                do { try await Task.sleep(for: .seconds(0.18)) } catch { break }
+        .transaction { if testingUI { $0.disablesAnimations = true } }
+        .task { change { $0.initializeWorld() } }
+        .task(id: movement) {
+            guard let direction = movement else { return }
+            while !Task.isCancelled && scenePhase == .active && !motel.caught && !paused {
+                change { $0.moveActor(dx: direction.x, dy: direction.y) }
+                do { try await Task.sleep(for: .seconds(direction.x != 0 && direction.y != 0 ? 0.19 : 0.14)) } catch { break }
             }
         }
-        .task(id: tickKey) {
+        .task(id: scenePhase) {
             guard scenePhase == .active else { return }
-            while !Task.isCancelled && motel.visit?.sneaking == true && !motel.caught {
-                do { try await Task.sleep(for: .seconds(1)) } catch { break }
+            var ticks = 0
+            while !Task.isCancelled && scenePhase == .active {
+                do { try await Task.sleep(for: .seconds(0.35)) } catch { break }
                 guard !Task.isCancelled, scenePhase == .active else { break }
-                change { $0.tick() }
+                if !paused && !motel.caught {
+                    ticks += 1
+                    if !motel.worldState.travellers.isEmpty { change { $0.tickWorld() } }
+                    if ticks % 3 == 0 && motel.visit?.sneaking == true { change { $0.tick() } }
+                }
             }
         }
-        .onChange(of: scenePhase) { _, phase in if phase != .active { held = nil } }
-        .onChange(of: motel.caught) { _, caught in if caught { held = nil } }
-        .onChange(of: motel.visit?.roomID) { _, _ in held = nil }
-        .onDisappear { held = nil }
-        .sheet(item: $booking) { guest in bookingSheet(guest) }
-        .sheet(item: $decorating) { room in customization(roomID: room.id) }
-        .sheet(isPresented: $officeEditor) { customization(roomID: nil) }
-        .alert("Enter an occupied room?", isPresented: $showEntry) {
-            Button("Enter quietly") { if let room = entry { change { _ = $0.enter(room.id) } }; entry = nil }
-            Button("Stay outside", role: .cancel) { entry = nil }
-        } message: {
-            Text("The guest is inside. Suspicion rises over time and when you move or search. Stay away from the guest and return to the door to escape. Getting caught loses everything since your last save.")
+        .task(id: working) {
+            guard working, motel.worldState.hasCleaningKit, let target = motel.cleaningTarget else { return }
+            let start = motel.actorTile
+            workProgress = 0
+            for step in 1...14 {
+                do { try await Task.sleep(for: .seconds(0.1)) } catch { workProgress = 0; return }
+                guard !Task.isCancelled, working, !paused, scenePhase == .active,
+                      motel.actorTile == start, motel.cleaningTarget == target else { workProgress = 0; return }
+                workProgress = Double(step) / 14
+            }
+            change { _ = $0.cleanNearbyTask() }
+            working = false
+            workProgress = 0
         }
-        .confirmationDialog("End this day and save the next morning?", isPresented: $confirmDay, titleVisibility: .visible) {
-            Button("Sleep until morning") { change { _ = $0.nextDay() }; game.save(); notice = "Morning checkpoint saved." }
-        } message: { Text("Remaining arrivals leave. Guests with completed stays check out, leaving rooms to clean.") }
-        .confirmationDialog("Discard progress since your last save?", isPresented: $confirmRestore, titleVisibility: .visible) {
-            Button("Load last save", role: .destructive) { held = nil; game = Game.load(); notice = "Checkpoint restored." }
+        .task(id: toast) {
+            guard let text = toast else { return }
+            try? await Task.sleep(for: .seconds(3))
+            if !Task.isCancelled && toast == text { toast = nil }
+        }
+        .onChange(of: mapIdentity) { _, _ in stop() }
+        .onChange(of: motel.actorTile) { _, _ in working = false; workProgress = 0 }
+        .onChange(of: motel.caught) { _, caught in if caught { stop(); panel = nil } }
+        .onChange(of: paused) { _, value in if value { stop() } }
+        .onChange(of: scenePhase) { _, phase in if phase != .active { stop() } }
+        .onDisappear { stop() }
+        .sheet(isPresented: $showMap) {
+            MotelPocketMap(motel: motel).presentationDetents([.large]).presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showPause) { pauseSheet.presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
+        .alert("Sneak into room \(101 + (confirmSneak ?? 0))?", isPresented: $showSneak) {
+            Button("Enter quietly") {
+                if let id = confirmSneak, motel.nearbyAction == .room(id) { change { _ = $0.useEntrance() } }
+                confirmSneak = nil
+            }
+            Button("Stay outside", role: .cancel) { confirmSneak = nil }
+        } message: { Text("Keep away from the guest. Taking belongings makes noise. Escape by the door before suspicion reaches 100%, or load your last checkpoint after getting caught.") }
+        .confirmationDialog("Sleep until morning and save?", isPresented: $confirmRest, titleVisibility: .visible) {
+            Button("Sleep until morning") {
+                if motel.nearbyAction == .rest {
+                    change { _ = $0.restAtBed() }
+                    game.save()
+                    toast = "Morning checkpoint saved. Go outside for new arrivals."
+                }
+            }
+        } message: { Text("Finished stays check out. Visit their rooms to make beds, collect trash and mop spills. Remaining arrivals leave.") }
+        .confirmationDialog("Discard unsaved progress?", isPresented: $confirmRestore, titleVisibility: .visible) {
+            Button("Load last save", role: .destructive) { stop(); panel = nil; game = Game.load(); toast = "Checkpoint restored." }
         }
     }
 
-    private var management: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                header
-                MotelOverview(motel: motel).frame(height: 205).clipShape(RoundedRectangle(cornerRadius: 20))
-                HStack {
-                    Label("\(motel.occupancy)/\(motel.rooms.count) occupied", systemImage: "bed.double.fill")
-                    Spacer()
-                    Text("GOAL  \(motel.rooms.count)/9 ROOMS").font(.caption.monospaced().bold()).foregroundStyle(gold)
-                }.font(.caption)
-                ProgressView(value: Double(motel.rooms.count - 3), total: 6).tint(gold)
-                if motel.goalReached {
-                    Label("A thriving motel! You can keep playing.", systemImage: "star.fill").font(.headline).foregroundStyle(gold)
-                }
-                Picker("Motel area", selection: $tab) {
-                    Text("Desk").tag(0); Text("Rooms").tag(1); Text("Office").tag(2)
-                }.pickerStyle(.segmented).accessibilityIdentifier("motelTabs")
-                Text(notice ?? motel.lastEvent).font(.subheadline).foregroundStyle(cream.opacity(0.75)).fixedSize(horizontal: false, vertical: true)
-                if tab == 0 { reception }
-                if tab == 1 { roomList }
-                if tab == 2 { office }
-            }.padding(18)
-        }.accessibilityIdentifier("motelManagement")
-    }
-    private var header: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("LITTLE HAVEN").font(.system(size: 23, weight: .black, design: .rounded)).tracking(1)
-                Text("MOTEL / DAY \(motel.day)").font(.caption.monospaced().bold()).foregroundStyle(gold)
-            }
-            Spacer()
-            Label("\(motel.cash)", systemImage: "circle.circle.fill").font(.title3.monospaced().bold()).foregroundStyle(gold).accessibilityIdentifier("motelCash")
-        }
-    }
-    private var reception: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Arrivals").font(.title2.bold())
-            Text("Payment is collected at check-in. Better rooms and an upgraded office earn higher nightly rates.").font(.caption).foregroundStyle(.secondary)
-            if motel.waiting.isEmpty { Text("Everyone is settled. Prepare your rooms or end the day for new arrivals.").padding(.vertical) }
-            ForEach(motel.waiting) { guest in
-                HStack(spacing: 12) {
-                    PaperPortrait(color: guest.color, variant: guest.id % 8).frame(width: 45, height: 62)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(guest.name).font(.headline)
-                        Text("\(guest.nights) night\(guest.nights == 1 ? "" : "s") / \(guest.story)").font(.caption).foregroundStyle(.secondary)
-                    }
-                    Spacer(minLength: 0)
-                    Button("Check in") { booking = guest; notice = nil }
-                        .font(.caption.bold()).padding(11).background(gold, in: Capsule()).foregroundStyle(Color(hex: 0x203B32))
-                        .disabled(!motel.rooms.contains(where: \.available))
-                        .accessibilityIdentifier("checkIn\(guest.id)")
-                }.padding(12).background(Color(hex: 0x283E35), in: RoundedRectangle(cornerRadius: 16))
-            }
-            if !motel.rooms.contains(where: \.available) { Text("No ready rooms. Clean a vacated room, expand, or end the day for checkouts.").font(.caption).foregroundStyle(gold) }
-            HStack {
-                Button("Save at desk") { game.save(); notice = "Checkpoint saved. Day \(motel.day), \(motel.cash) coins." }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("saveMotel")
-                Button("End day") { confirmDay = true }.buttonStyle(MotelButtonStyle(subdued: true))
-            }
-            Text("Save at the desk or start a new day to create a checkpoint. Closing the app or getting caught returns to that checkpoint.").font(.caption).foregroundStyle(.secondary)
-        }
-    }
-    private var roomList: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            ForEach(motel.rooms) { room in
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Text("ROOM \(room.number)").font(.headline.monospaced())
-                        Spacer()
-                        Text("\(motel.rate(for: room))/night").font(.caption.bold()).foregroundStyle(gold)
-                    }
-                    HStack(spacing: 12) {
-                        RoomIllustration(theme: room.theme, level: room.furniture, office: false).frame(width: 100, height: 80).clipShape(RoundedRectangle(cornerRadius: 10))
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(room.guest.map { "\($0.name) / \(room.nightsLeft) nights left" } ?? (room.dirty ? "Needs cleaning" : "Ready for guests")).font(.subheadline.bold())
-                            Text("\(Motel.themeNames[room.theme]) / \(["Basic", "Comfort", "Deluxe"][room.furniture])").font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                    HStack {
-                        Button(room.guest == nil ? "Enter room" : "Sneak inside") {
-                            notice = nil
-                            if room.guest != nil { entry = RoomChoice(id: room.id); showEntry = true }
-                            else { change { _ = $0.enter(room.id) } }
-                        }.buttonStyle(MotelButtonStyle(subdued: room.guest != nil)).accessibilityIdentifier("enterRoom\(room.id)")
-                        if room.dirty && room.guest == nil {
-                            Button("Clean / free") { change { _ = $0.clean(room.id) }; notice = nil }.buttonStyle(MotelButtonStyle())
-                        } else {
-                            Button("Customize") { decorating = RoomChoice(id: room.id) }
-                                .buttonStyle(MotelButtonStyle(subdued: true)).disabled(room.guest != nil)
-                                .accessibilityIdentifier("customizeRoom\(room.id)")
-                        }
-                    }
-                }.padding(14).background(Color(hex: 0x283E35), in: RoundedRectangle(cornerRadius: 18))
-            }
-            if !motel.goalReached {
-                Button("Build room \(101 + motel.rooms.count) / \(motel.expansionCost) coins") { change { _ = $0.expand() }; notice = nil }
-                    .buttonStyle(MotelButtonStyle()).disabled(motel.cash < motel.expansionCost).accessibilityIdentifier("expandMotel")
-            }
-        }
-    }
-    private var office: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            RoomIllustration(theme: motel.officeTheme, level: motel.officeLevel, office: true).frame(height: 210).clipShape(RoundedRectangle(cornerRadius: 18))
-            Text("Your office").font(.title2.bold())
-            Text("\(Motel.themeNames[motel.officeTheme]) walls / \(["Starter", "Welcoming", "Premium"][motel.officeLevel]) desk").font(.subheadline)
-            Text("Office upgrades add 15 coins to every room's nightly rate and attract one extra arrival each day.").font(.caption).foregroundStyle(.secondary)
-            Button("Customize office") { officeEditor = true }.buttonStyle(MotelButtonStyle())
-            HStack {
-                stat("GUESTS", value: motel.guestsServed)
-                stat("ROOMS", value: motel.rooms.count)
-                stat("STOLEN", value: motel.totalStolen)
-            }
-            Button("Save at desk") { game.save(); notice = "Checkpoint saved." }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("saveOffice")
-            Button("Load last save") { confirmRestore = true }.buttonStyle(MotelButtonStyle(subdued: true))
-        }
-    }
-    private func stat(_ title: String, value: Int) -> some View {
-        VStack(spacing: 6) { Text("\(value)").font(.title2.bold()); Text(title).font(.caption2.monospaced()) }
-            .frame(maxWidth: .infinity).padding(15).background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
-    }
-    private func bookingSheet(_ guest: MotelGuest) -> some View {
-        NavigationStack {
-            List {
-                Section("Choose a clean, empty room for \(guest.name)") {
-                    ForEach(motel.rooms.filter(\.available)) { room in
-                        Button {
-                            change { _ = $0.checkIn(guestID: guest.id, roomID: room.id) }
-                            booking = nil
-                        } label: {
-                            HStack { Text("Room \(room.number)"); Spacer(); Text("\(motel.rate(for: room) * guest.nights) coins total") }
-                        }.accessibilityIdentifier("assignRoom\(room.id)")
-                    }
-                }
-            }.navigationTitle("Check in").toolbar { Button("Cancel") { booking = nil } }
-        }.tint(gold).presentationDetents([.medium, .large])
-    }
-    private func customization(roomID: Int?) -> some View {
-        let room = motel.rooms.first { $0.id == roomID }
-        let theme = room?.theme ?? motel.officeTheme
-        let level = room?.furniture ?? motel.officeLevel
-        let price = (level + 1) * (roomID == nil ? 120 : 90)
-        return NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    RoomIllustration(theme: theme, level: level, office: roomID == nil).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: 18))
-                    Text("Walls / 25 coins per change").font(.headline)
-                    HStack {
-                        ForEach(0..<4) { index in
-                            Button { change { _ = $0.decorate(roomID: roomID, theme: index) }; notice = nil } label: {
-                                VStack {
-                                    Circle().fill(Color(hex: Motel.themeColors[index])).frame(width: 42, height: 42).overlay(Circle().stroke(index == theme ? gold : .clear, lineWidth: 3))
-                                    Text(Motel.themeNames[index]).font(.caption)
-                                }.frame(maxWidth: .infinity)
-                            }.disabled(theme == index || motel.cash < 25).accessibilityIdentifier("theme\(index)")
-                        }
-                    }
-                    Text("Furniture / level \(level + 1) of 3").font(.headline)
-                    Text(roomID == nil ? "Improve your reception desk, add a plant and a lounge corner. Each upgrade increases all room rates by 15." : "Add a better bed, a rug, and a reading nook. Each upgrade increases this room's nightly rate by 30.").font(.subheadline).foregroundStyle(.secondary)
-                    Button(level == 2 ? "Fully furnished" : "Upgrade furniture / \(price) coins") { change { _ = $0.upgrade(roomID: roomID) }; notice = nil }
-                        .buttonStyle(MotelButtonStyle()).disabled(level == 2 || motel.cash < price).accessibilityIdentifier("upgradeFurniture")
-                    Text("Balance: \(motel.cash) coins. Save at the desk to keep your changes.").font(.caption).foregroundStyle(gold)
-                }.padding(20)
-            }.background(Color(hex: 0x172A25)).navigationTitle(roomID == nil ? "Your office" : "Room \(101 + (roomID ?? 0))")
-                .toolbar { Button("Done") { decorating = nil; officeEditor = false } }
-        }.tint(gold).presentationDetents([.large])
-    }
-    private func roomScene(_ visit: RoomVisit) -> some View {
-        let room = motel.rooms.first { $0.id == visit.roomID } ?? MotelRoom(id: 0)
-        let item = visit.nearbyLoot
-        let alreadyTaken = item.map { visit.loot.contains($0) || room.stolen.contains($0) } ?? false
-        return VStack(spacing: 12) {
+    private var worldScreen: some View {
+        VStack(spacing: 10) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("ROOM \(room.number)").font(.title2.monospaced().bold())
-                    Text(visit.sneaking ? "KEEP QUIET. KEEP YOUR DISTANCE." : "YOUR MOTEL, ONE ROOM AT A TIME.").font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(gold)
+                    Text(motel.mapName).font(.system(size: 20, weight: .black, design: .rounded))
+                    Text("DAY \(motel.day) / \(motel.occupancy) GUESTS / \(motel.rooms.count) ROOMS")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(gold)
                 }
-                Spacer()
-                Text("\(visit.pocket) coins").font(.subheadline.bold())
+                Spacer(minLength: 4)
+                Label("\(motel.cash)", systemImage: "circle.circle.fill").font(.system(size: 18, weight: .heavy, design: .monospaced)).foregroundStyle(gold).accessibilityIdentifier("motelCash")
+                Button { stop(); showMap = true } label: { Image(systemName: "map.fill").frame(width: 36, height: 40) }.accessibilityLabel("Motel map")
+                Button { stop(); showPause = true } label: { Image(systemName: "pause.fill").frame(width: 28, height: 40) }.accessibilityLabel("Pause game")
             }
-            MotelRoomCanvas(room: room, visit: visit, x: Double(visit.player.x), y: Double(visit.player.y))
-                .animation(.linear(duration: 0.18), value: visit.player)
-                .clipShape(RoundedRectangle(cornerRadius: 20)).frame(maxHeight: .infinity)
-                .accessibilityElement(children: .ignore).accessibilityLabel("Room interior. Column \(visit.player.x), row \(visit.player.y)").accessibilityIdentifier("motelRoom")
-            if visit.sneaking {
-                HStack { Text("SUSPICION").font(.caption.monospaced().bold()); Spacer(); Text("\(visit.alert)%").font(.headline.monospaced()).foregroundStyle(visit.alert >= 70 ? .red : gold) }
-                ProgressView(value: Double(visit.alert), total: 100).tint(visit.alert >= 70 ? .red : gold)
-                Text("Caught at 100% or beside the guest. Search marked belongings, then leave by the bottom door.").font(.caption).foregroundStyle(.secondary)
-            } else {
-                Text("Take a look around. Walk to the bottom door to return to the motel.").font(.caption).foregroundStyle(.secondary)
-            }
-            HStack {
-                VStack(spacing: 3) {
-                    roomDirection("chevron.up", 0, -1, "Creep north")
-                    HStack(spacing: 3) {
-                        roomDirection("chevron.left", -1, 0, "Creep west")
-                        Image(systemName: "figure.walk").frame(width: 44, height: 40)
-                        roomDirection("chevron.right", 1, 0, "Creep east")
-                    }
-                    roomDirection("chevron.down", 0, 1, "Creep south")
+            ZStack(alignment: .bottom) {
+                scene
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(cream.opacity(0.18), lineWidth: 1))
+                if let panel {
+                    interactionPanel(panel).padding(10).background(Color(hex: 0x20392E).opacity(0.98), in: RoundedRectangle(cornerRadius: 18)).padding(9)
+                } else if let toast {
+                    Text(toast).font(.system(size: 12, weight: .semibold)).multilineTextAlignment(.center)
+                        .padding(12).frame(maxWidth: .infinity).background(Color(hex: 0x20392E).opacity(0.94), in: RoundedRectangle(cornerRadius: 13)).padding(10).allowsHitTesting(false)
                 }
-                Spacer()
-                VStack(spacing: 8) {
-                    if visit.sneaking {
-                        Button(item.map { alreadyTaken ? "Already taken" : "Take \(RoomVisit.lootNames[$0])" } ?? "Find belongings") {
-                            held = nil; change { _ = $0.steal() }
-                        }.buttonStyle(MotelButtonStyle()).disabled(item == nil || alreadyTaken).accessibilityIdentifier("stealItem")
-                        if let item, !alreadyTaken { Text("+\(RoomVisit.lootValues[item]) coins / +\(RoomVisit.lootNoise[item]) suspicion").font(.caption2).foregroundStyle(gold) }
-                    }
-                    Button("Leave by door") { held = nil; change { $0.leave() } }
-                        .buttonStyle(MotelButtonStyle(subdued: true)).disabled(visit.player.distance(to: Tile(x: 4, y: 8)) > 1).accessibilityIdentifier("leaveRoom")
-                }.frame(maxWidth: 180)
-            }.frame(height: 145)
-        }.padding(18)
+            }.frame(maxHeight: .infinity)
+            if let visit = motel.visit, visit.sneaking {
+                HStack {
+                    Text("SUSPICION").font(.system(size: 9, weight: .black, design: .monospaced))
+                    ProgressView(value: Double(visit.alert), total: 100).tint(visit.alert >= 70 ? .red : gold)
+                    Text("\(visit.alert)%").font(.caption.monospaced().bold())
+                    Text("+\(visit.pocket)").font(.caption.monospaced().bold()).foregroundStyle(gold)
+                }
+            } else if let visit = motel.visit, let room = motel.rooms.first(where: { $0.id == visit.roomID }), room.dirty {
+                HStack {
+                    Label("CLEANING", systemImage: "sparkles").font(.system(size: 9, weight: .black, design: .monospaced))
+                    ProgressView(value: working ? workProgress : Double(room.cleanedTasks?.count ?? 0) / 3).tint(gold)
+                    Text("\(room.cleanedTasks?.count ?? 0)/3").font(.caption.monospaced().bold())
+                }
+            }
+            Text(hint).font(.system(size: 11, weight: .medium)).foregroundStyle(cream.opacity(0.8)).lineLimit(2).frame(maxWidth: .infinity, minHeight: 29, alignment: .leading)
+            HStack(spacing: 16) {
+                MotelJoystick(direction: { direction in
+                    if !paused && !motel.caught { movement = direction }
+                }, active: movement, step: { direction in
+                    stop()
+                    if !paused && !motel.caught { change { $0.moveActor(dx: direction.x, dy: direction.y) } }
+                })
+                Spacer(minLength: 0)
+                VStack(spacing: 7) {
+                    actionButton
+                    Label(motel.worldState.hasCleaningKit ? "MOP + FRESH SHEETS" : "GET TOOLS IN OFFICE", systemImage: "sparkles")
+                        .font(.system(size: 8, weight: .bold, design: .monospaced)).foregroundStyle(cream.opacity(0.6))
+                }.frame(width: 160)
+            }.frame(height: 140).padding(.horizontal, 8)
+        }.padding(.horizontal, 16).padding(.vertical, 10)
     }
-    private func roomDirection(_ symbol: String, _ dx: Int, _ dy: Int, _ label: String) -> some View {
-        HoldDirection(symbol: symbol, label: label, isActive: held == Tile(x: dx, y: dy)) { pressed in
-            if pressed { held = Tile(x: dx, y: dy) }
-            else if held == Tile(x: dx, y: dy) { held = nil }
-        } singleStep: { held = nil; change { $0.move(dx: dx, dy: dy) } }
+
+    @ViewBuilder private var scene: some View {
+        let tile = motel.actorTile
+        if let visit = motel.visit, let room = motel.rooms.first(where: { $0.id == visit.roomID }) {
+            MotelRoomCanvas(room: room, visit: visit, x: Double(tile.x), y: Double(tile.y), guestPresent: motel.guestPresent(in: room.id))
+                .animation(.linear(duration: 0.14), value: tile).id(mapIdentity)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(motel.mapName). Column \(tile.x), row \(tile.y).")
+                .accessibilityValue("\(room.dirty ? "Cleaning \(room.cleanedTasks?.count ?? 0)/3" : "Ready for guests"). Theme \(room.theme). Furnishings \(room.furniture).")
+                .accessibilityIdentifier("motelWorld")
+        } else if motel.worldState.place == .office {
+            MotelOfficeCanvas(motel: motel, x: Double(tile.x), y: Double(tile.y))
+                .animation(.linear(duration: 0.14), value: tile).id(mapIdentity)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("YOUR OFFICE. Column \(tile.x), row \(tile.y).")
+                .accessibilityIdentifier("motelWorld")
+        } else {
+            MotelGroundsCanvas(motel: motel, x: Double(tile.x), y: Double(tile.y), npcTick: Double(motel.worldState.tick))
+                .animation(.linear(duration: 0.14), value: tile)
+                .animation(.linear(duration: 0.35), value: motel.worldState.tick).id(mapIdentity)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("MOTEL GROUNDS. Column \(tile.x), row \(tile.y).")
+                .accessibilityIdentifier("motelWorld")
+        }
+    }
+
+    private var actionName: String {
+        switch motel.nearbyAction {
+        case .office, .room: return "ENTER"
+        case .guest: return "TALK"
+        case .construction: return "BUILD"
+        case .desk: return "DESK"
+        case .save: return "SAVE"
+        case .rest: return "SLEEP"
+        case .tools: return "TAKE TOOLS"
+        case .paint: return "PAINT"
+        case .furniture: return "UPGRADE"
+        case .clean: return motel.worldState.hasCleaningKit ? "HOLD TO CLEAN" : "NEED MOP"
+        case .loot: return "TAKE"
+        case .exit: return "LEAVE"
+        case .none: return "EXPLORE"
+        }
+    }
+    private var actionSymbol: String {
+        switch motel.nearbyAction {
+        case .guest: return "bubble.left.fill"
+        case .clean, .tools: return "sparkles"
+        case .save, .desk: return "book.closed.fill"
+        case .paint: return "paintbrush.fill"
+        case .construction, .furniture: return "hammer.fill"
+        case .rest: return "moon.zzz.fill"
+        case .loot: return "hand.raised.fill"
+        default: return "door.left.hand.open"
+        }
+    }
+    private var actionButton: some View {
+        WorkActionButton(title: actionName, symbol: actionSymbol, cleaning: motel.cleaningTarget != nil,
+                         enabled: !paused && motel.nearbyAction != .none && (motel.cleaningTarget == nil || motel.worldState.hasCleaningKit),
+                         progress: workProgress, pressed: { pressed in
+            if pressed { movement = nil }
+            working = pressed
+        }, action: performAction).accessibilityIdentifier("worldAction")
+    }
+    private var hint: String {
+        switch motel.nearbyAction {
+        case .guest(let id):
+            let guest = motel.waiting.first { $0.id == id }
+            return "\(guest?.name ?? "Guest") wants a room. Talk, choose a room and collect payment."
+        case .room(let id):
+            let room = motel.rooms.first { $0.id == id }
+            return room?.guest != nil ? "Room \(101 + id) is occupied. Entering means sneaking." : "Room \(101 + id): \(room?.dirty == true ? "needs cleaning" : "ready"). Walk through the door."
+        case .clean(let task): return motel.worldState.hasCleaningKit ? "\(MotelGrounds.cleaningNames[task]): hold the work button until it finishes." : "Get a cleaning kit from the TOOLS closet in your office."
+        case .paint: return "Choose wall paint here. 25 coins per change."
+        case .furniture: return "Upgrade the bed and room furnishings here to improve its nightly rate."
+        case .desk: return "Your front desk: save a checkpoint or upgrade the office."
+        case .save: return "Logbook: save your current motel, guests and upgrades."
+        case .rest: return "Your bed: end the day, handle checkouts and save the next morning."
+        case .tools: return "Pick up a mop, fresh sheets and bin bags for cleaning."
+        case .office: return "Office entrance. Walk through the door or tap ENTER."
+        case .exit: return "Walk through the lower door to go outside."
+        case .construction: return "Build room \(101 + motel.rooms.count) here for \(motel.expansionCost) coins."
+        case .loot(let item): return "\(RoomVisit.lootNames[item]): +\(RoomVisit.lootValues[item]) coins, +\(RoomVisit.lootNoise[item]) suspicion. Escape to keep it."
+        case .none:
+            if motel.visit?.sneaking == true { return "Avoid the guest. Take belongings and return to the door before suspicion reaches 100%." }
+            if motel.visit != nil { return "Walk to the bed, trash or spill to clean. Paint cabinet is in the upper right." }
+            return motel.worldState.place == .office ? "Move with the stick or hold an arrow. Desk, tools, paint, bed and logbook are physical objects." : "Explore the grounds. Guests wait outside the office. Room entrances lead inside."
+        }
+    }
+
+    private func performAction() {
+        guard !paused else { return }
+        stop()
+        switch motel.nearbyAction {
+        case .office, .exit: change { _ = $0.useEntrance() }
+        case .room(let id):
+            if motel.rooms.first(where: { $0.id == id })?.guest != nil { confirmSneak = id; showSneak = true }
+            else { change { _ = $0.useEntrance() } }
+        case .guest(let id): selectedRoom = motel.rooms.first(where: \.available)?.id; panel = .guest(id)
+        case .construction: panel = .construction
+        case .desk: panel = .desk
+        case .save: saveHere()
+        case .rest: confirmRest = true
+        case .tools: change { _ = $0.collectTools() }
+        case .paint(let roomID): panel = .paint(roomID)
+        case .furniture: change { _ = $0.furnishNearby() }
+        case .loot: change { _ = $0.steal() }
+        case .none, .clean: break
+        }
+    }
+    @ViewBuilder private func interactionPanel(_ selected: MotelPanel) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(panelTitle(selected)).font(.headline)
+                Spacer()
+                Button { panel = nil } label: { Image(systemName: "xmark.circle.fill").font(.title2) }.accessibilityLabel("Close interaction")
+            }
+            switch selected {
+            case .guest(let id):
+                if let guest = motel.waiting.first(where: { $0.id == id }) {
+                    HStack {
+                        PaperPortrait(color: guest.color, variant: guest.id % 8).frame(width: 43, height: 55)
+                        Text("\(guest.nights) night\(guest.nights == 1 ? "" : "s"). \(guest.story)").font(.caption)
+                    }
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(motel.rooms.filter(\.available)) { room in
+                                Button { selectedRoom = room.id } label: {
+                                    VStack(spacing: 4) {
+                                        RoomIllustration(theme: room.theme, level: room.furniture, office: false).frame(width: 70, height: 48)
+                                        Text("\(room.number) / \(motel.rate(for: room) * guest.nights) coins").font(.system(size: 10, weight: .bold))
+                                    }.padding(7).background(selectedRoom == room.id ? gold.opacity(0.3) : .white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                                }.accessibilityIdentifier("chooseRoom\(room.id)")
+                            }
+                        }
+                    }
+                    Button("Collect payment and hand over key") {
+                        if let roomID = selectedRoom { change { _ = $0.chargeGuest(id, roomID: roomID) } }
+                        panel = nil
+                    }.buttonStyle(MotelButtonStyle()).disabled(selectedRoom == nil).accessibilityIdentifier("chargeGuest")
+                    if selectedRoom == nil { Text("No clean, empty rooms. Clean a room or build another.").font(.caption) }
+                }
+            case .paint(let roomID):
+                let current = roomID.flatMap { id in motel.rooms.first { $0.id == id }?.theme } ?? motel.officeTheme
+                HStack {
+                    ForEach(0..<4) { theme in
+                        Button { change { _ = $0.paintNearby(theme) }; panel = nil } label: {
+                            VStack(spacing: 4) {
+                                Circle().fill(Color(hex: Motel.themeColors[theme])).frame(width: 34, height: 34)
+                                    .overlay(Circle().stroke(current == theme ? gold : .clear, lineWidth: 3))
+                                Text(Motel.themeNames[theme]).font(.caption2)
+                            }.frame(maxWidth: .infinity)
+                        }.disabled(motel.cash < 25 || current == theme).accessibilityIdentifier("paint\(theme)")
+                    }
+                }
+                Text("25 coins per color change.").font(.caption).foregroundStyle(gold)
+            case .desk:
+                HStack {
+                    Button("Save checkpoint", action: saveHere).buttonStyle(MotelButtonStyle()).accessibilityIdentifier("saveCheckpoint")
+                    Button("Upgrade / \((motel.officeLevel + 1) * 120)") {
+                        change { _ = $0.furnishNearby() }; panel = nil
+                    }.buttonStyle(MotelButtonStyle(subdued: true)).disabled(motel.officeLevel >= 2 || motel.cash < (motel.officeLevel + 1) * 120)
+                }
+                Text("Office upgrades improve every room's nightly rate by 15 coins.").font(.caption)
+            case .construction:
+                HStack {
+                    RoomIllustration(theme: 0, level: 0, office: false).frame(width: 88, height: 70).clipShape(RoundedRectangle(cornerRadius: 8))
+                    Text("Room \(101 + motel.rooms.count)\n\(motel.expansionCost) coins\n\(motel.rooms.count)/9 rooms built").font(.subheadline.bold())
+                }
+                Button("Build this room") {
+                    change { _ = $0.buildNearby() }; panel = nil
+                }.buttonStyle(MotelButtonStyle()).disabled(motel.cash < motel.expansionCost || motel.goalReached).accessibilityIdentifier("buildRoom")
+            }
+        }
+    }
+    private func panelTitle(_ value: MotelPanel) -> String {
+        switch value {
+        case .guest(let id): return motel.waiting.first { $0.id == id }?.name ?? "Guest"
+        case .paint(let id): return id.map { "Room \(101 + $0) paint" } ?? "Office paint"
+        case .desk: return "Front desk"
+        case .construction: return "Motel expansion"
+        }
+    }
+    private var pauseSheet: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("On a break").font(.title.bold())
+            Text("Move around the motel to do your work. Visit the desk or logbook to save, the tools closet for a mop, and your bed for the next day. Clean all three messes inside a vacated room before renting it again.").font(.body)
+            Text("Getting caught while stealing means loading your latest checkpoint. Changes since that save will be lost.").font(.subheadline).foregroundStyle(.secondary)
+            Button("Back to the motel") { showPause = false }.buttonStyle(MotelButtonStyle())
+            Button("Load last save") { showPause = false; confirmRestore = true }.buttonStyle(MotelButtonStyle(subdued: true))
+        }.padding(24).foregroundStyle(cream).presentationBackground(Color(hex: 0x172A25))
     }
     private var gameOver: some View {
         VStack(spacing: 24) {
@@ -323,15 +395,22 @@ struct MotelView: View {
             Image(systemName: "eye.fill").font(.system(size: 60)).foregroundStyle(Color(hex: 0xDE927D))
             Text("CAUGHT").font(.system(size: 46, weight: .black, design: .rounded)).tracking(5)
             Text("The guest saw you.").font(.title2.bold())
-            Text("Your motel story ends here.\nRestore your last checkpoint to try again. Anything earned or changed after that save will be lost.").multilineTextAlignment(.center).foregroundStyle(.secondary)
-            Button("Load last save") { held = nil; game = Game.load(); notice = "Your last checkpoint has been restored." }
+            Text("Load your last checkpoint to try again. Everything after that save is lost.").multilineTextAlignment(.center).foregroundStyle(.secondary)
+            Button("Load last save") { stop(); panel = nil; game = Game.load(); toast = "Checkpoint restored." }
                 .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("restoreCheckpoint")
             Spacer()
         }.padding(30).frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(hex: 0x2C292A))
     }
+    private func saveHere() {
+        guard motel.atSavePoint else { return }
+        stop(); game.save(); panel = nil; toast = "Checkpoint saved at the office."
+    }
+    private func stop() { movement = nil; working = false; workProgress = 0 }
     private func change(_ action: (inout Motel) -> Void) {
         guard var current = game.motel else { return }
+        let before = current.lastEvent
         action(&current)
         game.motel = current
+        if current.lastEvent != before { toast = current.lastEvent }
     }
 }
