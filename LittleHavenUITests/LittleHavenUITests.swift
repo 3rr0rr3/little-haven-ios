@@ -27,7 +27,7 @@ final class LittleHavenUITests: XCTestCase {
 
     func testReceptionDecisionsDoorAndSave() {
         let app = launch("--ui-world")
-        XCTAssertTrue(app.buttons["office_door"].waitForExistence(timeout:10))
+        XCTAssertTrue(app.buttons["office_door"].waitForExistence(timeout:10), app.debugDescription)
         XCTAssertFalse(app.buttons["Walk north"].exists, "Reception clerk has no walking controls")
         XCTAssertTrue(app.buttons["chargeGuest"].waitForExistence(timeout:15), "Client walks in and starts a conversation")
         app.buttons["chooseRoom0"].tap()
@@ -48,13 +48,13 @@ final class LittleHavenUITests: XCTestCase {
         app.terminate()
         app.launchArguments = ["--ui-testing"]
         app.launch()
-        XCTAssertTrue(app.buttons["office_door"].waitForExistence(timeout:10))
+        XCTAssertTrue(app.buttons["office_door"].waitForExistence(timeout:10), app.debugDescription)
         XCTAssertTrue(cash(app).contains("260"))
         capture(app,"Reception decisions and saved desk checkpoint")
     }
     func testFamilyAndCatsAreTappable() {
         let app = launch("--ui-office-family")
-        XCTAssertTrue(app.buttons["office_chichu"].waitForExistence(timeout:10))
+        XCTAssertTrue(app.buttons["office_chichu"].waitForExistence(timeout:10), app.debugDescription)
         app.buttons["office_chichu"].tap()
         XCTAssertTrue(app.alerts["Chichu"].waitForExistence(timeout:3))
         app.alerts.buttons["Pet"].tap()

@@ -41,6 +41,7 @@ jobs:
           xcrun simctl bootstatus "$DEVICE" -b
           xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO test
       - name: Capture chapter previews
+        if: ${{ !cancelled() && env.SIM_DEVICE != '' }}
         run: |
           set -euo pipefail
           DEVICE="$SIM_DEVICE"
@@ -98,6 +99,13 @@ jobs:
           gh api "repos/$GH_REPO/contents/sideStore.json" > live-source-response.json
           python3 scripts/update_source.py "$TAG"
           gh api --method PUT "repos/$GH_REPO/contents/sideStore.json" --input source-update.json
+      - name: Preserve gameplay previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gameplay-previews
+          path: LittleHaven-*.png
+          if-no-files-found: ignore
       - name: Preserve simulator test results
         if: always()
         uses: actions/upload-artifact@v4

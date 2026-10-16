@@ -31,13 +31,14 @@ struct OfficeReceptionView: View {
                 target(.bed,"Sleep until morning",Tile(x:1,y:2),scale,origin)
                 target(.save,"Save checkpoint",Tile(x:5,y:4),scale,origin)
                 if let visitor { target(.guest,"Talk to \(visitor.guest.name)",visitor.tile,scale,origin) }
-            }
-        }.accessibilityIdentifier("officeScene")
+            }.frame(width: proxy.size.width, height: proxy.size.height)
+        }.accessibilityElement(children: .contain).accessibilityIdentifier("officeScene")
     }
     private func target(_ item:OfficeTap,_ label:String,_ tile:Tile,_ scale:CGFloat,_ origin:CGPoint) -> some View {
-        Button { tap(item) } label: { Color.clear.contentShape(Rectangle()) }
-            .buttonStyle(.plain).frame(width:max(38,24*scale),height:max(38,(item == .door ? 36 : 26)*scale))
+        Button { tap(item) } label: { Color.white.opacity(0.001).contentShape(Rectangle()) }
+            .buttonStyle(.plain).frame(width:max(item == .hildarelys ? 52 : 44,24*scale),height:max(44,(item == .door ? 36 : 26)*scale))
             .position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+(item == .door ? 224 : CGFloat(tile.y*16+5))*scale)
+            .accessibilityElement(children: .ignore).accessibilityAddTraits(.isButton)
             .accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
     }
 }
