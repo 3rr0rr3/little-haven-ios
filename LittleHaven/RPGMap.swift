@@ -53,16 +53,16 @@ enum RPGMaps {
         walkable: RPGRegion(x: 1,y: 2,width: 7,height: 6),
         obstacles: [RPGRegion(x: 1,y: 2,width: 2,height: 2),RPGRegion(x: 6,y: 2,width: 1,height: 1)],
         passages: [Tile(x: 4,y: 8)], events: [RPGMapEvent(id: "exit",tile: Tile(x: 4,y: 8),trigger: .playerTouch,destination: "town",arrival: Tile(x: 15,y: 7))])
-    static let office = RPGMapDefinition(id: "office", width: 9,height: 9,
-        walkable: RPGRegion(x: 1,y: 2,width: 7,height: 6),
-        obstacles: [RPGRegion(x: 2,y: 2,width: 2,height: 1),RPGRegion(x: 1,y: 5,width: 1,height: 1),RPGRegion(x: 7,y: 5,width: 1,height: 1),RPGRegion(x: 6,y: 2,width: 1,height: 1),RPGRegion(x: 3,y: 4,width: 3,height: 1)],
-        passages: [Tile(x: 4,y: 8)], events: [
-            RPGMapEvent(id: "exit",tile: Tile(x: 4,y: 8),trigger: .playerTouch,destination: "grounds",arrival: Tile(x: 6,y: 10)),
-            RPGMapEvent(id: "desk",tile: Tile(x: 4,y: 4),trigger: .action),
-            RPGMapEvent(id: "tools",tile: Tile(x: 1,y: 5),trigger: .action),
-            RPGMapEvent(id: "paint",tile: Tile(x: 7,y: 5),trigger: .action),
-            RPGMapEvent(id: "save",tile: Tile(x: 6,y: 2),trigger: .action),
-            RPGMapEvent(id: "rest",tile: Tile(x: 2,y: 2),trigger: .action)])
+    static let office = RPGMapDefinition(id: "office", width: 15,height: 15,
+        walkable: RPGRegion(x: 1,y: 2,width: 13,height: 12),
+        obstacles: [RPGRegion(x: 2,y: 4,width: 5,height: 2),RPGRegion(x: 9,y: 10,width: 5,height: 2),RPGRegion(x: 10,y: 5,width: 3,height: 2)],
+        passages: [Tile(x: 7,y: 14)], events: [
+            RPGMapEvent(id: "exit",tile: Tile(x: 7,y: 13),trigger: .action,destination: "grounds",arrival: Tile(x: 6,y: 10)),
+            RPGMapEvent(id: "desk",tile: Tile(x: 4,y: 3),trigger: .action),
+            RPGMapEvent(id: "tools",tile: Tile(x: 1,y: 7),trigger: .action),
+            RPGMapEvent(id: "paint",tile: Tile(x: 1,y: 9),trigger: .action),
+            RPGMapEvent(id: "save",tile: Tile(x: 5,y: 4),trigger: .action),
+            RPGMapEvent(id: "rest",tile: Tile(x: 1,y: 2),trigger: .action)])
     static let room = RPGMapDefinition(id: "room",width: 9,height: 9,
         walkable: RPGRegion(x: 1,y: 2,width: 7,height: 6),
         obstacles: [RPGRegion(x: 2,y: 2,width: 2,height: 1),RPGRegion(x: 7,y: 2,width: 1,height: 1),RPGRegion(x: 2,y: 3,width: 1,height: 1),RPGRegion(x: 6,y: 6,width: 1,height: 1),RPGRegion(x: 2,y: 6,width: 1,height: 1)],

@@ -13,6 +13,8 @@ struct RPGActor {
     var marker = ""
     var duration = 0.14
     var danger = false
+    var animal = 0
+    var displayScale = 1.0
 }
 
 struct RPGSceneView: UIViewRepresentable {
@@ -52,8 +54,8 @@ private struct ActorArtwork: View {
     let stride: Double
     var body: some View {
         Canvas { context, _ in
-            PaperPerson.draw(context: &context, x: 4, y: 9, color: actor.color,
-                             variant: actor.variant, facing: actor.facing, walk: stride)
+            if actor.animal > 0 { CatArt.draw(context: &context, gray: actor.animal == 1, walk: stride) }
+            else { PaperPerson.draw(context: &context, x: 4, y: 9, color: actor.color, variant: actor.variant, facing: actor.facing, walk: stride) }
         }.frame(width: 24, height: 28)
     }
 }
@@ -118,7 +120,7 @@ final class RPGScene: SKScene {
             let moving = existing != nil && node.userData?["targetX"] as? Int != actor.tile.x || existing != nil && node.userData?["targetY"] as? Int != actor.tile.y
             if existing == nil {
                 node.name = name
-                node.size = CGSize(width: 24, height: 28)
+                node.size = CGSize(width: 24 * actor.displayScale, height: 28 * actor.displayScale)
                 node.position = target
                 node.userData = NSMutableDictionary()
                 world.addChild(node)
@@ -177,7 +179,7 @@ final class RPGScene: SKScene {
         layoutCamera(jump: changedMap)
     }
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
-        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)"
+        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
         renderer.scale = 3
@@ -187,7 +189,7 @@ final class RPGScene: SKScene {
     }
     private func layoutCamera(jump: Bool) {
         guard let view, view.bounds.width > 0, dimensions.width > 0 else { return }
-        let zoom = indoors ? max(144 / view.bounds.width, 144 / view.bounds.height) : 16 * visibleColumns / view.bounds.width
+        let zoom = indoors ? max(dimensions.width / view.bounds.width, dimensions.height / view.bounds.height) : 16 * visibleColumns / view.bounds.width
         followCamera.setScale(zoom)
         let viewport = CGSize(width: view.bounds.width * zoom, height: view.bounds.height * zoom)
         let cx = indoors ? dimensions.width / 2 : max(viewport.width / 2, min(playerTarget.x, dimensions.width - viewport.width / 2))
@@ -227,12 +229,12 @@ struct MotelRPGView: View {
         let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
         var actors = [RPGActor(id: "player", tile: motel.actorTile, color: 0x6AACA3, variant: 7, facing: motel.actorFacing)]
         if !interior {
-            actors += motel.waiting.map { RPGActor(id: "guest-\($0.id)", tile: MotelGrounds.guestTile($0.id), color: $0.color, variant: $0.id % 8, name: $0.name) }
+            actors += motel.waiting.filter { $0.id != motel.reception.visitor?.guest.id }.map { RPGActor(id: "guest-\($0.id)", tile: MotelGrounds.guestTile($0.id), color: $0.color, variant: $0.id % 7, name: $0.name) }
             actors += motel.worldState.travellers.map {
-                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.id % 8, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: 0.35)
+                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.id % 7, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: 0.35)
             }
         } else if let room, let guest = room.guest, let visit, motel.guestPresent(in: room.id) {
-            actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.id % 8, danger: true))
+            actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.id % 7, danger: true))
         }
         return RPGSceneView(mapID: mapID, revision: revision, mapSize: CGSize(width: interior ? 144 : 640, height: interior ? 144 : 608), columns: 14, interior: interior, actors: actors, working: workProgress > 0) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }

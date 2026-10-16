@@ -20,6 +20,15 @@ struct ContentView: View {
     private static func initialGame() -> Game {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
+        if args.contains("--ui-office-preview") || args.contains("--ui-office-family") {
+            var sample = Game()
+            sample.coins = 545
+            sample.wakeUp()
+            sample.motel!.initializeWorld()
+            if args.contains("--ui-office-family") { sample.motel!.waiting = [] }
+            sample.save()
+            return sample
+        }
         if args.contains("--ui-fresh") {
             UserDefaults.standard.removeObject(forKey: "littlehaven.save.v1")
             return Game()

@@ -17,6 +17,7 @@ struct MotelWorldState: Codable {
     var hasCleaningKit = false
     var travellers: [MotelWalker] = []
     var tick = 0
+    var reception: OfficeReception?
 }
 enum MotelAction: Hashable {
     case none, office, room(Int), guest(Int), construction, desk, save, rest, tools
@@ -75,7 +76,7 @@ enum MotelGrounds {
 
 extension Motel {
     var worldState: MotelWorldState { world ?? MotelWorldState() }
-    var actorTile: Tile { visit?.player ?? worldState.player }
+    var actorTile: Tile { visit?.player ?? (isAtReception ? OfficeReception.clerk : worldState.player) }
     var actorFacing: Int { visit?.facing ?? worldState.facing }
     var mapName: String {
         if let visit, let room = rooms.first(where: { $0.id == visit.roomID }) { return "ROOM \(room.number)" }
@@ -102,20 +103,7 @@ extension Motel {
             if player.distance(to: Tile(x: 3, y: 2)) <= 1 { return .furniture(visit.roomID) }
             return .none
         }
-        if worldState.place == .office {
-            for event in RPGMaps.office.events(at: player, trigger: .action) {
-                switch event.id {
-                case "desk": return .desk
-                case "save": return .save
-                case "rest": return .rest
-                case "tools": return .tools
-                case "paint": return .paint(nil)
-                default: break
-                }
-            }
-            if player.distance(to: Tile(x: 4, y: 8)) <= 1 { return .exit }
-            return .none
-        }
+        if isAtReception { return .desk }
         if let guest = waiting.first(where: { player.distance(to: MotelGrounds.guestTile($0.id)) <= 1 }) { return .guest(guest.id) }
         if player.distance(to: MotelGrounds.officeDoor) <= 1 { return .office }
         for room in rooms where player.distance(to: MotelGrounds.roomDoor(room.id)) <= 1 { return .room(room.id) }
@@ -124,11 +112,14 @@ extension Motel {
     }
     mutating func initializeWorld() {
         if world == nil { world = MotelWorldState() }
+        if world!.reception == nil { world!.reception = OfficeReception() }
+        if world!.place == .office && visit == nil { world!.player = OfficeReception.clerk }
     }
     mutating func moveActor(dx: Int, dy: Int) {
         guard !caught, abs(dx) <= 1, abs(dy) <= 1, dx != 0 || dy != 0 else { return }
         initializeWorld()
         if visit != nil { move(dx: dx, dy: dy); return }
+        guard !isAtReception else { return }
         var state = worldState
         state.facing = dy > 0 ? 0 : dx < 0 ? 1 : dx > 0 ? 2 : 3
         let next = Tile(x: state.player.x + dx, y: state.player.y + dy)
@@ -152,7 +143,7 @@ extension Motel {
             }
         }
         if next == MotelGrounds.officeDoor && dy < 0 {
-            state.place = .office; state.player = Tile(x: 4, y: 7)
+            state.place = .office; state.player = OfficeReception.clerk
             world = state; return
         }
         state.player = next
@@ -163,7 +154,7 @@ extension Motel {
         initializeWorld()
         switch nearbyAction {
         case .office:
-            world!.place = .office; world!.player = Tile(x: 4, y: 7); return true
+            world!.place = .office; world!.player = OfficeReception.clerk; return true
         case .room(let id): return enter(id)
         case .exit:
             if visit != nil { leave() }
@@ -173,7 +164,7 @@ extension Motel {
         }
     }
     @discardableResult mutating func chargeGuest(_ guestID: Int, roomID: Int) -> Bool {
-        guard nearbyAction == .guest(guestID) else { return false }
+        guard nearbyAction == .guest(guestID), reception.visitor?.guest.id != guestID else { return false }
         guard let guest = waiting.first(where: { $0.id == guestID }) else { return false }
         guard checkIn(guestID: guestID, roomID: roomID) else { return false }
         initializeWorld()
@@ -201,6 +192,7 @@ extension Motel {
         return true
     }
     @discardableResult mutating func paintNearby(_ theme: Int) -> Bool {
+        if isAtReception { return decorate(roomID: nil, theme: theme) }
         guard case .paint(let roomID) = nearbyAction else { return false }
         if let roomID {
             guard let index = rooms.firstIndex(where: { $0.id == roomID }), rooms[index].guest == nil,
@@ -230,7 +222,7 @@ extension Motel {
         return expand()
     }
     @discardableResult mutating func restAtBed() -> Bool {
-        guard nearbyAction == .rest else { return false }
+        guard isAtReception || nearbyAction == .rest else { return false }
         let departures = rooms.compactMap { room -> MotelWalker? in
             guard let guest = room.guest, room.nightsLeft == 1 else { return nil }
             let start = MotelGrounds.roomDoor(room.id)
@@ -239,12 +231,14 @@ extension Motel {
         guard nextDay() else { return false }
         initializeWorld()
         world!.travellers = departures
-        world!.place = .office; world!.player = Tile(x: 4, y: 6)
+        world!.reception = OfficeReception()
+        world!.place = .office; world!.player = OfficeReception.clerk
         return true
     }
     var atSavePoint: Bool { nearbyAction == .desk || nearbyAction == .save }
     func guestPresent(in roomID: Int) -> Bool {
         guard let guest = rooms.first(where: { $0.id == roomID })?.guest else { return false }
+        if reception.visitor?.guest.id == guest.id { return false }
         return !worldState.travellers.contains { $0.id == guest.id && $0.destination == MotelGrounds.roomDoor(roomID) }
     }
     mutating func tickWorld() {

@@ -52,6 +52,7 @@ struct MotelView: View {
     @State private var showSneak = false
     @State private var confirmRestore = false
     @State private var toast: String?
+    @State private var family: OfficeTap?
     private var motel: Motel { game.motel ?? Motel() }
     private var mapIdentity: String { motel.visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue }
     private var movementDuration: Double { movement.map { $0.x != 0 && $0.y != 0 ? 0.19 : 0.14 } ?? 0.14 }
@@ -64,7 +65,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
@@ -90,6 +91,7 @@ struct MotelView: View {
                 if !paused && !motel.caught {
                     ticks += 1
                     if !motel.worldState.travellers.isEmpty { change { $0.tickWorld() } }
+                    if motel.isAtReception || motel.reception.visitor != nil { change { $0.tickReception() } }
                     if ticks % 3 == 0 && motel.visit?.sneaking == true { change { $0.tick() } }
                 }
             }
@@ -122,6 +124,20 @@ struct MotelView: View {
         .onChange(of: motel.caught) { _, caught in if caught { stop(); panel = nil } }
         .onChange(of: paused) { _, value in if value { stop() } }
         .onChange(of: scenePhase) { _, phase in if phase != .active { stop() } }
+        .onChange(of: receptionPrompt) { _, id in
+            if let id, panel == nil, family == nil { openReceptionGuest(id) }
+        }
+        .alert(familyTitle, isPresented: Binding(get: { family != nil }, set: { if !$0 { family = nil } })) {
+            if family == .chichu || family == .chichi {
+                Button("Pet") { toast = "\(familyTitle) purrs and leans into your hand."; family = nil }
+                Button("Give a treat") { toast = "\(familyTitle) happily eats a little treat."; family = nil }
+            } else if family == .hildarelys {
+                Button("Give her a kiss") { toast = "Hildarelys smiles: We make a good team."; family = nil }
+            } else if family == .samhil {
+                Button("Watch together") { toast = "You watch a funny cartoon with Samhil from the desk."; family = nil }
+            }
+            Button("Back", role: .cancel) { family = nil }
+        } message: { Text(familyMessage) }
         .onDisappear { stop() }
         .sheet(isPresented: $showMap) {
             MotelPocketMap(motel: motel).presentationDetents([.large]).presentationDragIndicator(.visible)
@@ -136,10 +152,10 @@ struct MotelView: View {
         } message: { Text("Keep away from the guest. Taking belongings makes noise. Escape by the door before suspicion reaches 100%, or load your last checkpoint after getting caught.") }
         .confirmationDialog("Sleep until morning and save?", isPresented: $confirmRest, titleVisibility: .visible) {
             Button("Sleep until morning") {
-                if motel.nearbyAction == .rest {
+                if motel.isAtReception || motel.nearbyAction == .rest {
                     change { _ = $0.restAtBed() }
                     game.save()
-                    toast = "Morning checkpoint saved. Go outside for new arrivals."
+                    toast = "Morning checkpoint saved. New clients will come to your desk."
                 }
             }
         } message: { Text("Finished stays check out. Visit their rooms to make beds, collect trash and mop spills. Remaining arrivals leave.") }
@@ -186,7 +202,16 @@ struct MotelView: View {
                     Text("\(room.cleanedTasks?.count ?? 0)/3").font(.caption.monospaced().bold())
                 }
             }
-            Text(hint).font(.system(size: 11, weight: .medium)).foregroundStyle(cream.opacity(0.8)).lineLimit(2).frame(maxWidth: .infinity, minHeight: 29, alignment: .leading)
+            Text(motel.isAtReception ? "Stay at the desk. Tap clients to talk; tap the lower door to walk outside." : hint).font(.system(size: 11, weight: .medium)).foregroundStyle(cream.opacity(0.8)).lineLimit(2).frame(maxWidth: .infinity, minHeight: 29, alignment: .leading)
+            if motel.isAtReception {
+                HStack(spacing: 10) {
+                    Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("TAP PEOPLE & OBJECTS").font(.system(size: 9, weight: .bold, design: .monospaced))
+                        Text(motel.worldState.hasCleaningKit ? "Cleaning kit ready" : "Tools are in the left closet").font(.caption2).foregroundStyle(cream.opacity(0.7))
+                    }
+                }.frame(height: 65)
+            } else {
             HStack(spacing: 16) {
                 MotelJoystick(direction: { direction in
                     if !paused && !motel.caught { movement = direction }
@@ -201,6 +226,7 @@ struct MotelView: View {
                         .font(.system(size: 8, weight: .bold, design: .monospaced)).foregroundStyle(cream.opacity(0.6))
                 }.frame(width: 160)
             }.frame(height: 140).padding(.horizontal, 8)
+            }
         }.padding(.horizontal, 16).padding(.vertical, 10)
     }
 
@@ -213,12 +239,8 @@ struct MotelView: View {
                 .accessibilityLabel("\(motel.mapName). Column \(tile.x), row \(tile.y).")
                 .accessibilityValue("\(room.dirty ? "Cleaning \(room.cleanedTasks?.count ?? 0)/3" : "Ready for guests"). Theme \(room.theme). Furnishings \(room.furniture).")
                 .accessibilityIdentifier("motelWorld")
-        } else if motel.worldState.place == .office {
-            MotelRPGView(motel: motel)
-                .animation(.linear(duration: movementDuration), value: tile).id(mapIdentity)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("YOUR OFFICE. Column \(tile.x), row \(tile.y).")
-                .accessibilityIdentifier("motelWorld")
+        } else if motel.isAtReception {
+            OfficeReceptionView(motel: motel, tap: officeTap).id(mapIdentity)
         } else {
             MotelRPGView(motel: motel)
                 .animation(.linear(duration: movementDuration), value: tile)
@@ -301,7 +323,7 @@ struct MotelView: View {
         case .room(let id):
             if motel.rooms.first(where: { $0.id == id })?.guest != nil { confirmSneak = id; showSneak = true }
             else { change { _ = $0.useEntrance() } }
-        case .guest(let id): selectedRoom = motel.rooms.first(where: \.available)?.id; panel = .guest(id)
+        case .guest: toast = "Clients check in at reception. Tap the office door to return to your desk."
         case .construction: panel = .construction
         case .desk: panel = .desk
         case .save: saveHere()
@@ -324,8 +346,8 @@ struct MotelView: View {
             case .guest(let id):
                 if let guest = motel.waiting.first(where: { $0.id == id }) {
                     HStack {
-                        PaperPortrait(color: guest.color, variant: guest.id % 8).frame(width: 43, height: 55)
-                        Text("\(guest.nights) night\(guest.nights == 1 ? "" : "s"). \(guest.story)").font(.caption)
+                        PaperPortrait(color: guest.color, variant: guest.id % 7).frame(width: 43, height: 55)
+                        Text("Hello! My name is \(guest.name). \(guest.story) Could I stay for \(guest.nights) night\(guest.nights == 1 ? "" : "s")?").font(.caption)
                     }
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
@@ -339,11 +361,14 @@ struct MotelView: View {
                             }
                         }
                     }
-                    Button("Collect payment and hand over key") {
-                        if let roomID = selectedRoom { change { _ = $0.chargeGuest(id, roomID: roomID) } }
+                    Button("Accept guest & collect payment") {
+                        if let roomID = selectedRoom { change { _ = $0.acceptReceptionGuest(roomID: roomID) } }
                         panel = nil
                     }.buttonStyle(MotelButtonStyle()).disabled(selectedRoom == nil).accessibilityIdentifier("chargeGuest")
-                    if selectedRoom == nil { Text("No clean, empty rooms. Clean a room or build another.").font(.caption) }
+                    Button("Decline politely") {
+                        change { _ = $0.declineReceptionGuest() }; panel = nil
+                    }.buttonStyle(MotelButtonStyle(subdued: true)).accessibilityIdentifier("declineGuest")
+                    if selectedRoom == nil { Text("No clean, empty rooms. You can decline or return after preparing a room.").font(.caption) }
                 }
             case .paint(let roomID):
                 let current = roomID.flatMap { id in motel.rooms.first { $0.id == id }?.theme } ?? motel.officeTheme
@@ -406,6 +431,45 @@ struct MotelView: View {
                 .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("restoreCheckpoint")
             Spacer()
         }.padding(30).frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(hex: 0x2C292A))
+    }
+    private var receptionPrompt: Int? { motel.isAtReception ? motel.receptionGuest?.id : nil }
+    private func openReceptionGuest(_ id: Int) {
+        guard motel.isAtReception, motel.receptionGuest?.id == id else { return }
+        stop(); selectedRoom = motel.rooms.first(where: \.available)?.id; panel = .guest(id)
+    }
+    private func officeTap(_ item: OfficeTap) {
+        guard !paused, motel.isAtReception else { return }
+        stop()
+        switch item {
+        case .door: change { _ = $0.leaveReception() }
+        case .player: panel = .desk
+        case .save: saveHere()
+        case .tools: change { _ = $0.receptionTools() }
+        case .paint: panel = .paint(nil)
+        case .bed: confirmRest = true
+        case .guest:
+            if let guest = motel.receptionGuest { openReceptionGuest(guest.id) }
+            else { toast = "The client is walking to the desk." }
+        case .chichu, .chichi, .samhil, .hildarelys: family = item
+        }
+    }
+    private var familyTitle: String {
+        switch family {
+        case .chichu: return "Chichu"
+        case .chichi: return "Chichi"
+        case .samhil: return "Samhil"
+        case .hildarelys: return "Hildarelys"
+        default: return "Family"
+        }
+    }
+    private var familyMessage: String {
+        switch family {
+        case .chichu: return "Your gray tabby looks up with green eyes and gives a soft meow."
+        case .chichi: return "Chichi flicks her calico tail and waits for some attention."
+        case .samhil: return "This cartoon is so funny! Can we watch another episode when you finish helping the guests?"
+        case .hildarelys: return "I love our little office. I will keep Samhil and the cats company while you welcome the guests."
+        default: return ""
+        }
     }
     private func saveHere() {
         guard motel.atSavePoint else { return }

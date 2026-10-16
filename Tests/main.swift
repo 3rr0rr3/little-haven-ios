@@ -204,8 +204,8 @@ func worldRules() {
     walk.initializeWorld()
     require(walk.worldState.place == .office, "Start the shift inside the office")
     require(!walk.chargeGuest(10, roomID: 0), "Cannot charge customers remotely")
-    require(!walk.collectTools(), "Cannot collect cleaning tools remotely")
-    walk.moveActor(dx: 0, dy: 1)
+    require(walk.receptionTools(), "Tap the office closet to collect tools from the desk")
+    _ = walk.leaveReception()
     require(walk.worldState.place == .grounds && walk.actorTile == Tile(x: 6, y: 10), "Office door leads onto the actual grounds")
     walk.moveActor(dx: -1, dy: 0)
     walk.moveActor(dx: 0, dy: 1)
@@ -226,9 +226,9 @@ func worldRules() {
     require(walk.worldState.place == .office, "Diagonal movement can reach an unobstructed doorway")
     walk.world!.player = Tile(x: 4, y: 5)
     walk.moveActor(dx: 0, dy: -1)
-    require(walk.actorTile == Tile(x: 4, y: 5) && walk.atSavePoint, "Office desk has collision and a nearby save point")
+    require(walk.actorTile == OfficeReception.clerk && walk.atSavePoint, "Clerk stays behind desk with a save point")
     walk.world!.player = Tile(x: 2, y: 5)
-    require(walk.collectTools() && walk.worldState.hasCleaningKit, "Cleaning kit is collected at the actual closet")
+    require(walk.receptionTools() && walk.worldState.hasCleaningKit, "Cleaning kit is collected at the actual closet")
 
     var service = Motel()
     service.initializeWorld()
@@ -279,7 +279,7 @@ func worldRules() {
     var morning = Motel()
     morning.initializeWorld()
     _ = morning.checkIn(guestID: 10, roomID: 0)
-    require(!morning.restAtBed(), "Next day requires walking to the bed")
+    require(morning.isAtReception, "Sleep is available by tapping the office bed")
     morning.world!.player = Tile(x: 2, y: 3)
     require(morning.restAtBed() && morning.day == 2 && morning.rooms[0].dirty, "Sleeping advances stays and creates physical room work")
     require(morning.worldState.travellers.count == 1, "Checked-out guests walk toward the exit")
@@ -320,8 +320,43 @@ print("PASS: directional room entrances")
 // Shared engine maps preserve collision, portals and event triggers.
 require(RPGMaps.grounds.blocked(Tile(x: 3,y: 18)), "Engine map blocks pool water")
 require(!RPGMaps.grounds.canStep(from: Tile(x: 3,y: 17),dx: -1,dy: 1), "Engine prevents diagonal corner cutting")
-require(RPGMaps.office.events(at: Tile(x: 2,y: 5),trigger: .action).first?.id == "tools", "Engine dispatches adjacent object events")
-require(RPGMaps.office.events(at: Tile(x: 4,y: 8),trigger: .playerTouch).first?.destination == "grounds", "Engine defines linked map transfer")
+require(RPGMaps.office.events(at: Tile(x: 1,y: 7),trigger: .action).contains { $0.id == "tools" }, "Engine dispatches adjacent object events")
+require(RPGMaps.office.events(at: Tile(x: 7,y: 13),trigger: .action).first?.destination == "grounds", "Engine defines linked map transfer")
 let mapRoundTrip = try! JSONDecoder().decode(RPGMapDefinition.self, from: JSONEncoder().encode(RPGMaps.grounds))
 require(mapRoundTrip.events.count == 11 && mapRoundTrip.blocked(Tile(x: 14,y: 4)), "Map database serializes events and collision")
 print("PASS: RPG map collision, events, transfers and map serialization")
+
+func receptionRules() {
+    var motel = Motel()
+    motel.initializeWorld()
+    for direction in [Tile(x:0,y:1),Tile(x:1,y:0),Tile(x:-1,y:0)] { motel.moveActor(dx:direction.x,dy:direction.y) }
+    require(motel.actorTile == OfficeReception.clerk && motel.isAtReception, "Office movement cannot move the desk clerk")
+    require(!motel.acceptReceptionGuest(roomID:0) && !motel.declineReceptionGuest(), "Clients cannot be decided before arriving")
+    let familyStart = motel.reception.hildarelys
+    for _ in 0..<12 { motel.tickReception() }
+    require(motel.receptionGuest?.id == 10 && motel.reception.visitor?.tile == Tile(x:4,y:6), "Client walks from door to front of desk")
+    require(motel.acceptReceptionGuest(roomID:0) && motel.cash == 260, "Accepting charges the correct room price once")
+    require(!motel.acceptReceptionGuest(roomID:1) && motel.cash == 260, "Double acceptance cannot charge twice")
+    require(!motel.guestPresent(in:0), "Accepted visitor is not teleported into room while leaving reception")
+    for _ in 0..<11 { motel.tickReception() }
+    require(motel.worldState.travellers.contains { $0.id == 10 && $0.destination == MotelGrounds.roomDoor(0) }, "Accepted client leaves office and walks to assigned room")
+    for _ in 0..<12 { motel.tickReception() }
+    require(motel.receptionGuest?.id == 11, "Next client arrives after first leaves")
+    let before = motel.cash
+    require(motel.declineReceptionGuest() && motel.cash == before && !motel.waiting.contains { $0.id == 11 }, "Declining removes client without payment or occupancy")
+    for _ in 0..<11 { motel.tickReception() }
+    require(motel.worldState.travellers.contains { $0.id == 11 && $0.destination == MotelGrounds.gate }, "Declined client walks toward road")
+    for _ in 0..<4 { motel.tickReception() }
+    require(motel.reception.hildarelys != familyStart, "Hildarelys walks around the office")
+    require(motel.leaveReception() && motel.actorTile == Tile(x:6,y:10), "Tapping office door resumes free movement outside")
+    let position = motel.actorTile
+    motel.moveActor(dx:1,dy:0)
+    require(motel.actorTile != position, "Grounds retain free walking")
+    require(!motel.receptionTools() && !motel.declineReceptionGuest(), "Office actions cannot run remotely")
+    let data = try! JSONEncoder().encode(motel)
+    var saved = try! JSONDecoder().decode(Motel.self,from:data)
+    saved.initializeWorld()
+    require(saved.cash == motel.cash && saved.reception.visitor?.guest.id == motel.reception.visitor?.guest.id, "Reception queue persists in save data")
+    print("PASS: static clerk, guest arrival, acceptance, decline, no double charge, departures, family movement, door exit and reception persistence")
+}
+receptionRules()

@@ -1,4 +1,4 @@
-# Little Haven - Walkable Motel
+# Little Haven - Family Reception
 
 An original iPhone RPG with cut-paper cartoon characters, a town dream, and a motel you run by walking around its grounds and interiors.
 
@@ -50,7 +50,7 @@ Open LittleHaven.xcodeproj in Xcode and choose an iPhone simulator. For a signed
 Run game-rule tests on macOS:
 
 ~~~sh
-swiftc LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
+swiftc LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
 /tmp/little-haven-tests
 ~~~
 
@@ -65,3 +65,10 @@ Version 3.2 restores the original cut-paper characters and scenery from 3.0. The
 RPGMap.swift defines serializable map boundaries, collision regions, passages, object events and map transfer metadata. These definitions drive game collision and office event dispatch. RPGScene.swift presents the maps and actors. Existing Codable game models remain authoritative for payments, cleaning, stealth and checkpoints, preserving save compatibility.
 
 This is a custom iPhone-native RPG foundation using Apple's SpriteKit. It is not RPG Maker, Pok�mon Essentials, or compatible with their project files. No proprietary RPG Maker runtime is included.
+## Family reception (4.0)
+
+The expanded 15-by-15 office is operated from a fixed position behind the desk. Clients walk through the entrance one at a time, introduce themselves and request a stay. Choose a clean room to accept and collect payment, or politely decline. Visitors walk back through the door and continue to their assigned room or the road. Tap the lower office door to resume free walking on the grounds. Returning to the office puts you behind the desk again.
+
+Tap the gray tabby Chichu or calico Chichi to pet them or offer a treat. Samhil sits on the couch watching TV, and Hildarelys walks around the office. Tap either to chat. The owner has dark spiky hair, rectangular glasses, a beard and a light collared shirt; Hildarelys has long dark hair, red lipstick and a black-and-white outfit. Artwork is an original cut-paper cartoon interpretation of the provided references. Original photos are not bundled or published.
+
+Tap the desk or logbook to save, the closet to collect cleaning tools, the paint shelf to redecorate, and the bed to end the day. Existing saves retain motel cash, rooms, upgrades and quests. Older office positions migrate to the desk. Reception visitors and their decisions are included in checkpoints.
