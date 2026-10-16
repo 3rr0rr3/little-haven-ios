@@ -155,7 +155,7 @@ final class RPGScene: SKScene {
                     mop.strokeColor = .clear
                     mop.position = CGPoint(x: 8, y: -6)
                     let head = SKShapeNode(ellipseOf: CGSize(width: 8, height: 3))
-                    head.fillColor = .mint
+                    head.fillColor = .systemMint
                     head.strokeColor = .clear
                     head.position.y = -7
                     mop.addChild(head)
