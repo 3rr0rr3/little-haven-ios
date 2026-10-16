@@ -1,0 +1,61 @@
+name: Test and build iPhone IPA
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test game rules and map reachability
+        run: |
+          set -euo pipefail
+          swiftc LittleHaven/Game.swift Tests/main.swift -o /tmp/little-haven-tests
+          /tmp/little-haven-tests
+      - name: Build iPhone app
+        run: |
+          set -euo pipefail
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath device-build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Simulator launch and screenshot
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -sdk iphonesimulator -destination "id=$DEVICE" -derivedDataPath sim-build CODE_SIGNING_ALLOWED=NO build
+          xcrun simctl status_bar "$DEVICE" override --time '9:41' --dataNetwork wifi --wifiMode active --wifiBars 3 --batteryState charged --batteryLevel 100
+          xcrun simctl install "$DEVICE" sim-build/Build/Products/Debug-iphonesimulator/LittleHaven.app
+          xcrun simctl launch "$DEVICE" com.littlehaven.town
+          sleep 3
+          xcrun simctl io "$DEVICE" screenshot LittleHaven-preview.png
+      - name: Verify and package IPA
+        run: |
+          set -euo pipefail
+          APP=device-build/Build/Products/Release-iphoneos/LittleHaven.app
+          test -x "$APP/LittleHaven"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleSupportedPlatforms:0' "$APP/Info.plist")" = "iPhoneOS"
+          xcrun lipo "$APP/LittleHaven" -verify_arch arm64
+          xcrun vtool -show-build "$APP/LittleHaven" | tee platform.txt
+          grep -Eq 'platform[[:space:]]+IOS$' platform.txt
+          mkdir -p package/Payload
+          ditto "$APP" package/Payload/LittleHaven.app
+          cd package
+          zip -qry ../LittleHaven-unsigned.ipa Payload
+          cd ..
+          unzip -t LittleHaven-unsigned.ipa
+          shasum -a 256 LittleHaven-unsigned.ipa > LittleHaven-unsigned.ipa.sha256
+      - name: Publish IPA and preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TAG="sideload-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          printf '%s\n' 'Little Haven: an original town RPG for iPhone, iOS 17+.' 'Ask neighbors for coins, buy your cottage, and explore your new home.' 'Unsigned arm64 iPhoneOS build. Sign with your Apple account or certificate through a compatible sideloader before installing. Physical-device installation has not been verified.' 'Includes game logic checks and an iPhone simulator launch preview.' > release-notes.txt
+          gh release create "$TAG" LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png --target "$GITHUB_SHA" --title "Little Haven — iPhone build ${GITHUB_RUN_NUMBER}" --prerelease --notes-file release-notes.txt
