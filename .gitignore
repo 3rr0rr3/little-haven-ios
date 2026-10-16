@@ -1,0 +1,10 @@
+.DS_Store
+build/
+device-build/
+sim-build/
+package/
+dist/
+*.ipa
+*.xcuserstate
+xcuserdata/
+.build/
