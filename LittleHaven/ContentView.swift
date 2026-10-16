@@ -232,6 +232,6 @@ private struct HoldDirection: View {
             .accessibilityLabel(label)
             .accessibilityHint("Hold to keep walking; activate to take one step.")
             .accessibilityAddTraits(.isButton)
-            .accessibilityAction(singleStep)
+            .accessibilityAction { singleStep() }
     }
 }
