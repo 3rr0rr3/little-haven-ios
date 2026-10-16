@@ -16,15 +16,25 @@
       "tintColor": "4C8C85",
       "category": "games",
       "screenshotURLs": [
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-family.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-office.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-motel.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-cleaning.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-stealth.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-wake.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-preview.png"
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-16-1/LittleHaven-dialogue.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-16-1/LittleHaven-chaos.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-16-1/LittleHaven-office.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-16-1/LittleHaven-motel.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-16-1/LittleHaven-cleaning.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-16-1/LittleHaven-stealth.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-16-1/LittleHaven-wake.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-16-1/LittleHaven-preview.png"
       ],
       "versions": [
+        {
+          "version": "5.0",
+          "buildVersion": "9",
+          "date": "2026-10-16",
+          "localizedDescription": "Motel mayhem: good and bad guest reviews, hired housekeepers, groundskeepers and security, room upgrades, courtyard fires, pool rescues and outdoor fights. Character conversations now use illustrated dialogue boxes inside the game.",
+          "downloadURL": "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-16-1/LittleHaven-unsigned.ipa",
+          "size": 616356,
+          "minOSVersion": "17.0"
+        },
         {
           "version": "4.0",
           "buildVersion": "8",
