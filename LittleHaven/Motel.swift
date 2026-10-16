@@ -56,6 +56,7 @@ struct Motel: Codable {
     var guestsServed = 0
     var totalStolen = 0
     var world: MotelWorldState?
+    var operations: MotelOperations?
     var expansionCost: Int { 250 + (rooms.count - 3) * 150 }
     var occupancy: Int { rooms.filter { $0.guest != nil }.count }
     var goalReached: Bool { rooms.count >= Self.goal }
@@ -83,6 +84,7 @@ struct Motel: Codable {
         rooms[roomIndex].stolen = []
         cash += payment
         guestsServed += 1
+        prepareChaosClock()
         lastEvent = "\(guest.name) checked into room \(rooms[roomIndex].number). +\(payment) coins."
         return true
     }
@@ -138,10 +140,12 @@ struct Motel: Codable {
     @discardableResult mutating func nextDay() -> Bool {
         guard canSave else { return false }
         day += 1
+        payStaffForDay()
         var departures = 0
         for index in rooms.indices where rooms[index].guest != nil {
             rooms[index].nightsLeft -= 1
             if rooms[index].nightsLeft == 0 {
+                recordCheckoutReview(rooms[index])
                 rooms[index].guest = nil
                 rooms[index].dirty = true
                 rooms[index].cleanedTasks = []

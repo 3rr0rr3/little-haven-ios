@@ -50,7 +50,7 @@ Open LittleHaven.xcodeproj in Xcode and choose an iPhone simulator. For a signed
 Run game-rule tests on macOS:
 
 ~~~sh
-swiftc LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
+swiftc LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
 /tmp/little-haven-tests
 ~~~
 
@@ -72,3 +72,12 @@ The expanded 15-by-15 office is operated from a fixed position behind the desk. 
 Tap the gray tabby Chichu or calico Chichi to pet them or offer a treat. Samhil sits on the couch watching TV, and Hildarelys walks around the office. Tap either to chat. The owner has dark spiky hair, rectangular glasses, a beard and a light collared shirt; Hildarelys has long dark hair, red lipstick and a black-and-white outfit. Artwork is an original cut-paper cartoon interpretation of the provided references. Original photos are not bundled or published.
 
 Tap the desk or logbook to save, the closet to collect cleaning tools, the paint shelf to redecorate, and the bed to end the day. Existing saves retain motel cash, rooms, upgrades and quests. Older office positions migrate to the desk. Reception visitors and their decisions are included in checkpoints.
+## Motel mayhem (5.0)
+
+Guests leave one-to-five-star reviews when they check out. Upgraded rooms improve reviews; unresolved outdoor emergencies and stolen belongings hurt them. Open the review board from the HUD or desk. Reviews, staff, payroll status, incidents and guest complaints are saved with your checkpoint.
+
+From the desk, hire Luna (housekeeper, 100 coins, 15/day), Mateo (groundskeeper, 140 coins, 20/day), and Riley (security, 160 coins, 25/day). Their first shift is included. Each morning, wages are deducted if affordable; otherwise that employee takes the shift off. Staff walk through the grounds: Luna services vacant dirty rooms, Mateo responds to fires and pool accidents, and Riley handles fights. Room upgrades are available from the desk as well as inside vacant rooms.
+
+When guests are staying, incidents periodically occur outside: a courtyard fire, a guest falling in the pool, or a fight near reception. Follow the persistent alarm, walk to the scene and use HELP to intervene, or let matching hired staff respond. Incidents have a 90-second active-play deadline; ignored events cost up to 40 coins and can produce bad reviews. Dialogue and management panels pause simulation time. Office reception and the family remain unchanged.
+
+Character conversations and game decisions now appear as portrait dialogue boxes within the scene, rather than system iPhone alerts.

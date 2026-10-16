@@ -21,7 +21,7 @@ struct MotelWorldState: Codable {
 }
 enum MotelAction: Hashable {
     case none, office, room(Int), guest(Int), construction, desk, save, rest, tools
-    case paint(Int?), furniture(Int?), clean(Int), loot(Int), exit
+    case paint(Int?), furniture(Int?), clean(Int), loot(Int), exit, incident
 }
 enum MotelGrounds {
     static let width = 40
@@ -104,6 +104,7 @@ extension Motel {
             return .none
         }
         if isAtReception { return .desk }
+        if nearbyIncident { return .incident }
         if let guest = waiting.first(where: { player.distance(to: MotelGrounds.guestTile($0.id)) <= 1 }) { return .guest(guest.id) }
         if player.distance(to: MotelGrounds.officeDoor) <= 1 { return .office }
         for room in rooms where player.distance(to: MotelGrounds.roomDoor(room.id)) <= 1 { return .room(room.id) }

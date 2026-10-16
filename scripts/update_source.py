@@ -21,7 +21,7 @@ entry = {
     "version": version,
     "buildVersion": build,
     "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-    "localizedDescription": "Family reception: an expanded office, a fixed desk position, arriving clients with accept/decline conversations, Chichu and Chichi, Samhil watching TV and Hildarelys walking around. Photo-inspired original cut-paper characters. Explore the grounds and interiors with a movement stick, meet clients and collect payments in person, carry cleaning tools, make beds, collect trash, mop spills, customize physical rooms and expand the property. Existing motel saves are supported.",
+    "localizedDescription": "Motel mayhem: good and bad guest reviews, hired housekeepers, groundskeepers and security, room upgrades, courtyard fires, pool rescues and outdoor fights. Character conversations now use illustrated dialogue boxes inside the game.",
     "downloadURL": f"{asset_base}/LittleHaven-unsigned.ipa",
     "size": pathlib.Path("LittleHaven-unsigned.ipa").stat().st_size,
     "minOSVersion": info["MinimumOSVersion"],
@@ -29,7 +29,7 @@ entry = {
 app["versions"] = [entry] + [item for item in app["versions"] if item["version"] != version or item.get("buildVersion") != build]
 app["subtitle"] = "Walk, work and build your motel."
 app["localizedDescription"] = "Run a roadside motel from an expanded family reception. Stay behind the desk while clients walk in, introduce themselves and request a room. Accept and collect payment or decline politely. Tap your gray tabby Chichu, calico Chichi, Samhil watching TV, or Hildarelys walking around to interact. The owner and Hildarelys use original photo-inspired cut-paper cartoon designs. Tap the office door to explore the grounds, clean rooms, customize and expand the motel. Sneaking and last-save recovery remain available. Existing saves are supported."
-app["screenshotURLs"] = [f"{asset_base}/LittleHaven-office.png", f"{asset_base}/LittleHaven-motel.png", f"{asset_base}/LittleHaven-cleaning.png", f"{asset_base}/LittleHaven-stealth.png", f"{asset_base}/LittleHaven-wake.png", f"{asset_base}/LittleHaven-preview.png"]
+app["screenshotURLs"] = [f"{asset_base}/LittleHaven-dialogue.png", f"{asset_base}/LittleHaven-chaos.png", f"{asset_base}/LittleHaven-office.png", f"{asset_base}/LittleHaven-motel.png", f"{asset_base}/LittleHaven-cleaning.png", f"{asset_base}/LittleHaven-stealth.png", f"{asset_base}/LittleHaven-wake.png", f"{asset_base}/LittleHaven-preview.png"]
 source["subtitle"] = "A town dream and a roadside motel"
 body = {
     "message": f"Update SideStore feed for Little Haven {version} [skip ci]",

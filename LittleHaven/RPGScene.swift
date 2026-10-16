@@ -15,6 +15,7 @@ struct RPGActor {
     var danger = false
     var animal = 0
     var displayScale = 1.0
+    var effect = 0
 }
 
 struct RPGSceneView: UIViewRepresentable {
@@ -54,7 +55,8 @@ private struct ActorArtwork: View {
     let stride: Double
     var body: some View {
         Canvas { context, _ in
-            if actor.animal > 0 { CatArt.draw(context: &context, gray: actor.animal == 1, walk: stride) }
+            if actor.effect > 0 { ChaosArt.draw(context: &context, kind: actor.effect, stride: stride) }
+            else if actor.animal > 0 { CatArt.draw(context: &context, gray: actor.animal == 1, walk: stride) }
             else { PaperPerson.draw(context: &context, x: 4, y: 9, color: actor.color, variant: actor.variant, facing: actor.facing, walk: stride) }
         }.frame(width: 24, height: 28)
     }
@@ -136,6 +138,9 @@ final class RPGScene: SKScene {
                 node.removeAction(forKey: "move")
                 node.run(.move(to: target, duration: actor.duration), withKey: "move")
             }
+            if actor.effect > 0 && node.action(forKey:"effect") == nil {
+                node.run(.repeatForever(.animate(with:[sprite(actor,stride:0),sprite(actor,stride:1),sprite(actor,stride:-1)],timePerFrame:0.2)),withKey:"effect")
+            }
             if actor.danger && node.childNode(withName: "detection") == nil {
                 let ring = SKShapeNode(circleOfRadius: 15)
                 ring.name = "detection"
@@ -179,7 +184,7 @@ final class RPGScene: SKScene {
         layoutCamera(jump: changedMap)
     }
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
-        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)"
+        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.effect)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
         renderer.scale = 3
@@ -232,6 +237,14 @@ struct MotelRPGView: View {
             actors += motel.waiting.filter { $0.id != motel.reception.visitor?.guest.id }.map { RPGActor(id: "guest-\($0.id)", tile: MotelGrounds.guestTile($0.id), color: $0.color, variant: $0.id % 7, name: $0.name) }
             actors += motel.worldState.travellers.map {
                 RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.id % 7, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: 0.35)
+            }
+            for worker in motel.operationsState.workers where worker.active {
+                actors.append(RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:worker.role == .cleaner ? 1 : worker.role == .maintenance ? 4 : 0,name:worker.role.name,duration:0.9))
+            }
+            if let incident = motel.operationsState.incident {
+                let kind = incident.kind
+                actors.append(RPGActor(id:"chaos",tile:kind.tile,color:0xD99B7E,variant:0,name:kind == .fire ? "FIRE!" : kind == .pool ? "HELP!" : "FIGHT!",effect:kind == .fire ? 1 : kind == .pool ? 2 : 3))
+                if kind == .fight { actors.append(RPGActor(id:"chaos-other",tile:Tile(x:kind.tile.x+1,y:kind.tile.y),color:0x82AFC1,variant:4,facing:1,marker:"!",effect:3)) }
             }
         } else if let room, let guest = room.guest, let visit, motel.guestPresent(in: room.id) {
             actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.id % 7, danger: true))

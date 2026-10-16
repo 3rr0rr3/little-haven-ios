@@ -360,3 +360,56 @@ func receptionRules() {
     print("PASS: static clerk, guest arrival, acceptance, decline, no double charge, departures, family movement, door exit and reception persistence")
 }
 receptionRules()
+func managementRules() {
+    var good = Motel()
+    good.initializeWorld(); good.cash = 1000
+    require(good.upgradeFromDesk(0) && good.rooms[0].furniture == 1, "Desk upgrade changes room tier")
+    require(good.checkIn(guestID:10,roomID:0), "Upgraded room can be rented")
+    require(good.nextDay() && good.operationsState.reviews.first?.stars == 5, "Happy checkout produces a five star review")
+    require(good.operationsState.reviews.count == 1, "Review is created once per checkout")
+    var bad = Motel()
+    bad.initializeWorld(); _ = bad.checkIn(guestID:10,roomID:0)
+    bad.operations!.incident = MotelIncident(kind:.fire,elapsed:89)
+    bad.tickManagement()
+    require(bad.operationsState.incidentsMissed == 1 && bad.operationsState.guestPenalties[10] == 2, "Ignoring an emergency affects staying guests")
+    _ = bad.nextDay()
+    require(bad.operationsState.reviews.first?.stars == 2, "Unresolved chaos creates a bad checkout review")
+    var theft = Motel()
+    _ = theft.checkIn(guestID:10,roomID:0); theft.rooms[0].stolen = [0]
+    _ = theft.nextDay()
+    require(theft.operationsState.reviews.first?.stars == 1, "Stolen belongings lead to a one star review")
+    var staff = Motel()
+    staff.initializeWorld(); staff.cash = 1000
+    for role in StaffRole.allCases { require(staff.hire(role), "Each staff role can be hired") }
+    require(staff.cash == 600 && !staff.hire(.cleaner), "Hiring charges once and prevents duplicate employees")
+    staff.rooms[0].dirty = true
+    for _ in 0..<80 { staff.tickManagement() }
+    require(!staff.rooms[0].dirty && staff.rooms[0].cleanedTasks?.count == 3, "Housekeeper walks to and cleans a vacant room")
+    for kind in ChaosKind.allCases {
+        staff.operations!.incident = MotelIncident(kind:kind)
+        let index = staff.operations!.workers.firstIndex { $0.role == kind.responder }!
+        staff.operations!.workers[index].tile = kind.approach
+        for _ in 0..<8 { staff.tickManagement() }
+        require(staff.operationsState.incident == nil, "Matching employee handles each emergency")
+    }
+    staff.cash = 5; _ = staff.nextDay()
+    require(staff.cash == 5 && staff.operationsState.workers.allSatisfy { !$0.active }, "Insufficient wages put workers off duty without debt")
+    staff.cash = 100; _ = staff.nextDay()
+    require(staff.cash == 40 && staff.operationsState.workers.allSatisfy { $0.active }, "Paying wages restores the next shift")
+    var manual = Motel()
+    manual.initializeWorld(); _ = manual.checkIn(guestID:10,roomID:0)
+    for _ in 0..<40 { manual.tickManagement() }
+    require(manual.operationsState.incident?.kind == .fire && !manual.resolveNearbyIncident(), "Incidents occur during a shift and require a physical response")
+    _ = manual.leaveReception()
+    manual.world!.player = ChaosKind.fire.approach
+    require(manual.nearbyAction == .incident && manual.resolveNearbyIncident(), "Walking to the scene allows manual intervention")
+    require(!manual.resolveNearbyIncident(), "Resolved incidents cannot be claimed twice")
+    let data = try! JSONEncoder().encode(staff)
+    let saved = try! JSONDecoder().decode(Motel.self,from:data)
+    require(saved.operationsState.workers.count == 3 && saved.operationsState.incidentsResolved == 3, "Staff and incident outcomes survive save/load")
+    var legacy = Motel(); legacy.operations = nil
+    let old = try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(legacy))
+    require(old.operationsState.workers.isEmpty && old.operationsState.reviews.isEmpty, "Old motel saves migrate with no invented employees or ratings")
+    print("PASS: good and bad checkout reviews, theft reviews, hiring costs, wages, autonomous cleaning, all staff emergency responses, manual intervention, persistence and migration")
+}
+managementRules()

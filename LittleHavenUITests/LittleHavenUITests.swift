@@ -56,17 +56,17 @@ final class LittleHavenUITests: XCTestCase {
         let app = launch("--ui-office-family")
         XCTAssertTrue(app.buttons["office_chichu"].waitForExistence(timeout:10), app.debugDescription)
         app.buttons["office_chichu"].tap()
-        XCTAssertTrue(app.alerts["Chichu"].waitForExistence(timeout:3))
-        app.alerts.buttons["Pet"].tap()
+        XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
+        app.buttons["Pet"].tap()
         app.buttons["office_chichi"].tap()
-        XCTAssertTrue(app.alerts["Chichi"].waitForExistence(timeout:3))
-        app.alerts.buttons["Give a treat"].tap()
+        XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
+        app.buttons["Give a treat"].tap()
         app.buttons["office_samhil"].tap()
-        XCTAssertTrue(app.alerts["Samhil"].waitForExistence(timeout:3))
-        app.alerts.buttons["Watch together"].tap()
+        XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
+        app.buttons["Watch together"].tap()
         app.buttons["office_hildarelys"].tap()
-        XCTAssertTrue(app.alerts["Hildarelys"].waitForExistence(timeout:3))
-        app.alerts.buttons["Give her a kiss"].tap()
+        XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
+        app.buttons["Give her a kiss"].tap()
         app.buttons["office_player"].tap()
         XCTAssertTrue(app.buttons["saveCheckpoint"].waitForExistence(timeout:3))
         app.buttons["saveCheckpoint"].tap()
@@ -125,6 +125,34 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(cash(app).contains("260"), "Unexpected cash counter: \(cash(app))")
     }
 
+    func testStaffReviewsAndDeskUpgrades() {
+        let app = launch("--ui-operations")
+        XCTAssertTrue(app.buttons["openStaff"].waitForExistence(timeout:10))
+        app.buttons["openStaff"].tap()
+        app.buttons["hire_cleaner"].tap()
+        XCTAssertTrue(cash(app).contains("800"))
+        app.buttons["Close interaction"].tap()
+        app.buttons["receptionDesk"].tap()
+        app.buttons["deskRooms"].tap()
+        app.buttons["deskUpgrade_0"].tap()
+        XCTAssertTrue(cash(app).contains("710"))
+        app.buttons["Close interaction"].tap()
+        app.buttons["openReviews"].tap()
+        XCTAssertTrue(app.descendants(matching:.any)["guestReview_good"].exists)
+        XCTAssertTrue(app.descendants(matching:.any)["guestReview_bad"].exists)
+        capture(app,"Good and bad reviews, hired staff and room upgrades")
+    }
+    func testOutdoorChaosCanBeHandled() {
+        let app = launch("--ui-chaos-fire")
+        for (fixture,action) in [("--ui-chaos-fire","Put out the fire"),("--ui-chaos-pool","Help the guest out"),("--ui-chaos-fight","Break up the fight")] {
+            if fixture != "--ui-chaos-fire" { app.terminate(); app.launchArguments = [fixture,"--ui-testing"]; app.launch() }
+            XCTAssertTrue(app.buttons["incidentAlarm"].waitForExistence(timeout:10))
+            app.buttons["worldAction"].tap()
+            XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
+            app.buttons[action].tap()
+            XCTAssertFalse(app.buttons["incidentAlarm"].exists)
+        }
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

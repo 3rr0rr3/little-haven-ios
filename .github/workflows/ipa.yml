@@ -26,7 +26,7 @@ jobs:
       - name: Test prologue, motel economy, stealth and checkpoint rules
         run: |
           set -euo pipefail
-          swiftc LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
+          swiftc LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
           /tmp/little-haven-tests
       - name: Build iPhone app
         run: |
@@ -71,6 +71,14 @@ jobs:
           xcrun simctl launch "$DEVICE" com.littlehaven.town --ui-office-preview
           sleep 3
           xcrun simctl io "$DEVICE" screenshot LittleHaven-office.png
+          xcrun simctl terminate "$DEVICE" com.littlehaven.town
+          xcrun simctl launch "$DEVICE" com.littlehaven.town --ui-dialogue
+          sleep 2
+          xcrun simctl io "$DEVICE" screenshot LittleHaven-dialogue.png
+          xcrun simctl terminate "$DEVICE" com.littlehaven.town
+          xcrun simctl launch "$DEVICE" com.littlehaven.town --ui-chaos-fire
+          sleep 2
+          xcrun simctl io "$DEVICE" screenshot LittleHaven-chaos.png
       - name: Verify and package IPA
         run: |
           set -euo pipefail
@@ -94,8 +102,8 @@ jobs:
         run: |
           set -euo pipefail
           TAG="sideload-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
-          printf '%s\n' 'Little Haven 4.0: expanded family office, photo-inspired characters, cats and desk reception, iOS 17+.' 'Wake up and walk around your motel grounds, office and rooms. Meet guests, collect payment, carry cleaning tools, make beds, collect trash, mop spills and expand your motel.' 'Explore occupied rooms, steal belongings and escape before suspicion reaches 100%. Getting caught returns you to your last saved checkpoint.' 'Save at the desk or end the day. Existing cottage saves migrate to the wake-up scene.' 'Unsigned arm64 iPhoneOS build. Sign through your sideloading tool before installing. Physical-device installation has not been verified.' > release-notes.txt
-          gh release create "$TAG" LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png LittleHaven-wake.png LittleHaven-motel.png LittleHaven-stealth.png LittleHaven-cleaning.png LittleHaven-office.png --target "$GITHUB_SHA" --title "Little Haven 4.0 - Walkable motel" --prerelease --notes-file release-notes.txt
+          printf '%s\n' 'Little Haven 5.0: expanded family office, photo-inspired characters, cats and desk reception, iOS 17+.' 'Wake up and walk around your motel grounds, office and rooms. Meet guests, collect payment, carry cleaning tools, make beds, collect trash, mop spills and expand your motel.' 'Explore occupied rooms, steal belongings and escape before suspicion reaches 100%. Getting caught returns you to your last saved checkpoint.' 'Save at the desk or end the day. Existing cottage saves migrate to the wake-up scene.' 'Unsigned arm64 iPhoneOS build. Sign through your sideloading tool before installing. Physical-device installation has not been verified.' > release-notes.txt
+          gh release create "$TAG" LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png LittleHaven-wake.png LittleHaven-motel.png LittleHaven-stealth.png LittleHaven-cleaning.png LittleHaven-office.png LittleHaven-dialogue.png LittleHaven-chaos.png --target "$GITHUB_SHA" --title "Little Haven 5.0 - Walkable motel" --prerelease --notes-file release-notes.txt
           gh api "repos/$GH_REPO/contents/sideStore.json" > live-source-response.json
           python3 scripts/update_source.py "$TAG"
           gh api --method PUT "repos/$GH_REPO/contents/sideStore.json" --input source-update.json

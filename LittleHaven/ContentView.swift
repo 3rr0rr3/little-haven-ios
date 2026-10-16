@@ -20,6 +20,23 @@ struct ContentView: View {
     private static func initialGame() -> Game {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
+        if args.contains("--ui-operations") || args.contains("--ui-chaos-fire") || args.contains("--ui-chaos-pool") || args.contains("--ui-chaos-fight") || args.contains("--ui-dialogue") {
+            var sample = Game()
+            sample.coins = 545; sample.wakeUp(); sample.motel!.initializeWorld()
+            sample.motel!.waiting = []; sample.motel!.cash = 900
+            sample.motel!.operations = MotelOperations()
+            if args.contains("--ui-operations") {
+                sample.motel!.operations!.reviews = [GuestReview(id:"good",guest:"Robin",day:2,room:101,stars:5,text:"Lovely room and a peaceful stay!"),GuestReview(id:"bad",guest:"Sasha",day:2,room:102,stars:1,text:"The trouble outside spoiled my stay.")]
+            }
+            let kind: ChaosKind? = args.contains("--ui-chaos-fire") ? .fire : args.contains("--ui-chaos-pool") ? .pool : args.contains("--ui-chaos-fight") ? .fight : nil
+            if let kind {
+                sample.motel!.world!.place = .grounds
+                sample.motel!.world!.player = kind.approach
+                sample.motel!.operations!.incident = MotelIncident(kind:kind)
+            }
+            sample.save()
+            return sample
+        }
         if args.contains("--ui-office-preview") || args.contains("--ui-office-family") {
             var sample = Game()
             sample.coins = 545
