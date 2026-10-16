@@ -11,18 +11,28 @@
       "bundleIdentifier": "com.littlehaven.town",
       "developerName": "3rr0rr3",
       "subtitle": "Walk, work and build your motel.",
-      "localizedDescription": "Wake up and walk freely around a roadside motel, its office, pool, parking and guest rooms. Meet arriving clients, assign rooms and collect their payments. Pick up tools at the office, then make beds, collect trash and mop spills inside each vacated room. Interact with paint cabinets, beds, the front desk and construction plots to customize and expand your property. Guests walk to their rooms and depart along the grounds. Sneak into occupied rooms, take belongings and escape before being caught. Save at the office or sleep to create checkpoints. Original cut-paper cartoon characters and smooth eight-direction movement.",
+      "localizedDescription": "Run a roadside motel from an expanded family reception. Stay behind the desk while clients walk in, introduce themselves and request a room. Accept and collect payment or decline politely. Tap your gray tabby Chichu, calico Chichi, Samhil watching TV, or Hildarelys walking around to interact. The owner and Hildarelys use original photo-inspired cut-paper cartoon designs. Tap the office door to explore the grounds, clean rooms, customize and expand the motel. Sneaking and last-save recovery remain available. Existing saves are supported.",
       "iconURL": "https://raw.githubusercontent.com/3rr0rr3/little-haven-ios/main/LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
       "tintColor": "4C8C85",
       "category": "games",
       "screenshotURLs": [
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-13-1/LittleHaven-motel.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-13-1/LittleHaven-cleaning.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-13-1/LittleHaven-stealth.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-13-1/LittleHaven-wake.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-13-1/LittleHaven-preview.png"
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-office.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-motel.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-cleaning.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-stealth.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-wake.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-preview.png"
       ],
       "versions": [
+        {
+          "version": "4.0",
+          "buildVersion": "8",
+          "date": "2026-10-16",
+          "localizedDescription": "Family reception: an expanded office, a fixed desk position, arriving clients with accept/decline conversations, Chichu and Chichi, Samhil watching TV and Hildarelys walking around. Photo-inspired original cut-paper characters. Explore the grounds and interiors with a movement stick, meet clients and collect payments in person, carry cleaning tools, make beds, collect trash, mop spills, customize physical rooms and expand the property. Existing motel saves are supported.",
+          "downloadURL": "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-15-1/LittleHaven-unsigned.ipa",
+          "size": 526381,
+          "minOSVersion": "17.0"
+        },
         {
           "version": "3.2",
           "buildVersion": "7",
