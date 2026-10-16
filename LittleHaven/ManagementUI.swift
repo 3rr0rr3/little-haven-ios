@@ -97,7 +97,7 @@ struct RoomUpgradesPanel: View {
                     RoomIllustration(theme:room.theme,level:room.furniture,office:false).frame(width:58,height:58)
                     VStack(alignment:.leading,spacing:4) {
                         Text("ROOM \(room.number) / TIER \(room.furniture)").font(.caption.monospaced().bold())
-                        Text("\(Airb&b.rate(for:room)) coins/night").font(.caption)
+                        Text("\(motel.rate(for:room)) coins/night").font(.caption)
                         if room.furniture < 2 {
                             Button("Upgrade / \((room.furniture+1)*90)") { upgrade(room.id) }.buttonStyle(MotelButtonStyle()).disabled(room.guest != nil || motel.cash < (room.furniture+1)*90).accessibilityIdentifier("deskUpgrade_\(room.id)")
                         } else { Text("Fully upgraded").font(.caption.bold()) }

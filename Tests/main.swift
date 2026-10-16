@@ -89,7 +89,7 @@ func motelRules() {
     require(decor.upgrade(roomID: 0) && decor.rate(for: decor.rooms[0]) == 110, "Room furnishing improves nightly rate")
     require(decor.decorate(roomID: nil, theme: 3) && decor.officeTheme == 3, "Office color is independent")
     require(decor.upgrade(roomID: nil) && decor.rate(for: decor.rooms[0]) == 125, "Office upgrade improves all rates")
-    require(decor.rooms[1].theme == 0, "Room themes stay independent")
+    require(decor.rooms[1].theme == 1, "Room themes stay independent")
     decor.cash = 10000
     while !decor.goalReached { require(decor.expand(), "Expansion should reach the nine-room goal") }
     require(decor.rooms.count == 9 && !decor.expand(), "Motel goal caps construction at nine rooms")

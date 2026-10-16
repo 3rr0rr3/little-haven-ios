@@ -257,7 +257,7 @@ struct MotelGroundsCanvas: View, Animatable {
             rect(Double(sign.x * 16 + 6), Double(sign.y * 16), 4, 19, 0x7D6D50)
             rect(Double(sign.x * 16 - 12), Double(sign.y * 16 - 7), 40, 20, 0x3A594C)
             label("BUILD", Double(sign.x * 16 + 8), Double(sign.y * 16 - 1), 4, 0xF0CC7F)
-            label("\(Airb&b.expansionCost)", Double(sign.x * 16 + 8), Double(sign.y * 16 + 6), 4, 0xF0CC7F)
+            label("\(motel.expansionCost)", Double(sign.x * 16 + 8), Double(sign.y * 16 + 6), 4, 0xF0CC7F)
             rect(15, 505, 62, 25, 0x3E5E50)
             label("LITTLE HAVEN", 46, 514, 4); label("MOTOR INN", 46, 522, 4)
             struct Actor {
@@ -363,7 +363,7 @@ struct MotelPocketMap: View {
                 }.frame(maxWidth: .infinity)
             }
             Text("PARKING / ROAD").font(.caption.monospaced().bold()).frame(maxWidth: .infinity).padding().background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
-            Text("You are in \(Airb&b.mapName.lowercased()), column \(Airb&b.actorTile.x), row \(Airb&b.actorTile.y).").font(.footnote)
+            Text("You are in \(motel.mapName.lowercased()), column \(motel.actorTile.x), row \(motel.actorTile.y).").font(.footnote)
             Text("Office: desk = save or upgrade; bed = next day; closet = cleaning kit; paint cabinet = wall colors. Rooms: hold work near mess to clean, use the bed to upgrade furnishings, and use the paint cabinet for colors.").font(.footnote).foregroundStyle(.secondary)
         }.padding(24).foregroundStyle(Color(hex: 0xF5E7C8)).presentationBackground(Color(hex: 0x172A25))
     }

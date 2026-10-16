@@ -150,18 +150,18 @@ struct MotelView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(motel.mapName).font(.system(size: 20, weight: .black, design: .rounded))
-                    Text("DAY \(Airb&b.day) / \(Airb&b.occupancy) GUESTS / \(Airb&b.rooms.count) ROOMS")
+                    Text("DAY \(motel.day) / \(motel.occupancy) GUESTS / \(motel.rooms.count) ROOMS")
                         .font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(gold)
                 }
                 Spacer(minLength: 4)
-                Label("\(Airb&b.cash)", systemImage: "circle.circle.fill").font(.system(size: 18, weight: .heavy, design: .monospaced)).foregroundStyle(gold).accessibilityElement(children: .ignore).accessibilityLabel("Cash \(Airb&b.cash) coins").accessibilityIdentifier("motelCash")
+                Label("\(motel.cash)", systemImage: "circle.circle.fill").font(.system(size: 18, weight: .heavy, design: .monospaced)).foregroundStyle(gold).accessibilityElement(children: .ignore).accessibilityLabel("Cash \(motel.cash) coins").accessibilityIdentifier("motelCash")
                 Button { stop(); showMap = true } label: { Image(systemName: "map.fill").frame(width: 36, height: 40) }.accessibilityLabel("Airb&b map")
                 Button { stop(); showPause = true } label: { Image(systemName: "pause.fill").frame(width: 28, height: 40) }.accessibilityLabel("Pause game")
             }
             HStack {
                 Button { stop(); panel = .reviews } label: { Text(motel.reviewAverage.map { String(format:"★ %.1f",$0) } ?? "★ NEW") }.accessibilityIdentifier("openReviews")
                 Spacer()
-                Button("HIRE / TEAM \(Airb&b.operationsState.workers.count)") { stop(); panel = .staff }.accessibilityIdentifier("openStaff")
+                Button("HIRE / TEAM \(motel.operationsState.workers.count)") { stop(); panel = .staff }.accessibilityIdentifier("openStaff")
                 if let incident = motel.operationsState.incident {
                     Button("! \(incident.kind.rawValue.uppercased()) / \(incident.remaining)s") { stop(); showIncident = true }.foregroundStyle(Color(hex:0xEE9E78)).accessibilityIdentifier("incidentAlarm")
                 }
@@ -261,7 +261,7 @@ struct MotelView: View {
             MotelRPGView(motel: motel, workProgress: workProgress)
                 .animation(.linear(duration: movementDuration), value: tile).id(mapIdentity)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(Airb&b.mapName). Column \(tile.x), row \(tile.y).")
+                .accessibilityLabel("\(motel.mapName). Column \(tile.x), row \(tile.y).")
                 .accessibilityValue("\(room.dirty ? "Cleaning \(room.cleanedTasks?.count ?? 0)/3" : "Ready for guests"). Theme \(room.theme). Furnishings \(room.furniture).")
                 .accessibilityIdentifier("motelWorld")
         } else if motel.isAtReception {
@@ -272,7 +272,7 @@ struct MotelView: View {
                 .animation(.linear(duration: 0.35), value: motel.worldState.tick).id(mapIdentity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Airb&b GROUNDS. Column \(tile.x), row \(tile.y).")
-                .accessibilityValue("\(Airb&b.worldState.travellers.count) guests walking to their destinations.")
+                .accessibilityValue("\(motel.worldState.travellers.count) guests walking to their destinations.")
                 .accessibilityIdentifier("motelWorld")
         }
     }
@@ -334,7 +334,7 @@ struct MotelView: View {
         case .tools: return "Pick up a mop, fresh sheets and bin bags for cleaning."
         case .office: return "Office entrance. Walk through the door or tap ENTER."
         case .exit: return "Walk through the lower door to go outside."
-        case .construction: return "Build room \(101 + Airb&b.rooms.count) here for \(Airb&b.expansionCost) coins."
+        case .construction: return "Build room \(101 + motel.rooms.count) here for \(motel.expansionCost) coins."
         case .loot(let item): return "\(RoomVisit.lootNames[item]): +\(RoomVisit.lootValues[item]) coins, +\(RoomVisit.lootNoise[item]) suspicion. Escape to keep it."
         case .none:
             if motel.visit?.sneaking == true { return "Avoid the guest. Take belongings and return to the door before suspicion reaches 100%." }
@@ -384,7 +384,7 @@ struct MotelView: View {
                                 Button { selectedRoom = room.id } label: {
                                     VStack(spacing: 4) {
                                         RoomIllustration(theme: room.theme, level: room.furniture, office: false).frame(width: 70, height: 48)
-                                        Text("\(room.number) / \(Airb&b.rate(for: room) * guest.nights) coins").font(.system(size: 10, weight: .bold))
+                                        Text("\(room.number) / \(motel.rate(for: room) * guest.nights) coins").font(.system(size: 10, weight: .bold))
                                     }.padding(7).background(selectedRoom == room.id ? gold.opacity(0.3) : .white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
                                 }.accessibilityIdentifier("chooseRoom\(room.id)")
                             }
@@ -403,7 +403,7 @@ struct MotelView: View {
                 StaffPanel(motel:motel) { role in change { _ = $0.hire(role) } }
             case .reviews:
                 VStack(alignment:.leading,spacing:6) {
-                    Text("Safety deaths: \(Airb&b.business.deaths) / Lost daily bookings: \(Airb&b.bookingPenalty) / Fine balance: \(Airb&b.business.debt)").font(.caption)
+                    Text("Safety deaths: \(motel.business.deaths) / Lost daily bookings: \(motel.bookingPenalty) / Fine balance: \(motel.business.debt)").font(.caption)
                     ReviewsPanel(motel:motel)
                 }
             case .roomUpgrades:
@@ -430,7 +430,7 @@ struct MotelView: View {
                 }.font(.caption.bold()).foregroundStyle(gold).padding(.bottom,6)
                 HStack {
                     Button("Save checkpoint", action: saveHere).buttonStyle(MotelButtonStyle()).accessibilityIdentifier("saveCheckpoint")
-                    Button("Upgrade / \((Airb&b.officeLevel + 1) * 120)") {
+                    Button("Upgrade / \((motel.officeLevel + 1) * 120)") {
                         change { _ = $0.furnishNearby() }; panel = nil
                     }.buttonStyle(MotelButtonStyle(subdued: true)).disabled(motel.officeLevel >= 2 || motel.cash < (motel.officeLevel + 1) * 120)
                 }
@@ -438,7 +438,7 @@ struct MotelView: View {
             case .construction:
                 HStack {
                     RoomIllustration(theme: 0, level: 0, office: false).frame(width: 88, height: 70).clipShape(RoundedRectangle(cornerRadius: 8))
-                    Text("Room \(101 + Airb&b.rooms.count)\n\(Airb&b.expansionCost) coins\n\(Airb&b.rooms.count)/9 rooms built").font(.subheadline.bold())
+                    Text("Room \(101 + motel.rooms.count)\n\(motel.expansionCost) coins\n\(motel.rooms.count)/9 rooms built").font(.subheadline.bold())
                 }
                 Button("Build this room") {
                     change { _ = $0.buildNearby() }; panel = nil

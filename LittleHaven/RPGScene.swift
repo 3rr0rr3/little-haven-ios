@@ -231,7 +231,7 @@ struct MotelRPGView: View {
         let room = visit.flatMap { v in motel.rooms.first { $0.id == v.roomID } }
         let interior = visit != nil || motel.worldState.place == .office
         let mapID = visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue
-        let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(Airb&b.guestPresent(in: $0.id))" } ?? "\(Airb&b.officeTheme)-\(Airb&b.officeLevel)-\(Airb&b.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
+        let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
         var actors = [RPGActor(id: "player", tile: motel.actorTile, color: 0x6AACA3, variant: 7, facing: motel.actorFacing)]
         if !interior {
             actors += motel.waiting.filter { $0.id != motel.reception.visitor?.guest.id }.map { RPGActor(id: "guest-\($0.id)", tile: MotelGrounds.guestTile($0.id), color: $0.color, variant: $0.id % 7, name: $0.name) }
