@@ -16,18 +16,27 @@
       "tintColor": "4C8C85",
       "category": "games",
       "screenshotURLs": [
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-19-1/LittleHaven-police.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-19-1/LittleHaven-hiring.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-19-1/LittleHaven-dialogue.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-19-1/LittleHaven-chaos.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-19-1/LittleHaven-office.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-19-1/LittleHaven-Airb&b.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-19-1/LittleHaven-cleaning.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-19-1/LittleHaven-stealth.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-19-1/LittleHaven-wake.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-19-1/LittleHaven-preview.png"
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-20-1/LittleHaven-police.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-20-1/LittleHaven-hiring.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-20-1/LittleHaven-dialogue.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-20-1/LittleHaven-chaos.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-20-1/LittleHaven-office.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-20-1/LittleHaven-Airb&b.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-20-1/LittleHaven-cleaning.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-20-1/LittleHaven-stealth.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-20-1/LittleHaven-wake.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-20-1/LittleHaven-preview.png"
       ],
       "versions": [
+        {
+          "version": "7.0",
+          "buildVersion": "11",
+          "date": "2026-10-17",
+          "localizedDescription": "More trees, flower beds and benches; daily breakfast, laundry, repairs, gardening and luggage services; varied guests and animated fighting and action feedback.",
+          "downloadURL": "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-20-1/LittleHaven-unsigned.ipa",
+          "size": 665602,
+          "minOSVersion": "17.0"
+        },
         {
           "version": "6.0",
           "buildVersion": "10",
