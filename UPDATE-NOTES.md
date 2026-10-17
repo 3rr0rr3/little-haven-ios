@@ -4,4 +4,4 @@ Added fourteen trees, four benches, flower beds, stable guest appearance seeds, 
 
 Inspiration: Hotel: A Resort Simulator's guest services and Hotel Renovator's decoration and upkeep systems. No game assets were copied.
 
-Verification: scripts/check_landscape.py audits route connectivity on Windows. Tests/main.swift adds native model tests for service availability, rewards, daily limits, persistence and route access. Run the existing macOS workflow to compile, execute Swift tests and verify the iPhone UI. This update has not been built into an IPA or published.
+Verification: scripts/check_landscape.py audits route connectivity on Windows. Tests/main.swift adds native model tests for service availability, rewards, daily limits, persistence and route access. Run the existing macOS workflow to compile, execute Swift tests and verify the iPhone UI. Version 7.0 (11) was built and published as sideload-20-1. Native model tests and all 10 simulator tests passed. The unsigned arm64 IPA passed platform and archive checks. Physical-device installation has not been tested.
