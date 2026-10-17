@@ -414,6 +414,38 @@ func managementRules() {
 }
 managementRules()
 
+func expandedHotelRules() {
+    var hotel = Motel()
+    hotel.initializeWorld()
+    hotel.world!.place = .grounds
+    hotel.world!.player = MotelGrounds.gate
+    require(!hotel.performService(.garden), "Cannot complete service remotely")
+    for service in HotelService.allCases {
+        require(MotelGrounds.nextStep(from:MotelGrounds.gate,to:service.tile,avoiding:[]) != nil, "All service stations must remain reachable")
+    }
+    for id in 0..<9 {
+        require(MotelGrounds.nextStep(from:MotelGrounds.gate,to:MotelGrounds.roomDoor(id),avoiding:[]) != nil, "Landscaping must not block guest rooms")
+    }
+    for kind in ChaosKind.allCases {
+        require(MotelGrounds.nextStep(from:MotelGrounds.gate,to:kind.approach,avoiding:[]) != nil, "Emergency routes must stay accessible")
+    }
+    hotel.world!.player = HotelService.breakfast.tile
+    require(!hotel.performService(.breakfast), "Breakfast requires guests")
+    hotel.world!.player = HotelService.garden.tile
+    let balance = hotel.cash
+    require(hotel.performService(.garden), "Nearby gardening succeeds")
+    require(hotel.cash == balance + HotelService.garden.reward, "Service pays exact reward")
+    require(!hotel.performService(.garden), "Same-day repeated reward is rejected")
+    let data = try! JSONEncoder().encode(hotel)
+    var loaded = try! JSONDecoder().decode(Motel.self,from:data)
+    require(!loaded.performService(.garden), "Daily reward guard survives reload")
+    loaded.day += 1
+    require(loaded.performService(.garden), "Service becomes available next day")
+    require((loaded.operationsState.actionUntil ?? 0) > loaded.operationsState.tick, "Service starts visible animation")
+    print("PASS: service proximity, guest requirements, rewards, daily limits, persistence, and landscape routes")
+}
+expandedHotelRules()
+
 func policeRules() {
     for kind in ChaosKind.allCases {
         var m = Motel(); m.initializeWorld(); _ = m.checkIn(guestID:10,roomID:0)

@@ -66,6 +66,10 @@ struct BusinessConsequences: Codable {
 struct MotelOperations: Codable {
     var consequences: BusinessConsequences?
     var colorsAssigned: Bool?
+    var serviceDays: [String:Int]?
+    var actionLabel: String?
+    var actionUntil: Int?
+
     var tick = 0
     var nextIncidentTick = 45
     var incidentsStarted = 0
@@ -286,5 +290,55 @@ extension Motel {
         let payment = min(cash,consequences.debt)
         cash -= payment; consequences.debt -= payment; consequences.finesPaid += payment
         state.consequences = consequences; operations = state
+    }
+}
+
+
+enum HotelService: String, CaseIterable {
+    case breakfast, laundry, repair, garden, luggage
+    var title: String { switch self {
+    case .breakfast: return "Serve breakfast"
+    case .laundry: return "Wash fresh towels"
+    case .repair: return "Repair pool pump"
+    case .garden: return "Water the garden"
+    case .luggage: return "Deliver luggage"
+    } }
+    var tile: Tile { switch self {
+    case .breakfast: return Tile(x:10,y:15)
+    case .laundry: return Tile(x:10,y:25)
+    case .repair: return Tile(x:10,y:22)
+    case .garden: return Tile(x:3,y:28)
+    case .luggage: return Tile(x:8,y:11)
+    } }
+    var symbol: String { switch self {
+    case .breakfast: return "?"
+    case .laundry: return "�"
+    case .repair: return "?"
+    case .garden: return "?"
+    case .luggage: return "?"
+    } }
+    var reward: Int { self == .luggage ? 18 : self == .breakfast ? 24 : 12 }
+}
+extension Motel {
+    var nearbyService: HotelService? {
+        guard canSave, visit == nil, worldState.place == .grounds else { return nil }
+        return HotelService.allCases.first { actorTile.distance(to:$0.tile) <= 1 }
+    }
+    func serviceAvailable(_ service: HotelService) -> Bool {
+        (operationsState.serviceDays?[service.rawValue] != day) &&
+        (!(service == .breakfast || service == .luggage) || occupancy > 0)
+    }
+    @discardableResult mutating func performService(_ service: HotelService) -> Bool {
+        guard nearbyService == service, serviceAvailable(service), !caught else { return false }
+        var state = operationsState
+        var days = state.serviceDays ?? [:]
+        days[service.rawValue] = day
+        state.serviceDays = days
+        state.actionLabel = service.symbol
+        state.actionUntil = state.tick + 3
+        operations = state
+        cash += service.reward
+        lastEvent = "\(service.title) completed! +\(service.reward) coins. Available again tomorrow."
+        return true
     }
 }

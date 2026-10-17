@@ -21,7 +21,7 @@ entry = {
     "version": version,
     "buildVersion": build,
     "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-    "localizedDescription": "Airb&b chaos: neglected emergencies can kill guests and summon police. Pay fines or risk a refused bribe. Safety incidents reduce bookings and ratings. Prominent employee hiring, faster emergency cycles and distinct room colors inside and outside.",
+    "localizedDescription": "More trees, flower beds and benches; daily breakfast, laundry, repairs, gardening and luggage services; varied guests and animated fighting and action feedback.",
     "downloadURL": f"{asset_base}/LittleHaven-unsigned.ipa",
     "size": pathlib.Path("LittleHaven-unsigned.ipa").stat().st_size,
     "minOSVersion": info["MinimumOSVersion"],

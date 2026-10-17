@@ -16,6 +16,7 @@ struct RPGActor {
     var animal = 0
     var displayScale = 1.0
     var effect = 0
+    var action = ""
 }
 
 struct RPGSceneView: UIViewRepresentable {
@@ -55,9 +56,15 @@ private struct ActorArtwork: View {
     let stride: Double
     var body: some View {
         Canvas { context, _ in
-            if actor.effect > 0 { ChaosArt.draw(context: &context, kind: actor.effect, stride: stride) }
+            if actor.effect > 0 && actor.effect != 3 { ChaosArt.draw(context: &context, kind: actor.effect, stride: stride) }
             else if actor.animal > 0 { CatArt.draw(context: &context, gray: actor.animal == 1, walk: stride) }
-            else { PaperPerson.draw(context: &context, x: 4, y: 9, color: actor.color, variant: actor.variant, facing: actor.facing, walk: stride) }
+            else { PaperPerson.draw(context: &context, x: 4, y: 9, color: actor.color, variant: actor.variant, facing: actor.facing, walk: stride)
+                if actor.effect == 3 {
+                    let punch = stride > 0 ? 6.0 : 0.0
+                    context.fill(Path(ellipseIn:CGRect(x:actor.facing == 1 ? 1-punch : 16+punch,y:14,width:5,height:4)),with:.color(Color(hex:0xE3B587)))
+                    if stride > 0 { context.draw(Text("?").font(.system(size:8)).foregroundColor(.yellow),at:CGPoint(x:actor.facing == 1 ? 0 : 23,y:12)) }
+                }
+            }
         }.frame(width: 24, height: 28)
     }
 }
@@ -150,6 +157,15 @@ final class RPGScene: SKScene {
                 ring.zPosition = -1
                 node.addChild(ring)
             }
+            if !actor.action.isEmpty && node.childNode(withName:"activity") == nil {
+                let prop = SKLabelNode(text:actor.action)
+                prop.name = "activity"; prop.fontSize = 12; prop.position = CGPoint(x:12,y:3)
+                node.addChild(prop)
+                prop.run(.repeatForever(.sequence([.rotate(byAngle:0.5,duration:0.15),.rotate(byAngle:-0.5,duration:0.15)])))
+            } else if actor.action.isEmpty { node.childNode(withName:"activity")?.removeFromParent() }
+            if actor.effect == 3 && node.action(forKey:"spar") == nil {
+                node.run(.repeatForever(.sequence([.rotate(toAngle:0.18,duration:0.12),.rotate(toAngle:-0.18,duration:0.12),.rotate(toAngle:0,duration:0.16)])),withKey:"spar")
+            }
             node.zPosition = CGFloat(actor.tile.y * 16)
             node.childNode(withName: "caption")?.removeFromParent()
             let caption = [actor.name, actor.marker].filter { !$0.isEmpty }.joined(separator: " ")
@@ -233,10 +249,13 @@ struct MotelRPGView: View {
         let mapID = visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue
         let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
         var actors = [RPGActor(id: "player", tile: motel.actorTile, color: 0x6AACA3, variant: 7, facing: motel.actorFacing)]
+        if (motel.operationsState.actionUntil ?? 0) > motel.operationsState.tick {
+            actors[0].action = motel.operationsState.actionLabel ?? ""
+        }
         if !interior {
-            actors += motel.waiting.filter { $0.id != motel.reception.visitor?.guest.id }.map { RPGActor(id: "guest-\($0.id)", tile: MotelGrounds.guestTile($0.id), color: $0.color, variant: $0.id % 7, name: $0.name) }
+            actors += motel.waiting.filter { $0.id != motel.reception.visitor?.guest.id }.map { RPGActor(id: "guest-\($0.id)", tile: MotelGrounds.guestTile($0.id), color: $0.color, variant: $0.id + 100, name: $0.name) }
             actors += motel.worldState.travellers.map {
-                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.id % 7, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: 0.35)
+                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.id + 100, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: 0.35)
             }
             for worker in motel.operationsState.workers where worker.active {
                 actors.append(RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:worker.role == .cleaner ? 1 : worker.role == .maintenance ? 4 : 0,name:worker.role.name,duration:0.9))
@@ -246,11 +265,11 @@ struct MotelRPGView: View {
             }
             if let incident = motel.operationsState.incident {
                 let kind = incident.kind
-                actors.append(RPGActor(id:"chaos",tile:kind.tile,color:0xD99B7E,variant:0,name:kind == .fire ? "FIRE!" : kind == .pool ? "HELP!" : "FIGHT!",effect:kind == .fire ? 1 : kind == .pool ? 2 : 3))
+                actors.append(RPGActor(id:"chaos",tile:kind.tile,color:0xD99B7E,variant:0,facing:2,name:kind == .fire ? "FIRE!" : kind == .pool ? "HELP!" : "FIGHT!",effect:kind == .fire ? 1 : kind == .pool ? 2 : 3))
                 if kind == .fight { actors.append(RPGActor(id:"chaos-other",tile:Tile(x:kind.tile.x+1,y:kind.tile.y),color:0x82AFC1,variant:4,facing:1,marker:"!",effect:3)) }
             }
         } else if let room, let guest = room.guest, let visit, motel.guestPresent(in: room.id) {
-            actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.id % 7, danger: true))
+            actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.id + 100, danger: true))
         }
         return RPGSceneView(mapID: mapID, revision: revision, mapSize: CGSize(width: interior ? 144 : 640, height: interior ? 144 : 608), columns: 14, interior: interior, actors: actors, working: workProgress > 0) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }

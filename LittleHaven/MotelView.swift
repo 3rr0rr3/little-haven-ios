@@ -159,7 +159,7 @@ struct MotelView: View {
                 Button { stop(); showPause = true } label: { Image(systemName: "pause.fill").frame(width: 28, height: 40) }.accessibilityLabel("Pause game")
             }
             HStack {
-                Button { stop(); panel = .reviews } label: { Text(motel.reviewAverage.map { String(format:"★ %.1f",$0) } ?? "★ NEW") }.accessibilityIdentifier("openReviews")
+                Button { stop(); panel = .reviews } label: { Text(motel.reviewAverage.map { String(format:"? %.1f",$0) } ?? "? NEW") }.accessibilityIdentifier("openReviews")
                 Spacer()
                 Button("HIRE / TEAM \(motel.operationsState.workers.count)") { stop(); panel = .staff }.accessibilityIdentifier("openStaff")
                 if let incident = motel.operationsState.incident {
@@ -193,6 +193,11 @@ struct MotelView: View {
                 }
             }
             Text(motel.isAtReception ? "Stay at the desk. Tap clients to talk; tap the lower door to walk outside." : hint).font(.system(size: 11, weight: .medium)).foregroundStyle(cream.opacity(0.8)).lineLimit(2).frame(maxWidth: .infinity, minHeight: 29, alignment: .leading)
+            if let service = motel.nearbyService {
+                Button(motel.serviceAvailable(service) ? "\(service.title) / +\(service.reward) coins" : "\(service.title) / done or awaiting guests") {
+                    stop(); change { _ = $0.performService(service) }
+                }.buttonStyle(MotelButtonStyle()).disabled(!motel.serviceAvailable(service))
+            }
             if motel.isAtReception {
                 HStack(spacing: 10) {
                     Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
@@ -375,7 +380,7 @@ struct MotelView: View {
             case .guest(let id):
                 if let guest = motel.waiting.first(where: { $0.id == id }) {
                     HStack {
-                        PaperPortrait(color: guest.color, variant: guest.id % 7).frame(width: 43, height: 55)
+                        PaperPortrait(color: guest.color, variant: guest.id + 100).frame(width: 43, height: 55)
                         Text("Hello! My name is \(guest.name). \(guest.story) Could I stay for \(guest.nights) night\(guest.nights == 1 ? "" : "s")?").font(.caption)
                     }
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -544,6 +549,15 @@ struct MotelView: View {
         guard var current = game.motel else { return }
         let before = current.lastEvent
         action(&current)
+        if current.lastEvent != before {
+            var state = current.operationsState
+            let event = current.lastEvent.lowercased()
+            if (state.actionUntil ?? 0) <= state.tick {
+                state.actionLabel = event.contains("fire") ? "??" : event.contains("pool") ? "?" : event.contains("fight") ? "?" : event.contains("paint") ? "?" : event.contains("clean") ? "?" : event.contains("room") ? "?" : "�"
+                state.actionUntil = state.tick + 3
+                current.operations = state
+            }
+        }
         game.motel = current
         if current.lastEvent != before { toast = current.lastEvent }
     }

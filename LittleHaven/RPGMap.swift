@@ -45,6 +45,8 @@ struct RPGMapDefinition: Codable {
     }
 }
 enum RPGMaps {
+    static let landscapeTrees = [Tile(x:2,y:2),Tile(x:12,y:2),Tile(x:21,y:2),Tile(x:29,y:2),Tile(x:37,y:2),Tile(x:2,y:16),Tile(x:2,y:24),Tile(x:2,y:30),Tile(x:9,y:30),Tile(x:3,y:33),Tile(x:10,y:33),Tile(x:37,y:10),Tile(x:37,y:19),Tile(x:37,y:28)]
+    static let landscapeBenches = [Tile(x:3,y:16),Tile(x:8,y:16),Tile(x:3,y:25),Tile(x:8,y:25)]
     static let town = RPGMapDefinition(id: "town", width: 20, height: 23,
         walkable: RPGRegion(x: 1, y: 1, width: 18, height: 21),
         obstacles: [RPGRegion(x: 2,y: 3,width: 4,height: 4), RPGRegion(x: 13,y: 3,width: 5,height: 4), RPGRegion(x: 2,y: 11,width: 4,height: 3), RPGRegion(x: 14,y: 13,width: 4,height: 3)],
@@ -69,6 +71,9 @@ enum RPGMaps {
         passages: [Tile(x: 4,y: 8)], events: [RPGMapEvent(id: "exit",tile: Tile(x: 4,y: 8),trigger: .playerTouch,destination: "grounds")])
     static let grounds: RPGMapDefinition = {
         var obstacles = [RPGRegion(x: 3,y: 3,width: 8,height: 6),RPGRegion(x: 3,y: 18,width: 7,height: 5),RPGRegion(x: 12,y: 26,width: 1,height: 1)]
+        for tile in landscapeTrees + landscapeBenches {
+            obstacles.append(RPGRegion(x:tile.x,y:tile.y,width:1,height:1))
+        }
         var events = [RPGMapEvent(id: "office",tile: Tile(x: 6,y: 9),trigger: .action,destination: "office",arrival: Tile(x: 4,y: 7)),RPGMapEvent(id: "construction",tile: Tile(x: 12,y: 26),trigger: .action)]
         for id in 0..<9 {
             let x = 14 + id % 3 * 8, y = 4 + id / 3 * 9

@@ -129,7 +129,7 @@ struct MotelRoomCanvas: View, Animatable {
             if guestPresent, let guest = room.guest {
                 let tile = visit.guestTile
                 if !sceneryOnly { context.stroke(Path(ellipseIn: CGRect(x: Double(tile.x * 16 - 7), y: Double(tile.y * 16 - 5), width: 30, height: 28)), with: .color(.red.opacity(0.45)), lineWidth: 0.8) }
-                if !sceneryOnly { PaperPerson.draw(context: &context, x: Double(tile.x * 16), y: Double(tile.y * 16), color: guest.color, variant: guest.id % 7, facing: 0, walk: 0) }
+                if !sceneryOnly { PaperPerson.draw(context: &context, x: Double(tile.x * 16), y: Double(tile.y * 16), color: guest.color, variant: guest.id + 100, facing: 0, walk: 0) }
             }
             if !sceneryOnly { PaperPerson.draw(context: &context, x: x * 16, y: y * 16, color: 0x6AACA3, variant: 7, facing: visit.facing, walk: sin((x + y) * .pi * 2)) }
             if workProgress > 0 {
@@ -200,6 +200,31 @@ struct MotelGroundsCanvas: View, Animatable {
                     }
                 }
             }
+            for tile in RPGMaps.landscapeTrees {
+                let tx = Double(tile.x*16), ty = Double(tile.y*16)
+                rect(tx+6,ty+8,4,8,0x816044)
+                for layer in 0..<3 {
+                    context.fill(Path(ellipseIn:CGRect(x:tx-2+Double(layer),y:ty-10+Double(layer*4),width:20-Double(layer*2),height:15)),with:.color(Color(hex:layer == 1 ? 0x426E50 : 0x5B8D58)))
+                }
+                if tile.x % 2 == 0 { rect(tx+3,ty+1,3,3,0xE5A18E); rect(tx+11,ty+4,3,3,0xE5A18E) }
+            }
+            for tile in RPGMaps.landscapeBenches {
+                let tx=Double(tile.x*16), ty=Double(tile.y*16)
+                rect(tx,ty+3,16,4,0x9A714D); rect(tx,ty+9,16,4,0xC49A68)
+                rect(tx+2,ty+13,2,3,0x45564B); rect(tx+12,ty+13,2,3,0x45564B)
+            }
+            for col in [14,22,30] {
+                for row in [10,19,28] {
+                    rect(Double(col*16),Double(row*16),28,8,0xA07855)
+                    for flower in 0..<6 { rect(Double(col*16+flower*4+2),Double(row*16-2),3,6,flower % 2 == 0 ? 0xE3A7B1 : 0xF0CE79) }
+                }
+            }
+            for service in HotelService.allCases {
+                let tx=Double(service.tile.x*16), ty=Double(service.tile.y*16)
+                rect(tx+1,ty+2,14,12,0x55776B)
+                label(service.symbol,tx+8,ty+7,8,0xF4D58B)
+                label(service.rawValue.uppercased(),tx+8,ty-4,3,0x243D32)
+            }
             // The office and nine physical room plots, connected by walkable lanes.
             func building(_ origin: Tile, _ width: Int, _ height: Int, _ door: Tile, _ name: String, _ roof: UInt32, _ paint: UInt32) {
                 let px = Double(origin.x * 16), py = Double(origin.y * 16), w = Double(width * 16), h = Double(height * 16)
@@ -265,14 +290,14 @@ struct MotelGroundsCanvas: View, Animatable {
             }
             var actors: [Actor] = motel.waiting.map {
                 let t = MotelGrounds.guestTile($0.id)
-                return Actor(x: Double(t.x), y: Double(t.y), color: $0.color, variant: $0.id % 7, facing: 0, name: $0.name, isPlayer: false)
+                return Actor(x: Double(t.x), y: Double(t.y), color: $0.color, variant: $0.id + 100, facing: 0, name: $0.name, isPlayer: false)
             }
             let fraction = npcTick == Double(motel.worldState.tick) ? 1 : npcTick - floor(npcTick)
             for walker in motel.worldState.travellers {
                 let px = Double(walker.previous.x) + Double(walker.player.x - walker.previous.x) * fraction
                 let py = Double(walker.previous.y) + Double(walker.player.y - walker.previous.y) * fraction
                 let facing = walker.player.y > walker.previous.y ? 0 : walker.player.x < walker.previous.x ? 1 : walker.player.x > walker.previous.x ? 2 : 3
-                actors.append(Actor(x: px, y: py, color: walker.color, variant: walker.id % 7, facing: facing, name: "", isPlayer: false))
+                actors.append(Actor(x: px, y: py, color: walker.color, variant: walker.id + 100, facing: facing, name: "", isPlayer: false))
             }
             actors.append(Actor(x: x, y: y, color: 0x6AACA3, variant: 7, facing: motel.actorFacing, name: "", isPlayer: true))
             for actor in actors.filter({ _ in !sceneryOnly }).sorted(by: { $0.y < $1.y }) {

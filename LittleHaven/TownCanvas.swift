@@ -159,8 +159,10 @@ enum PaperPerson {
                      color: UInt32, variant: Int, facing: Int, walk: Double) {
         if [7,8,9].contains(variant) { PersonalArt.draw(context: &context, x: x, y: y, variant: variant, facing: facing, walk: walk); return }
         let ink: UInt32 = 0x343333
-        let skin: UInt32 = variant == 2 || variant == 4 ? 0xD6A477 : 0xF0C9A0
+        let seed = abs(variant)
+        let skin: UInt32 = [UInt32(0xF0C9A0),0xD6A477,0xA87350,0x734A37,0xE9B693][seed % 5]
         let hair: UInt32 = [0x795334, 0x52362B, 0x554432, 0xA15D3A, 0x493A30, 0xBA8C48, 0xC2BDB0, 0x594537][variant % 8]
+        let style = seed % 7
         let bob = abs(walk) * 0.35
         func shape(_ path: Path, _ fill: UInt32, _ outline: Bool = true) {
             context.fill(path, with: .color(Color(hex: fill)))
@@ -192,11 +194,14 @@ enum PaperPerson {
         coat.addQuadCurve(to: CGPoint(x: x + 12, y: y + 5 - bob), control: CGPoint(x: x + 15, y: y + 8 - bob))
         coat.closeSubpath()
         shape(coat, color)
+        if seed % 3 == 0 { box(3, 8, 10, 1.3, 0xEEE3BA) }
+        if seed % 3 == 1 { box(4, 7, 2, 5, 0x445B69) }
+        if seed % 4 == 0 { box(10, 10, 3, 3, 0xBD975F) }
         line([CGPoint(x: 8, y: 7), CGPoint(x: 8, y: 13.7)], ink)
         for button in 0..<3 { oval(8.7, 8.2 + Double(button) * 1.7, 0.5, 0.5, ink, false) }
         oval(0.6, 9 + walk * 0.7, 3.5, 3.7, skin)
         oval(11.9, 9 - walk * 0.7, 3.5, 3.7, skin)
-        if variant == 1 || variant == 3 || variant == 6 { oval(1, -4.5, 14, 13.5, hair) }
+        if style == 1 || style == 3 || style == 6 { oval(1, -4.5, 14, 13.5, hair) }
         oval(1.7, -5, 12.6, 12.5, skin)
         if facing == 3 {
             oval(1.8, -5, 12.4, 11.6, hair)
@@ -207,19 +212,19 @@ enum PaperPerson {
             oval(5.5 + look, 0.5, 0.75, 1, ink, false)
             oval(9.3 + look, 0.5, 0.75, 1, ink, false)
             line([CGPoint(x: 6.1, y: 5), CGPoint(x: 8, y: 5.4), CGPoint(x: 9.9, y: 5)], ink, 0.35)
-            if variant == 3 || variant == 6 {
+            if style == 3 || style == 6 {
                 context.stroke(Path(ellipseIn: CGRect(x: x + 3.1, y: y - 1.7 - bob, width: 4.8, height: 5.3)), with: .color(Color(hex: ink)), lineWidth: 0.45)
                 context.stroke(Path(ellipseIn: CGRect(x: x + 8, y: y - 1.7 - bob, width: 4.8, height: 5.3)), with: .color(Color(hex: ink)), lineWidth: 0.45)
             }
         }
-        if variant == 7 || variant == 2 || variant == 5 {
+        if variant == 7 || style == 2 || style == 5 {
             oval(1.6, -6, 12.8, 5.2, variant == 7 ? 0x4C8C85 : color)
             box(1.3, -2.5, 13.4, 1.7, variant == 7 ? 0xE8BC65 : 0xE9DFBA)
             oval(6.4, -7.5, 3.2, 2.6, variant == 7 ? 0xE8BC65 : color)
         } else {
             oval(2, -5.5, 12, 3.7, hair)
-            if variant == 1 { oval(10.8, -6.5, 4, 4, hair) }
-            if variant == 4 { line([CGPoint(x: 5.6, y: 4.1), CGPoint(x: 10.4, y: 4.1)], hair, 0.8) }
+            if style == 1 { oval(10.8, -6.5, 4, 4, hair) }
+            if style == 4 { line([CGPoint(x: 5.6, y: 4.1), CGPoint(x: 10.4, y: 4.1)], hair, 0.8) }
         }
     }
 }
