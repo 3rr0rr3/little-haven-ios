@@ -150,7 +150,7 @@ struct MotelView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(motel.mapName).font(.system(size: 20, weight: .black, design: .rounded))
-                    Text("DAY \(motel.day) / \(motel.occupancy) GUESTS / \(motel.weather.title)")
+                    Text("DAY \(motel.day) / \(motel.occupancy) GUESTS / \(motel.rooms.count) ROOMS / \(motel.weather.title)")
                         .font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(gold)
                 }
                 Spacer(minLength: 4)

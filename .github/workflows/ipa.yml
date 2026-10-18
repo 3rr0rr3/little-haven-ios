@@ -142,7 +142,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Gameplay-previews
-          path: LittleHaven-*.png
+          path: |
+            LittleHaven-*.png
+            LittleHaven-*.mp4
           if-no-files-found: ignore
       - name: Preserve simulator test results
         if: always()

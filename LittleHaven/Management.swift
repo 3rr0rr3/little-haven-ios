@@ -183,6 +183,7 @@ extension Motel {
                 worker.roomID = nil
                 target = incident.kind.approach
             } else if worker.role == .valet, let car = state.cars?.first(where: { $0.arrival >= 8 && $0.washedDay != day }) {
+                if worker.roomID != car.id { worker.progress = 0 }
                 worker.roomID = car.id
                 target = HotelCar.approach(car.slot)
             } else if worker.role == .cleaner, let room = rooms.first(where: { $0.dirty && $0.guest == nil }) {
