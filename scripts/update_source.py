@@ -21,7 +21,7 @@ entry = {
     "version": version,
     "buildVersion": build,
     "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-    "localizedDescription": "More trees, flower beds and benches; daily breakfast, laundry, repairs, gardening and luggage services; varied guests and animated fighting and action feedback.",
+    "localizedDescription": "Animated drowning, angry fights and fire; guest parking and a paid car wash attendant; animated cleaning, outdoor services, theft and changing weather.",
     "downloadURL": f"{asset_base}/LittleHaven-unsigned.ipa",
     "size": pathlib.Path("LittleHaven-unsigned.ipa").stat().st_size,
     "minOSVersion": info["MinimumOSVersion"],

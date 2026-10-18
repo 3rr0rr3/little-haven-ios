@@ -150,7 +150,7 @@ struct MotelView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(motel.mapName).font(.system(size: 20, weight: .black, design: .rounded))
-                    Text("DAY \(motel.day) / \(motel.occupancy) GUESTS / \(motel.rooms.count) ROOMS")
+                    Text("DAY \(motel.day) / \(motel.occupancy) GUESTS / \(motel.weather.title)")
                         .font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(gold)
                 }
                 Spacer(minLength: 4)
@@ -193,6 +193,11 @@ struct MotelView: View {
                 }
             }
             Text(motel.isAtReception ? "Stay at the desk. Tap clients to talk; tap the lower door to walk outside." : hint).font(.system(size: 11, weight: .medium)).foregroundStyle(cream.opacity(0.8)).lineLimit(2).frame(maxWidth: .infinity, minHeight: 29, alignment: .leading)
+            if let car = motel.nearbyCar {
+                Button("Wash car / +35 coins") { stop(); change { _ = $0.washNearbyCar() } }
+                    .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("washCar")
+                Text("Parking bay \(car.slot+1) / Hire Diego for automatic washes").font(.system(size:9))
+            }
             if let service = motel.nearbyService {
                 Button(motel.serviceAvailable(service) ? "\(service.title) / +\(service.reward) coins" : "\(service.title) / done or awaiting guests") {
                     stop(); change { _ = $0.performService(service) }
@@ -557,6 +562,12 @@ struct MotelView: View {
                 state.actionUntil = state.tick + 3
                 current.operations = state
             }
+        }
+        if current.lastEvent != before && current.operationsState.visual?.id == game.motel?.operationsState.visual?.id {
+            let message = current.lastEvent.lowercased()
+            if message.contains("paint") { current.playVisual("paint") }
+            else if message.contains("built") || message.contains("furnish") || message.contains("upgraded") { current.playVisual("build") }
+            else if message.contains("tools collected") || message.contains("fresh sheets collected") { current.playVisual("laundry") }
         }
         game.motel = current
         if current.lastEvent != before { toast = current.lastEvent }

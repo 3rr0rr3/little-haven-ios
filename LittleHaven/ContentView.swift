@@ -20,6 +20,31 @@ struct ContentView: View {
     private static func initialGame() -> Game {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
+        if args.contains(where: { $0.hasPrefix("--ui-parking") || $0.hasPrefix("--ui-weather") || $0.hasPrefix("--ui-action") }) {
+            var sample=Game()
+            sample.coins=545; sample.wakeUp(); sample.motel!.initializeWorld()
+            sample.motel!.cash=900
+            sample.motel!.world!.place = .grounds
+            sample.motel!.world!.player = Tile(x:18,y:32)
+            for _ in 0..<8 { sample.motel!.tickManagement() }
+            sample.motel!.operations!.nextIncidentTick=10000
+            if args.contains("--ui-parking-staff") {
+                _ = sample.motel!.hire(.valet)
+                sample.motel!.operations!.workers[0].tile=HotelCar.approach(0)
+                sample.motel!.operations!.workers[0].progress=3
+            }
+            for weather in HotelWeather.allCases where args.contains("--ui-weather-"+weather.rawValue) {
+                sample.motel!.operations!.weatherOverride=weather
+                sample.motel!.world!.player=Tile(x:9,y:23)
+            }
+            if args.contains("--ui-action-theft") {
+                _ = sample.motel!.checkIn(guestID:10,roomID:0)
+                _ = sample.motel!.enter(0); sample.motel!.visit!.player=Tile(x:3,y:3)
+                _ = sample.motel!.steal()
+            }
+            if args.contains("--ui-action-wash") { _ = sample.motel!.washNearbyCar() }
+            sample.save(); return sample
+        }
         if args.contains("--ui-police") || args.contains("--ui-hiring") || args.contains("--ui-operations") || args.contains("--ui-chaos-fire") || args.contains("--ui-chaos-pool") || args.contains("--ui-chaos-fight") || args.contains("--ui-dialogue") {
             var sample = Game()
             sample.coins = 545; sample.wakeUp(); sample.motel!.initializeWorld()

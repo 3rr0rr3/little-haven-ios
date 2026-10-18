@@ -171,6 +171,24 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.buttons["hire_cleaner"].waitForExistence(timeout:3))
         capture(app,"Visible hiring panel")
     }
+    func testCarWashPaysOnlyOnce() {
+        let app=launch("--ui-parking")
+        XCTAssertTrue(app.buttons["washCar"].waitForExistence(timeout:10))
+        let before=cash(app)
+        XCTAssertTrue(before.contains("900"))
+        app.buttons["washCar"].tap()
+        XCTAssertTrue(cash(app).contains("935"))
+        XCTAssertFalse(app.buttons["washCar"].exists)
+        capture(app,"Car washed with animated foam and spray")
+    }
+    func testWeatherAndAnimatedTheft() {
+        let app=launch("--ui-weather-storm")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS %@", "THUNDERSTORM")).firstMatch.waitForExistence(timeout:10))
+        capture(app,"Storm particles outside the hotel")
+        app.terminate(); app.launchArguments=["--ui-action-theft","--ui-testing"]; app.launch()
+        XCTAssertTrue(app.descendants(matching:.any)["motelWorld"].waitForExistence(timeout:10))
+        capture(app,"Recognizable suitcase, watch and camera in the guest room")
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

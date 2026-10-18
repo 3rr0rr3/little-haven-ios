@@ -1,15 +1,15 @@
 import Foundation
 
 enum StaffRole: String, Codable, CaseIterable, Identifiable {
-    case cleaner, maintenance, security
+    case cleaner, maintenance, security, valet
     var id: String { rawValue }
-    var title: String { switch self { case .cleaner: return "Housekeeper"; case .maintenance: return "Groundskeeper"; case .security: return "Security guard" } }
-    var name: String { switch self { case .cleaner: return "Luna"; case .maintenance: return "Mateo"; case .security: return "Riley" } }
-    var hireCost: Int { switch self { case .cleaner: return 100; case .maintenance: return 140; case .security: return 160 } }
-    var wage: Int { switch self { case .cleaner: return 15; case .maintenance: return 20; case .security: return 25 } }
-    var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office." } }
-    var home: Tile { Tile(x:11,y:self == .cleaner ? 10 : self == .maintenance ? 11 : 12) }
-    var color: UInt32 { switch self { case .cleaner: return 0xB4A1C5; case .maintenance: return 0xD8AC66; case .security: return 0x718DA9 } }
+    var title: String { switch self { case .cleaner: return "Housekeeper"; case .maintenance: return "Groundskeeper"; case .security: return "Security guard"; case .valet: return "Car wash attendant" } }
+    var name: String { switch self { case .cleaner: return "Luna"; case .maintenance: return "Mateo"; case .security: return "Riley"; case .valet: return "Diego" } }
+    var hireCost: Int { switch self { case .cleaner: return 100; case .maintenance: return 140; case .security: return 160; case .valet: return 120 } }
+    var wage: Int { switch self { case .cleaner: return 15; case .maintenance: return 20; case .security: return 25; case .valet: return 18 } }
+    var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office."; case .valet: return "Walks to parked guest cars, scrubs and rinses them. Each car earns 35 coins once per day." } }
+    var home: Tile { self == .valet ? Tile(x:15,y:32) : Tile(x:11,y:self == .cleaner ? 10 : self == .maintenance ? 11 : 12) }
+    var color: UInt32 { switch self { case .cleaner: return 0xB4A1C5; case .maintenance: return 0xD8AC66; case .security: return 0x718DA9; case .valet: return 0x5DA6B0 } }
 }
 struct MotelWorker: Codable, Identifiable {
     let role: StaffRole
@@ -69,6 +69,11 @@ struct MotelOperations: Codable {
     var serviceDays: [String:Int]?
     var actionLabel: String?
     var actionUntil: Int?
+    var visual: HotelVisual?
+    var visualSerial: Int?
+    var cars: [HotelCar]?
+    var washIncome: Int?
+    var weatherOverride: HotelWeather?
 
     var tick = 0
     var nextIncidentTick = 45
@@ -140,6 +145,9 @@ extension Motel {
     @discardableResult mutating func resolveNearbyIncident() -> Bool {
         guard nearbyIncident, !caught else { return false }
         var state = operationsState
+        let incident = state.incident!
+        state.visualSerial = (state.visualSerial ?? 0) + 1
+        state.visual = HotelVisual(id:state.visualSerial!,kind:incident.kind == .fire ? "extinguish" : incident.kind == .pool ? "rescue" : "calm",origin:actorTile,target:incident.kind.tile,map:"grounds")
         state.incident = nil
         state.incidentsResolved += 1
         state.nextIncidentTick = state.tick + 30
@@ -151,6 +159,7 @@ extension Motel {
         guard !caught else { return }
         var state = operationsState
         state.tick += 1
+        tickParking(&state)
         if state.incident == nil && state.consequences?.police == nil && occupancy > 0 && state.tick >= state.nextIncidentTick {
             let kind = ChaosKind.allCases[state.incidentsStarted % ChaosKind.allCases.count]
             state.incidentsStarted += 1
@@ -173,6 +182,9 @@ extension Motel {
             if responding, let incident = state.incident {
                 worker.roomID = nil
                 target = incident.kind.approach
+            } else if worker.role == .valet, let car = state.cars?.first(where: { $0.arrival >= 8 && $0.washedDay != day }) {
+                worker.roomID = car.id
+                target = HotelCar.approach(car.slot)
             } else if worker.role == .cleaner, let room = rooms.first(where: { $0.dirty && $0.guest == nil }) {
                 if worker.roomID != room.id { worker.progress = 0 }
                 worker.roomID = room.id
@@ -191,6 +203,18 @@ extension Motel {
                     state.incidentsResolved += 1
                     state.nextIncidentTick = state.tick + 30
                     lastEvent = "\(worker.role.name) handled the emergency. Your guests are safe."
+                }
+            } else if worker.role == .valet, let carID = worker.roomID,
+                      let carIndex = state.cars?.firstIndex(where: { $0.id == carID }) {
+                worker.progress += 1
+                state.cars![carIndex].washProgress = worker.progress
+                if worker.progress >= 10 {
+                    state.cars![carIndex].washedDay = day
+                    state.cars![carIndex].washProgress = 0
+                    state.washIncome = (state.washIncome ?? 0) + 35
+                    cash += 35
+                    worker.progress = 0; worker.roomID = nil
+                    lastEvent = "Diego washed a guest car. +35 coins."
                 }
             } else if let roomID = worker.roomID, let roomIndex = rooms.firstIndex(where: { $0.id == roomID }) {
                 worker.progress += 1
@@ -334,11 +358,76 @@ extension Motel {
         var days = state.serviceDays ?? [:]
         days[service.rawValue] = day
         state.serviceDays = days
-        state.actionLabel = service.symbol
+        state.actionLabel = service.rawValue
         state.actionUntil = state.tick + 3
         operations = state
         cash += service.reward
+        playVisual(service.rawValue, target:service.tile)
         lastEvent = "\(service.title) completed! +\(service.reward) coins. Available again tomorrow."
+        return true
+    }
+}
+
+enum HotelWeather: String, Codable, CaseIterable {
+    case sunny, rain, storm, wind, snow
+    var title: String { switch self {
+    case .sunny: return "SUNNY"; case .rain: return "RAIN"; case .storm: return "THUNDERSTORM"
+    case .wind: return "WIND"; case .snow: return "SNOW"
+    } }
+}
+struct HotelVisual: Codable {
+    let id: Int
+    let kind: String
+    let origin: Tile
+    let target: Tile
+    let map: String
+}
+struct HotelCar: Codable, Identifiable {
+    let id: Int
+    let slot: Int
+    let color: UInt32
+    var arrival = 0
+    var washedDay = 0
+    var washProgress = 0
+    static func tile(_ slot: Int) -> Tile { Tile(x:18 + slot * 8,y:30) }
+    static func approach(_ slot: Int) -> Tile { Tile(x:18 + slot * 8,y:32) }
+}
+extension Motel {
+    var weather: HotelWeather {
+        operationsState.weatherOverride ?? HotelWeather.allCases[((day-1) + operationsState.tick / 75) % HotelWeather.allCases.count]
+    }
+    var visualMap: String { visit.map { "room-\($0.roomID)" } ?? worldState.place.rawValue }
+    mutating func playVisual(_ kind: String, target: Tile? = nil) {
+        var state = operationsState
+        state.visualSerial = (state.visualSerial ?? 0) + 1
+        state.visual = HotelVisual(id:state.visualSerial!,kind:kind,origin:actorTile,target:target ?? actorTile,map:visualMap)
+        operations = state
+    }
+    mutating func tickParking(_ state: inout MotelOperations) {
+        let guests = rooms.compactMap(\.guest) + waiting
+        let valid = Set(guests.map(\.id))
+        var cars = state.cars ?? []
+        cars.removeAll { !valid.contains($0.id) }
+        for guest in guests where !cars.contains(where: { $0.id == guest.id }) {
+            guard let slot = (0..<3).first(where: { slot in !cars.contains { $0.slot == slot } }) else { break }
+            cars.append(HotelCar(id:guest.id,slot:slot,color:guest.color))
+        }
+        for i in cars.indices { cars[i].arrival = min(8,cars[i].arrival + 1) }
+        state.cars = cars
+    }
+    var nearbyCar: HotelCar? {
+        guard canSave, worldState.place == .grounds else { return nil }
+        return operationsState.cars?.first { $0.arrival >= 8 && $0.washedDay != day && actorTile.distance(to:HotelCar.approach($0.slot)) <= 1 }
+    }
+    @discardableResult mutating func washNearbyCar() -> Bool {
+        guard let car = nearbyCar else { return false }
+        var state = operationsState
+        guard let i = state.cars?.firstIndex(where: { $0.id == car.id }) else { return false }
+        state.cars![i].washedDay = day; state.cars![i].washProgress = 0
+        state.washIncome = (state.washIncome ?? 0) + 35
+        cash += 35; operations = state
+        playVisual("carwash",target:HotelCar.tile(car.slot))
+        lastEvent = "Car scrubbed and rinsed. +35 coins."
         return true
     }
 }

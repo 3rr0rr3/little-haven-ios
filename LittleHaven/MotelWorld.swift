@@ -187,6 +187,7 @@ extension Motel {
         var tasks = rooms[index].cleanedTasks ?? []
         guard tasks.insert(target).inserted else { return false }
         rooms[index].cleanedTasks = tasks
+        playVisual(target == 0 ? "bed" : target == 1 ? "trash" : "mop",target:MotelGrounds.cleaningTiles[target])
         if tasks.count == MotelGrounds.cleaningTiles.count {
             rooms[index].dirty = false
             lastEvent = "Room \(rooms[index].number) is spotless and ready for a guest."

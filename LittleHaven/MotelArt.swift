@@ -49,10 +49,17 @@ enum InteriorArt {
                 rect(98, 94, 14, 4, 0xE4C396)
             }
         } else {
+            // Wooden frame, mattress, two shaped pillows and stitched blanket.
+            rect(29,31,37,20,0x624B3C)
+            context.fill(Path(roundedRect:CGRect(x:31,y:32,width:33,height:16),cornerRadius:2),with:.color(Color(hex:0xECE6D1)))
             rect(30, 32, 35, 17, 0x715643)
             rect(32, 33, 31, 15, level == 2 ? 0xE4D2A9 : Motel.themeColors[theme])
             rect(33, 34, 13, 5, 0xF6EBCF)
             rect(49, 34, 12, 5, 0xF6EBCF)
+            context.fill(Path(roundedRect:CGRect(x:33,y:34,width:13,height:5),cornerRadius:1.5),with:.color(Color(hex:0xFCF3DC)))
+            context.fill(Path(roundedRect:CGRect(x:49,y:34,width:12,height:5),cornerRadius:1.5),with:.color(Color(hex:0xFCF3DC)))
+            rect(32,41,31,2,0xD4BE96)
+            for stitch in 0..<7 { rect(34+Double(stitch*4),44,1,2,0xD8DBC1) }
             if level == 2 {
                 rect(102, 77, 17, 11, 0x765F4A)
                 rect(107, 68, 6, 10, 0xE6CF8C)
@@ -122,9 +129,12 @@ struct MotelRoomCanvas: View, Animatable {
                 let tile = RoomVisit.lootTiles[index]
                 let itemRect = CGRect(x: Double(tile.x * 16 + 2), y: Double(tile.y * 16 + 3), width: 12, height: 10)
                 let taken = room.stolen.contains(index) || visit.loot.contains(index)
-                context.fill(Path(roundedRect: itemRect, cornerRadius: 2), with: .color(Color(hex: taken ? 0x7D796A : [UInt32(0x9D7155), 0xCBA957, 0x4B5660][index])))
-                if visit.sneaking && !taken { context.stroke(Path(roundedRect: itemRect.insetBy(dx: -1, dy: -1), cornerRadius: 3), with: .color(Color(hex: 0xF3D185)), lineWidth: 0.6) }
-                context.draw(Text((room.guest == nil ? ["CASE", "DESK", "SHELF"] : ["BAG", "WATCH", "CAM"])[index]).font(.system(size: 3, weight: .bold, design: .monospaced)).foregroundColor(Color(hex: 0xF4E5C5)), at: CGPoint(x: Double(tile.x * 16 + 8), y: Double(tile.y * 16 + 8)))
+                if !taken {
+                    RoomObjectArt.draw(context:&context,index:index,x:Double(tile.x*16),y:Double(tile.y*16))
+                    context.stroke(Path(roundedRect:itemRect.insetBy(dx:-2,dy:-2),cornerRadius:3),with:.color(Color(hex:0xF3D185)),lineWidth:0.6)
+                } else {
+                    context.stroke(Path(roundedRect:itemRect,cornerRadius:2),with:.color(Color(hex:0x8A826C)),lineWidth:0.4)
+                }
             }
             if guestPresent, let guest = room.guest {
                 let tile = visit.guestTile
@@ -270,14 +280,16 @@ struct MotelGroundsCanvas: View, Animatable {
             for i in 0..<6 { rect(59 + Double(i % 3) * 27, 302 + Double(i / 3) * 32, 18, 1, 0xCEE4CD) }
             label("POOL", 105, 278, 4, 0x4A664A)
             rect(64, 252, 40, 5, 0x9F7854); rect(68, 257, 3, 6, 0x6B634D); rect(97, 257, 3, 6, 0x6B634D)
-            for (index, col) in [17, 25, 33].enumerated() {
-                let px = Double(col * 16), py = 480.0
-                rect(px - 5, py - 3, 59, 40, 0x7E8580)
-                rect(px - 5, py - 3, 1, 40, 0xE5D5AD); rect(px + 54, py - 3, 1, 40, 0xE5D5AD)
-                rect(px + 1, py + 2, 45, 27, [UInt32(0xC68D6F), 0x8CAAB3, 0xCAB46B][index])
-                rect(px + 10, py + 4, 23, 8, 0xB2D0C9)
-                rect(px + 3, py + 24, 8, 8, 0x414A43); rect(px + 35, py + 24, 8, 8, 0x414A43)
+            rect(240,472,365,80,0x747E78)
+            label("GUEST PARKING / CAR WASH",416,466,5,0x2F4E3D)
+            for col in [17,25,33] {
+                let px=Double(col*16)
+                rect(px-5,477,1,40,0xE5D5AD); rect(px+54,477,1,40,0xE5D5AD)
+                rect(px-5,477,59,1,0xE5D5AD)
+                label("WASH +35",px+24,527,3,0xF4D891)
             }
+            rect(238,505,16,25,0x436D76); rect(240,508,12,12,0x8FC3CC)
+            label("HIRE DIEGO",245,540,3,0xF4D891)
             let sign = MotelGrounds.sign
             rect(Double(sign.x * 16 + 6), Double(sign.y * 16), 4, 19, 0x7D6D50)
             rect(Double(sign.x * 16 - 12), Double(sign.y * 16 - 7), 40, 20, 0x3A594C)

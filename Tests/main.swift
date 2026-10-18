@@ -381,7 +381,7 @@ func managementRules() {
     var staff = Motel()
     staff.initializeWorld(); staff.cash = 1000
     for role in StaffRole.allCases { require(staff.hire(role), "Each staff role can be hired") }
-    require(staff.cash == 600 && !staff.hire(.cleaner), "Hiring charges once and prevents duplicate employees")
+    require(staff.cash == 480 && !staff.hire(.cleaner), "Hiring charges once and prevents duplicate employees")
     staff.rooms[0].dirty = true
     for _ in 0..<80 { staff.tickManagement() }
     require(!staff.rooms[0].dirty && staff.rooms[0].cleanedTasks?.count == 3, "Housekeeper walks to and cleans a vacant room")
@@ -395,7 +395,7 @@ func managementRules() {
     staff.cash = 5; _ = staff.nextDay()
     require(staff.cash == 5 && staff.operationsState.workers.allSatisfy { !$0.active }, "Insufficient wages put workers off duty without debt")
     staff.cash = 100; _ = staff.nextDay()
-    require(staff.cash == 40 && staff.operationsState.workers.allSatisfy { $0.active }, "Paying wages restores the next shift")
+    require(staff.cash == 22 && staff.operationsState.workers.allSatisfy { $0.active }, "Paying wages restores the next shift")
     var manual = Motel()
     manual.initializeWorld(); _ = manual.checkIn(guestID:10,roomID:0)
     for _ in 0..<40 { manual.tickManagement() }
@@ -406,7 +406,7 @@ func managementRules() {
     require(!manual.resolveNearbyIncident(), "Resolved incidents cannot be claimed twice")
     let data = try! JSONEncoder().encode(staff)
     let saved = try! JSONDecoder().decode(Motel.self,from:data)
-    require(saved.operationsState.workers.count == 3 && saved.operationsState.incidentsResolved == 3, "Staff and incident outcomes survive save/load")
+    require(saved.operationsState.workers.count == 4 && saved.operationsState.incidentsResolved == 3, "Staff and incident outcomes survive save/load")
     var legacy = Motel(); legacy.operations = nil
     let old = try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(legacy))
     require(old.operationsState.workers.isEmpty && old.operationsState.reviews.isEmpty, "Old motel saves migrate with no invented employees or ratings")
@@ -484,3 +484,52 @@ func policeRules() {
     print("PASS: fatalities, police arrival, fine debt, accepted and rejected bribes, booking penalties, persisted consequences, room colors and accessible hiring")
 }
 policeRules()
+
+func parkingAndAnimationRules() {
+    var hotel=Motel(); hotel.initializeWorld()
+    hotel.world!.place = .grounds; hotel.world!.player=MotelGrounds.gate
+    hotel.operations = MotelOperations()
+    for _ in 0..<8 { hotel.tickManagement() }
+    require(hotel.operationsState.cars?.count == 3,"Three occupied parking bays are created")
+    require(!hotel.washNearbyCar(),"Cannot collect car wash income remotely")
+    for slot in 0..<3 {
+        require(MotelGrounds.nextStep(from:MotelGrounds.gate,to:HotelCar.approach(slot),avoiding:[]) != nil,"Every parking bay is reachable")
+    }
+    hotel.world!.player=HotelCar.approach(0)
+    let money=hotel.cash
+    require(hotel.washNearbyCar() && hotel.cash == money+35,"Nearby car wash earns 35 coins")
+    require(!hotel.washNearbyCar(),"Cannot wash the same car repeatedly in one day")
+    require(hotel.operationsState.visual?.kind == "carwash","Washing records a specific animation")
+    let copy=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(hotel))
+    require(copy.operationsState.cars?.first?.washedDay == hotel.day,"Clean cars survive save and reload")
+    var worker=Motel(); worker.initializeWorld(); worker.cash=1000
+    require(worker.hire(.valet),"Car wash attendant can be hired")
+    for _ in 0..<80 { worker.tickManagement() }
+    require(worker.operationsState.washIncome == 105,"Attendant walks to and washes all three cars")
+    let earned=worker.cash
+    for _ in 0..<30 { worker.tickManagement() }
+    require(worker.cash == earned,"Attendant cannot farm the same cars")
+    for mode in HotelWeather.allCases {
+        worker.operations!.weatherOverride=mode
+        require(worker.weather == mode,"Every weather mode is available and persisted")
+    }
+    var old=Motel(); old.operations=MotelOperations()
+    let legacy=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(old))
+    require(legacy.operationsState.cars == nil && legacy.operationsState.visual == nil,"Old saves need no car or animation fields")
+    var cleaner=Motel(); cleaner.initializeWorld(); cleaner.rooms[0].dirty=true
+    cleaner.world!.hasCleaningKit=true; _ = cleaner.enter(0)
+    cleaner.visit!.player=Tile(x:3,y:3)
+    require(cleaner.cleanNearbyTask() && cleaner.operationsState.visual?.kind == "bed","Bed cleaning uses a sheet animation")
+    var thief=Motel(); thief.initializeWorld(); _ = thief.checkIn(guestID:10,roomID:0); _ = thief.enter(0)
+    thief.visit!.player=Tile(x:3,y:3)
+    require(thief.steal() && thief.operationsState.visual?.kind == "steal-0","Stolen suitcase records its source and destination")
+    for kind in ChaosKind.allCases {
+        var rescue=Motel(); rescue.initializeWorld(); rescue.world!.place = .grounds
+        rescue.world!.player=kind.approach; rescue.operations=MotelOperations()
+        rescue.operations!.incident=MotelIncident(kind:kind)
+        require(rescue.resolveNearbyIncident(),"Each emergency can be resolved")
+        require(rescue.operationsState.visual?.target == kind.tile,"Emergency resolution animation stays at the incident")
+    }
+    print("PASS: parking, walking attendant, car wash income, persistence, climate and action animation events")
+}
+parkingAndAnimationRules()

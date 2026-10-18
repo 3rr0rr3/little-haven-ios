@@ -13,7 +13,7 @@ struct OfficeReceptionView: View {
             RPGActor(id:"chichi",tile:Tile(x:5,y:11),color:0xE9E2D0,variant:0,name:"Chichi",animal:2)]
         if let visitor { result.append(RPGActor(id:"reception-guest",tile:visitor.tile,color:visitor.guest.color,variant:visitor.guest.id + 100,facing:visitor.phase == .leaving ? 0 : 3,name:visitor.guest.name,duration:0.3)) }
         if (motel.operationsState.actionUntil ?? 0) > motel.operationsState.tick {
-            result[0].action = motel.operationsState.actionLabel ?? ""
+            result[0].action = motel.operationsState.visual?.kind ?? ""
         }
         return result
     }

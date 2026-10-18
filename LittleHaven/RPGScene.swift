@@ -27,6 +27,11 @@ struct RPGSceneView: UIViewRepresentable {
     let interior: Bool
     let actors: [RPGActor]
     var working = false
+    var workKind = "mop"
+    var visual: HotelVisual?
+    var weather: HotelWeather = .sunny
+    var cars: [HotelCar] = []
+    var day = 1
     let scenery: () -> AnyView
 
     func makeUIView(context: Context) -> SKView {
@@ -43,7 +48,8 @@ struct RPGSceneView: UIViewRepresentable {
         guard let scene = view.scene as? RPGScene else { return }
         scene.configure(mapID: mapID, revision: revision, mapSize: mapSize,
                         columns: columns, interior: interior, actors: actors,
-                        working: working, scenery: scenery)
+                        working: working, workKind: workKind, visual: visual,
+                        weather:weather,cars:cars,day:day,scenery: scenery)
     }
     static func dismantleUIView(_ view: SKView, coordinator: ()) {
         view.scene?.removeAllActions()
@@ -56,15 +62,10 @@ private struct ActorArtwork: View {
     let stride: Double
     var body: some View {
         Canvas { context, _ in
-            if actor.effect > 0 && actor.effect != 3 { ChaosArt.draw(context: &context, kind: actor.effect, stride: stride) }
-            else if actor.animal > 0 { CatArt.draw(context: &context, gray: actor.animal == 1, walk: stride) }
-            else { PaperPerson.draw(context: &context, x: 4, y: 9, color: actor.color, variant: actor.variant, facing: actor.facing, walk: stride)
-                if actor.effect == 3 {
-                    let punch = stride > 0 ? 6.0 : 0.0
-                    context.fill(Path(ellipseIn:CGRect(x:actor.facing == 1 ? 1-punch : 16+punch,y:14,width:5,height:4)),with:.color(Color(hex:0xE3B587)))
-                    if stride > 0 { context.draw(Text("?").font(.system(size:8)).foregroundColor(.yellow),at:CGPoint(x:actor.facing == 1 ? 0 : 23,y:12)) }
-                }
-            }
+            if actor.effect > 0 {
+                ChaosArt.draw(context:&context,kind:actor.effect,stride:stride,color:actor.color,variant:actor.variant,facing:actor.facing)
+            } else if actor.animal > 0 { CatArt.draw(context:&context,gray:actor.animal == 1,walk:stride) }
+            else { PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:stride) }
         }.frame(width: 24, height: 28)
     }
 }
@@ -81,6 +82,15 @@ final class RPGScene: SKScene {
     private var textures: [String: SKTexture] = [:]
     private var configured = false
     private var viewSize = CGSize.zero
+    private var activeWeather: HotelWeather = .sunny
+    private let weatherLayer = SKNode()
+    private var weatherParticles: [SKShapeNode] = []
+    private var weatherTime = 0.0
+    private var previousTime = 0.0
+    private var visualSeen = -1
+    private var visualMapSeen = ""
+    private var actionTextures: [String:[SKTexture]] = [:]
+    private var carTextures: [String:SKTexture] = [:]
 
     override func didMove(to view: SKView) {
         if !configured {
@@ -93,7 +103,9 @@ final class RPGScene: SKScene {
     }
     @MainActor func configure(mapID: String, revision newRevision: String,
                              mapSize: CGSize, columns: CGFloat, interior: Bool,
-                             actors: [RPGActor], working: Bool, scenery: () -> AnyView) {
+                             actors: [RPGActor], working: Bool, workKind:String,
+                             visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],day:Int,
+                             scenery: () -> AnyView) {
         let changedMap = worldID != mapID
         dimensions = mapSize
         visibleColumns = columns
@@ -117,6 +129,12 @@ final class RPGScene: SKScene {
             worldID = mapID
             revision = newRevision
         }
+        configureWeather(interior ? .sunny : weather)
+        if !interior { configureCars(cars,day:day) }
+        if let visual, visual.map == mapID, visual.id != visualSeen || visual.map != visualMapSeen {
+            visualSeen = visual.id; visualMapSeen = visual.map
+            if !changedMap || ProcessInfo.processInfo.arguments.contains(where: { $0.hasPrefix("--ui-action") }) { showVisual(visual) }
+        }
         let ids = Set(actors.map { "actor:" + $0.id })
         for node in world.children where node.name?.hasPrefix("actor:") == true && !ids.contains(node.name!) {
             node.removeFromParent()
@@ -137,7 +155,7 @@ final class RPGScene: SKScene {
             node.userData?["targetX"] = actor.tile.x
             node.userData?["targetY"] = actor.tile.y
             let idle = sprite(actor, stride: 0)
-            node.texture = idle
+            if actor.effect == 0 && node.action(forKey:"walk") == nil { node.texture = idle }
             if moving {
                 node.removeAction(forKey: "walk")
                 let frames = [sprite(actor, stride: 1), idle, sprite(actor, stride: -1), idle]
@@ -146,7 +164,7 @@ final class RPGScene: SKScene {
                 node.run(.move(to: target, duration: actor.duration), withKey: "move")
             }
             if actor.effect > 0 && node.action(forKey:"effect") == nil {
-                node.run(.repeatForever(.animate(with:[sprite(actor,stride:0),sprite(actor,stride:1),sprite(actor,stride:-1)],timePerFrame:0.2)),withKey:"effect")
+                node.run(.repeatForever(.animate(with:(0..<8).map { sprite(actor,stride:Double($0)) },timePerFrame:0.1)),withKey:"effect")
             }
             if actor.danger && node.childNode(withName: "detection") == nil {
                 let ring = SKShapeNode(circleOfRadius: 15)
@@ -157,11 +175,17 @@ final class RPGScene: SKScene {
                 ring.zPosition = -1
                 node.addChild(ring)
             }
+            if node.userData?["activityKind"] as? String != actor.action {
+                node.childNode(withName:"activity")?.removeFromParent()
+                node.userData?["activityKind"] = actor.action
+            }
             if !actor.action.isEmpty && node.childNode(withName:"activity") == nil {
-                let prop = SKLabelNode(text:actor.action)
-                prop.name = "activity"; prop.fontSize = 12; prop.position = CGPoint(x:12,y:3)
+                let frames=activityFrames(actor.action)
+                let prop=SKSpriteNode(texture:frames[0])
+                prop.name="activity"; prop.size=CGSize(width:40,height:40)
+                prop.position=CGPoint(x:10,y:-1); prop.zPosition=5
+                prop.run(.repeatForever(.animate(with:frames,timePerFrame:0.12)))
                 node.addChild(prop)
-                prop.run(.repeatForever(.sequence([.rotate(byAngle:0.5,duration:0.15),.rotate(byAngle:-0.5,duration:0.15)])))
             } else if actor.action.isEmpty { node.childNode(withName:"activity")?.removeFromParent() }
             if actor.effect == 3 && node.action(forKey:"spar") == nil {
                 node.run(.repeatForever(.sequence([.rotate(toAngle:0.18,duration:0.12),.rotate(toAngle:-0.18,duration:0.12),.rotate(toAngle:0,duration:0.16)])),withKey:"spar")
@@ -181,20 +205,18 @@ final class RPGScene: SKScene {
             }
             if actor.id == "player" {
                 playerTarget = target
-                if working && node.childNode(withName: "mop") == nil {
-                    let mop = SKShapeNode(rectOf: CGSize(width: 1.2, height: 14))
-                    mop.name = "mop"
-                    mop.fillColor = .brown
-                    mop.strokeColor = .clear
-                    mop.position = CGPoint(x: 8, y: -6)
-                    let head = SKShapeNode(ellipseOf: CGSize(width: 8, height: 3))
-                    head.fillColor = .systemMint
-                    head.strokeColor = .clear
-                    head.position.y = -7
-                    mop.addChild(head)
-                    mop.run(.repeatForever(.sequence([.rotate(toAngle: -0.4, duration: 0.2), .rotate(toAngle: 0.4, duration: 0.2)])))
-                    node.addChild(mop)
-                } else if !working { node.childNode(withName: "mop")?.removeFromParent() }
+                if node.userData?["workKind"] as? String != workKind {
+                    node.childNode(withName:"work")?.removeFromParent()
+                    node.userData?["workKind"] = workKind
+                }
+                if working && node.childNode(withName:"work") == nil {
+                    let frames=activityFrames(workKind)
+                    let prop=SKSpriteNode(texture:frames[0])
+                    prop.name="work"; prop.size=CGSize(width:42,height:42)
+                    prop.position=CGPoint(x:7,y:-3); prop.zPosition=6
+                    prop.run(.repeatForever(.animate(with:frames,timePerFrame:0.12)))
+                    node.addChild(prop)
+                } else if !working { node.childNode(withName:"work")?.removeFromParent() }
             }
         }
         layoutCamera(jump: changedMap)
@@ -207,6 +229,112 @@ final class RPGScene: SKScene {
         let texture = renderer.uiImage.map { SKTexture(image: $0) } ?? SKTexture()
         textures[key] = texture
         return texture
+    }
+
+    @MainActor private func activityFrames(_ kind:String) -> [SKTexture] {
+        if let cached=actionTextures[kind] { return cached }
+        let frames=(0..<8).map { frame -> SKTexture in
+            let renderer=ImageRenderer(content:HotelActionArtwork(kind:kind,frame:frame))
+            renderer.scale=3
+            return renderer.uiImage.map { SKTexture(image:$0) } ?? SKTexture()
+        }
+        actionTextures[kind]=frames
+        return frames
+    }
+    @MainActor private func showVisual(_ visual:HotelVisual) {
+        let frames=activityFrames(visual.kind)
+        let sprite=SKSpriteNode(texture:frames[0])
+        sprite.size=CGSize(width:48,height:48)
+        sprite.position=CGPoint(x:CGFloat(visual.target.x*16+8),y: -CGFloat(visual.target.y*16+5))
+        sprite.zPosition=CGFloat(visual.target.y*16+100)
+        world.addChild(sprite)
+        if visual.kind.hasPrefix("steal-") {
+            sprite.size=CGSize(width:32,height:32)
+            let target=CGPoint(x:CGFloat(visual.origin.x*16+8),y: -CGFloat(visual.origin.y*16+5))
+            sprite.run(.sequence([
+                .group([.move(to:target,duration:0.85),.rotate(byAngle:0.3,duration:0.85),.scale(to:0.45,duration:0.85)]),
+                .fadeOut(withDuration:0.15),.removeFromParent()
+            ]))
+        } else {
+            sprite.run(.sequence([.repeat(.animate(with:frames,timePerFrame:0.1),count:3),.fadeOut(withDuration:0.25),.removeFromParent()]))
+        }
+    }
+    @MainActor private func configureCars(_ cars:[HotelCar],day:Int) {
+        let ids=Set(cars.map { "car:\($0.id)" })
+        for node in world.children where node.name?.hasPrefix("car:") == true && !ids.contains(node.name!) { node.removeFromParent() }
+        for car in cars {
+            let name="car:\(car.id)"
+            let existing=world.childNode(withName:name) as? SKSpriteNode
+            let key="\(car.color)-\(car.washedDay == day)"
+            let texture:SKTexture
+            if let cached=carTextures[key] { texture=cached }
+            else {
+                let renderer=ImageRenderer(content:HotelCarArtwork(color:car.color,dirty:car.washedDay != day))
+                renderer.scale=3
+                texture=renderer.uiImage.map { SKTexture(image:$0) } ?? SKTexture()
+                carTextures[key]=texture
+            }
+            let node=existing ?? SKSpriteNode(texture:texture)
+            node.texture=texture; node.name=name; node.size=CGSize(width:48,height:34)
+            let bay=HotelCar.tile(car.slot)
+            let fraction=min(1,Double(car.arrival)/4)
+            let x=6+Double(bay.x-6)*fraction
+            let y=34-max(0,Double(car.arrival-4))
+            let target=CGPoint(x:x*16+8,y: -(y*16+8))
+            if existing == nil { node.position=CGPoint(x:104,y:-552); world.addChild(node) }
+            if node.userData == nil { node.userData=NSMutableDictionary() }
+            if node.userData?["arrival"] as? Int != car.arrival {
+                node.removeAction(forKey:"drive")
+                node.run(.move(to:target,duration:0.95),withKey:"drive")
+                node.userData?["arrival"]=car.arrival
+            }
+            node.zPosition=CGFloat(bay.y*16+20)
+        }
+    }
+    private func configureWeather(_ weather:HotelWeather) {
+        if weatherLayer.parent == nil { weatherLayer.zPosition=50000; world.addChild(weatherLayer) }
+        guard activeWeather != weather || weatherParticles.isEmpty && weather != .sunny else { return }
+        activeWeather=weather
+        weatherLayer.removeAllChildren(); weatherParticles=[]
+        if weather == .sunny { return }
+        let count=UIAccessibility.isReduceMotionEnabled ? 18 : 56
+        for i in 0..<count {
+            let node:SKShapeNode
+            if weather == .snow { node=SKShapeNode(circleOfRadius:i%3 == 0 ? 1.2 : 0.7) }
+            else if weather == .wind { node=SKShapeNode(ellipseOf:CGSize(width:3,height:1.2)) }
+            else {
+                var path=CGMutablePath(); path.move(to:.zero); path.addLine(to:CGPoint(x:-2,y:7))
+                node=SKShapeNode(path:path)
+            }
+            node.fillColor=weather == .wind ? UIColor(red:0.68,green:0.6,blue:0.32,alpha:1) : .white
+            node.strokeColor=weather == .rain || weather == .storm ? UIColor(red:0.7,green:0.87,blue:0.96,alpha:0.6) : .clear
+            node.lineWidth=0.6
+            weatherLayer.addChild(node); weatherParticles.append(node)
+        }
+        if weather == .storm {
+            let flash=SKSpriteNode(color:.white,size:CGSize(width:1500,height:1500))
+            flash.name="lightning"; flash.alpha=0
+            weatherLayer.addChild(flash)
+            flash.run(.repeatForever(.sequence([.wait(forDuration:7),.fadeAlpha(to:0.32,duration:0.05),.fadeOut(withDuration:0.12),.wait(forDuration:0.08),.fadeAlpha(to:0.18,duration:0.05),.fadeOut(withDuration:0.25)])))
+        }
+    }
+    private func updateWeather() {
+        guard activeWeather != .sunny,let view else { return }
+        let width=max(250,Double(view.bounds.width*followCamera.xScale)+40)
+        let height=max(250,Double(view.bounds.height*followCamera.yScale)+40)
+        let speed=activeWeather == .snow ? 12.0 : activeWeather == .wind ? 32 : 90
+        let time=weatherTime*(UIAccessibility.isReduceMotionEnabled ? 0.35 : 1)
+        for (i,node) in weatherParticles.enumerated() {
+            let seed=Double(i)
+            let travel=(seed*37+time*speed).truncatingRemainder(dividingBy:height)
+            let wind=activeWeather == .wind ? time*speed : time*10
+            let x=(seed*57+wind).truncatingRemainder(dividingBy:width)-width/2
+            let sway=activeWeather == .snow ? sin(time+seed)*4 : 0
+            node.position=CGPoint(x:Double(followCamera.position.x)+x+sway,y:Double(followCamera.position.y)+height/2-travel)
+            node.zRotation=activeWeather == .wind ? time+seed : 0
+            node.alpha=activeWeather == .storm ? 0.7 : 0.5
+        }
+        weatherLayer.childNode(withName:"lightning")?.position=followCamera.position
     }
     private func layoutCamera(jump: Bool) {
         guard let view, view.bounds.width > 0, dimensions.width > 0 else { return }
@@ -222,6 +350,9 @@ final class RPGScene: SKScene {
     }
     override func didChangeSize(_ oldSize: CGSize) { layoutCamera(jump: true) }
     override func update(_ currentTime: TimeInterval) {
+        if previousTime > 0 { weatherTime += min(0.05,max(0,currentTime-previousTime)) }
+        previousTime = currentTime
+        updateWeather()
         if view?.bounds.size != viewSize { viewSize = view?.bounds.size ?? .zero; layoutCamera(jump: true) }
         for node in world.children where node.name?.hasPrefix("actor:") == true { node.zPosition = -node.position.y }
     }
@@ -249,16 +380,21 @@ struct MotelRPGView: View {
         let mapID = visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue
         let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
         var actors = [RPGActor(id: "player", tile: motel.actorTile, color: 0x6AACA3, variant: 7, facing: motel.actorFacing)]
-        if (motel.operationsState.actionUntil ?? 0) > motel.operationsState.tick {
-            actors[0].action = motel.operationsState.actionLabel ?? ""
-        }
         if !interior {
             actors += motel.waiting.filter { $0.id != motel.reception.visitor?.guest.id }.map { RPGActor(id: "guest-\($0.id)", tile: MotelGrounds.guestTile($0.id), color: $0.color, variant: $0.id + 100, name: $0.name) }
             actors += motel.worldState.travellers.map {
                 RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.id + 100, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: 0.35)
             }
             for worker in motel.operationsState.workers where worker.active {
-                actors.append(RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:worker.role == .cleaner ? 1 : worker.role == .maintenance ? 4 : 0,name:worker.role.name,duration:0.9))
+                var workerActor = RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:worker.role == .cleaner ? 1 : worker.role == .maintenance ? 4 : 0,name:worker.role.name,duration:0.9)
+                if worker.progress > 0 {
+                    workerActor.action = worker.role == .valet ? "carwash" : "mop"
+                }
+                if let incident=motel.operationsState.incident,incident.kind.responder == worker.role,
+                   worker.tile.distance(to:incident.kind.approach) <= 1 {
+                    workerActor.action = incident.kind == .fire ? "extinguish" : incident.kind == .pool ? "rescue" : "calm"
+                }
+                actors.append(workerActor)
             }
             if let police = motel.business.police {
                 actors.append(RPGActor(id:"police",tile:police.tile,color:0x54739C,variant:0,name:"Officer Vega",marker:"!",duration:0.9))
@@ -271,7 +407,9 @@ struct MotelRPGView: View {
         } else if let room, let guest = room.guest, let visit, motel.guestPresent(in: room.id) {
             actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.id + 100, danger: true))
         }
-        return RPGSceneView(mapID: mapID, revision: revision, mapSize: CGSize(width: interior ? 144 : 640, height: interior ? 144 : 608), columns: 14, interior: interior, actors: actors, working: workProgress > 0) {
+        return RPGSceneView(mapID: mapID, revision: revision, mapSize: CGSize(width: interior ? 144 : 640, height: interior ? 144 : 608), columns: 14, interior: interior, actors: actors, working: workProgress > 0,
+                            workKind:motel.cleaningTarget == 0 ? "bed" : motel.cleaningTarget == 1 ? "trash" : "mop",
+                            visual:motel.operationsState.visual,weather:motel.weather,cars:motel.operationsState.cars ?? [],day:motel.day) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }
             if motel.worldState.place == .office { return AnyView(MotelOfficeCanvas(sceneryOnly: true, motel: motel, x: 0, y: 0)) }
             return AnyView(MotelGroundsCanvas(motel: motel, x: 0, y: 0, npcTick: 0, sceneryOnly: true, fullMap: true))

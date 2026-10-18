@@ -94,6 +94,7 @@ struct Motel: Codable {
         guard canSave, let index = rooms.firstIndex(where: { $0.id == roomID }),
               rooms[index].guest == nil, rooms[index].dirty else { return false }
         rooms[index].dirty = false
+        playVisual("mop")
         rooms[index].cleanedTasks = Set(MotelGrounds.cleaningTiles.indices)
         lastEvent = "Room \(rooms[index].number) is ready. A little elbow grease costs nothing."
         return true
@@ -191,6 +192,7 @@ struct Motel: Codable {
               let item = roomVisit.nearbyLoot,
               let room = rooms.first(where: { $0.id == roomVisit.roomID }),
               !room.stolen.contains(item), !roomVisit.loot.contains(item) else { return false }
+        playVisual("steal-\(item)",target:RoomVisit.lootTiles[item])
         roomVisit.loot.insert(item)
         roomVisit.pocket += RoomVisit.lootValues[item]
         roomVisit.alert = min(100, roomVisit.alert + RoomVisit.lootNoise[item])
