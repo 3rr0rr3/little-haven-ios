@@ -232,7 +232,23 @@ struct MotelGroundsCanvas: View, Animatable {
             for service in HotelService.allCases {
                 let tx=Double(service.tile.x*16), ty=Double(service.tile.y*16)
                 rect(tx+1,ty+2,14,12,0x55776B)
-                label(service.symbol,tx+8,ty+7,8,0xF4D58B)
+                switch service {
+                case .breakfast:
+                    context.fill(Path(ellipseIn:CGRect(x:tx+2,y:ty+8,width:12,height:4)),with:.color(Color(hex:0xE8DEBD)))
+                    rect(tx+5,ty+3,6,6,0xF5EDCF); rect(tx+11,ty+4,2,3,0xD1BA84)
+                    rect(tx+6,ty+1,1,2,0xBCCDC3)
+                case .laundry:
+                    rect(tx+2,ty+9,12,4,0xA78961)
+                    rect(tx+3,ty+6,10,3,0xE8E7D5); rect(tx+4,ty+3,8,3,0x9ABEB9)
+                case .repair:
+                    rect(tx+6,ty+5,3,8,0xBAC9C6)
+                    context.stroke(Path(ellipseIn:CGRect(x:tx+4,y:ty+1,width:7,height:7)),with:.color(Color(hex:0xBAC9C6)),lineWidth:2)
+                case .garden:
+                    rect(tx+4,ty+7,8,6,0x719DB0); rect(tx+11,ty+6,4,2,0x719DB0)
+                    context.stroke(Path(ellipseIn:CGRect(x:tx+1,y:ty+5,width:6,height:6)),with:.color(Color(hex:0x719DB0)),lineWidth:1.4)
+                case .luggage:
+                    RoomObjectArt.draw(context:&context,index:0,x:tx,y:ty)
+                }
                 label(service.rawValue.uppercased(),tx+8,ty-4,3,0x243D32)
             }
             // The office and nine physical room plots, connected by walkable lanes.

@@ -31,7 +31,7 @@ struct GameDialogue: View {
             }
             ForEach(choices) { choice in
                 Button(action:choice.action) {
-                    HStack { Text("?").foregroundStyle(Color(hex:0xEFC977)); Text(choice.title); Spacer() }
+                    HStack { Text(">").foregroundStyle(Color(hex:0xEFC977)); Text(choice.title); Spacer() }
                         .font(.system(size:13,weight:.bold,design:.monospaced)).padding(11)
                         .foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x385448))
                 }.accessibilityLabel(choice.title)

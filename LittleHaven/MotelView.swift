@@ -159,7 +159,7 @@ struct MotelView: View {
                 Button { stop(); showPause = true } label: { Image(systemName: "pause.fill").frame(width: 28, height: 40) }.accessibilityLabel("Pause game")
             }
             HStack {
-                Button { stop(); panel = .reviews } label: { Text(motel.reviewAverage.map { String(format:"? %.1f",$0) } ?? "? NEW") }.accessibilityIdentifier("openReviews")
+                Button { stop(); panel = .reviews } label: { Text(motel.reviewAverage.map { String(format:"RATING %.1f",$0) } ?? "NEW REVIEWS") }.accessibilityIdentifier("openReviews")
                 Spacer()
                 Button("HIRE / TEAM \(motel.operationsState.workers.count)") { stop(); panel = .staff }.accessibilityIdentifier("openStaff")
                 if let incident = motel.operationsState.incident {
