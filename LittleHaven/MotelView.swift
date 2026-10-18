@@ -395,7 +395,7 @@ struct MotelView: View {
             case .guest(let id):
                 if let guest = motel.waiting.first(where: { $0.id == id }) {
                     HStack {
-                        PaperPortrait(color: guest.color, variant: guest.id + 100).frame(width: 43, height: 55)
+                        PaperPortrait(color: guest.color, variant: guest.appearanceSeed).frame(width: 43, height: 55)
                         Text("Hello! My name is \(guest.name). \(guest.story) Could I stay for \(guest.nights) night\(guest.nights == 1 ? "" : "s")?").font(.caption)
                     }
                     if motel.managementEnabled {

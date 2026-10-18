@@ -7,7 +7,8 @@ struct MotelGuest: Codable, Identifiable, Equatable {
     let color: UInt32
     let story: String
     var category: GuestKind?
-    var kind: GuestKind { category ?? GuestKind.allCases[max(0,id + id/10 - 11) % GuestKind.allCases.count] }
+    var kind: GuestKind { category ?? GuestKind.allCases[(Motel.guestNames.firstIndex(of:name) ?? max(0,id)%10) % GuestKind.allCases.count] }
+    var appearanceSeed:Int {Motel.appearanceSeed(name:name,id:id)}
 }
 struct MotelRoom: Codable, Identifiable {
     let id: Int
@@ -47,6 +48,8 @@ struct RoomVisit: Codable {
 }
 struct Motel: Codable {
     static let goal = 9
+    static let guestNames = ["Robin", "Sasha", "Ellis", "Alex", "Morgan", "Casey", "Jamie", "Blair", "Drew", "Quinn"]
+    static func appearanceSeed(name:String,id:Int)->Int {100+(guestNames.firstIndex(of:name) ?? id)}
     static let themeNames = ["Sage", "Sunset", "Ocean", "Plum"]
     static let themeColors: [UInt32] = [0x91B7A1, 0xD99B7E, 0x82AFC1, 0xAE95B9]
     var day = 1
@@ -71,11 +74,11 @@ struct Motel: Codable {
         return operationsState.simulation == nil ? base : managementRate(room,base:base)
     }
     static func arrivals(day: Int, count: Int) -> [MotelGuest] {
-        let names = ["Robin", "Sasha", "Ellis", "Alex", "Morgan", "Casey", "Jamie", "Blair", "Drew", "Quinn"]
+        let names = Self.guestNames
         let stories = ["Passing through on a road trip.", "In town for the weekend market.", "Needs a quiet place to write.", "Visiting an old friend.", "Taking the scenic route home."]
         return (0..<count).map { index in
             let key = day * 10 + index
-            return MotelGuest(id: key, name: names[(key + index) % names.count],
+            return MotelGuest(id: key, name: names[index % names.count],
                               nights: index % 3 == 1 ? 2 : 1,
                               color: [UInt32(0xD99B7E), 0x82AFC1, 0xAE95B9, 0xD6BD71][index % 4],
                               story: stories[(day + index) % stories.count])

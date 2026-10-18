@@ -14,7 +14,7 @@ struct OfficeReceptionView: View {
         if motel.operationsState.workers.contains(where:{$0.role == .clerk && $0.active}) {
             result.append(RPGActor(id:"clerk-nora",tile:Tile(x:6,y:3),color:StaffRole.clerk.color,variant:5,name:"Nora"))
         }
-        if let visitor { result.append(RPGActor(id:"reception-guest",tile:visitor.tile,color:visitor.guest.color,variant:visitor.guest.id + 100,facing:visitor.phase == .leaving ? 0 : 3,name:visitor.guest.name,duration:0.3)) }
+        if let visitor { result.append(RPGActor(id:"reception-guest",tile:visitor.tile,color:visitor.guest.color,variant:visitor.guest.appearanceSeed,facing:visitor.phase == .leaving ? 0 : 3,name:visitor.guest.name,duration:0.3)) }
         if (motel.operationsState.actionUntil ?? 0) > motel.operationsState.tick {
             result[0].action = motel.operationsState.visual?.kind ?? ""
         }

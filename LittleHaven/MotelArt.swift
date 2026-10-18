@@ -160,7 +160,7 @@ struct MotelRoomCanvas: View, Animatable {
             if guestPresent, let guest = room.guest {
                 let tile = visit.guestTile
                 if !sceneryOnly { context.stroke(Path(ellipseIn: CGRect(x: Double(tile.x * 16 - 7), y: Double(tile.y * 16 - 5), width: 30, height: 28)), with: .color(.red.opacity(0.45)), lineWidth: 0.8) }
-                if !sceneryOnly { PaperPerson.draw(context: &context, x: Double(tile.x * 16), y: Double(tile.y * 16), color: guest.color, variant: guest.id + 100, facing: 0, walk: 0) }
+                if !sceneryOnly { PaperPerson.draw(context: &context, x: Double(tile.x * 16), y: Double(tile.y * 16), color: guest.color, variant: guest.appearanceSeed, facing: 0, walk: 0) }
             }
             if !sceneryOnly { PaperPerson.draw(context: &context, x: x * 16, y: y * 16, color: 0x6AACA3, variant: 7, facing: visit.facing, walk: sin((x + y) * .pi * 2)) }
             if workProgress > 0 {
@@ -358,14 +358,14 @@ struct MotelGroundsCanvas: View, Animatable {
             }
             var actors: [Actor] = motel.waiting.map {
                 let t = MotelGrounds.guestTile($0.id)
-                return Actor(x: Double(t.x), y: Double(t.y), color: $0.color, variant: $0.id + 100, facing: 0, name: $0.name, isPlayer: false)
+                return Actor(x: Double(t.x), y: Double(t.y), color: $0.color, variant: $0.appearanceSeed, facing: 0, name: $0.name, isPlayer: false)
             }
             let fraction = npcTick == Double(motel.worldState.tick) ? 1 : npcTick - floor(npcTick)
             for walker in motel.worldState.travellers {
                 let px = Double(walker.previous.x) + Double(walker.player.x - walker.previous.x) * fraction
                 let py = Double(walker.previous.y) + Double(walker.player.y - walker.previous.y) * fraction
                 let facing = walker.player.y > walker.previous.y ? 0 : walker.player.x < walker.previous.x ? 1 : walker.player.x > walker.previous.x ? 2 : 3
-                actors.append(Actor(x: px, y: py, color: walker.color, variant: walker.id + 100, facing: facing, name: "", isPlayer: false))
+                actors.append(Actor(x: px, y: py, color: walker.color, variant: walker.appearanceSeed, facing: facing, name: "", isPlayer: false))
             }
             actors.append(Actor(x: x, y: y, color: 0x6AACA3, variant: 7, facing: motel.actorFacing, name: "", isPlayer: true))
             for actor in actors.filter({ _ in !sceneryOnly }).sorted(by: { $0.y < $1.y }) {

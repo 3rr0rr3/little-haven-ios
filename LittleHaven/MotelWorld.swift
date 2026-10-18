@@ -9,6 +9,7 @@ struct MotelWalker: Codable, Identifiable {
     var player: Tile
     var previous: Tile
     let destination: Tile
+    var appearanceSeed:Int {Motel.appearanceSeed(name:name,id:id)}
 }
 struct MotelWorldState: Codable {
     var place: MotelPlace = .office

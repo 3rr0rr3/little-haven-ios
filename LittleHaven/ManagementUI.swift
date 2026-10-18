@@ -379,6 +379,11 @@ struct ManagementHub:View {
                     Spacer()
                     Text("\(motel.cash) coins  /  REP \(motel.simulation.reputation)").font(.caption.bold()).foregroundStyle(gold)
                 }.padding(.horizontal)
+                if let incident=motel.operationsState.incident {
+                    Button("EMERGENCY: \(incident.kind.title) / \(incident.remaining)s — return to grounds") {dismiss()}
+                        .font(.caption.bold()).foregroundStyle(.orange).accessibilityIdentifier("managementEmergency")
+                }
+                if motel.business.police != nil {Button("Police case needs attention — return to grounds"){dismiss()}.font(.caption.bold()).foregroundStyle(.orange)}
                 Text(motel.simulation.news).font(.caption).frame(maxWidth:.infinity,alignment:.leading).padding(.horizontal).accessibilityIdentifier("managementNews")
                 ScrollView(.horizontal,showsIndicators:false) {
                     HStack(spacing:8) {
@@ -496,7 +501,7 @@ struct ManagementHub:View {
     private func arrivalCard(_ guest:MotelGuest)->some View {
         card {
             HStack {
-                PaperPortrait(color:guest.color,variant:guest.id+100).frame(width:40,height:48)
+                PaperPortrait(color:guest.color,variant:guest.appearanceSeed).frame(width:40,height:48)
                 VStack(alignment:.leading) {Text(guest.name+" / "+guest.kind.title).font(.subheadline.bold());Text(guest.kind.preference).font(.caption)}
             }
             if motel.simulation.visits[guest.name,default:0]>0 {Text("Returning guest / relationship \(motel.simulation.relationships[guest.name,default:0])").font(.caption).foregroundStyle(gold)}
