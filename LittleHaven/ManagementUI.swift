@@ -209,7 +209,7 @@ struct HotelActionArtwork: View {
     let frame:Int
     var body: some View {
         Canvas { context,_ in
-            let phase=Double(frame)*.pi/4
+            let phase=Double(frame) * .pi / 4
             let swing=sin(phase)
             func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
                 context.fill(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:1),with:.color(Color(hex:color)))
