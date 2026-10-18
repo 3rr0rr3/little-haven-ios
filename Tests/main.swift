@@ -543,7 +543,7 @@ func expandedManagementRules() {
     let returning1=Motel.arrivals(day:1,count:10)
     let returning2=Motel.arrivals(day:2,count:10)
     require(Set(returning1.map(\.name)).count==10,"Arrivals have distinct recurring identities")
-    require(zip(returning1,returning2).allSatisfy{$0.name==$1.name && $0.kind==$1.kind && $0.appearanceSeed==$1.appearanceSeed},"Returning characters keep their identity, type and appearance")
+    require(zip(returning1,returning2).allSatisfy{pair in pair.0.name==pair.1.name && pair.0.kind==pair.1.kind && pair.0.appearanceSeed==pair.1.appearanceSeed},"Returning characters keep their identity, type and appearance")
     var hotel=make()
     require(hotel.simulation.hour==8 && !hotel.isNight,"Management opens in daytime")
     let oldSnapshot=hotel.simulation.stock
