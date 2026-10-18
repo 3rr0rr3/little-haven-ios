@@ -183,7 +183,8 @@ final class RPGScene: SKScene {
                 let frames=activityFrames(actor.action)
                 let prop=SKSpriteNode(texture:frames[0])
                 prop.name="activity"; prop.size=CGSize(width:40,height:40)
-                prop.position=CGPoint(x:10,y:-1); prop.zPosition=5
+                prop.position = actor.action == "carwash" ? CGPoint(x:0,y:24) : actor.action == "extinguish" ? CGPoint(x:0,y:14) : actor.action == "rescue" ? CGPoint(x:0,y:22) : CGPoint(x:10,y:-1)
+                prop.zPosition=5
                 prop.run(.repeatForever(.animate(with:frames,timePerFrame:0.12)))
                 node.addChild(prop)
             } else if actor.action.isEmpty { node.childNode(withName:"activity")?.removeFromParent() }
