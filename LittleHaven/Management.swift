@@ -53,6 +53,7 @@ struct PoliceCase: Codable {
     var bribeTried = false
     var acceptsBribe = Bool.random()
     var message = ""
+    var reason:String?
 }
 struct BusinessConsequences: Codable {
     var deaths = 0
@@ -894,7 +895,7 @@ extension Motel {
         for id in due {if let room=rooms.first(where:{$0.guest?.id==id}) {_=checkoutGuest(room.id)}}
         if simulation.heat>=35 && business.police==nil {
             var state=operationsState;var consequences=state.consequences ?? BusinessConsequences()
-            consequences.police=PoliceCase(number:day+simulation.heat,guest:"Night operations",cause:.fight,fine:150+simulation.heat*2)
+            consequences.police=PoliceCase(number:day+simulation.heat,guest:"Night operations",cause:.fight,fine:150+simulation.heat*2,reason:"Repeated noise and suspicious off-books activity brought a business citation. No guest death was reported.")
             state.consequences=consequences;operations=state
             var current=simulation;current.heat=10;simulation=current
             lastEvent="Noise and suspicious activity drew police attention. An officer is coming."

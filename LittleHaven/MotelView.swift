@@ -245,7 +245,8 @@ struct MotelView: View {
             }
         }
         let detail = police.arrived ? "\(police.guest) died in the \(police.cause.rawValue) emergency. Your fine is \(police.fine) coins. Bribery may be refused and increase the fine. Unpaid fines are deducted from future room income. \(police.message)" : "An officer is walking from the road to reception after a guest death. Keep the grounds safe. Talk once the officer arrives."
-        return GameDialogue(speaker:"Officer Vega",text:detail,portrait:AnyView(PaperPortrait(color:0x54739C,variant:0)),choices:choices) { showPolice = false }
+        let report=police.reason.map {police.arrived ? $0+" Fine: \(police.fine) coins. "+police.message : "An officer is on the way after complaints about night operations."} ?? detail
+        return GameDialogue(speaker:"Officer Vega",text:report,portrait:AnyView(PaperPortrait(color:0x54739C,variant:0)),choices:choices) { showPolice = false }
     }
 
     @ViewBuilder private var worldOverlay: some View {

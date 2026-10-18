@@ -626,6 +626,8 @@ func expandedManagementRules() {
     events.injectIssue(.noise,roomID:0);let reputation=events.simulation.reputation
     for _ in 0..<3 {events.advanceHotelHour()}
     require(events.simulation.reputation<reputation,"Ignored complaints damage future reputation")
+    var attention=make();var heat=attention.simulation;heat.heat=40;attention.simulation=heat;attention.advanceHotelHour()
+    require(attention.business.police?.reason != nil && attention.business.deaths==0,"Noise and criminal attention summon a nonfatal police citation")
     var utilities=make();var us=utilities.simulation;us.powerOut=true;us.waterOut=true;utilities.simulation=us
     require(!utilities.checkIn(guestID:10,roomID:0),"Utility failures stop new bookings")
     require(utilities.restoreUtilities() && !utilities.simulation.powerOut && !utilities.simulation.waterOut,"Utilities can always be repaired from the operations board")
