@@ -129,6 +129,12 @@ struct MotelRoomCanvas: View, Animatable {
                 let tile = RoomVisit.lootTiles[index]
                 let itemRect = CGRect(x: Double(tile.x * 16 + 2), y: Double(tile.y * 16 + 3), width: 12, height: 10)
                 let taken = room.stolen.contains(index) || visit.loot.contains(index)
+                if index > 0 {
+                    let px=Double(tile.x*16), py=Double(tile.y*16)
+                    context.fill(Path(roundedRect:CGRect(x:px-2,y:py+5,width:20,height:12),cornerRadius:1),with:.color(Color(hex:0x805F46)))
+                    context.fill(Path(CGRect(x:px-3,y:py+4,width:22,height:3)),with:.color(Color(hex:0xBC986B)))
+                    context.fill(Path(CGRect(x:px+6,y:py+14,width:4,height:1)),with:.color(Color(hex:0xE6C88A)))
+                }
                 if !taken {
                     RoomObjectArt.draw(context:&context,index:index,x:Double(tile.x*16),y:Double(tile.y*16))
                     context.stroke(Path(roundedRect:itemRect.insetBy(dx:-2,dy:-2),cornerRadius:3),with:.color(Color(hex:0xF3D185)),lineWidth:0.6)

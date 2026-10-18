@@ -312,6 +312,11 @@ final class RPGScene: SKScene {
             node.lineWidth=0.6
             weatherLayer.addChild(node); weatherParticles.append(node)
         }
+        if weather == .rain || weather == .storm {
+            let shade=SKSpriteNode(color:.black,size:CGSize(width:1500,height:1500))
+            shade.name="cloudShade"; shade.alpha=weather == .storm ? 0.2 : 0.08
+            shade.zPosition = -1; weatherLayer.addChild(shade)
+        }
         if weather == .storm {
             let flash=SKSpriteNode(color:.white,size:CGSize(width:1500,height:1500))
             flash.name="lightning"; flash.alpha=0
@@ -327,15 +332,18 @@ final class RPGScene: SKScene {
         let time=weatherTime*(UIAccessibility.isReduceMotionEnabled ? 0.35 : 1)
         for (i,node) in weatherParticles.enumerated() {
             let seed=Double(i)
-            let travel=(seed*37+time*speed).truncatingRemainder(dividingBy:height)
+            let randomY=sin(seed*269.5+183.3)*21656.4
+            let randomX=sin(seed*127.1+311.7)*43758.5453
+            let travel=((randomY-floor(randomY))*height+time*speed).truncatingRemainder(dividingBy:height)
             let wind=activeWeather == .wind ? time*speed : time*10
-            let x=(seed*57+wind).truncatingRemainder(dividingBy:width)-width/2
+            let x=((randomX-floor(randomX))*width+wind).truncatingRemainder(dividingBy:width)-width/2
             let sway=activeWeather == .snow ? sin(time+seed)*4 : 0
             node.position=CGPoint(x:Double(followCamera.position.x)+x+sway,y:Double(followCamera.position.y)+height/2-travel)
             node.zRotation=activeWeather == .wind ? time+seed : 0
             node.alpha=activeWeather == .storm ? 0.7 : 0.5
         }
         weatherLayer.childNode(withName:"lightning")?.position=followCamera.position
+        weatherLayer.childNode(withName:"cloudShade")?.position=followCamera.position
     }
     private func layoutCamera(jump: Bool) {
         guard let view, view.bounds.width > 0, dimensions.width > 0 else { return }
