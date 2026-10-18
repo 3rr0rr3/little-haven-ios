@@ -29,7 +29,7 @@ enum MotelGrounds {
     static let officeDoor = Tile(x: 6, y: 9)
     static let sign = Tile(x: 12, y: 26)
     static let gate = Tile(x: 6, y: 35)
-    static func roomOrigin(_ id: Int) -> Tile { Tile(x: 14 + (id % 3) * 8, y: 4 + (id / 3) * 9) }
+    static func roomOrigin(_ id: Int) -> Tile { Tile(x: 14 + (id % 3) * 8, y: 4 + ((id % 9) / 3) * 9) }
     static func roomDoor(_ id: Int) -> Tile {
         let origin = roomOrigin(id)
         return Tile(x: origin.x + 2, y: origin.y + 4)
@@ -107,7 +107,7 @@ extension Motel {
         if nearbyIncident { return .incident }
         if let guest = waiting.first(where: { player.distance(to: MotelGrounds.guestTile($0.id)) <= 1 }) { return .guest(guest.id) }
         if player.distance(to: MotelGrounds.officeDoor) <= 1 { return .office }
-        for room in rooms where player.distance(to: MotelGrounds.roomDoor(room.id)) <= 1 { return .room(room.id) }
+        for room in rooms where room.id / 9 == viewingFloor && player.distance(to: MotelGrounds.roomDoor(room.id)) <= 1 { return .room(room.id) }
         if !goalReached && (player.distance(to: MotelGrounds.sign) <= 1 || player.distance(to: MotelGrounds.roomDoor(rooms.count)) <= 1) { return .construction }
         return .none
     }
@@ -150,7 +150,7 @@ extension Motel {
         }
         state.player = next
         world = state
-        if dy < 0, let room = rooms.first(where: { MotelGrounds.roomDoor($0.id) == next && $0.guest == nil }) { _ = enter(room.id) }
+        if dy < 0, let room = rooms.first(where: { $0.id / 9 == viewingFloor && MotelGrounds.roomDoor($0.id) == next && $0.guest == nil }) { _ = enter(room.id) }
     }
     @discardableResult mutating func useEntrance() -> Bool {
         initializeWorld()
@@ -184,9 +184,11 @@ extension Motel {
     @discardableResult mutating func cleanNearbyTask() -> Bool {
         guard !caught, worldState.hasCleaningKit, let target = cleaningTarget, let visit,
               let index = rooms.firstIndex(where: { $0.id == visit.roomID }) else { return false }
+        guard useCleaningStock(full:false) else { return false }
         var tasks = rooms[index].cleanedTasks ?? []
         guard tasks.insert(target).inserted else { return false }
         rooms[index].cleanedTasks = tasks
+        if operationsState.simulation != nil { var health=rooms[index].health; health.cleanliness=tasks.count == 3 ? 100 : min(95,health.cleanliness+30); if tasks.count==3 {health.faults.remove(.mattress)}; rooms[index].hospitality=health }
         playVisual(target == 0 ? "bed" : target == 1 ? "trash" : "mop",target:MotelGrounds.cleaningTiles[target])
         if tasks.count == MotelGrounds.cleaningTiles.count {
             rooms[index].dirty = false
@@ -226,6 +228,7 @@ extension Motel {
     }
     @discardableResult mutating func restAtBed() -> Bool {
         guard business.police == nil, isAtReception || nearbyAction == .rest else { return false }
+        if managementEnabled && !isNight {lastEvent="Rest opens at 20:00. Advance time from the management board.";return false}
         let departures = rooms.compactMap { room -> MotelWalker? in
             guard let guest = room.guest, room.nightsLeft == 1 else { return nil }
             let start = MotelGrounds.roomDoor(room.id)

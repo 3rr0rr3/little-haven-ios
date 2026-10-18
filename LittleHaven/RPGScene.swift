@@ -32,6 +32,9 @@ struct RPGSceneView: UIViewRepresentable {
     var weather: HotelWeather = .sunny
     var cars: [HotelCar] = []
     var day = 1
+    var night = false
+    var nightVision = false
+    var powerOut = false
     let scenery: () -> AnyView
 
     func makeUIView(context: Context) -> SKView {
@@ -49,7 +52,7 @@ struct RPGSceneView: UIViewRepresentable {
         scene.configure(mapID: mapID, revision: revision, mapSize: mapSize,
                         columns: columns, interior: interior, actors: actors,
                         working: working, workKind: workKind, visual: visual,
-                        weather:weather,cars:cars,day:day,scenery: scenery)
+                        weather:weather,cars:cars,day:day,night:night,nightVision:nightVision,powerOut:powerOut,scenery: scenery)
     }
     static func dismantleUIView(_ view: SKView, coordinator: ()) {
         view.scene?.removeAllActions()
@@ -84,6 +87,7 @@ final class RPGScene: SKScene {
     private var viewSize = CGSize.zero
     private var activeWeather: HotelWeather = .sunny
     private let weatherLayer = SKNode()
+    private let ambientLayer=SKSpriteNode(color:.black,size:CGSize(width:1600,height:1600))
     private var weatherParticles: [SKShapeNode] = []
     private var weatherTime = 0.0
     private var previousTime = 0.0
@@ -104,7 +108,7 @@ final class RPGScene: SKScene {
     @MainActor func configure(mapID: String, revision newRevision: String,
                              mapSize: CGSize, columns: CGFloat, interior: Bool,
                              actors: [RPGActor], working: Bool, workKind:String,
-                             visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],day:Int,
+                             visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,
                              scenery: () -> AnyView) {
         let changedMap = worldID != mapID
         dimensions = mapSize
@@ -129,6 +133,7 @@ final class RPGScene: SKScene {
             worldID = mapID
             revision = newRevision
         }
+        configureAmbient(night:night && !interior,nightVision:nightVision,powerOut:powerOut)
         configureWeather(interior ? .sunny : weather)
         if !interior { configureCars(cars,day:day) }
         if let visual, visual.map == mapID, visual.id != visualSeen || visual.map != visualMapSeen {
@@ -280,7 +285,7 @@ final class RPGScene: SKScene {
             let bay=HotelCar.tile(car.slot)
             let fraction=min(1,Double(car.arrival)/4)
             let x=6+Double(bay.x-6)*fraction
-            let y=34-max(0,Double(car.arrival-4))
+            let y=34+Double(bay.y-34)*max(0,Double(car.arrival-4))/4
             let target=CGPoint(x:x*16+8,y: -(y*16+8))
             if existing == nil { node.position=CGPoint(x:104,y:-552); world.addChild(node) }
             if node.userData == nil { node.userData=NSMutableDictionary() }
@@ -291,6 +296,12 @@ final class RPGScene: SKScene {
             }
             node.zPosition=CGFloat(bay.y*16+20)
         }
+    }
+    private func configureAmbient(night:Bool,nightVision:Bool,powerOut:Bool) {
+        if ambientLayer.parent == nil {ambientLayer.zPosition=40000;world.addChild(ambientLayer)}
+        ambientLayer.color=nightVision ? UIColor(red:0.16,green:0.75,blue:0.25,alpha:1) : .black
+        ambientLayer.alpha=nightVision ? 0.18 : powerOut ? 0.72 : night ? 0.5 : 0
+        ambientLayer.position=followCamera.position
     }
     private func configureWeather(_ weather:HotelWeather) {
         if weatherLayer.parent == nil { weatherLayer.zPosition=50000; world.addChild(weatherLayer) }
@@ -362,6 +373,7 @@ final class RPGScene: SKScene {
         if previousTime > 0 { weatherTime += min(0.05,max(0,currentTime-previousTime)) }
         previousTime = currentTime
         updateWeather()
+        ambientLayer.position=followCamera.position
         if view?.bounds.size != viewSize { viewSize = view?.bounds.size ?? .zero; layoutCamera(jump: true) }
         for node in world.children where node.name?.hasPrefix("actor:") == true { node.zPosition = -node.position.y }
     }
@@ -388,13 +400,14 @@ struct MotelRPGView: View {
         let interior = visit != nil || motel.worldState.place == .office
         let mapID = visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue
         let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
+        let worldRevision=revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
         var actors = [RPGActor(id: "player", tile: motel.actorTile, color: 0x6AACA3, variant: 7, facing: motel.actorFacing)]
         if !interior {
             actors += motel.waiting.filter { $0.id != motel.reception.visitor?.guest.id }.map { RPGActor(id: "guest-\($0.id)", tile: MotelGrounds.guestTile($0.id), color: $0.color, variant: $0.id + 100, name: $0.name) }
             actors += motel.worldState.travellers.map {
                 RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.id + 100, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: 0.35)
             }
-            for worker in motel.operationsState.workers where worker.active {
+            for worker in motel.operationsState.workers where worker.active && worker.role != .clerk {
                 var workerActor = RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:worker.role == .cleaner ? 1 : worker.role == .maintenance ? 4 : 0,name:worker.role.name,duration:0.9)
                 if worker.progress > 0 {
                     workerActor.action = worker.role == .valet ? "carwash" : "mop"
@@ -404,6 +417,17 @@ struct MotelRPGView: View {
                     workerActor.action = incident.kind == .fire ? "extinguish" : incident.kind == .pool ? "rescue" : "calm"
                 }
                 actors.append(workerActor)
+            }
+            if motel.managementEnabled {
+                for issue in motel.simulation.issues {
+                    let special=[HotelIssueKind.adultVisitor,.drugDeal,.cult,.celebrity].contains(issue.kind)
+                    if special {
+                        actors.append(RPGActor(id:"request-\(issue.id)",tile:Tile(x:8+issue.id%3,y:14),color:issue.kind == .cult ? 0x976AB0 : 0xD6BD71,variant:issue.id+220,name:issue.kind == .celebrity ? "VIP" : "Visitor",marker:"!"))
+                    } else if issue.roomID / 9 == motel.viewingFloor {
+                        let effect=issue.kind == .leak ? 4 : issue.kind == .ac || issue.kind == .temperature ? 5 : issue.kind == .bedbugs || issue.kind == .roaches ? 6 : issue.kind == .noise ? 7 : 0
+                        if effect>0 {actors.append(RPGActor(id:"issue-\(issue.id)",tile:MotelGrounds.roomDoor(issue.roomID),color:0xD9AA71,variant:0,name:issue.kind.title,effect:effect))}
+                    }
+                }
             }
             if let police = motel.business.police {
                 actors.append(RPGActor(id:"police",tile:police.tile,color:0x54739C,variant:0,name:"Officer Vega",marker:"!",duration:0.9))
@@ -416,9 +440,10 @@ struct MotelRPGView: View {
         } else if let room, let guest = room.guest, let visit, motel.guestPresent(in: room.id) {
             actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.id + 100, danger: true))
         }
-        return RPGSceneView(mapID: mapID, revision: revision, mapSize: CGSize(width: interior ? 144 : 640, height: interior ? 144 : 608), columns: 14, interior: interior, actors: actors, working: workProgress > 0,
+        return RPGSceneView(mapID: mapID, revision: worldRevision, mapSize: CGSize(width: interior ? 144 : 640, height: interior ? 144 : 608), columns: 14, interior: interior, actors: actors, working: workProgress > 0,
                             workKind:motel.cleaningTarget == 0 ? "bed" : motel.cleaningTarget == 1 ? "trash" : "mop",
-                            visual:motel.operationsState.visual,weather:motel.weather,cars:motel.operationsState.cars ?? [],day:motel.day) {
+                            visual:motel.operationsState.visual,weather:motel.weather,cars:motel.operationsState.cars ?? [],day:motel.day,
+                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false)) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }
             if motel.worldState.place == .office { return AnyView(MotelOfficeCanvas(sceneryOnly: true, motel: motel, x: 0, y: 0)) }
             return AnyView(MotelGroundsCanvas(motel: motel, x: 0, y: 0, npcTick: 0, sceneryOnly: true, fullMap: true))

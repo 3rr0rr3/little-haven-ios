@@ -11,6 +11,9 @@ struct OfficeReceptionView: View {
             RPGActor(id:"samhil",tile:Tile(x:11,y:9),color:0xD88BAA,variant:9,facing:3,name:"Samhil",displayScale:0.8),
             RPGActor(id:"chichu",tile:Tile(x:3,y:10),color:0x85817C,variant:0,name:"Chichu",animal:1),
             RPGActor(id:"chichi",tile:Tile(x:5,y:11),color:0xE9E2D0,variant:0,name:"Chichi",animal:2)]
+        if motel.operationsState.workers.contains(where:{$0.role == .clerk && $0.active}) {
+            result.append(RPGActor(id:"clerk-nora",tile:Tile(x:6,y:3),color:StaffRole.clerk.color,variant:5,name:"Nora"))
+        }
         if let visitor { result.append(RPGActor(id:"reception-guest",tile:visitor.tile,color:visitor.guest.color,variant:visitor.guest.id + 100,facing:visitor.phase == .leaving ? 0 : 3,name:visitor.guest.name,duration:0.3)) }
         if (motel.operationsState.actionUntil ?? 0) > motel.operationsState.tick {
             result[0].action = motel.operationsState.visual?.kind ?? ""
@@ -22,7 +25,7 @@ struct OfficeReceptionView: View {
             let scale = min(proxy.size.width / 240, proxy.size.height / 240)
             let origin = CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-office",revision:"family-\(motel.officeTheme)",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme)) }
+                RPGSceneView(mapID:"family-office",revision:"family-\(motel.officeTheme)",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme)) }
                 target(.player,"Front desk",OfficeReception.clerk,scale,origin)
                 target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin)
                 target(.samhil,"Talk to Samhil",Tile(x:11,y:9),scale,origin)

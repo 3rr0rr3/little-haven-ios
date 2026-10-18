@@ -189,6 +189,42 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching:.any)["motelWorld"].waitForExistence(timeout:10))
         capture(app,"Recognizable suitcase, watch and camera in the guest room")
     }
+    func testManagementBoardSuppliesAndMiniGame() {
+        let app=launch("--ui-management")
+        XCTAssertTrue(app.buttons["openManagement"].waitForExistence(timeout:10))
+        app.buttons["openManagement"].tap()
+        XCTAssertTrue(app.buttons["miniClean_1"].waitForExistence(timeout:5))
+        app.buttons["miniClean_1"].tap()
+        XCTAssertTrue(app.buttons["miniGameTap"].waitForExistence(timeout:3))
+        app.buttons["Cancel"].tap()
+        app.buttons["manageTab_Supplies"].tap()
+        XCTAssertTrue(app.buttons["buy_toiletries"].waitForExistence(timeout:3))
+        app.buttons["buy_toiletries"].tap()
+        XCTAssertTrue(app.staticTexts["In stock: 16"].exists)
+        capture(app,"Management inventory and ongoing supply costs")
+    }
+    func testManagementUtilitiesAndCameras() {
+        let app=launch("--ui-management-events")
+        XCTAssertTrue(app.buttons["restoreUtilities"].waitForExistence(timeout:10))
+        app.buttons["restoreUtilities"].tap()
+        XCTAssertFalse(app.buttons["restoreUtilities"].exists)
+        capture(app,"Actionable power and pest complaints")
+        app.terminate();app.launchArguments=["--ui-management-cameras","--ui-testing"];app.launch()
+        XCTAssertTrue(app.descendants(matching:.any)["cameraMonitor"].waitForExistence(timeout:10))
+        XCTAssertTrue(app.buttons["Disable night vision"].exists)
+        app.buttons["Disable night vision"].tap()
+        XCTAssertTrue(app.buttons["Enable night vision"].exists)
+        capture(app,"Live grounds cameras and night vision")
+    }
+    func testManagementDayNightAndPricing() {
+        let app=launch("--ui-management-night")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS %@", "22:00 NIGHT")).firstMatch.waitForExistence(timeout:10))
+        capture(app,"Night shift hotel grounds")
+        app.buttons["openManagement"].tap()
+        app.buttons["manageTab_Desk"].tap()
+        XCTAssertTrue(app.segmentedControls["pricingPolicy"].waitForExistence(timeout:5))
+        capture(app,"Hourly nightly and weekly pricing")
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

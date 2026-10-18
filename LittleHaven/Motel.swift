@@ -6,6 +6,8 @@ struct MotelGuest: Codable, Identifiable, Equatable {
     let nights: Int
     let color: UInt32
     let story: String
+    var category: GuestKind?
+    var kind: GuestKind { category ?? GuestKind.allCases[max(0,id + id/10 - 11) % GuestKind.allCases.count] }
 }
 struct MotelRoom: Codable, Identifiable {
     let id: Int
@@ -16,9 +18,11 @@ struct MotelRoom: Codable, Identifiable {
     var dirty = false
     var stolen: Set<Int> = []
     var cleanedTasks: Set<Int>?
-    var number: Int { 101 + id }
+    var hospitality: GuestRoomState?
+    var health: GuestRoomState { hospitality ?? GuestRoomState() }
+    var number: Int { (id / 9 + 1) * 100 + id % 9 + 1 }
     init(id: Int) { self.id = id; self.theme = id % 4 }
-    var available: Bool { guest == nil && !dirty }
+    var available: Bool { guest == nil && !dirty && health.cleanliness >= 60 && health.faults.isEmpty }
 }
 struct RoomVisit: Codable {
     let roomID: Int
@@ -60,9 +64,12 @@ struct Motel: Codable {
     var operations: MotelOperations?
     var expansionCost: Int { 250 + (rooms.count - 3) * 150 }
     var occupancy: Int { rooms.filter { $0.guest != nil }.count }
-    var goalReached: Bool { rooms.count >= Self.goal }
+    var goalReached: Bool { rooms.count >= expansionCapacity }
     var canSave: Bool { visit == nil && !caught }
-    func rate(for room: MotelRoom) -> Int { 80 + room.furniture * 30 + officeLevel * 15 }
+    func rate(for room: MotelRoom) -> Int {
+        let base=80 + room.furniture * 30 + officeLevel * 15
+        return operationsState.simulation == nil ? base : managementRate(room,base:base)
+    }
     static func arrivals(day: Int, count: Int) -> [MotelGuest] {
         let names = ["Robin", "Sasha", "Ellis", "Alex", "Morgan", "Casey", "Jamie", "Blair", "Drew", "Quinn"]
         let stories = ["Passing through on a road trip.", "In town for the weekend market.", "Needs a quiet place to write.", "Visiting an old friend.", "Taking the scenic route home."]
@@ -75,17 +82,20 @@ struct Motel: Codable {
         }
     }
     @discardableResult mutating func checkIn(guestID: Int, roomID: Int) -> Bool {
-        guard canSave, let guestIndex = waiting.firstIndex(where: { $0.id == guestID }),
+        guard !caught, (visit == nil || managementEnabled && operationsState.workers.contains(where:{$0.role == .clerk && $0.active})), let guestIndex = waiting.firstIndex(where: { $0.id == guestID }),
               let roomIndex = rooms.firstIndex(where: { $0.id == roomID }),
               rooms[roomIndex].available else { return false }
+        let candidate=waiting[guestIndex]
+        guard mayCheckIn(candidate,room:rooms[roomIndex]) else { return false }
         let guest = waiting.remove(at: guestIndex)
-        let payment = rate(for: rooms[roomIndex]) * guest.nights
+        let payment = bookingQuote(guest,room:rooms[roomIndex])
         rooms[roomIndex].guest = guest
-        rooms[roomIndex].nightsLeft = guest.nights
+        rooms[roomIndex].nightsLeft = operationsState.simulation == nil ? guest.nights : (bookingPlan(guest,room:rooms[roomIndex]) == .weekly ? 7 : guest.nights)
         rooms[roomIndex].stolen = []
         cash += payment
         repayBusinessDebt()
         guestsServed += 1
+        registerContract(guest,room:rooms[roomIndex],payment:payment)
         prepareChaosClock()
         lastEvent = "\(guest.name) checked into room \(rooms[roomIndex].number). +\(payment) coins."
         return true
@@ -93,7 +103,9 @@ struct Motel: Codable {
     @discardableResult mutating func clean(_ roomID: Int) -> Bool {
         guard canSave, let index = rooms.firstIndex(where: { $0.id == roomID }),
               rooms[index].guest == nil, rooms[index].dirty else { return false }
+        guard useCleaningStock(full:true) else { return false }
         rooms[index].dirty = false
+        if operationsState.simulation != nil { var health=rooms[index].health; health.cleanliness=100; health.faults.remove(.mattress); rooms[index].hospitality=health }
         playVisual("mop")
         rooms[index].cleanedTasks = Set(MotelGrounds.cleaningTiles.indices)
         lastEvent = "Room \(rooms[index].number) is ready. A little elbow grease costs nothing."
@@ -137,13 +149,15 @@ struct Motel: Codable {
         guard canSave, !goalReached, cash >= expansionCost else { return false }
         cash -= expansionCost
         rooms.append(MotelRoom(id: rooms.count))
-        lastEvent = goalReached ? "Nine rooms! You built Little Haven into a thriving Airb&b. Keep running it as long as you like." : "Room \(rooms.last!.number) is built and ready for its first guest."
+        lastEvent = managementEnabled && goalReached ? "Capacity reached. Buy land or add an upper floor on the management board." : goalReached ? "Nine rooms! You built Little Haven into a thriving Airb&b. Keep running it as long as you like." : "Room \(rooms.last!.number) is built and ready for its first guest."
         return true
     }
     @discardableResult mutating func nextDay() -> Bool {
-        guard canSave, business.police == nil else { return false }
+        guard !caught, (visit == nil || managementEnabled), business.police == nil else { return false }
         day += 1
+        let beforeWages=cash
         payStaffForDay()
+        logMoney(cash-beforeWages,category:"Wages",note:"Day and night shift payroll")
         var departures = 0
         for index in rooms.indices where rooms[index].guest != nil {
             rooms[index].nightsLeft -= 1
@@ -157,6 +171,12 @@ struct Motel: Codable {
             }
         }
         waiting = Self.arrivals(day: day, count: max(1,min(rooms.count + 1 + officeLevel, 10) - bookingPenalty))
+        finishSimulationDay()
+        if let oldVisit=visit,oldVisit.sneaking,rooms.first(where:{$0.id==oldVisit.roomID})?.guest==nil {
+            var empty=RoomVisit(roomID:oldVisit.roomID,sneaking:false)
+            empty.player=oldVisit.player;empty.facing=oldVisit.facing;empty.pocket=oldVisit.pocket;empty.loot=oldVisit.loot
+            visit=empty
+        }
         lastEvent = "Day \(day): \(departures) checkouts. Clean the empty rooms and welcome new arrivals."
         return true
     }
@@ -193,6 +213,7 @@ struct Motel: Codable {
               let room = rooms.first(where: { $0.id == roomVisit.roomID }),
               !room.stolen.contains(item), !roomVisit.loot.contains(item) else { return false }
         playVisual("steal-\(item)",target:RoomVisit.lootTiles[item])
+        if managementEnabled {var s=simulation;s.criminal += 1;s.heat += 5;simulation=s}
         roomVisit.loot.insert(item)
         roomVisit.pocket += RoomVisit.lootValues[item]
         roomVisit.alert = min(100, roomVisit.alert + RoomVisit.lootNoise[item])
@@ -215,6 +236,7 @@ struct Motel: Codable {
         }
         cash += roomVisit.pocket
         totalStolen += roomVisit.pocket
+        if roomVisit.pocket>0 {logMoney(roomVisit.pocket,category:"Stolen belongings",note:"Off-books escape")}
         lastEvent = roomVisit.pocket > 0 ? "You slipped out with \(roomVisit.pocket) coins worth of belongings. Save at the desk to keep this progress." : "Back outside. The desk is waiting."
         visit = nil
         if world != nil {

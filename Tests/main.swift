@@ -381,7 +381,7 @@ func managementRules() {
     var staff = Motel()
     staff.initializeWorld(); staff.cash = 1000
     for role in StaffRole.allCases { require(staff.hire(role), "Each staff role can be hired") }
-    require(staff.cash == 480 && !staff.hire(.cleaner), "Hiring charges once and prevents duplicate employees")
+    require(staff.cash == 350 && !staff.hire(.cleaner), "Hiring charges once and prevents duplicate employees")
     staff.rooms[0].dirty = true
     for _ in 0..<80 { staff.tickManagement() }
     require(!staff.rooms[0].dirty && staff.rooms[0].cleanedTasks?.count == 3, "Housekeeper walks to and cleans a vacant room")
@@ -395,7 +395,7 @@ func managementRules() {
     staff.cash = 5; _ = staff.nextDay()
     require(staff.cash == 5 && staff.operationsState.workers.allSatisfy { !$0.active }, "Insufficient wages put workers off duty without debt")
     staff.cash = 100; _ = staff.nextDay()
-    require(staff.cash == 22 && staff.operationsState.workers.allSatisfy { $0.active }, "Paying wages restores the next shift")
+    require(staff.cash == 0 && staff.operationsState.workers.allSatisfy { $0.active }, "Paying wages restores the next shift")
     var manual = Motel()
     manual.initializeWorld(); _ = manual.checkIn(guestID:10,roomID:0)
     for _ in 0..<40 { manual.tickManagement() }
@@ -406,7 +406,7 @@ func managementRules() {
     require(!manual.resolveNearbyIncident(), "Resolved incidents cannot be claimed twice")
     let data = try! JSONEncoder().encode(staff)
     let saved = try! JSONDecoder().decode(Motel.self,from:data)
-    require(saved.operationsState.workers.count == 4 && saved.operationsState.incidentsResolved == 3, "Staff and incident outcomes survive save/load")
+    require(saved.operationsState.workers.count == 5 && saved.operationsState.incidentsResolved == 3, "Staff and incident outcomes survive save/load")
     var legacy = Motel(); legacy.operations = nil
     let old = try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(legacy))
     require(old.operationsState.workers.isEmpty && old.operationsState.reviews.isEmpty, "Old motel saves migrate with no invented employees or ratings")
@@ -533,3 +533,132 @@ func parkingAndAnimationRules() {
     print("PASS: parking, walking attendant, car wash income, persistence, climate and action animation events")
 }
 parkingAndAnimationRules()
+
+
+func expandedManagementRules() {
+    func make()->Motel {
+        var hotel=Motel();hotel.initializeWorld();hotel.enableManagement();hotel.cash=20000
+        return hotel
+    }
+    var hotel=make()
+    require(hotel.simulation.hour==8 && !hotel.isNight,"Management opens in daytime")
+    let oldSnapshot=hotel.simulation.stock
+    hotel.enableManagement()
+    require(hotel.simulation.stock==oldSnapshot,"Migration cannot duplicate supplies")
+    require(hotel.expansionCapacity==6,"Base property has six-room capacity")
+    let price=hotel.rate(for:hotel.rooms[0])
+    require(hotel.checkIn(guestID:10,roomID:0),"Daytime normal traveler checks in")
+    require(hotel.simulation.stock["towels"]==11 && hotel.simulation.stock["toiletries"]==11,"Check-in consumes guest supplies")
+    require(hotel.simulation.contracts[10]?.paid==price,"Actual booking payment is recorded")
+    let clean=hotel.rooms[0].health.cleanliness
+    hotel.advanceHotelHour()
+    require(hotel.simulation.hour==9 && hotel.rooms[0].health.cleanliness<clean,"Time progresses and rooms deteriorate")
+    var hourly=make();var state=hourly.simulation;state.plan = .hourly;hourly.simulation=state
+    let hourlyPayment=hourly.bookingQuote(hourly.waiting[0],room:hourly.rooms[0])
+    require(hourlyPayment==40 && hourly.checkIn(guestID:10,roomID:0),"Two-hour contract charges hourly pricing")
+    hourly.advanceHotelHour();hourly.advanceHotelHour()
+    require(hourly.rooms[0].guest==nil && hourly.rooms[0].dirty,"Hourly guest automatically checks out")
+    var weekly=make()
+    let resident=weekly.waiting.first{$0.kind == .resident}!
+    require(weekly.checkIn(guestID:resident.id,roomID:0),"Weekly resident checks in")
+    require(weekly.rooms[0].nightsLeft==7 && weekly.simulation.contracts[resident.id]?.plan == .weekly,"Weekly discount and stay duration are real")
+    var rates=make();let standard=rates.rate(for:rates.rooms[0])
+    rates.setPrices(.premium,plan:.nightly)
+    require(rates.rate(for:rates.rooms[0])>standard,"Pricing policy changes charged rates")
+    var renovation=make()
+    require(!renovation.changeRoomKind(0,kind:.suite),"Suite reputation gate is enforced")
+    var rep=renovation.simulation;rep.reputation=75;renovation.simulation=rep
+    require(renovation.changeRoomKind(0,kind:.suite),"Suites unlock at reputation 60")
+    require(renovation.buyRoomUpgrade(0,upgrade:.bed),"Meaningful bed upgrade installs")
+    require(!renovation.buyRoomUpgrade(0,upgrade:.bed),"Upgrade cannot be purchased twice")
+    require(renovation.rate(for:renovation.rooms[0])>standard+100,"Suite and bed affect real room prices")
+    var dirty=make();var h=dirty.rooms[0].health;h.cleanliness=20;h.faults=[.pipe,.roaches];dirty.rooms[0].hospitality=h;dirty.rooms[0].dirty=true
+    require(!dirty.rooms[0].available,"Damaged dirty rooms cannot be assigned")
+    require(dirty.managerClean(0) && !dirty.rooms[0].available,"Cleaning alone does not repair a leaking infested room")
+    require(dirty.repairRoom(0) && dirty.rooms[0].available,"Parts or pest treatment restores bookable rooms")
+    var stock=dirty.simulation;stock.stock["detergent"]=0;dirty.simulation=stock
+    let before=dirty.cash
+    require(!dirty.managerClean(0) && dirty.cash==before,"Out-of-stock cleaning does not grant work or charge money")
+    require(dirty.buyStock(.detergent) && dirty.simulation.stock["detergent"]==5,"Inventory purchases add real stock")
+    require(MiniGameTiming.isHit(elapsed:0.8) && !MiniGameTiming.isHit(elapsed:0) && !MiniGameTiming.isHit(elapsed:1.5),"Cleaning and repair timing windows are meaningful")
+    var night=make();var ns=night.simulation;ns.hour=22;ns.absoluteHour=22;night.simulation=ns
+    require(night.isNight && !night.checkIn(guestID:10,roomID:0),"Normal check-in closes at night")
+    night.toggleShadyOffers()
+    require(night.checkIn(guestID:10,roomID:0) && night.simulation.heat>0,"Optional off-books night rentals have consequences")
+    var identity=make()
+    let privateGuest=identity.waiting.first{$0.kind == .suspicious}!
+    require(!identity.checkIn(guestID:privateGuest.id,roomID:0),"Private cash guests need verified identity")
+    identity.verifyGuest(privateGuest.id);let ethics=identity.simulation.ethical;identity.verifyGuest(privateGuest.id)
+    require(identity.simulation.ethical==ethics,"Repeated identity checks cannot farm story points")
+    require(identity.checkIn(guestID:privateGuest.id,roomID:0),"Verified private guest can book")
+    var bills=make();bills.cash=1000
+    require(bills.nextDay() && bills.cash==941,"Rent and utilities are charged each morning")
+    bills.cash=0;_=bills.nextDay()
+    require(bills.simulation.billDebt>0,"Unpaid bills persist as debt")
+    require(bills.emergencyLoan() && bills.cash==200 && bills.simulation.loanDebt==240,"Emergency credit has an explicit repayment cost")
+    require(bills.repayBills() && bills.cash==0,"Debt repayment spends available cash")
+    var staff=make()
+    require(staff.hire(.clerk),"Front-desk clerk can be hired")
+    for _ in 0..<12 {staff.tickManagement()}
+    require(staff.occupancy>=1 && staff.guestsServed>=1,"Clerk really assigns rooms and takes payment")
+    staff.scheduleNight(.clerk)
+    require(staff.scheduledWage(.clerk)==33,"Night coverage costs fifty percent more")
+    let speed=staff.simulation.profiles[StaffRole.clerk.rawValue]!.speed
+    require(staff.trainStaff(.clerk) && staff.simulation.profiles[StaffRole.clerk.rawValue]!.speed>speed,"Training improves employee stats")
+    var quitting=make();_=quitting.hire(.cleaner);quitting.cash=0;_=quitting.nextDay();_=quitting.nextDay()
+    require(!quitting.operationsState.workers.contains{$0.role == .cleaner},"Staff can quit after two unpaid shifts")
+    var events=make();_=events.checkIn(guestID:10,roomID:0)
+    for kind in HotelIssueKind.allCases {
+        events.injectIssue(kind,roomID:0)
+        let issue=events.simulation.issues.last!
+        require(events.respondToIssue(issue.id,choice:0),"Every listed issue has a safe response")
+        require(!events.simulation.issues.contains{$0.id==issue.id},"Handled issues close exactly once")
+        require(!events.respondToIssue(issue.id,choice:0),"Closed events cannot pay twice")
+    }
+    events.injectIssue(.drugDeal,roomID:0);let deal=events.simulation.issues.last!.id
+    require(!events.respondToIssue(deal,choice:1),"Shady choices are optional and disabled by default")
+    events.toggleShadyOffers();let money=events.cash
+    require(events.respondToIssue(deal,choice:1) && events.cash==money+90 && events.simulation.criminal>0,"Fictional criminal route changes money and story")
+    events.injectIssue(.noise,roomID:0);let reputation=events.simulation.reputation
+    for _ in 0..<3 {events.advanceHotelHour()}
+    require(events.simulation.reputation<reputation,"Ignored complaints damage future reputation")
+    var utilities=make();var us=utilities.simulation;us.powerOut=true;us.waterOut=true;utilities.simulation=us
+    require(!utilities.checkIn(guestID:10,roomID:0),"Utility failures stop new bookings")
+    require(utilities.restoreUtilities() && !utilities.simulation.powerOut && !utilities.simulation.waterOut,"Utilities can always be repaired from the operations board")
+    var growth=make();var gs=growth.simulation;gs.reputation=75;growth.simulation=gs
+    require(growth.installFacility(.adjacentLot) && growth.expansionCapacity==9,"Buying land expands capacity")
+    require(growth.installFacility(.upperFloor) && growth.expansionCapacity==18,"Upper floor expands to eighteen rooms")
+    for _ in 0..<7 {require(growth.expand(),"Rooms can be built beyond the original nine")}
+    growth.world!.place = .grounds
+    require(growth.setViewingFloor(1) && growth.rooms[9].number==201,"Upper-floor room numbers and access are distinct")
+    require(MotelGrounds.roomDoor(9)==MotelGrounds.roomDoor(0),"Floors share the existing walkable footprint")
+    require(growth.installFacility(.parking),"Parking expansion installs")
+    growth.waiting=Motel.arrivals(day:3,count:10)
+    for _ in 0..<8 {growth.tickManagement()}
+    require(growth.operationsState.cars?.count==6,"Expanded parking creates six physical guest cars")
+    for slot in 0..<6 {require(MotelGrounds.nextStep(from:MotelGrounds.gate,to:HotelCar.approach(slot),avoiding:[]) != nil,"Expanded parking remains reachable")}
+    require(growth.installFacility(.cameras) && growth.installFacility(.nightVision),"CCTV and night vision unlock")
+    growth.toggleNightVision();require(growth.simulation.nightVision,"Night vision is a saved mode")
+    require(growth.installFacility(.restaurant) && growth.installFacility(.pool),"Restaurant and staffed pool are real upgrades")
+    var local=make();local.day=11;_=local.nextDay()
+    require(local.simulation.economy == .heatwave && local.weather == .sunny,"Local heatwaves affect the climate and AC events")
+    local.day=8;_=local.nextDay()
+    require(local.simulation.economy == .factoryClosure && local.waiting.allSatisfy{$0.kind == .resident},"Factory closure changes the guest economy")
+    var noShow=make();var reservations=noShow.simulation
+    reservations.reservations=[HotelReservation(id:999,guest:Motel.arrivals(day:4,count:1)[0],arrivalHour:9,noShow:true)]
+    noShow.simulation=reservations;let feeMoney=noShow.cash;noShow.advanceHotelHour()
+    require(noShow.simulation.noShows==1 && noShow.cash==feeMoney+10,"No-shows collect the disclosed fee")
+    var story=make();story.day=14
+    for (ethical,greedy,criminal,cult,title) in [(10,0,0,0,"A haven worth returning to"),(0,10,0,0,"Profit at any price"),(0,0,10,0,"Highway underworld"),(0,0,0,10,"Sanctuary of the strange")] {
+        var s=story.simulation;s.ethical=ethical;s.greedy=greedy;s.criminal=criminal;s.cultFriendly=cult;story.simulation=s;story.claimStoryEnding()
+        require(story.simulation.endings.contains(title),"Every management story path can reach its ending")
+    }
+    let data=try! JSONEncoder().encode(growth)
+    let saved=try! JSONDecoder().decode(Motel.self,from:data)
+    require(saved.simulation.facilities.contains(.upperFloor) && saved.rooms[9].number==201 && saved.simulation.nightVision,"Expansion, room state and camera mode survive reload")
+    var legacy=Motel();legacy.operations=nil
+    var migrated=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(legacy));migrated.enableManagement()
+    require(migrated.managementEnabled && migrated.rooms.allSatisfy{$0.hospitality != nil},"Old saves migrate to the management simulation")
+    print("PASS: day/night, room types and wear, contracts, pricing, inventory, bills, staff, complaints, guests, demand, expansion, cameras, minigames, story endings and migration")
+}
+expandedManagementRules()

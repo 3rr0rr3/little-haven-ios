@@ -47,6 +47,7 @@ struct MotelView: View {
     @State private var selectedRoom: Int?
     @State private var showMap = false
     @State private var showPause = false
+    @State private var showManagement = false
     @State private var confirmRest = false
     @State private var confirmSneak: Int?
     @State private var showSneak = false
@@ -77,11 +78,12 @@ struct MotelView: View {
         .foregroundStyle(cream).background(Color(hex: 0x172A25))
         .transaction { if testingUI { $0.disablesAnimations = true } }
         .task {
-            change { $0.initializeWorld() }
+            change { $0.initializeWorld(); if !testingUI || ProcessInfo.processInfo.arguments.contains("--ui-management") { $0.enableManagement() } }
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--ui-dialogue") { family = .hildarelys }
             if ProcessInfo.processInfo.arguments.contains("--ui-police") { showPolice = true }
             if ProcessInfo.processInfo.arguments.contains("--ui-hiring") { panel = .staff }
+            if ProcessInfo.processInfo.arguments.contains(where:{$0.hasPrefix("--ui-management-") && $0 != "--ui-management-night"}) {showManagement=true}
             #endif
         }
         .task(id: movement) {
@@ -138,6 +140,9 @@ struct MotelView: View {
             if let id, panel == nil, family == nil { openReceptionGuest(id) }
         }
         .onDisappear { stop() }
+        .sheet(isPresented:$showManagement) {
+            ManagementHub(game:$game).presentationDetents([.large]).presentationDragIndicator(.visible)
+        }
         .sheet(isPresented: $showMap) {
             MotelPocketMap(motel: motel).presentationDetents([.large]).presentationDragIndicator(.visible)
         }
@@ -150,7 +155,7 @@ struct MotelView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(motel.mapName).font(.system(size: 20, weight: .black, design: .rounded))
-                    Text("DAY \(motel.day) / \(motel.occupancy) GUESTS / \(motel.rooms.count) ROOMS / \(motel.weather.title)")
+                    Text("DAY \(motel.day) / \(motel.occupancy) GUESTS / \(motel.rooms.count) ROOMS / \(motel.clockLabel) \(motel.weather.title)")
                         .font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(gold)
                 }
                 Spacer(minLength: 4)
@@ -161,11 +166,15 @@ struct MotelView: View {
             HStack {
                 Button { stop(); panel = .reviews } label: { Text(motel.reviewAverage.map { String(format:"RATING %.1f",$0) } ?? "NEW REVIEWS") }.accessibilityIdentifier("openReviews")
                 Spacer()
-                Button("HIRE / TEAM \(motel.operationsState.workers.count)") { stop(); panel = .staff }.accessibilityIdentifier("openStaff")
+                if motel.managementEnabled {
+                    Button("MANAGE \(motel.simulation.issues.count)") {stop();panel=nil;showManagement=true}.accessibilityIdentifier("openManagement")
+                }
+                Button("TEAM \(motel.operationsState.workers.count)") { stop(); panel = .staff }.accessibilityIdentifier("openStaff")
                 if let incident = motel.operationsState.incident {
                     Button("! \(incident.kind.rawValue.uppercased()) / \(incident.remaining)s") { stop(); showIncident = true }.foregroundStyle(Color(hex:0xEE9E78)).accessibilityIdentifier("incidentAlarm")
                 }
             }.font(.system(size:10,weight:.bold,design:.monospaced)).foregroundStyle(gold)
+            if motel.managementEnabled {Text(motel.simulation.news).font(.system(size:10)).foregroundStyle(gold).lineLimit(1)}
             if let police = motel.business.police {
                 Button { stop(); showPolice = true } label: {
                     Label(police.arrived ? "POLICE HERE - FINE / BRIBE" : "POLICE ON THE WAY",systemImage:"light.beacon.max.fill")
@@ -253,7 +262,8 @@ struct MotelView: View {
                     })]) { showSneak = false; confirmSneak = nil }.padding(12)
                 } else if confirmRest {
                     GameDialogue(speaker:"End the day?",text:"Guests check out, reviews arrive, and wages are paid. An ignored emergency can kill a guest. Police cases must be settled before sleeping. Your morning is saved.",portrait:AnyView(PaperPortrait(color:0xC7D0D4,variant:7)),choices:[DialogueChoice(title:"Sleep until morning",action:{
-                        change { _ = $0.restAtBed() }; game.save(); confirmRest = false; toast = "Morning checkpoint saved."
+                        var rested=false;change {rested=$0.restAtBed()};confirmRest=false
+                        if rested {game.save();toast="Morning checkpoint saved."} else {toast="Rest is available from 20:00 after police cases are settled."}
                     })]) { confirmRest = false }.padding(12)
                 } else if confirmRestore {
                     GameDialogue(speaker:"Load checkpoint?",text:"Progress since your last save will be lost.",portrait:AnyView(PaperPortrait(color:0xC7D0D4,variant:7)),choices:[DialogueChoice(title:"Load last save",action:{ stop(); panel = nil; game = Game.load(); confirmRestore = false })]) { confirmRestore = false }.padding(12)
@@ -388,13 +398,18 @@ struct MotelView: View {
                         PaperPortrait(color: guest.color, variant: guest.id + 100).frame(width: 43, height: 55)
                         Text("Hello! My name is \(guest.name). \(guest.story) Could I stay for \(guest.nights) night\(guest.nights == 1 ? "" : "s")?").font(.caption)
                     }
+                    if motel.managementEnabled {
+                        Text(guest.kind.title+" / "+guest.kind.preference).font(.caption)
+                        Button(motel.simulation.checkedIDs.contains(guest.id) ? "Identity verified" : "Verify guest identity") {change{$0.verifyGuest(guest.id)}}.disabled(motel.simulation.checkedIDs.contains(guest.id))
+                        if let room=motel.rooms.first(where:{$0.id==selectedRoom}) {Text(motel.checkInExplanation(guest,room:room)).font(.caption2)}
+                    }
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(motel.rooms.filter(\.available)) { room in
                                 Button { selectedRoom = room.id } label: {
                                     VStack(spacing: 4) {
                                         RoomIllustration(theme: room.theme, level: room.furniture, office: false).frame(width: 70, height: 48)
-                                        Text("\(room.number) / \(motel.rate(for: room) * guest.nights) coins").font(.system(size: 10, weight: .bold))
+                                        Text("\(room.number) / \(motel.bookingQuote(guest,room:room)) coins").font(.system(size: 10, weight: .bold))
                                     }.padding(7).background(selectedRoom == room.id ? gold.opacity(0.3) : .white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
                                 }.accessibilityIdentifier("chooseRoom\(room.id)")
                             }
@@ -403,7 +418,7 @@ struct MotelView: View {
                     Button("Accept guest & collect payment") {
                         if let roomID = selectedRoom { change { _ = $0.acceptReceptionGuest(roomID: roomID) } }
                         panel = nil
-                    }.buttonStyle(MotelButtonStyle()).disabled(selectedRoom == nil).accessibilityIdentifier("chargeGuest")
+                    }.buttonStyle(MotelButtonStyle()).disabled(selectedRoom == nil || (motel.rooms.first{$0.id==selectedRoom}.map{!motel.mayCheckIn(guest,room:$0)} ?? true)).accessibilityIdentifier("chargeGuest")
                     Button("Decline politely") {
                         change { _ = $0.declineReceptionGuest() }; panel = nil
                     }.buttonStyle(MotelButtonStyle(subdued: true)).accessibilityIdentifier("declineGuest")
@@ -448,7 +463,7 @@ struct MotelView: View {
             case .construction:
                 HStack {
                     RoomIllustration(theme: 0, level: 0, office: false).frame(width: 88, height: 70).clipShape(RoundedRectangle(cornerRadius: 8))
-                    Text("Room \(101 + motel.rooms.count)\n\(motel.expansionCost) coins\n\(motel.rooms.count)/9 rooms built").font(.subheadline.bold())
+                    Text("Room \(101 + motel.rooms.count)\n\(motel.expansionCost) coins\n\(motel.rooms.count)/\(motel.expansionCapacity) rooms built").font(.subheadline.bold())
                 }
                 Button("Build this room") {
                     change { _ = $0.buildNearby() }; panel = nil
@@ -558,7 +573,7 @@ struct MotelView: View {
             var state = current.operationsState
             let event = current.lastEvent.lowercased()
             if (state.actionUntil ?? 0) <= state.tick {
-                state.actionLabel = event.contains("fire") ? "??" : event.contains("pool") ? "?" : event.contains("fight") ? "?" : event.contains("paint") ? "?" : event.contains("clean") ? "?" : event.contains("room") ? "?" : "�"
+                state.actionLabel = event.contains("fire") ? "??" : event.contains("pool") ? "?" : event.contains("fight") ? "?" : event.contains("paint") ? "?" : event.contains("clean") ? "?" : event.contains("room") ? "?" : "?"
                 state.actionUntil = state.tick + 3
                 current.operations = state
             }

@@ -20,6 +20,25 @@ struct ContentView: View {
     private static func initialGame() -> Game {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
+        if args.contains(where:{$0.hasPrefix("--ui-management")}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement()
+            sample.motel!.cash=6000
+            var sim=sample.motel!.simulation;sim.reputation=75;sample.motel!.simulation=sim
+            _=sample.motel!.checkIn(guestID:10,roomID:0)
+            sample.motel!.rooms[1].dirty=true
+            var health=sample.motel!.rooms[1].health;health.cleanliness=35;health.faults=[.pipe];sample.motel!.rooms[1].hospitality=health
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:11,y:14)
+            sample.motel!.operations!.nextIncidentTick=10000
+            if args.contains("--ui-management-night") || args.contains("--ui-management-cameras") {
+                var state=sample.motel!.simulation;state.hour=22;state.absoluteHour=22;state.facilities=[.cameras,.nightVision,.adjacentLot,.upperFloor];state.nightVision=args.contains("--ui-management-cameras");sample.motel!.simulation=state
+                sample.motel!.injectIssue(.leak,roomID:0)
+            }
+            if args.contains("--ui-management-events") {
+                sample.motel!.injectIssue(.outage,roomID:0);sample.motel!.injectIssue(.bedbugs,roomID:1)
+                var state=sample.motel!.simulation;state.powerOut=true;sample.motel!.simulation=state
+            }
+            sample.save();return sample
+        }
         if args.contains(where: { $0.hasPrefix("--ui-parking") || $0.hasPrefix("--ui-weather") || $0.hasPrefix("--ui-action") }) {
             var sample=Game()
             sample.coins=545; sample.wakeUp(); sample.motel!.initializeWorld()

@@ -87,6 +87,21 @@ struct MotelRoomCanvas: View, Animatable {
             context.translateBy(x: (size.width - 144 * scale) / 2, y: (size.height - 144 * scale) / 2)
             context.scaleBy(x: scale, y: scale)
             InteriorArt.draw(context: &context, theme: room.theme, level: room.furniture, office: false)
+            if room.health.kind == .deluxe || room.health.kind == .suite {
+                context.fill(Path(roundedRect:CGRect(x:80,y:38,width:34,height:16),cornerRadius:3),with:.color(Color(hex:0x997887)))
+                context.fill(Path(CGRect(x:83,y:41,width:28,height:7)),with:.color(Color(hex:0xC0A3AD)))
+            }
+            if room.health.upgrades.contains(.fridge) {
+                context.fill(Path(roundedRect:CGRect(x:109,y:72,width:15,height:21),cornerRadius:2),with:.color(Color(hex:0xD9DDCD)))
+                context.fill(Path(CGRect(x:111,y:80,width:11,height:1)),with:.color(Color(hex:0x8EABA4)))
+                context.fill(Path(CGRect(x:111,y:74,width:1,height:4)),with:.color(Color(hex:0x728C88)))
+            }
+            if room.health.upgrades.contains(.bed) {
+                context.fill(Path(CGRect(x:32,y:40,width:31,height:8)),with:.color(Color(hex:0xD8C58E)))
+            }
+            if room.health.upgrades.contains(.soundproof) {
+                for panel in 0..<6 {context.fill(Path(CGRect(x:18+Double(panel*7),y:18,width:4,height:10)),with:.color(Color(hex:0x758B7D)))}
+            }
             if !visit.sneaking {
                 let paint = MotelGrounds.roomPaint
                 let cabinet = CGRect(x: Double(paint.x * 16 + 2), y: Double(paint.y * 16), width: 13, height: 15)
@@ -278,10 +293,12 @@ struct MotelGroundsCanvas: View, Animatable {
             building(Tile(x: 3, y: 3), 8, 6, MotelGrounds.officeDoor, "OFFICE / RECEPTION", 0x739998, 0xE2CEA4)
             for index in 0..<9 {
                 let o = MotelGrounds.roomOrigin(index)
-                if index < motel.rooms.count {
-                    let room = motel.rooms[index]
+                let actual=index+motel.viewingFloor*9
+                if actual < motel.rooms.count {
+                    let room = motel.rooms[actual]
                     building(o, 6, 4, MotelGrounds.roomDoor(index), "\(room.number) / \(room.guest != nil ? "GUEST" : room.dirty ? "DIRTY" : "VACANT")", Motel.themeColors[room.theme], Motel.themeColors[room.theme])
                     let door = MotelGrounds.roomDoor(index)
+                    if room.health.upgrades.contains(.camera) {rect(Double(door.x*16+20),Double(door.y*16-22),5,3,0x344D50)}
                     rect(Double(door.x * 16 + 19), Double(door.y * 16 - 13), 3, 3, room.guest != nil ? 0xD7927A : room.dirty ? 0xD9AF5C : 0x8AA96A)
                 } else {
                     let px = Double(o.x * 16), py = Double(o.y * 16)
@@ -292,7 +309,24 @@ struct MotelGroundsCanvas: View, Animatable {
                     }
                     rect(px, py + 18, 96, 3, 0xCDBD9B); rect(px, py + 45, 96, 3, 0xCDBD9B)
                     rect(px + 22, py + 22, 52, 18, 0x4B6251)
-                    label(index == motel.rooms.count ? "BUILD NEXT" : "FUTURE ROOM", px + 48, py + 31, 4, 0xF0D393)
+                    label(actual == motel.rooms.count ? "BUILD NEXT" : "FUTURE ROOM", px + 48, py + 31, 4, 0xF0D393)
+                }
+            }
+            if motel.managementEnabled {
+                label("FLOOR \(motel.viewingFloor+1)",200,38,6,0xF2D58F)
+                if motel.simulation.facilities.contains(.restaurant) {
+                    rect(46,410,38,24,0x9F795A); rect(52,405,26,7,0xD2B478)
+                    label("CAFE",65,419,5,0xF4E2BD)
+                }
+                if motel.simulation.economy == .festival {
+                    for flag in 0..<8 {rect(176+Double(flag*12),245,7,9,flag%2==0 ? 0xD9957E : 0xE3C26F)}
+                    label("FESTIVAL",220,238,5,0x3D5C47)
+                }
+                if motel.simulation.facilities.contains(.parking) {
+                    for col in [17,25,33] {
+                        rect(Double(col*16-5),528,1,32,0xE5D5AD)
+                        rect(Double(col*16+54),528,1,32,0xE5D5AD)
+                    }
                 }
             }
             // Pool, courtyard, parking spaces and roadside sign.

@@ -44,7 +44,7 @@ extension Motel {
                 }
             }
             office.visitor = visitor
-        } else if isAtReception, let guest = waiting.first {
+        } else if isAtReception, (!managementEnabled || !isNight), let guest = waiting.first {
             office.visitor = OfficeVisitor(guest: guest)
         }
         world!.reception = office
