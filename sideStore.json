@@ -10,22 +10,20 @@
       "name": "Little Haven",
       "bundleIdentifier": "com.littlehaven.town",
       "developerName": "3rr0rr3",
-      "subtitle": "Walk, work and build your Airb&b.",
-      "localizedDescription": "Run a roadside Airb&b from an expanded family reception. Stay behind the desk while clients walk in, introduce themselves and request a room. Accept and collect payment or decline politely. Tap your gray tabby Chichu, calico Chichi, Samhil watching TV, or Hildarelys walking around to interact. The owner and Hildarelys use original photo-inspired cut-paper cartoon designs. Tap the office door to explore the grounds, clean rooms, customize and expand the Airb&b. Sneaking and last-save recovery remain available. Existing saves are supported.",
+      "subtitle": "Run your Airb&b and car wash.",
+      "localizedDescription": "Run your Airb&b with animated guest emergencies, changing outdoor weather, and a paid car wash. Watch guests struggle in the pool, angry guests fight, and courtyard fires burn. Hire Diego to scrub and rinse parked guest cars for income. Clean rooms, serve breakfast, wash towels, water plants, repair equipment and carry luggage with visible tools and effects. Guest belongings have recognizable suitcase, watch and camera designs and animate into your hands when stolen. Existing family reception, staff, police events, room upgrades and saved games are supported.",
       "iconURL": "https://raw.githubusercontent.com/3rr0rr3/little-haven-ios/main/LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
       "tintColor": "4C8C85",
       "category": "games",
       "screenshotURLs": [
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-police.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-hiring.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-dialogue.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-chaos.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-office.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-motel.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-cleaning.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-pool.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-fight.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-parking-staff.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-weather-storm.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-weather-snow.png",
         "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-stealth.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-wake.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-preview.png"
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-cleaning.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-office.png"
       ],
       "versions": [
         {

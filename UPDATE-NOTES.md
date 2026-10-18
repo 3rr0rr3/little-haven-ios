@@ -1,7 +1,12 @@
-Added five outdoor daily services: breakfast, luggage, laundry, pool maintenance, and gardening. Walk beside the labeled station to see its action button. Breakfast and luggage require checked-in guests; each service pays once per day and persists its completion through saves.
+Little Haven 8.0 (12) — sideload-26-1
 
-Added fourteen trees, four benches, flower beds, stable guest appearance seeds, skin/hair/clothing/accessory variation, directional fight punches and recoil, and animated action symbols. Existing cleaning and emergency effects remain. Prior local Airb&b and police changes were retained.
+- Animated drowning with waving arms, bobbing head and splashes; alternating angry punches and recoil; flickering fire, sparks and rising smoke.
+- Three guest parking bays with arriving cars. Hire Diego (120 coins; 18/day) to walk to cars and wash them for 35 coins each. Manual washing is available at the bays. Each car pays once per day, including across save reloads.
+- Visible sheets, trash bags, mop strokes, foam, spray, laundry, watering, breakfast, luggage, paint rollers, repair tools and construction effects.
+- Recognizable suitcase, watch and camera designs on room furniture. Theft animates each object from its source to the player's hands.
+- Automatically changing outdoor sun, rain, thunderstorm, wind and snow. Weather stays outside; storm shading and lightning accompany rain.
+- New fields are optional to preserve existing saves.
 
-Inspiration: Hotel: A Resort Simulator's guest services and Hotel Renovator's decoration and upkeep systems. No game assets were copied.
-
-Verification: scripts/check_landscape.py audits route connectivity on Windows. Tests/main.swift adds native model tests for service availability, rewards, daily limits, persistence and route access. Run the existing macOS workflow to compile, execute Swift tests and verify the iPhone UI. Version 7.0 (11) was built and published as sideload-20-1. Native model tests and all 10 simulator tests passed. The unsigned arm64 IPA passed platform and archive checks. Physical-device installation has not been tested.
+Verified: native model tests, all 12 iPhone simulator tests, Release iPhoneOS compilation, arm64/platform/archive checks, and generated screenshots and three emergency videos. Physical-device installation has not been tested.
+IPA: https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-unsigned.ipa
+Workflow: https://github.com/3rr0rr3/little-haven-ios/actions/runs/39083763244

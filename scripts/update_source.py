@@ -27,9 +27,9 @@ entry = {
     "minOSVersion": info["MinimumOSVersion"],
 }
 app["versions"] = [entry] + [item for item in app["versions"] if item["version"] != version or item.get("buildVersion") != build]
-app["subtitle"] = "Walk, work and build your Airb&b."
-app["localizedDescription"] = "Run a roadside Airb&b from an expanded family reception. Stay behind the desk while clients walk in, introduce themselves and request a room. Accept and collect payment or decline politely. Tap your gray tabby Chichu, calico Chichi, Samhil watching TV, or Hildarelys walking around to interact. The owner and Hildarelys use original photo-inspired cut-paper cartoon designs. Tap the office door to explore the grounds, clean rooms, customize and expand the Airb&b. Sneaking and last-save recovery remain available. Existing saves are supported."
-app["screenshotURLs"] = [f"{asset_base}/LittleHaven-police.png", f"{asset_base}/LittleHaven-hiring.png", f"{asset_base}/LittleHaven-dialogue.png", f"{asset_base}/LittleHaven-chaos.png", f"{asset_base}/LittleHaven-office.png", f"{asset_base}/LittleHaven-motel.png", f"{asset_base}/LittleHaven-cleaning.png", f"{asset_base}/LittleHaven-stealth.png", f"{asset_base}/LittleHaven-wake.png", f"{asset_base}/LittleHaven-preview.png"]
+app["subtitle"] = "Run your Airb&b and car wash."
+app["localizedDescription"] = "Run your Airb&b with animated guest emergencies, changing outdoor weather, and a paid car wash. Watch guests struggle in the pool, angry guests fight, and courtyard fires burn. Hire Diego to scrub and rinse parked guest cars for income. Clean rooms, serve breakfast, wash towels, water plants, repair equipment and carry luggage with visible tools and effects. Guest belongings have recognizable suitcase, watch and camera designs and animate into your hands when stolen. Existing family reception, staff, police events, room upgrades and saved games are supported."
+app["screenshotURLs"] = [f"{asset_base}/LittleHaven-pool.png", f"{asset_base}/LittleHaven-fight.png", f"{asset_base}/LittleHaven-parking-staff.png", f"{asset_base}/LittleHaven-weather-storm.png", f"{asset_base}/LittleHaven-weather-snow.png", f"{asset_base}/LittleHaven-stealth.png", f"{asset_base}/LittleHaven-cleaning.png", f"{asset_base}/LittleHaven-office.png"]
 source["subtitle"] = "A town dream and a roadside Airb&b"
 body = {
     "message": f"Update SideStore feed for Little Haven {version} [skip ci]",
