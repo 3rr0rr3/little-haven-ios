@@ -16,16 +16,25 @@
       "tintColor": "4C8C85",
       "category": "games",
       "screenshotURLs": [
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-pool.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-fight.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-parking-staff.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-weather-storm.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-weather-snow.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-stealth.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-cleaning.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-26-1/LittleHaven-office.png"
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-30-1/LittleHaven-pool.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-30-1/LittleHaven-fight.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-30-1/LittleHaven-parking-staff.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-30-1/LittleHaven-weather-storm.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-30-1/LittleHaven-weather-snow.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-30-1/LittleHaven-stealth.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-30-1/LittleHaven-cleaning.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-30-1/LittleHaven-office.png"
       ],
       "versions": [
+        {
+          "version": "9.0",
+          "buildVersion": "13",
+          "date": "2026-10-18",
+          "localizedDescription": "Complete management expansion: day and night shifts, room types and wear, meaningful upgrades, guest needs, contracts and rates, inventory, bills and wages, staff stats, complaints, local demand, expansions, CCTV and story paths.",
+          "downloadURL": "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-30-1/LittleHaven-unsigned.ipa",
+          "size": 1350949,
+          "minOSVersion": "17.0"
+        },
         {
           "version": "8.0",
           "buildVersion": "12",
