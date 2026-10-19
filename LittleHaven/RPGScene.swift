@@ -136,8 +136,7 @@ final class RPGScene: SKScene {
         }
         configureAmbient(night:night && !interior,nightVision:nightVision,powerOut:powerOut)
         configureWeather(interior ? .sunny : weather)
-        if !interior {
-            actors += motel.neighborhoodActors configureCars(cars,day:day) }
+        if !interior { configureCars(cars,day:day) }
         if let visual, visual.map == mapID, visual.id != visualSeen || visual.map != visualMapSeen {
             visualSeen = visual.id; visualMapSeen = visual.map
             if !changedMap || ProcessInfo.processInfo.arguments.contains(where: { $0.hasPrefix("--ui-action") }) { showVisual(visual) }
