@@ -239,7 +239,11 @@ final class LittleHavenUITests: XCTestCase {
         let hintSwitch = app.switches["optionHints"]
         let originalHintValue = hintSwitch.value as? String
         let expectedHintValue = originalHintValue == "1" ? "0" : "1"
-        hintSwitch.tap()
+        hintSwitch.coordinate(withNormalizedOffset:CGVector(dx:0.92,dy:0.5)).tap()
+        Thread.sleep(forTimeInterval:0.5)
+        if (hintSwitch.value as? String) == originalHintValue {
+            hintSwitch.coordinate(withNormalizedOffset:CGVector(dx:0.78,dy:0.5)).tap()
+        }
         expectation(for: NSPredicate(format:"value == %@", expectedHintValue), evaluatedWith:hintSwitch)
         waitForExpectations(timeout:3)
         let changedHintValue = hintSwitch.value as? String
