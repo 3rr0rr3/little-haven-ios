@@ -231,7 +231,8 @@ final class LittleHavenUITests: XCTestCase {
         capture(app,"Hourly nightly and weekly pricing")
     }
     func testTitleOptionsContinueAndNewGame() {
-        let app=launch("--ui-title")
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-title","--ui-office-family","--ui-testing"]; app.launch()
         XCTAssertTrue(app.buttons["titleOptions"].waitForExistence(timeout:10))
         app.buttons["titleOptions"].tap()
         XCTAssertTrue(app.switches["optionHints"].waitForExistence(timeout:5))
@@ -245,6 +246,14 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["Quit session"].tap()
         XCTAssertTrue(app.buttons["returnTitle"].waitForExistence(timeout:5))
         app.buttons["returnTitle"].tap()
+        app.buttons["startGame"].tap()
+        XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:10),"Continue loads existing hotel")
+        app.buttons["Pause game"].tap()
+        app.buttons["Options"].tap()
+        XCTAssertTrue(app.switches["optionHints"].waitForExistence(timeout:5),"In-game options opens from pause")
+        app.buttons["Done"].tap()
+        app.buttons["backToTitle"].tap()
+        XCTAssertTrue(app.buttons["startGame"].waitForExistence(timeout:10))
         if !app.buttons["newGame"].exists {
             app.buttons["startGame"].tap()
             app.terminate();app.launchArguments=["--ui-title","--ui-testing"];app.launch()

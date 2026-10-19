@@ -148,7 +148,6 @@ struct MotelView: View {
         .sheet(isPresented: $showMap) {
             MotelPocketMap(motel: motel).presentationDetents([.large]).presentationDragIndicator(.visible)
         }
-        .sheet(isPresented:$showOptions) { GameOptionsView() }
         .sheet(isPresented: $showPause) { pauseSheet.presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
 
     }
@@ -493,9 +492,10 @@ struct MotelView: View {
             Text("Getting caught while stealing means loading your latest checkpoint. Changes since that save will be lost.").font(.subheadline).foregroundStyle(.secondary)
             Button("Back to the Airb&b") { showPause = false }.buttonStyle(MotelButtonStyle())
             Button("Load last save") { showPause = false; confirmRestore = true }.buttonStyle(MotelButtonStyle(subdued: true))
-            Button("Options") { showPause = false; showOptions = true }.buttonStyle(MotelButtonStyle(subdued:true))
+            Button("Options") { showOptions = true }.buttonStyle(MotelButtonStyle(subdued:true))
             Button("Save & return to title") { stop(); game.save(); showPause = false; returnToTitle() }.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("backToTitle")
         }.padding(24).foregroundStyle(cream).presentationBackground(Color(hex: 0x172A25))
+            .sheet(isPresented:$showOptions) { GameOptionsView() }
     }
     private var gameOver: some View {
         VStack(spacing: 24) {
