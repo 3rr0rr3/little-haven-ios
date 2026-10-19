@@ -1,3 +1,22 @@
+Little Haven 13.0 (17) — separate family home and open neighborhood
+
+- Restored the open reception office and moved Hildarelys, Samhil, Chichu and Chichi into a separate family house east of the motel. Their original designs, walking/cat animations and interactions are retained.
+- Added a pitched roof, chimney, porch, garden and distinct home interior. Visit at column 54, row 14. The house has a marked checkpoint and a decoration menu.
+- Spend motel profits on three home upgrades: unlock the west room, expand furnishing capacity and renovate the exterior. Customize walls and floors.
+- Willow Home sells plants, rugs, lamps, bookshelves, tables and armchairs. Purchases enter home storage; place items on the home grid, return them to storage and reposition them. Placement preserves family paths and the exit.
+- Expanded the grounds to a connected 72 × 48 neighborhood with roads, storefronts and seven animated pedestrians who move between destinations and flee nearby emergencies.
+- Thread & Co. sells and equips outfits. Owned clothing can be worn again without another charge.
+- Second Chance Pawn buys carried stolen belongings individually. Escaping with loot adds items to inventory and never awards cash; payment happens only when selling at the pawn shop.
+- Fires and fights rotate through reachable locations across the motel and neighborhood. Animations, manual intervention, evacuation and employee responses share the actual incident position. Pool incidents remain at the pool.
+- Home upgrades, finishes, furniture, wardrobe, carried belongings and neighborhood movement are included in checkpoints. Existing motel saves migrate through optional fields.
+
+Verified: portable rules on Linux and native model rules on macOS passed, including physical shop access, home renovation, decoration placement, outfit ownership, explicit pawn sales, saved inventory and legacy saves. All 22 iPhone simulator UI tests passed with zero failures. Release iPhoneOS compilation, arm64/platform/archive checks and preview capture passed. Downloaded IPA matched its published SHA256; its Info.plist reports version 13.0, build 17 and iPhoneOS, and its executable is arm64. Family-home, neighborhood and restored-office captures were visually reviewed. SideStore feed was verified at 13.0 (17). Physical-device installation has not been tested.
+IPA: https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-unsigned.ipa
+Release: https://github.com/3rr0rr3/little-haven-ios/releases/tag/sideload-47-1
+Workflow: https://github.com/3rr0rr3/little-haven-ios/actions/runs/39283779421
+SHA256: 06db66d5bdce771879362ed274f10bf89a22eaea026ec74cc0d80d84dcf7b51a
+
+Previous release:
 Little Haven 12.0 (16) — sideload-43-1 family room and continuous staff work
 
 - Hildarelys, Samhil, Chichu and Chichi now occupy a separate room inside the office, with a partition, walkable doorway, television, couch, cat beds and bowls. Their character designs, animation routes and existing interactions remain supported.
