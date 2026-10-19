@@ -94,6 +94,24 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["upgradeHome"].tap()
         capture(app,"Home upgrades wallpaper flooring and furniture placement")
     }
+    func testPetsFollowOutsideAndWaitIndependently() {
+        let app=launch("--ui-family-home")
+        XCTAssertTrue(app.buttons["office_chichu"].waitForExistence(timeout:10))
+        app.buttons["office_chichu"].tap()
+        app.buttons["Follow me"].tap()
+        app.buttons["office_chichi"].tap()
+        app.buttons["Follow me"].tap()
+        app.buttons["office_door"].tap()
+        XCTAssertTrue(app.buttons["Chichu"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["Chichi"].exists)
+        app.buttons["Chichu"].tap()
+        XCTAssertTrue(app.buttons["Stay here"].waitForExistence(timeout:3))
+        app.buttons["Stay here"].tap()
+        for _ in 0..<3 { app.buttons["Walk south"].tap() }
+        XCTAssertFalse(app.buttons["Chichu"].exists)
+        XCTAssertTrue(app.buttons["Chichi"].exists)
+        capture(app,"Chichi follows outside while Chichu waits near home")
+    }
     func testPawnShopRequiresExplicitSale() {
         let app=launch("--ui-pawn-store")
         XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
