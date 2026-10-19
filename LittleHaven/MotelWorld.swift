@@ -38,7 +38,7 @@ enum MotelGrounds {
     }
     static func guestTile(_ id: Int) -> Tile { Tile(x: 4 + (id % 5) * 2, y: 11 + ((id % 10) / 5) * 2) }
     static func refuge(from tile: Tile, danger: Tile) -> Tile {
-        [Tile(x:2,y:12),Tile(x:11,y:32),Tile(x:35,y:25),Tile(x:12,y:3)]
+        [Tile(x:2,y:12),Tile(x:11,y:32),Tile(x:36,y:27),Tile(x:12,y:3)]
             .max { $0.distance(to:danger) < $1.distance(to:danger) } ?? tile
     }
     static func escapeStep(from start:Tile,danger:Tile,avoiding:Set<Tile>) -> Tile? {
