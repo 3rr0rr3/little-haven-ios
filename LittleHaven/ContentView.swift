@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 extension Color {
     init(hex: UInt32) { self.init(red: Double((hex >> 16) & 255) / 255, green: Double((hex >> 8) & 255) / 255, blue: Double(hex & 255) / 255) }
@@ -6,6 +7,16 @@ extension Color {
 
 struct ContentView: View {
     @State private var game = ContentView.initialGame()
+    @State private var playing = ContentView.bypassTitle
+    @State private var sessionID = UUID()
+    @AppStorage("littlehaven.hints") private var showHints = true
+    private static var bypassTitle: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains(where: { $0.hasPrefix("--ui-") }) && !ProcessInfo.processInfo.arguments.contains("--ui-title")
+        #else
+        return false
+        #endif
+    }
     @State private var conversation: Neighbor?
     @State private var message: String?
     @State private var showHouse = false
@@ -146,6 +157,21 @@ struct ContentView: View {
     }
     var body: some View {
         Group {
+            if playing { gameplay.id(sessionID) }
+            else {
+                MotelTitleScreen(hasSave: UserDefaults.standard.data(forKey:"littlehaven.save.v1") != nil, start: {
+                    game = Game.load(); sessionID = UUID(); playing = true
+                }, newGame: {
+                    heldDirection = nil; conversation = nil; message = nil; showHouse = false; showJournal = false
+                    game = Game(); game.save(); sessionID = UUID(); playing = true
+                })
+            }
+        }.environment(\.returnToTitle, {
+            heldDirection = nil; game.save(); playing = false
+        }).onChange(of:scenePhase) { _, phase in if phase != .active { heldDirection = nil } }
+    }
+    private var gameplay: some View {
+        Group {
             if game.motel != nil {
                 MotelView(game: $game)
             } else if game.readyToWake {
@@ -202,7 +228,7 @@ struct ContentView: View {
 
                 HStack(spacing: 8) {
                     Circle().fill(gold).frame(width: 5, height: 5)
-                    Text(hint).font(.system(size: 11, weight: .medium)).lineLimit(2)
+                    Text(showHints ? hint : "").font(.system(size: 11, weight: .medium)).lineLimit(2)
                     Spacer(minLength: 0)
                 }.frame(height: 28)
 
@@ -344,6 +370,7 @@ struct ContentView: View {
                 }
                 Section {
                     Text("Progress saves automatically on this device. All coins are fictional game currency.").font(.footnote)
+                    Button("Save & return to title") { stopMoving(); showJournal = false; playing = false }
                     Button("Start a new adventure", role: .destructive) { reset = true }
                 }
             }.navigationTitle("Your journal").toolbar { Button("Done") { showJournal = false } }
@@ -355,6 +382,7 @@ struct ContentView: View {
 }
 
 struct HoldDirection: View {
+    @AppStorage("littlehaven.largeControls") private var largeControls = false
     let symbol: String
     let label: String
     let isActive: Bool
@@ -365,17 +393,162 @@ struct HoldDirection: View {
     var body: some View {
         Image(systemName: symbol)
             .font(.system(size: 16, weight: .black))
-            .frame(width: 44, height: 40)
+            .frame(width: largeControls ? 50 : 44, height: largeControls ? 46 : 40)
             .background(Color(hex: isActive ? 0x65866B : 0x344B40), in: RoundedRectangle(cornerRadius: 10))
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0)
                 .updating($pressed) { value, state, _ in
-                    state = CGRect(x: -12, y: -12, width: 68, height: 64).contains(value.location)
-                })
+                    state = CGRect(x: 0, y: 0, width: largeControls ? 50 : 44, height: largeControls ? 46 : 40).contains(value.location)
+                }.onEnded { _ in changed(false) })
             .onChange(of: pressed) { _, value in changed(value) }
+            .onDisappear { changed(false) }
             .accessibilityLabel(label)
             .accessibilityHint("Hold to keep walking; activate to take one step.")
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { singleStep() }
+    }
+}
+
+
+private struct TitleReturnKey: EnvironmentKey {
+    static let defaultValue: () -> Void = {}
+}
+extension EnvironmentValues {
+    var returnToTitle: () -> Void {
+        get { self[TitleReturnKey.self] }
+        set { self[TitleReturnKey.self] = newValue }
+    }
+}
+
+struct GameOptionsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("littlehaven.hints") private var hints = true
+    @AppStorage("littlehaven.haptics") private var haptics = true
+    @AppStorage("littlehaven.largeControls") private var largeControls = false
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Gameplay") {
+                    Toggle("Show gameplay hints", isOn: $hints).accessibilityIdentifier("optionHints")
+                    Toggle("Action haptics", isOn: $haptics)
+                    Toggle("Larger D-pad buttons", isOn: $largeControls).accessibilityIdentifier("optionLargeControls")
+                }
+                Section("Controls") {
+                    Text("Hold an arrow to walk. Release or slide off the button to stop. Nearby tasks never move your character; press their action button when you want to work.")
+                    Text("Inside the office, walk freely and tap guests, the desk, tools, family, or the door to interact.")
+                }
+                Section("Saved game") {
+                    Text("Continue loads your last checkpoint. New Game starts from zero after confirmation. Save at the office before leaving. Quit closes the game session; use the Home gesture to leave the app.")
+                    Button("Restore default options") { hints = true; haptics = true; largeControls = false }
+                }
+            }.navigationTitle("Options")
+                .toolbar { Button("Done") { dismiss() } }
+        }.tint(Color(hex:0xEFC977))
+    }
+}
+
+struct MotelTitleScreen: View {
+    let hasSave: Bool
+    let start: () -> Void
+    let newGame: () -> Void
+    @State private var options = false
+    @State private var confirmNew = false
+    @State private var confirmQuit = false
+    @State private var closed = false
+    private let cream = Color(hex:0xF5E7C8)
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                MotelTitleLandscape().ignoresSafeArea()
+                Color.black.opacity(0.13).ignoresSafeArea()
+                if closed {
+                    VStack(spacing:24) {
+                        Image(systemName:"moon.stars.fill").font(.system(size:48))
+                        Text("See you soon").font(.largeTitle.bold())
+                        Text("Your game session is closed.\nUse the Home gesture to leave the app.").multilineTextAlignment(.center)
+                        menuButton("RETURN TO TITLE", tint:0x344B40, id:"returnTitle") { closed = false }
+                    }.padding(30).frame(maxWidth:.infinity,maxHeight:.infinity).background(Color(hex:0x172A25).opacity(0.97))
+                } else {
+                    VStack(spacing:12) {
+                        VStack(spacing:0) {
+                            Text("MOTEL").font(.system(size:min(60,proxy.size.width*0.15),weight:.black,design:.rounded)).tracking(3)
+                                .foregroundStyle(Color(hex:0xFFB4A4)).shadow(color:.red,radius:8)
+                            Text("SIMULATOR").font(.system(size:min(36,proxy.size.width*0.082),weight:.heavy,design:.rounded)).tracking(2)
+                                .foregroundStyle(Color(hex:0xB8F2EE)).shadow(color:.cyan,radius:8)
+                            Text("A GAME OF HOSPITALITY").font(.system(size:11,weight:.bold,design:.monospaced)).tracking(1).padding(.top,8)
+                        }.padding(20).background(Color(hex:0x193D43).opacity(0.96),in:RoundedRectangle(cornerRadius:20))
+                            .overlay(RoundedRectangle(cornerRadius:20).stroke(Color(hex:0xA5E1DE),lineWidth:3)).padding(.top,12)
+                        Spacer(minLength:20)
+                        VStack(spacing:12) {
+                            menuButton(hasSave ? "CONTINUE GAME" : "START GAME",tint:0x264E42,id:"startGame",action:start)
+                            menuButton("NEW GAME",tint:0x45594A,id:"newGame") { confirmNew = true }
+                            HStack(spacing:12) {
+                                menuButton("OPTIONS",tint:0x4B495E,id:"titleOptions") { options = true }
+                                menuButton("QUIT",tint:0x653C35,id:"titleQuit") { confirmQuit = true }
+                            }
+                        }.frame(maxWidth:460)
+                        Text("LITTLE HAVEN / YOUR NEXT SHIFT AWAITS").font(.system(size:9,weight:.bold,design:.monospaced)).shadow(color:.black,radius:3)
+                    }.padding(24)
+                }
+            }.foregroundStyle(cream)
+        }.accessibilityIdentifier("titleScreen")
+            .sheet(isPresented:$options) { GameOptionsView() }
+            .confirmationDialog("Start again from zero?",isPresented:$confirmNew,titleVisibility:.visible) {
+                Button("Erase checkpoint and start new game",role:.destructive,action:newGame)
+                Button("Cancel",role:.cancel) {}
+            } message: { Text("Your current saved adventure will be replaced. Your options will be kept.") }
+            .confirmationDialog("Close this game session?",isPresented:$confirmQuit,titleVisibility:.visible) {
+                Button("Quit session") { closed = true }
+                Button("Cancel",role:.cancel) {}
+            }
+    }
+    private func menuButton(_ title:String,tint:UInt32,id:String,action:@escaping ()->Void)->some View {
+        Button(action:action) {
+            Text(title).font(.system(size:16,weight:.black,design:.monospaced))
+                .frame(maxWidth:.infinity,minHeight:50)
+                .background(Color(hex:tint),in:RoundedRectangle(cornerRadius:5))
+                .overlay(RoundedRectangle(cornerRadius:5).stroke(Color(hex:0xC6DDC8),lineWidth:2))
+                .shadow(color:.black.opacity(0.45),radius:0,x:0,y:4)
+        }.buttonStyle(.plain).accessibilityIdentifier(id)
+    }
+}
+
+/// Code-drawn courtyard, inspired by the supplied title-screen reference.
+struct MotelTitleLandscape: View {
+    var body: some View {
+        Canvas { context,size in
+            let w=size.width,h=size.height
+            context.fill(Path(CGRect(origin:.zero,size:size)),with:.color(Color(hex:0x91B86D)))
+            for y in 0..<22 { for x in 0..<12 where (x+y)%2 == 0 {
+                context.fill(Path(CGRect(x:CGFloat(x)*w/12,y:CGFloat(y)*h/22,width:w/12,height:h/22)),with:.color(Color(hex:0x82AA60).opacity(0.45)))
+            }}
+            var courtyard=Path()
+            courtyard.move(to:CGPoint(x:w*0.12,y:h*0.32));courtyard.addLine(to:CGPoint(x:w*0.88,y:h*0.32))
+            courtyard.addLine(to:CGPoint(x:w*1.1,y:h));courtyard.addLine(to:CGPoint(x:-w*0.1,y:h));courtyard.closeSubpath()
+            context.fill(courtyard,with:.color(Color(hex:0xC9C49A)))
+            let colors:[UInt32]=[0x91B8A8,0xDBA083,0x89B3A3,0xAD96C0,0x91B8A8,0xB19BC7]
+            for i in 0..<6 {
+                let bw=w*0.23,bh=h*0.105,x=w*(0.09+Double(i%3)*0.30),y=h*(i<3 ? 0.37:0.57)
+                let r=CGRect(x:x,y:y,width:bw,height:bh)
+                context.fill(Path(r),with:.color(Color(hex:colors[i])))
+                context.fill(Path(CGRect(x:x-3,y:y-7,width:bw+6,height:bh*0.25)),with:.color(Color(hex:colors[i]).opacity(0.9)))
+                for line in 0..<3 {
+                    context.fill(Path(CGRect(x:x-3,y:y-7+CGFloat(line)*bh*0.08,width:bw+6,height:2)),with:.color(Color(hex:0x496957).opacity(0.6)))
+                }
+                context.fill(Path(CGRect(x:x+bw*0.37,y:y+bh*0.45,width:bw*0.24,height:bh*0.55)),with:.color(Color(hex:0x515649)))
+                context.fill(Path(CGRect(x:x+bw*0.7,y:y+bh*0.43,width:bw*0.21,height:bh*0.26)),with:.color(Color(hex:0xB4D5CA)))
+                context.fill(Path(CGRect(x:x+bw*0.08,y:y+bh*0.24,width:bw*0.84,height:bh*0.14)),with:.color(Color(hex:0x385549)))
+                context.draw(Text("\(101+i) / GUEST").font(.system(size:7,weight:.bold,design:.monospaced)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x+bw/2,y:y+bh*0.31))
+                context.fill(Path(CGRect(x:x+bw*0.24,y:y+bh*1.22,width:bw*0.5,height:bh*0.12)),with:.color(Color(hex:0x9B7958)))
+                for flower in 0..<5 {
+                    context.fill(Path(ellipseIn:CGRect(x:x+bw*0.25+CGFloat(flower)*bw*0.09,y:y+bh*1.15,width:bw*0.07,height:bh*0.12)),with:.color(Color(hex:flower%2 == 0 ? 0xEAB7B4:0xEDD189)))
+                }
+            }
+            for i in 0..<10 {
+                let x=i%2 == 0 ? w*0.035:w*0.92,y=h*(0.12+Double(i/2)*0.16)
+                context.fill(Path(CGRect(x:x+w*0.015,y:y+h*0.03,width:w*0.02,height:h*0.03)),with:.color(Color(hex:0x8F7950)))
+                context.fill(Path(ellipseIn:CGRect(x:x-w*0.015,y:y,width:w*0.085,height:h*0.055)),with:.color(Color(hex:i%3 == 0 ? 0x527C48:0x628D4E)))
+            }
+        }.accessibilityHidden(true)
     }
 }

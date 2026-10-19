@@ -226,7 +226,7 @@ func worldRules() {
     require(walk.worldState.place == .office, "Diagonal movement can reach an unobstructed doorway")
     walk.world!.player = Tile(x: 4, y: 5)
     walk.moveActor(dx: 0, dy: -1)
-    require(walk.actorTile == OfficeReception.clerk && walk.atSavePoint, "Clerk stays behind desk with a save point")
+    require(walk.actorTile == Tile(x:4,y:5), "Office desk collision blocks movement without teleporting the player")
     walk.world!.player = Tile(x: 2, y: 5)
     require(walk.receptionTools() && walk.worldState.hasCleaningKit, "Cleaning kit is collected at the actual closet")
 
@@ -330,7 +330,12 @@ func receptionRules() {
     var motel = Motel()
     motel.initializeWorld()
     for direction in [Tile(x:0,y:1),Tile(x:1,y:0),Tile(x:-1,y:0)] { motel.moveActor(dx:direction.x,dy:direction.y) }
-    require(motel.actorTile == OfficeReception.clerk && motel.isAtReception, "Office movement cannot move the desk clerk")
+    require(motel.actorTile == OfficeReception.clerk && motel.isAtReception, "Walking around office desk respects collision")
+    motel.moveActor(dx:1,dy:0)
+    require(motel.actorTile == Tile(x:5,y:3), "Player walks inside office")
+    motel.initializeWorld(); motel.tickReception()
+    require(motel.actorTile == Tile(x:5,y:3), "Office initialization and guest ticks never reset player position")
+    motel.moveActor(dx:-1,dy:0)
     require(!motel.acceptReceptionGuest(roomID:0) && !motel.declineReceptionGuest(), "Clients cannot be decided before arriving")
     let familyStart = motel.reception.hildarelys
     for _ in 0..<12 { motel.tickReception() }

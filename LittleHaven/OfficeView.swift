@@ -6,7 +6,7 @@ struct OfficeReceptionView: View {
     let tap: (OfficeTap) -> Void
     private var visitor: OfficeVisitor? { motel.reception.visitor }
     private var actors: [RPGActor] {
-        var result = [RPGActor(id:"player",tile:OfficeReception.clerk,color:0xC7D0D4,variant:7,name:"You"),
+        var result = [RPGActor(id:"player",tile:motel.actorTile,color:0xC7D0D4,variant:7,facing:motel.actorFacing,name:"You"),
             RPGActor(id:"hildarelys",tile:motel.reception.hildarelys,color:0x292A2C,variant:8,facing:motel.reception.tick % 12 < 6 ? 2 : 1,name:"Hildarelys",duration:0.65),
             RPGActor(id:"samhil",tile:Tile(x:11,y:9),color:0xD88BAA,variant:9,facing:3,name:"Samhil",displayScale:0.8),
             RPGActor(id:"chichu",tile:Tile(x:3,y:10),color:0x85817C,variant:0,name:"Chichu",animal:1),
@@ -39,6 +39,7 @@ struct OfficeReceptionView: View {
                 if let visitor { target(.guest,"Talk to \(visitor.guest.name)",visitor.tile,scale,origin) }
             }.frame(width: proxy.size.width, height: proxy.size.height)
         }.accessibilityElement(children: .contain).accessibilityIdentifier("officeScene")
+            .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
     }
     private func target(_ item:OfficeTap,_ label:String,_ tile:Tile,_ scale:CGFloat,_ origin:CGPoint) -> some View {
         Button { tap(item) } label: { Color.white.opacity(0.001).contentShape(Rectangle()) }

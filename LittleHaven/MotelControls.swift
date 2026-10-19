@@ -35,11 +35,12 @@ struct MotelJoystick: View {
             }
         }.frame(width: 134, height: 134)
             .onChange(of: vector) { _, value in direction(value) }
+            .onDisappear { direction(nil) }
     }
     private func arrow(_ symbol: String, _ tile: Tile, _ label: String) -> some View {
         HoldDirection(symbol: symbol, label: label, isActive: active == tile) { pressed in
             if pressed { direction(tile) }
-            else if active == tile { direction(nil) }
+            else { direction(nil) }
         } singleStep: { step(tile) }
     }
 }
@@ -65,7 +66,7 @@ struct WorkActionButton: View {
     }
     var body: some View {
         Group {
-            if cleaning || held {
+            if cleaning {
                 label.contentShape(RoundedRectangle(cornerRadius: 25))
                     .gesture(DragGesture(minimumDistance: 0).updating($held) { value, state, _ in
                         state = CGRect(x: -10, y: -10, width: 180, height: 111).contains(value.location)

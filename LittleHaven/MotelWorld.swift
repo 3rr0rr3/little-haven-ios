@@ -13,7 +13,7 @@ struct MotelWalker: Codable, Identifiable {
 }
 struct MotelWorldState: Codable {
     var place: MotelPlace = .office
-    var player = Tile(x: 4, y: 7)
+    var player = Tile(x: 4, y: 3)
     var facing = 0
     var hasCleaningKit = false
     var travellers: [MotelWalker] = []
@@ -77,7 +77,7 @@ enum MotelGrounds {
 
 extension Motel {
     var worldState: MotelWorldState { world ?? MotelWorldState() }
-    var actorTile: Tile { visit?.player ?? (isAtReception ? OfficeReception.clerk : worldState.player) }
+    var actorTile: Tile { visit?.player ?? worldState.player }
     var actorFacing: Int { visit?.facing ?? worldState.facing }
     var mapName: String {
         if let visit, let room = rooms.first(where: { $0.id == visit.roomID }) { return "ROOM \(room.number)" }
@@ -104,7 +104,15 @@ extension Motel {
             if player.distance(to: Tile(x: 3, y: 2)) <= 1 { return .furniture(visit.roomID) }
             return .none
         }
-        if isAtReception { return .desk }
+        if isAtReception {
+            if player.distance(to:OfficeReception.door) <= 1 { return .exit }
+            if player.distance(to:Tile(x:1,y:7)) <= 1 { return .tools }
+            if player.distance(to:Tile(x:1,y:9)) <= 1 { return .paint(nil) }
+            if player.distance(to:Tile(x:1,y:2)) <= 1 { return .rest }
+            if player.distance(to:OfficeReception.clerk) <= 1 { return .desk }
+            if player.distance(to:Tile(x:5,y:4)) <= 1 { return .save }
+            return .none
+        }
         if nearbyIncident { return .incident }
         if let guest = waiting.first(where: { player.distance(to: MotelGrounds.guestTile($0.id)) <= 1 }) { return .guest(guest.id) }
         if player.distance(to: MotelGrounds.officeDoor) <= 1 { return .office }
@@ -116,13 +124,11 @@ extension Motel {
         assignRoomColors()
         if world == nil { world = MotelWorldState() }
         if world!.reception == nil { world!.reception = OfficeReception() }
-        if world!.place == .office && visit == nil { world!.player = OfficeReception.clerk }
     }
     mutating func moveActor(dx: Int, dy: Int) {
         guard !caught, abs(dx) <= 1, abs(dy) <= 1, dx != 0 || dy != 0 else { return }
         initializeWorld()
         if visit != nil { move(dx: dx, dy: dy); return }
-        guard !isAtReception else { return }
         var state = worldState
         state.facing = dy > 0 ? 0 : dx < 0 ? 1 : dx > 0 ? 2 : 3
         let next = Tile(x: state.player.x + dx, y: state.player.y + dy)
@@ -132,7 +138,7 @@ extension Motel {
                 guard !MotelGrounds.officeBlocked(Tile(x: state.player.x + dx, y: state.player.y)),
                       !MotelGrounds.officeBlocked(Tile(x: state.player.x, y: state.player.y + dy)) else { world = state; return }
             }
-            if next == Tile(x: 4, y: 8) {
+            if next == OfficeReception.door || next == Tile(x:7,y:14) {
                 state.place = .grounds; state.player = Tile(x: 6, y: 10)
             } else { state.player = next }
             world = state

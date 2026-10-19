@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct WakeUpView: View {
     let begin: () -> Void
@@ -39,6 +40,10 @@ struct MotelButtonStyle: ButtonStyle {
 private enum MotelPanel: Equatable { case guest(Int), paint(Int?), desk, construction, staff, reviews, roomUpgrades }
 struct MotelView: View {
     @Binding var game: Game
+    @Environment(\.returnToTitle) private var returnToTitle
+    @AppStorage("littlehaven.hints") private var showHints = true
+    @AppStorage("littlehaven.haptics") private var haptics = true
+    @State private var showOptions = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var movement: Tile?
     @State private var working = false
@@ -68,7 +73,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
@@ -88,7 +93,7 @@ struct MotelView: View {
         }
         .task(id: movement) {
             guard let direction = movement else { return }
-            while !Task.isCancelled && scenePhase == .active && !motel.caught && !paused {
+            while !Task.isCancelled && movement == direction && scenePhase == .active && !motel.caught && !paused {
                 change { $0.moveActor(dx: direction.x, dy: direction.y) }
                 do { try await Task.sleep(for: .seconds(direction.x != 0 && direction.y != 0 ? 0.19 : 0.14)) } catch { break }
             }
@@ -136,9 +141,6 @@ struct MotelView: View {
         .onChange(of: motel.caught) { _, caught in if caught { stop(); panel = nil } }
         .onChange(of: paused) { _, value in if value { stop() } }
         .onChange(of: scenePhase) { _, phase in if phase != .active { stop() } }
-        .onChange(of: receptionPrompt) { _, id in
-            if let id, panel == nil, family == nil { openReceptionGuest(id) }
-        }
         .onDisappear { stop() }
         .sheet(isPresented:$showManagement) {
             ManagementHub(game:$game).presentationDetents([.large]).presentationDragIndicator(.visible)
@@ -146,6 +148,7 @@ struct MotelView: View {
         .sheet(isPresented: $showMap) {
             MotelPocketMap(motel: motel).presentationDetents([.large]).presentationDragIndicator(.visible)
         }
+        .sheet(isPresented:$showOptions) { GameOptionsView() }
         .sheet(isPresented: $showPause) { pauseSheet.presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
 
     }
@@ -201,26 +204,26 @@ struct MotelView: View {
                     Text("\(room.cleanedTasks?.count ?? 0)/3").font(.caption.monospaced().bold())
                 }
             }
-            Text(motel.isAtReception ? "Stay at the desk. Tap clients to talk; tap the lower door to walk outside." : hint).font(.system(size: 11, weight: .medium)).foregroundStyle(cream.opacity(0.8)).lineLimit(2).frame(maxWidth: .infinity, minHeight: 29, alignment: .leading)
-            if let car = motel.nearbyCar {
-                Button("Wash car / +35 coins") { stop(); change { _ = $0.washNearbyCar() } }
-                    .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("washCar")
-                Text("Parking bay \(car.slot+1) / Hire Diego for automatic washes").font(.system(size:9))
-            }
-            if let service = motel.nearbyService {
-                Button(motel.serviceAvailable(service) ? "\(service.title) / +\(service.reward) coins" : "\(service.title) / done or awaiting guests") {
-                    stop(); change { _ = $0.performService(service) }
-                }.buttonStyle(MotelButtonStyle()).disabled(!motel.serviceAvailable(service))
-            }
-            if motel.isAtReception {
-                HStack(spacing: 10) {
-                    Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
-                    Button("Hire employees") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")
-                }.frame(height: 65)
-            } else {
+            Text(showHints ? (motel.isAtReception ? "Walk freely. Tap guests, family and office objects to interact." : hint) : "").font(.system(size: 11, weight: .medium)).foregroundStyle(cream.opacity(0.8)).lineLimit(2).frame(maxWidth: .infinity, minHeight: 29, alignment: .leading)
+            ZStack {
+                if let car = motel.nearbyCar {
+                    Button("Wash car / +35 coins") { stop(); change { _ = $0.washNearbyCar() } }
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("washCar")
+                        .accessibilityHint("Parking bay \(car.slot+1)")
+                } else if let service = motel.nearbyService {
+                    Button(service.title + " / +\(service.reward) coins") {
+                        stop(); change { _ = $0.performService(service) }
+                    }.buttonStyle(MotelButtonStyle()).disabled(!motel.serviceAvailable(service))
+                } else if motel.isAtReception {
+                    HStack(spacing:10) {
+                        Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
+                        Button("Hire employees") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")
+                    }
+                } else { Color.clear }
+            }.frame(height:44).clipped()
             HStack(spacing: 16) {
                 MotelJoystick(direction: { direction in
-                    if !paused && !motel.caught { movement = direction }
+                    if direction == nil || (!paused && !motel.caught) { movement = direction }
                 }, active: movement, step: { direction in
                     stop()
                     if !paused && !motel.caught { change { $0.moveActor(dx: direction.x, dy: direction.y) } }
@@ -231,8 +234,7 @@ struct MotelView: View {
                     Label(motel.worldState.hasCleaningKit ? "MOP + FRESH SHEETS" : "GET TOOLS IN OFFICE", systemImage: "sparkles")
                         .font(.system(size: 8, weight: .bold, design: .monospaced)).foregroundStyle(cream.opacity(0.6))
                 }.frame(width: 160)
-            }.frame(height: 140).padding(.horizontal, 8)
-            }
+            }.frame(height: 150).padding(.horizontal, 8)
         }.padding(.horizontal, 16).padding(.vertical, 10)
     }
 
@@ -367,6 +369,7 @@ struct MotelView: View {
     private func performAction() {
         guard !paused else { return }
         stop()
+        if haptics { UIImpactFeedbackGenerator(style:.light).impactOccurred() }
         switch motel.nearbyAction {
         case .incident: showIncident = true
         case .office, .exit: change { _ = $0.useEntrance() }
@@ -490,6 +493,8 @@ struct MotelView: View {
             Text("Getting caught while stealing means loading your latest checkpoint. Changes since that save will be lost.").font(.subheadline).foregroundStyle(.secondary)
             Button("Back to the Airb&b") { showPause = false }.buttonStyle(MotelButtonStyle())
             Button("Load last save") { showPause = false; confirmRestore = true }.buttonStyle(MotelButtonStyle(subdued: true))
+            Button("Options") { showPause = false; showOptions = true }.buttonStyle(MotelButtonStyle(subdued:true))
+            Button("Save & return to title") { stop(); game.save(); showPause = false; returnToTitle() }.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("backToTitle")
         }.padding(24).foregroundStyle(cream).presentationBackground(Color(hex: 0x172A25))
     }
     private var gameOver: some View {

@@ -28,11 +28,16 @@ final class LittleHavenUITests: XCTestCase {
     func testReceptionDecisionsDoorAndSave() {
         let app = launch("--ui-world")
         XCTAssertTrue(app.buttons["office_door"].waitForExistence(timeout:10), app.debugDescription)
-        XCTAssertFalse(app.buttons["Walk north"].exists, "Reception clerk has no walking controls")
+        XCTAssertTrue(app.buttons["Walk north"].exists, "Office has walking controls")
+        XCTAssertTrue(app.buttons["office_guest"].waitForExistence(timeout:15))
+        Thread.sleep(forTimeInterval:5)
+        app.buttons["office_guest"].tap()
         XCTAssertTrue(app.buttons["chargeGuest"].waitForExistence(timeout:15), "Client walks in and starts a conversation")
         app.buttons["chooseRoom0"].tap()
         app.buttons["chargeGuest"].tap()
         XCTAssertTrue(cash(app).contains("260"))
+        Thread.sleep(forTimeInterval:9)
+        app.buttons["office_guest"].tap()
         XCTAssertTrue(app.buttons["declineGuest"].waitForExistence(timeout:20))
         app.buttons["declineGuest"].tap()
         XCTAssertTrue(cash(app).contains("260"), "Decline must not charge")
@@ -224,6 +229,62 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["manageTab_Desk"].tap()
         XCTAssertTrue(app.segmentedControls["pricingPolicy"].waitForExistence(timeout:5))
         capture(app,"Hourly nightly and weekly pricing")
+    }
+    func testTitleOptionsContinueAndNewGame() {
+        let app=launch("--ui-title")
+        XCTAssertTrue(app.buttons["titleOptions"].waitForExistence(timeout:10))
+        app.buttons["titleOptions"].tap()
+        XCTAssertTrue(app.switches["optionHints"].waitForExistence(timeout:5))
+        app.switches["optionHints"].tap()
+        app.buttons["Done"].tap()
+        app.buttons["titleOptions"].tap()
+        XCTAssertEqual(app.switches["optionHints"].value as? String,"0")
+        app.buttons["Restore default options"].tap()
+        app.buttons["Done"].tap()
+        app.buttons["titleQuit"].tap()
+        app.buttons["Quit session"].tap()
+        XCTAssertTrue(app.buttons["returnTitle"].waitForExistence(timeout:5))
+        app.buttons["returnTitle"].tap()
+        if !app.buttons["newGame"].exists {
+            app.buttons["startGame"].tap()
+            app.terminate();app.launchArguments=["--ui-title","--ui-testing"];app.launch()
+        }
+        app.buttons["newGame"].tap()
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.buttons["startGame"].exists)
+        app.buttons["newGame"].tap()
+        app.buttons["Erase checkpoint and start new game"].tap()
+        XCTAssertTrue(app.otherElements["townMap"].waitForExistence(timeout:10))
+        XCTAssertTrue(app.otherElements["townMap"].label.contains("row 19"))
+        capture(app,"New adventure starts from zero")
+    }
+    func testOfficeWalkingStopsOnRelease() {
+        let app=launch("--ui-office-family")
+        let office=app.otherElements["officeScene"]
+        XCTAssertTrue(office.waitForExistence(timeout:10))
+        let before=office.value as? String
+        app.buttons["Walk east"].press(forDuration:0.45)
+        let after=office.value as? String
+        XCTAssertNotEqual(before,after)
+        Thread.sleep(forTimeInterval:0.7)
+        XCTAssertEqual(office.value as? String,after,"Release stops movement even as reception ticks")
+        capture(app,"Free office movement")
+    }
+    func testOutdoorControlsStayPutNearTasks() {
+        let app=launch("--ui-parking")
+        let arrow=app.buttons["Walk west"]
+        XCTAssertTrue(arrow.waitForExistence(timeout:10))
+        let frame=arrow.frame
+        let world=app.otherElements["motelWorld"]
+        arrow.press(forDuration:0.65)
+        let stopped=world.label
+        Thread.sleep(forTimeInterval:0.7)
+        XCTAssertEqual(world.label,stopped)
+        XCTAssertEqual(arrow.frame,frame,"Nearby actions cannot shift the D-pad")
+        app.buttons["Walk east"].press(forDuration:0.4)
+        let stoppedAgain=world.label
+        Thread.sleep(forTimeInterval:0.7)
+        XCTAssertEqual(world.label,stoppedAgain)
     }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
