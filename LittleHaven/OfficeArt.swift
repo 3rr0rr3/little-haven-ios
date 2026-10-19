@@ -1,43 +1,78 @@
 import SwiftUI
 
+// Original 16-pixel tiles, drawn on an integer grid and enlarged without smoothing.
+// Three-tone materials and one-pixel edges give a classic handheld RPG look.
+enum PixelTiles {
+    static func ground(context:inout GraphicsContext,x:Double,y:Double,kind:Int,seed:Int) {
+        func r(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ c:UInt32) {context.fill(Path(CGRect(x:x+dx,y:y+dy,width:w,height:h)),with:.color(Color(hex:c)))}
+        if kind == 2 {
+            r(0,0,16,16,0x788898);r(2,3,2,1,0x8494A0);r(11,12,2,1,0x6C7C8C)
+        } else if kind == 1 {
+            r(0,0,16,16,0xE2CD9B);r(0,0,16,1,0xF5E4B9);r(0,15,16,1,0xB6A677)
+            r(0,0,1,16,0xC5B183);r(8,1,1,7,0xCFBA8C);r(1,8,15,1,0xCFBA8C)
+            r(3,11,2,1,0xEFDBAA);r(12,4,2,1,0xEFDBAA)
+        } else {
+            r(0,0,16,16,0x86BC65)
+            for i in 0..<3 {
+                let dx=Double((seed+i*5)%12+2),dy=Double((seed/3+i*7)%11+3)
+                r(dx,dy,1,2,0x5D984E);r(dx+2,dy-1,1,3,0x5D984E);r(dx+1,dy+2,2,1,0x6AA653)
+                r(dx-1,dy-1,1,1,0xA5D37A)
+            }
+            if seed%23 == 0 {r(6,6,3,3,0xF5E79F);r(7,7,1,1,0xDA9F54)}
+        }
+    }
+    static func tree(context:inout GraphicsContext,x:Double,y:Double) {
+        func r(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ c:UInt32) {context.fill(Path(CGRect(x:x+dx,y:y+dy,width:w,height:h)),with:.color(Color(hex:c)))}
+        r(0,12,20,4,0x60914D);r(6,5,6,11,0x70543C);r(7,7,2,8,0xAF8451)
+        r(1,-10,16,20,0x355F42);r(-3,-5,24,12,0x355F42);r(4,-13,10,3,0x355F42)
+        r(1,-9,16,16,0x4C8B4F);r(-2,-4,22,8,0x4C8B4F);r(4,-12,10,4,0x69A75D)
+        r(2,-7,12,4,0x83C16B);r(0,-2,6,3,0x69A75D);r(7,-4,9,3,0x69A75D)
+        r(2,4,4,2,0x355F42);r(10,3,7,3,0x3D7547);r(5,-8,4,1,0xA1D27C)
+    }
+    static func planter(context:inout GraphicsContext,x:Double,y:Double) {
+        func r(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ c:UInt32) {context.fill(Path(CGRect(x:x+dx,y:y+dy,width:w,height:h)),with:.color(Color(hex:c)))}
+        r(0,7,12,7,0x79513F);r(1,8,10,4,0xBF8158);r(-1,5,14,3,0xDEAA73)
+        r(1,1,10,5,0x497F48);r(3,-2,6,7,0x72AD58);r(5,0,3,2,0xE8A1B0);r(9,2,2,2,0xF4DB83)
+    }
+    static func building(context:inout GraphicsContext,x:Double,y:Double,w:Double,h:Double,doorX:Double,name:String,roof:UInt32,paint:UInt32) {
+        func r(_ dx:Double,_ dy:Double,_ width:Double,_ height:Double,_ c:UInt32) {context.fill(Path(CGRect(x:x+dx,y:y+dy,width:width,height:height)),with:.color(Color(hex:c)))}
+        let roofHeight=floor(h*0.46),door=doorX-x
+        r(4,8,w,h-6,0x608B58)
+        r(1,roofHeight,w-2,h-roofHeight,0x4B5258);r(3,roofHeight,w-6,h-roofHeight-2,paint)
+        for row in stride(from:roofHeight+8,to:h-5,by:8) {r(4,row,w-8,1,0xD2BC94)}
+        r(0,4,w,roofHeight-1,0x4B5258);r(4,0,w-8,roofHeight,0x4B5258)
+        r(2,5,w-4,roofHeight-4,roof);r(5,2,w-10,4,roof)
+        for row in stride(from:7.0,to:roofHeight,by:6) {
+            r(3,row,w-6,1,0x865D59)
+            r(3,row-1,w-6,1,0xE3AB8B)
+            for col in stride(from:Double(Int(row)%12)+4,to:w-4,by:12) {r(col,row-5,1,5,0x865D59)}
+        }
+        r(1,roofHeight,w-2,2,0x414B52);r(3,roofHeight+2,w-6,2,0xB19A78)
+        r(door-2,h-25,20,25,0xF6E5BA);r(door,h-23,16,23,0x4B5258);r(door+2,h-21,12,20,0x92714E)
+        r(door+4,h-19,1,17,0xB99A6B);r(door+11,h-12,2,2,0xF5D273)
+        r(door-2,h,20,3,0xB6A383);r(door-1,h,18,1,0xF3E2B5)
+        for wx in [10.0,w-30] where abs(wx-door)>17 {
+            r(wx-2,h-29,24,23,0x756951);r(wx,h-28,20,20,0xF7E9C5)
+            r(wx+2,h-26,16,16,0x518398);r(wx+3,h-25,14,7,0x88C5D2)
+            r(wx+9,h-26,2,16,0xF7E9C5);r(wx+2,h-19,16,2,0xF7E9C5)
+            r(wx-2,h-8,24,2,0xAD9470)
+        }
+        r(9,roofHeight+5,w-18,8,0x466A65);r(10,roofHeight+6,w-20,1,0x739D8C)
+        context.draw(Text(name).font(.system(size:4,weight:.bold,design:.monospaced)).foregroundColor(Color(hex:0xF9EDC7)),at:CGPoint(x:x+w/2,y:y+roofHeight+9))
+    }
+}
+
 enum NeighborhoodArt {
     static func draw(context:inout GraphicsContext,level:Int) {
-        func rect(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ c:UInt32){context.fill(Path(CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:c)))}
-        func label(_ text:String,_ x:Double,_ y:Double){context.draw(Text(text).font(.system(size:6,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x,y:y))}
-        // A pitched roof, chimney, porch and garden distinguish the house from motel cabins.
-        let neighborhoodContext=context
-        context.translateBy(x:438,y:112)
-        context.scaleBy(x:0.5,y:0.5)
-        rect(752,64,256,192,0x73866A)
-        rect(770,119,218,105,level>1 ? 0xD9B6A1 : 0xEAD6B0)
-        context.fill(Path(CGRect(x:770,y:126,width:218,height:98)),with:.linearGradient(Gradient(colors:[Color.white.opacity(0.12),Color.black.opacity(0.18)]),startPoint:CGPoint(x:770,y:126),endPoint:CGPoint(x:988,y:224)))
-        var roof=Path();roof.move(to:CGPoint(x:759,y:126));roof.addLine(to:CGPoint(x:879,y:53));roof.addLine(to:CGPoint(x:999,y:126));roof.closeSubpath();context.fill(roof,with:.color(Color(hex:level>1 ? 0x577E89 : 0x9D6654)))
-        rect(943,65,16,38,0x8D6153);rect(939,63,24,6,0x6F5149)
-        rect(789,144,36,35,0x8DBCB7);rect(930,144,36,35,0x8DBCB7)
-        for x in [805.0,946.0] {rect(x,144,2,35,0xF3E4BE);rect(x-16,160,36,2,0xF3E4BE)}
-        rect(864,174,24,50,0x6A735B);rect(881,197,3,3,0xF2D58C)
-        rect(848,224,56,9,0xE4C498);rect(856,233,40,7,0xC3AB84)
-        label("OUR HOME",879,139)
-        for x in stride(from:754,to:1004,by:16) where x<846 || x>909 {rect(Double(x),245,3,16,0xEFE1BC);rect(Double(x),251,15,2,0xEFE1BC)}
-        for x in [765.0,980.0] {rect(x,216,13,13,0xAA7B58);context.fill(Path(ellipseIn:CGRect(x:x-6,y:201,width:25,height:20)),with:.color(Color(hex:0x65884F)))}
-        if level>0 {rect(780,185,58,29,0xBBA3BA);label("WEST WING",809,199)}
-        if level>2 {rect(920,233,63,7,0x9B7957);for x in [925.0,966.0] {rect(x,224,4,17,0x775F44)}}
-        context=neighborhoodContext
-        // Stone approach joins the original doorway to the town sidewalk.
-        rect(864,232,24,56,0xB9B199)
-        for y in stride(from:234,to:286,by:9) {rect(865,Double(y),22,1,0x96967F)}
+        // Same seven-by-five footprint as the hotel buildings; no differently colored lawn rectangle.
+        for row in 14..<18 {for col in 54...55 {PixelTiles.ground(context:&context,x:Double(col*16),y:Double(row*16),kind:1,seed:row+col)}}
+        PixelTiles.building(context:&context,x:816,y:144,w:112,h:80,doorX:864,name:"HOME",roof:level>1 ? 0x6488B0 : 0xCC7058,paint:0xF0D8A0)
+        for x in [820.0,912.0] {PixelTiles.planter(context:&context,x:x,y:224)}
         for shop in NeighborhoodShop.allCases {
-            let x=Double((shop.door.x-3)*16),y=368.0
-            let color:UInt32=shop == .furniture ? 0x9B9279 : shop == .clothing ? 0xA18BA8 : 0x6D9492
-            rect(x+3,y+8,106,88,0xE4CDA6);rect(x,y,112,23,color)
-            context.fill(Path(CGRect(x:x+3,y:y+23,width:106,height:73)),with:.linearGradient(Gradient(colors:[Color.white.opacity(0.1),Color.black.opacity(0.18)]),startPoint:CGPoint(x:x,y:y+23),endPoint:CGPoint(x:x+106,y:y+96)))
-            rect(x+9,y+29,94,13,0x365247);label(shop.title.uppercased(),x+56,y+35)
-            rect(x+8,y+49,31,33,0x8DBCB7);rect(x+73,y+49,31,33,0x8DBCB7)
-            rect(x+48,y+48,16,48,0x665A48);rect(x+59,y+71,2,2,0xEED187)
-            for stripe in 0..<8 {rect(x+Double(stripe*14),y+43,14,8,stripe%2 == 0 ? color : 0xF1DFC0)}
-            label(shop == .furniture ? "FURNITURE" : shop == .clothing ? "CLOTHES" : "BUY / SELL",x+56,y+105)
+            let x=Double((shop.door.x-3)*16)
+            let roof:UInt32=shop == .furniture ? 0xCE9560 : shop == .clothing ? 0xA480B8 : 0x679EA8
+            PixelTiles.building(context:&context,x:x,y:368,w:112,h:96,doorX:Double(shop.door.x*16),name:shop.title.uppercased(),roof:roof,paint:0xEFDBAF)
         }
-        rect(628,281,31,16,0x506D57);label("TOWN >",643,289)
     }
 }
 struct HomeInteriorArt:View {
@@ -58,9 +93,14 @@ struct HomeInteriorArt:View {
         Canvas {context,_ in
             func rect(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ c:UInt32){context.fill(Path(CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:c)))}
             rect(0,0,240,240,0x4F6957);rect(16,32,208,192,Self.floors[home.floor]);rect(16,0,208,32,Motel.themeColors[home.wallpaper])
-            for y in stride(from:48,to:224,by:16) {rect(16,Double(y),208,1,0x9A805F)}
-            if home.level == 0 {rect(16,32,64,80,0x55715C)}
-            else {rect(20,38,47,30,0xE3CAB1);rect(22,40,43,8,0xF5E9D2)}
+            for row in 2..<14 {for col in 1..<14 {
+                let x=Double(col*16),y=Double(row*16)
+                rect(x,y+15,16,1,0x94704F);rect(x,y,16,1,0xD5BB8A)
+                if (col+row)%3 == 0 {rect(x+7,y+1,1,14,0xA88760)}
+                rect(x+2,y+5,4,1,0xC5A77C)
+            }}
+            rect(16,30,208,3,0x5E725B);rect(16,33,208,2,0x9F865E)
+            if home.level > 0 {rect(20,38,47,30,0xE3CAB1);rect(22,40,43,8,0xF5E9D2)}
             rect(154,81,60,28,0x775F49);rect(160,72,47,28,0x303C3C);rect(164,76,39,19,0x86B2B2);rect(176,85,15,8,0xE2CB86)
             rect(171,162,50,22,0x8E7B9E);rect(176,154,40,21,0xB8A3BA)
             for x in [157.0,190.0] {rect(x,201,25,13,0xBE9A76);rect(x+7,216,10,4,0x82ACA5)}

@@ -40,7 +40,7 @@ extension Motel {
     static let chaosLocations=[Tile(x:11,y:13),Tile(x:20,y:17),Tile(x:29,y:27),Tile(x:16,y:28),Tile(x:34,y:10)]
     var isAtHome:Bool {visit == nil && worldState.place == .house}
     func homeBlocked(_ tile:Tile)->Bool {
-        tile == FamilyHome.workbench || tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || (household.level == 0 && tile.x<5 && tile.y<7) || (10...12).contains(tile.x) && (5...6).contains(tile.y) || (11...13).contains(tile.x) && (10...11).contains(tile.y) || household.placed.contains{$0.tile == tile && $0.kind != .rug}
+        tile == FamilyHome.workbench || tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || (10...12).contains(tile.x) && (5...6).contains(tile.y) || (11...13).contains(tile.x) && (10...11).contains(tile.y) || household.placed.contains{$0.tile == tile && $0.kind != .rug}
     }
     @discardableResult mutating func buyHomeObject(_ kind:HomeObject)->Bool {
         guard worldState.place == .grounds,actorTile.distance(to:NeighborhoodShop.furniture.door)<=1,cash>=kind.price else{return false}
