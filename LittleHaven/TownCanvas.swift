@@ -218,8 +218,8 @@ enum PaperPerson {
                 if mood == "scared" { oval(6.8,4,2.4,2.7,0x6A413B,false) }
                 else { line([CGPoint(x:6,y:5.5),CGPoint(x:8,y:4.5),CGPoint(x:10,y:5.5)],ink,0.5) }
             } else if mood == "angry" || mood == "determined" {
-                line([CGPoint(x:4,y:-2.8),CGPoint(x:7,y:-1.4)],ink,0.75)
-                line([CGPoint(x:9,y:-1.4),CGPoint(x:12,y:-2.8)],ink,0.75)
+                line([CGPoint(x:4,y:-0.8),CGPoint(x:7,y:0.6)],ink,0.75)
+                line([CGPoint(x:9,y:0.6),CGPoint(x:12,y:-0.8)],ink,0.75)
                 line([CGPoint(x:6,y:5.6),CGPoint(x:8,y:4.7),CGPoint(x:10,y:5.6)],ink,0.6)
             } else if mood == "curious" {
                 line([CGPoint(x:4,y:-3),CGPoint(x:7,y:-3.5)],ink,0.6)

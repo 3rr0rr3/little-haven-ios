@@ -10,7 +10,7 @@ enum StaffRole: String, Codable, CaseIterable, Identifiable {
     var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office."; case .valet: return "Walks to parked guest cars, scrubs and rinses them. Each car earns 35 coins once per day."; case .clerk: return "Handles daytime arrivals, assigns suitable rooms and collects payments while you work outside." } }
     var home: Tile { self == .clerk ? Tile(x:6,y:10) : self == .valet ? Tile(x:15,y:32) : Tile(x:11,y:self == .cleaner ? 10 : self == .maintenance ? 11 : 12) }
     var color: UInt32 { switch self { case .cleaner: return 0xB4A1C5; case .maintenance: return 0xD8AC66; case .security: return 0x718DA9; case .valet: return 0x5DA6B0; case .clerk: return 0xD0B777 } }
-    var breakTile: Tile { Tile(x:24 + (Self.allCases.firstIndex(of:self) ?? 0)*2,y:26) }
+    var breakTile: Tile { Tile(x:24 + (Self.allCases.firstIndex(of:self) ?? 0)*2,y:33) }
 }
 struct MotelWorker: Codable, Identifiable {
     let role: StaffRole

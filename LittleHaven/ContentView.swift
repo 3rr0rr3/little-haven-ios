@@ -402,39 +402,50 @@ struct HoldDirection: View {
     let singleStep: () -> Void
 
     var body: some View {
-        Image(systemName: symbol)
-            .font(.system(size: 16, weight: .black))
-            .frame(width: largeControls ? 50 : 44, height: largeControls ? 46 : 40)
-            .background(Color(hex: isActive ? 0x65866B : 0x344B40), in: RoundedRectangle(cornerRadius: 10))
-            .contentShape(Rectangle())
-            .overlay(DirectionTouchSurface(changed: changed).accessibilityHidden(true))
+        DirectionTouchSurface(symbol:symbol,label:label,active:isActive,changed:changed,singleStep:singleStep)
+            .frame(width:largeControls ? 50 : 44,height:largeControls ? 46 : 40)
             .onDisappear { changed(false) }
-            .accessibilityLabel(label)
-            .accessibilityHint("Hold to keep walking; activate to take one step.")
-            .accessibilityAddTraits(.isButton)
-            .accessibilityAction { singleStep() }
     }
 }
 
-/// Touch-down delivery avoids gesture recognition and SwiftUI gesture-state latency.
+/// A single native accessible control receives touch-down without gesture delays.
 private struct DirectionTouchSurface: UIViewRepresentable {
-    let changed: (Bool) -> Void
-    func makeUIView(context: Context) -> DirectionTouchView {
-        let view = DirectionTouchView(); view.changed = changed; return view
+    let symbol:String
+    let label:String
+    let active:Bool
+    let changed:(Bool)->Void
+    let singleStep:()->Void
+    func makeUIView(context:Context)->DirectionTouchView { DirectionTouchView(frame:.zero) }
+    func updateUIView(_ view:DirectionTouchView,context:Context) {
+        view.changed=changed; view.singleStep=singleStep
+        view.accessibilityLabel=label; view.accessibilityIdentifier=label
+        view.accessibilityHint="Hold to walk. Release or slide off to stop. Activate to take one step."
+        view.icon.image=UIImage(systemName:symbol,withConfiguration:UIImage.SymbolConfiguration(pointSize:16,weight:.black))
+        view.backgroundColor=active ? UIColor(red:0.396,green:0.525,blue:0.420,alpha:1) : UIColor(red:0.204,green:0.294,blue:0.251,alpha:1)
     }
-    func updateUIView(_ view: DirectionTouchView, context: Context) { view.changed = changed }
-    static func dismantleUIView(_ view: DirectionTouchView, coordinator: ()) { view.setHeld(false) }
+    static func dismantleUIView(_ view:DirectionTouchView,coordinator:()) { view.setHeld(false) }
 }
-private final class DirectionTouchView: UIView {
-    var changed: (Bool) -> Void = { _ in }
-    private var held = false
-    func setHeld(_ value: Bool) { guard held != value else { return }; held = value; changed(value) }
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) { setHeld(true) }
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let touch = touches.first { setHeld(bounds.contains(touch.location(in: self))) }
+private final class DirectionTouchView:UIControl {
+    let icon=UIImageView()
+    var changed:(Bool)->Void={_ in}
+    var singleStep:()->Void={}
+    private var held=false
+    override init(frame:CGRect) {
+        super.init(frame:frame)
+        isAccessibilityElement=true; accessibilityTraits = .button
+        icon.isAccessibilityElement=false
+        icon.contentMode = .center
+        icon.tintColor=UIColor(red:0.961,green:0.906,blue:0.784,alpha:1)
+        addSubview(icon); layer.cornerRadius=10; clipsToBounds=true
     }
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) { setHeld(false) }
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) { setHeld(false) }
+    required init?(coder:NSCoder) { fatalError("Use init(frame:)") }
+    override func layoutSubviews() { super.layoutSubviews(); icon.frame=bounds }
+    func setHeld(_ value:Bool) { guard held != value else{return};held=value;changed(value) }
+    override func beginTracking(_ touch:UITouch,with event:UIEvent?)->Bool { setHeld(true);return true }
+    override func continueTracking(_ touch:UITouch,with event:UIEvent?)->Bool { setHeld(bounds.contains(touch.location(in:self)));return true }
+    override func endTracking(_ touch:UITouch?,with event:UIEvent?) { setHeld(false) }
+    override func cancelTracking(with event:UIEvent?) { setHeld(false) }
+    override func accessibilityActivate()->Bool { singleStep();return true }
     override func didMoveToWindow() { if window == nil { setHeld(false) } }
 }
 
