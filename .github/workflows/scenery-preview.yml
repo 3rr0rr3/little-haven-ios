@@ -1,0 +1,34 @@
+name: Preview elevated 3D scenery
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/elevated-3d']
+    paths: ['.github/workflows/scenery-preview.yml']
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build simulator app and capture scenery
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
+          xcrun simctl boot "$DEVICE"
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -sdk iphonesimulator -destination "id=$DEVICE" -derivedDataPath preview-build CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES build
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl status_bar "$DEVICE" override --time '9:41' --dataNetwork wifi --wifiMode active --wifiBars 3 --batteryState charged --batteryLevel 100
+          xcrun simctl install "$DEVICE" preview-build/Build/Products/Debug-iphonesimulator/LittleHaven.app
+          for MODE in home-exterior family-home neighborhood world parking-staff; do
+            xcrun simctl launch "$DEVICE" com.littlehaven.town --ui-testing --ui-$MODE
+            sleep 6
+            xcrun simctl io "$DEVICE" screenshot LittleHaven-$MODE.png
+            xcrun simctl terminate "$DEVICE" com.littlehaven.town
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Elevated-3D-previews
+          path: LittleHaven-*.png
