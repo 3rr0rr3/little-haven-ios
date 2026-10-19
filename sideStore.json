@@ -16,17 +16,26 @@
       "tintColor": "4C8C85",
       "category": "games",
       "screenshotURLs": [
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-43-1/LittleHaven-title.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-43-1/LittleHaven-management-board.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-43-1/LittleHaven-management-events.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-43-1/LittleHaven-management-cameras.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-43-1/LittleHaven-management-night.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-43-1/LittleHaven-parking-staff.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-43-1/LittleHaven-pool.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-43-1/LittleHaven-fight.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-43-1/LittleHaven-stealth.png"
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-title.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-management-board.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-management-events.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-management-cameras.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-management-night.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-parking-staff.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-pool.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-fight.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-stealth.png"
       ],
       "versions": [
+        {
+          "version": "13.0",
+          "buildVersion": "17",
+          "date": "2026-10-19",
+          "localizedDescription": "Separate family house with upgrades and furniture placement, an open neighborhood with pedestrians, furniture and clothing shops, a pawn shop with explicit item sales, restored reception, and varied emergency locations.",
+          "downloadURL": "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-unsigned.ipa",
+          "size": 1697058,
+          "minOSVersion": "17.0"
+        },
         {
           "version": "12.0",
           "buildVersion": "16",
