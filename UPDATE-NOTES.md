@@ -1,3 +1,17 @@
+Little Haven 10.0 (14) — sideload-37-1 start menu and movement
+
+- Courtyard title screen inspired by the supplied reference, with Continue/Start Game, New Game, Options and Quit.
+- New Game confirms before replacing the saved adventure and restores the initial zero-coin town state. Continue loads the last checkpoint. Save & return to title is available from pause and the town journal.
+- Options persist on this device: gameplay hints, action haptics and larger D-pad buttons; restore defaults and controls help are included.
+- The player can walk around the office with collision, facing and walk animation. Reception ticks no longer teleport the player to the desk, and guests wait to be tapped before opening a conversation.
+- Releasing or canceling the D-pad, leaving a direction button, backgrounding the app, or changing maps immediately stops movement. Outdoor service controls reserve a fixed area, so approaching luggage, car wash and other tasks cannot move the D-pad.
+- Existing hotel management, weather, emergencies, staff, parking and checkpoint systems remain supported.
+
+Verified: native model tests, all 18 iPhone simulator UI tests, Release iPhoneOS compilation, arm64/platform/archive checks and generated previews. Physical-device installation has not been tested.
+IPA: https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-37-1/LittleHaven-unsigned.ipa
+Workflow: https://github.com/3rr0rr3/little-haven-ios/actions/runs/39188096689
+
+Previous release:
 Little Haven 9.0 (13) — sideload-30-1 hotel management
 
 - Day/night shifts, more frequent night problems, rent, utilities, payroll, supplies and debt.
