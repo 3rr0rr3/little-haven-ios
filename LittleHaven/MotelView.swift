@@ -107,7 +107,7 @@ struct MotelView: View {
                 guard !Task.isCancelled, scenePhase == .active else { break }
                 if !paused && !motel.caught {
                     ticks += 1
-                    if !motel.worldState.travellers.isEmpty || !motel.waiting.isEmpty { change { $0.tickWorld() } }
+                    if !motel.worldState.travellers.isEmpty || !motel.waiting.isEmpty || !motel.simulation.issues.isEmpty { change { $0.tickWorld() } }
                     if motel.isAtReception || motel.reception.visitor != nil { change { $0.tickReception() } }
                     if ticks % 3 == 0 && motel.visit?.sneaking == true { change { $0.tick() } }
                     if ticks % 3 == 0 { change { $0.tickManagement() } }

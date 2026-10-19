@@ -430,7 +430,7 @@ struct MotelRPGView: View {
                 if worker.progress > 0 {
                     workerActor.action = worker.role == .valet ? "carwash" : "mop"
                 }
-                if worker.tile == worker.role.breakTile { workerActor.marker = "BREAK"; workerActor.expression = "happy" }
+                if incident == nil && worker.tile == worker.role.breakTile { workerActor.marker = "BREAK"; workerActor.expression = "happy" }
                 if let incident=motel.operationsState.incident,incident.kind.responder == worker.role,
                    worker.tile.distance(to:incident.kind.approach) <= 1 {
                     workerActor.action = incident.kind == .fire ? "extinguish" : incident.kind == .pool ? "rescue" : "calm"
@@ -442,7 +442,7 @@ struct MotelRPGView: View {
                 for issue in motel.simulation.issues {
                     let special=[HotelIssueKind.adultVisitor,.drugDeal,.cult,.celebrity].contains(issue.kind)
                     if special {
-                        actors.append(RPGActor(id:"request-\(issue.id)",tile:Tile(x:8+issue.id%3,y:14),color:issue.kind == .cult ? 0x976AB0 : 0xD6BD71,variant:issue.id+220,name:issue.kind == .celebrity ? "VIP" : "Visitor",marker:"!"))
+                        actors.append(RPGActor(id:"request-\(issue.id)",tile:motel.worldState.witnessPositions?[issue.id] ?? Tile(x:8+issue.id%3,y:14),color:issue.kind == .cult ? 0x976AB0 : 0xD6BD71,variant:issue.id+220,name:issue.kind == .celebrity ? "VIP" : "Visitor",marker:"!",duration:0.22,expression:incident == nil ? "" : "scared"))
                     } else if issue.roomID / 9 == motel.viewingFloor {
                         let effect=issue.kind == .leak ? 4 : issue.kind == .ac || issue.kind == .temperature ? 5 : issue.kind == .bedbugs || issue.kind == .roaches ? 6 : issue.kind == .noise ? 7 : 0
                         if effect>0 {actors.append(RPGActor(id:"issue-\(issue.id)",tile:MotelGrounds.roomDoor(issue.roomID),color:0xD9AA71,variant:0,name:issue.kind.title,effect:effect))}
@@ -450,7 +450,7 @@ struct MotelRPGView: View {
                 }
             }
             if let police = motel.business.police {
-                actors.append(RPGActor(id:"police",tile:police.tile,color:0x54739C,variant:0,name:"Officer Vega",marker:"!",duration:0.9))
+                actors.append(RPGActor(id:"police",tile:police.tile,color:0x54739C,variant:0,name:"Officer Vega",marker:"!",duration:0.9,expression:incident == nil ? "serious" : "determined"))
             }
             if let incident = motel.operationsState.incident {
                 let kind = incident.kind

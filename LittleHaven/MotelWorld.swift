@@ -20,6 +20,7 @@ struct MotelWorldState: Codable {
     var tick = 0
     var reception: OfficeReception?
     var guestPositions: [Int:Tile]?
+    var witnessPositions: [Int:Tile]?
 }
 enum MotelAction: Hashable {
     case none, office, room(Int), guest(Int), construction, desk, save, rest, tools
@@ -292,6 +293,16 @@ extension Motel {
             } else { positions[guest.id]=MotelGrounds.nextStep(from:current,to:target,avoiding:occupied) ?? current }
         }
         state.guestPositions = positions
+        let witnesses=simulation.issues.filter { [HotelIssueKind.adultVisitor,.drugDeal,.cult,.celebrity].contains($0.kind) }
+        var witnessPositions=(state.witnessPositions ?? [:]).filter { id,_ in witnesses.contains { $0.id == id } }
+        for witness in witnesses {
+            let origin=Tile(x:8+witness.id%3,y:14)
+            let current=witnessPositions[witness.id] ?? origin
+            if let danger=operationsState.incident?.kind.tile {
+                witnessPositions[witness.id]=MotelGrounds.escapeStep(from:current,danger:danger,avoiding:Set(positions.values)) ?? current
+            } else { witnessPositions[witness.id]=MotelGrounds.nextStep(from:current,to:origin,avoiding:Set(positions.values)) ?? current }
+        }
+        state.witnessPositions=witnessPositions
         var occupied = Set(waiting.map { positions[$0.id] ?? MotelGrounds.guestTile($0.id) } + state.travellers.map(\.player))
         if state.place == .grounds && visit == nil { occupied.insert(state.player) }
         for index in state.travellers.indices {

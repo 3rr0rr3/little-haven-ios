@@ -92,6 +92,10 @@ struct ContentView: View {
                 sample.motel!.rooms[1].guest=guests[1]
                 sample.motel!.waiting=Array(guests.dropFirst(2))
                 sample.motel!.operations!.incident = MotelIncident(kind:kind,guest:guests[0],otherGuest:guests[1])
+                if args.contains("--ui-responder") {
+                    _=sample.motel!.hire(kind.responder)
+                    sample.motel!.operations!.workers[0].tile=kind.approach
+                }
             }
             if args.contains("--ui-police") {
                 _ = sample.motel!.checkIn(guestID:10,roomID:0)
