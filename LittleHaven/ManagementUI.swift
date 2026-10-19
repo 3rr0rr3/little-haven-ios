@@ -49,7 +49,7 @@ struct HomeDesignView:View {
                 HStack {Text("Make it home").font(.title.bold());Spacer();Button("Done"){dismiss()}}
                 Text("\(motel.cash) COINS / LEVEL \(motel.household.level) / \(motel.household.placed.count) OF \(motel.household.capacity) OBJECTS").font(.caption.monospaced())
                 if motel.household.level<3 {
-                    Text(motel.household.level == 0 ? "Open the west room and add furniture space." : "Expand furniture space and renovate the exterior.")
+                    Text(motel.household.level == 0 ? "Improve home finishes and add furniture space." : "Expand furniture space and renovate the exterior.")
                     Button("Upgrade home / \(motel.household.upgradeCost)"){change{_=$0.upgradeHome()}}.disabled(motel.cash<motel.household.upgradeCost).accessibilityIdentifier("upgradeHome")
                 }
                 HStack {Text("Walls / 25");ForEach(0..<4,id:\.self) {index in Button {change{_=$0.finishHome(wall:true,color:index)}} label:{Circle().fill(Color(hex:Motel.themeColors[index])).frame(width:28,height:28)}.disabled(motel.cash<25 || motel.household.wallpaper == index)}}

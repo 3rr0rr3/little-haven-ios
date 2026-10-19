@@ -774,9 +774,9 @@ func familyHomeAndNeighborhoodRules() {
     require(motel.placeHomeObject(.plant,at:Tile(x:6,y:8)),"Purchased furniture can be placed on an open home tile")
     require(motel.homeBlocked(Tile(x:6,y:8)),"Placed furniture affects movement")
     require(motel.storeHomeObject(motel.household.placed[0].id) && motel.placeHomeObject(.plant,at:Tile(x:8,y:8)),"Furniture can be stored and moved")
-    require(motel.homeBlocked(Tile(x:2,y:3)),"Unrenovated west room is locked")
+    require(!motel.homeBlocked(Tile(x:2,y:3)),"The continuous west-room floor is walkable before renovating")
     let beforeUpgrade=motel.cash
-    require(motel.upgradeHome() && motel.cash == beforeUpgrade-250 && !motel.homeBlocked(Tile(x:2,y:3)) && motel.household.capacity == 10,"Home upgrade charges profits, opens a room and increases furnishing space")
+    require(motel.upgradeHome() && motel.cash == beforeUpgrade-250 && !motel.homeBlocked(Tile(x:2,y:3)) && motel.household.capacity == 10,"Home upgrade charges profits, improves the home and increases furnishing space")
     require(motel.finishHome(wall:true,color:2) && motel.finishHome(wall:false,color:3),"Wall and floor customization")
     motel.world!.place = .grounds;motel.world!.player=NeighborhoodShop.clothing.door
     let beforeOutfit=motel.cash

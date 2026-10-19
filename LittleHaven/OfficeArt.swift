@@ -59,8 +59,7 @@ struct HomeInteriorArt:View {
             func rect(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ c:UInt32){context.fill(Path(CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:c)))}
             rect(0,0,240,240,0x4F6957);rect(16,32,208,192,Self.floors[home.floor]);rect(16,0,208,32,Motel.themeColors[home.wallpaper])
             for y in stride(from:48,to:224,by:16) {rect(16,Double(y),208,1,0x9A805F)}
-            if home.level == 0 {rect(16,32,64,80,0x55715C)}
-            else {rect(20,38,47,30,0xE3CAB1);rect(22,40,43,8,0xF5E9D2)}
+            if home.level > 0 {rect(20,38,47,30,0xE3CAB1);rect(22,40,43,8,0xF5E9D2)}
             rect(154,81,60,28,0x775F49);rect(160,72,47,28,0x303C3C);rect(164,76,39,19,0x86B2B2);rect(176,85,15,8,0xE2CB86)
             rect(171,162,50,22,0x8E7B9E);rect(176,154,40,21,0xB8A3BA)
             for x in [157.0,190.0] {rect(x,201,25,13,0xBE9A76);rect(x+7,216,10,4,0x82ACA5)}

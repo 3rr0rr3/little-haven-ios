@@ -229,258 +229,116 @@ struct MotelGroundsCanvas: View, Animatable {
                         if (col * 3 + row * 11) % 37 == 0 {
                             rect(px + 7, py + 6, 2, 5, 0x668E54); rect(px + 6, py + 5, 4, 3, 0xE9BC96)
                         }
-                    } else if !road && (col + row) % 4 == 0 { rect(px + 3, py + 7, 2, 1, 0xBDAF8C) }
-                    if col == 0 || col == MotelGrounds.width - 1 || row == 0 || row == MotelGrounds.height - 1 {
-                        rect(px + 6, py + 8, 4, 9, 0x7C6B50)
-                        rect(px + 1, py + 1, 14, 12, 0x4E7851)
-                        rect(px + 3, py - 1, 10, 10, 0x66935C)
-                        rect(px + 5, py, 5, 3, 0x85A567)
-                    }
-                }
+                    } else if !road && (col + row) % 4 == 0 { rect(px…13782 tokens truncated…r
+            Button("Save & return to title") { stop(); game.save(); showPause = false; returnToTitle() }.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("backToTitle")
+        }.padding(24).foregroundStyle(cream).presentationBackground(Color(hex: 0x172A25))
+            .sheet(isPresented:$showOptions) { GameOptionsView() }
+    }
+    private var gameOver: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            Image(systemName: "eye.fill").font(.system(size: 60)).foregroundStyle(Color(hex: 0xDE927D))
+            Text("CAUGHT").font(.system(size: 46, weight: .black, design: .rounded)).tracking(5)
+            Text("The guest saw you.").font(.title2.bold())
+            Text("Load your last checkpoint to try again. Everything after that save is lost.").multilineTextAlignment(.center).foregroundStyle(.secondary)
+            Button("Load last save") { stop(); panel = nil; game = Game.load(); toast = "Checkpoint restored." }
+                .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("restoreCheckpoint")
+            Spacer()
+        }.padding(30).frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(hex: 0x2C292A))
+    }
+    private func familyPortrait(_ person: OfficeTap) -> AnyView {
+        if person == .chichu || person == .chichi { return AnyView(CatPortrait(gray:person == .chichu)) }
+        return AnyView(PaperPortrait(color:person == .samhil ? 0xD88BAA : 0x292A2C,variant:person == .samhil ? 9 : 8))
+    }
+    private func familyChoices(_ person: OfficeTap) -> [DialogueChoice] {
+        if person == .chichu || person == .chichi {
+            return [DialogueChoice(title:motel.petState(person.rawValue).following ? "Stay here" : "Follow me",action:{
+                        change { $0.togglePet(person.rawValue) }; family=nil
+                    }), DialogueChoice(title:"Pet",action:{ toast = "\(familyTitle) purrs happily."; family = nil }),
+                    DialogueChoice(title:"Give a treat",action:{ toast = "\(familyTitle) enjoys a little treat."; family = nil })]
+        }
+        if person == .hildarelys { return [DialogueChoice(title:"Give her a kiss",action:{ toast = "Hildarelys smiles: We make a good team."; family = nil })] }
+        return [DialogueChoice(title:"Watch together",action:{ toast = "You share a funny cartoon with Samhil."; family = nil })]
+    }
+    private func incidentChoices(_ kind: ChaosKind) -> [DialogueChoice] {
+        if motel.nearbyIncident { return [DialogueChoice(title:kind.action,action:{ change { _ = $0.resolveNearbyIncident() }; showIncident = false })] }
+        if motel.isAtReception { return [DialogueChoice(title:"Go outside",action:{ change { _ = $0.leaveReception() }; showIncident = false })] }
+        return []
+    }
+
+    private var receptionPrompt: Int? { motel.isAtReception ? motel.receptionGuest?.id : nil }
+    private func openReceptionGuest(_ id: Int) {
+        guard motel.isAtReception, motel.receptionGuest?.id == id else { return }
+        stop(); selectedRoom = motel.rooms.first(where: \.available)?.id; panel = .guest(id)
+    }
+    private func officeTap(_ item: OfficeTap) {
+        guard !paused, motel.isAtReception || motel.isAtHome else { return }
+        stop()
+        switch item {
+        case .door:
+            change { value in
+                if value.isAtHome {value.world!.place = .grounds;value.world!.player=Tile(x:FamilyHome.door.x,y:FamilyHome.door.y+1)}
+                else {_=value.leaveReception()}
             }
-            NeighborhoodArt.draw(context:&context,level:motel.household.level)
-            // Individual work posts, not a shared break area.
-            for role in StaffRole.allCases where role != .clerk {
-                let px=Double(role.home.x*16),py=Double(role.home.y*16)
-                rect(px-6,py-4,28,23,0xC1B58E)
-                rect(px-6,py-4,28,1,role.color);rect(px-6,py+18,28,1,role.color)
-                rect(px+17,py-7,8,13,0x72583E);rect(px+18,py-6,6,4,role.color)
-                label(role.station,px+8,py-11,2.7,0x344D3C)
-            }
-            for tile in RPGMaps.landscapeTrees {
-                let tx = Double(tile.x*16), ty = Double(tile.y*16)
-                context.fill(Path(ellipseIn:CGRect(x:tx-5,y:ty+10,width:28,height:8)),with:.radialGradient(Gradient(colors:[Color.black.opacity(0.24),.clear]),center:CGPoint(x:tx+9,y:ty+14),startRadius:0,endRadius:15))
-                rect(tx+6,ty+8,4,8,0x816044)
-                for layer in 0..<3 {
-                    context.fill(Path(ellipseIn:CGRect(x:tx-2+Double(layer),y:ty-10+Double(layer*4),width:20-Double(layer*2),height:15)),with:.linearGradient(Gradient(colors:[Color(hex:0x9CA779),Color(hex:0x647C5B),Color(hex:0x3E594B)]),startPoint:CGPoint(x:tx,y:ty-10),endPoint:CGPoint(x:tx+17,y:ty+14)))
-                }
-            }
-            for tile in RPGMaps.landscapeBenches {
-                let tx=Double(tile.x*16), ty=Double(tile.y*16)
-                rect(tx,ty+3,16,4,0x9A714D); rect(tx,ty+9,16,4,0xC49A68)
-                rect(tx+2,ty+13,2,3,0x45564B); rect(tx+12,ty+13,2,3,0x45564B)
-            }
-            for col in [14,22,30] {
-                for row in [10,19,28] {
-                    rect(Double(col*16),Double(row*16),28,8,0xA07855)
-                    for flower in 0..<6 { rect(Double(col*16+flower*4+2),Double(row*16-2),3,6,flower % 2 == 0 ? 0xE3A7B1 : 0xF0CE79) }
-                }
-            }
-            for service in HotelService.allCases {
-                let tx=Double(service.tile.x*16), ty=Double(service.tile.y*16)
-                rect(tx+1,ty+2,14,12,0x55776B)
-                switch service {
-                case .breakfast:
-                    context.fill(Path(ellipseIn:CGRect(x:tx+2,y:ty+8,width:12,height:4)),with:.color(Color(hex:0xE8DEBD)))
-                    rect(tx+5,ty+3,6,6,0xF5EDCF); rect(tx+11,ty+4,2,3,0xD1BA84)
-                    rect(tx+6,ty+1,1,2,0xBCCDC3)
-                case .laundry:
-                    rect(tx+2,ty+9,12,4,0xA78961)
-                    rect(tx+3,ty+6,10,3,0xE8E7D5); rect(tx+4,ty+3,8,3,0x9ABEB9)
-                case .repair:
-                    rect(tx+6,ty+5,3,8,0xBAC9C6)
-                    context.stroke(Path(ellipseIn:CGRect(x:tx+4,y:ty+1,width:7,height:7)),with:.color(Color(hex:0xBAC9C6)),lineWidth:2)
-                case .garden:
-                    rect(tx+4,ty+7,8,6,0x719DB0); rect(tx+11,ty+6,4,2,0x719DB0)
-                    context.stroke(Path(ellipseIn:CGRect(x:tx+1,y:ty+5,width:6,height:6)),with:.color(Color(hex:0x719DB0)),lineWidth:1.4)
-                case .luggage:
-                    RoomObjectArt.draw(context:&context,index:0,x:tx,y:ty)
-                }
-                label(service.rawValue.uppercased(),tx+8,ty-4,3,0x243D32)
-            }
-            // The office and nine physical room plots, connected by walkable lanes.
-            func building(_ origin: Tile, _ width: Int, _ height: Int, _ door: Tile, _ name: String, _ roof: UInt32, _ paint: UInt32) {
-                let px = Double(origin.x * 16), py = Double(origin.y * 16), w = Double(width * 16), h = Double(height * 16)
-                context.fill(Path(roundedRect:CGRect(x:px+4,y:py+8,width:w+5,height:h),cornerRadius:5),with:.color(Color(hex:0x253C35).opacity(0.23)))
-                rect(px + 2, py + 15, w - 4, h - 15, paint)
-                context.fill(Path(CGRect(x:px+2,y:py+15,width:w-4,height:h-15)),with:.linearGradient(Gradient(colors:[Color.white.opacity(0.12),Color.black.opacity(0.18)]),startPoint:CGPoint(x:px,y:py+15),endPoint:CGPoint(x:px+w,y:py+h)))
-                rect(px, py + 4, w, 21, roof)
-                rect(px + 4, py, w - 8, 6, roof)
-                context.fill(Path(CGRect(x:px,y:py+4,width:w,height:21)),with:.linearGradient(Gradient(colors:[Color.white.opacity(0.18),Color.black.opacity(0.22)]),startPoint:CGPoint(x:px,y:py+4),endPoint:CGPoint(x:px,y:py+25)))
-                rect(px+2,py+25,w-4,3,0x666951)
-                for line in 0..<3 { rect(px, py + 9 + Double(line * 6), w, 1, 0x795E50) }
-                let dx = Double(door.x * 16), dy = Double(door.y * 16)
-                rect(dx, py + h - 20, 16, 20, 0x6C6651)
-                rect(dx + 11, py + h - 11, 2, 2, 0xF3D18B)
-                rect(dx - 1, dy, 18, 4, 0xEFE0B5)
-                rect(px + w - 30, py + h - 25, 20, 15, 0x82ACA8)
-                rect(px + w - 20, py + h - 25, 1, 15, 0xF0DFBC)
-                rect(px + w - 30, py + h - 18, 20, 1, 0xF0DFBC)
-                rect(px + 9, py + 28, w - 18, 8, 0x425E50)
-                label(name, px + w / 2, py + 32, 4)
-            }
-            building(Tile(x: 3, y: 3), 8, 6, MotelGrounds.officeDoor, "OFFICE / RECEPTION", 0x739998, 0xE2CEA4)
-            for index in 0..<9 {
-                let o = MotelGrounds.roomOrigin(index)
-                let actual=index+motel.viewingFloor*9
-                if actual < motel.rooms.count {
-                    let room = motel.rooms[actual]
-                    building(o, 6, 4, MotelGrounds.roomDoor(index), "\(room.number) / \(room.guest != nil ? "GUEST" : room.dirty ? "DIRTY" : "VACANT")", Motel.themeColors[room.theme], Motel.themeColors[room.theme])
-                    let door = MotelGrounds.roomDoor(index)
-                    if room.health.upgrades.contains(.camera) {rect(Double(door.x*16+20),Double(door.y*16-22),5,3,0x344D50)}
-                    rect(Double(door.x * 16 + 19), Double(door.y * 16 - 13), 3, 3, room.guest != nil ? 0xD7927A : room.dirty ? 0xD9AF5C : 0x8AA96A)
-                } else {
-                    let px = Double(o.x * 16), py = Double(o.y * 16)
-                    rect(px, py, 96, 64, 0xA7A083)
-                    for post in 0..<7 {
-                        rect(px + Double(post * 15), py + 4, 2, 59, 0xBFB496)
-                        rect(px + Double(post * 15), py + 8, 2, 2, 0xDFCCA3)
-                    }
-                    rect(px, py + 18, 96, 3, 0xCDBD9B); rect(px, py + 45, 96, 3, 0xCDBD9B)
-                    rect(px + 22, py + 22, 52, 18, 0x4B6251)
-                    label(actual == motel.rooms.count ? "BUILD NEXT" : "FUTURE ROOM", px + 48, py + 31, 4, 0xF0D393)
-                }
-            }
-            if motel.managementEnabled {
-                label("FLOOR \(motel.viewingFloor+1)",200,38,6,0xF2D58F)
-                if motel.simulation.facilities.contains(.restaurant) {
-                    rect(46,410,38,24,0x9F795A); rect(52,405,26,7,0xD2B478)
-                    label("CAFE",65,419,5,0xF4E2BD)
-                }
-                if motel.simulation.economy == .festival {
-                    for flag in 0..<8 {rect(176+Double(flag*12),245,7,9,flag%2==0 ? 0xD9957E : 0xE3C26F)}
-                    label("FESTIVAL",220,238,5,0x3D5C47)
-                }
-                if motel.simulation.facilities.contains(.parking) {
-                    for col in [17,25,33] {
-                        rect(Double(col*16-5),528,1,32,0xE5D5AD)
-                        rect(Double(col*16+54),528,1,32,0xE5D5AD)
-                    }
-                }
-            }
-            // Pool, courtyard, parking spaces and roadside sign.
-            rect(47, 287, 115, 83, 0xE8D7B1)
-            rect(50, 290, 109, 77, 0x6DACA9)
-            rect(54, 294, 101, 69, 0x8BC3B8)
-            for i in 0..<6 { rect(59 + Double(i % 3) * 27, 302 + Double(i / 3) * 32, 18, 1, 0xCEE4CD) }
-            label("POOL", 105, 278, 4, 0x4A664A)
-            rect(64, 252, 40, 5, 0x9F7854); rect(68, 257, 3, 6, 0x6B634D); rect(97, 257, 3, 6, 0x6B634D)
-            rect(240,472,365,80,0x747E78)
-            label("GUEST PARKING / CAR WASH",416,466,5,0x2F4E3D)
-            for col in [17,25,33] {
-                let px=Double(col*16)
-                rect(px-5,477,1,40,0xE5D5AD); rect(px+54,477,1,40,0xE5D5AD)
-                rect(px-5,477,59,1,0xE5D5AD)
-                label("WASH +35",px+24,527,3,0xF4D891)
-            }
-            rect(238,505,16,25,0x436D76); rect(240,508,12,12,0x8FC3CC)
-            label("HIRE DIEGO",245,540,3,0xF4D891)
-            let sign = MotelGrounds.sign
-            rect(Double(sign.x * 16 + 6), Double(sign.y * 16), 4, 19, 0x7D6D50)
-            rect(Double(sign.x * 16 - 12), Double(sign.y * 16 - 7), 40, 20, 0x3A594C)
-            label("BUILD", Double(sign.x * 16 + 8), Double(sign.y * 16 - 1), 4, 0xF0CC7F)
-            label("\(motel.expansionCost)", Double(sign.x * 16 + 8), Double(sign.y * 16 + 6), 4, 0xF0CC7F)
-            rect(15, 505, 62, 25, 0x3E5E50)
-            label("LITTLE HAVEN", 46, 514, 4); label("MOTOR INN", 46, 522, 4)
-            struct Actor {
-                let x: Double; let y: Double; let color: UInt32; let variant: Int; let facing: Int; let name: String; let isPlayer: Bool
-            }
-            var actors: [Actor] = motel.waiting.map {
-                let t = MotelGrounds.guestTile($0.id)
-                return Actor(x: Double(t.x), y: Double(t.y), color: $0.color, variant: $0.appearanceSeed, facing: 0, name: $0.name, isPlayer: false)
-            }
-            let fraction = npcTick == Double(motel.worldState.tick) ? 1 : npcTick - floor(npcTick)
-            for walker in motel.worldState.travellers {
-                let px = Double(walker.previous.x) + Double(walker.player.x - walker.previous.x) * fraction
-                let py = Double(walker.previous.y) + Double(walker.player.y - walker.previous.y) * fraction
-                let facing = walker.player.y > walker.previous.y ? 0 : walker.player.x < walker.previous.x ? 1 : walker.player.x > walker.previous.x ? 2 : 3
-                actors.append(Actor(x: px, y: py, color: walker.color, variant: walker.appearanceSeed, facing: facing, name: "", isPlayer: false))
-            }
-            actors.append(Actor(x: x, y: y, color: 0x6AACA3, variant: 7, facing: motel.actorFacing, name: "", isPlayer: true))
-            for actor in actors.filter({ _ in !sceneryOnly }).sorted(by: { $0.y < $1.y }) {
-                PaperPerson.draw(context: &context, x: actor.x * 16, y: actor.y * 16, color: actor.color, variant: actor.variant, facing: actor.facing, walk: sin((actor.x + actor.y) * .pi * 2))
-                if !actor.name.isEmpty {
-                    label(actor.name, actor.x * 16 + 8, actor.y * 16 - 10, 3.6, 0x304D3D)
-                    rect(actor.x * 16 + 7, actor.y * 16 - 7, 2, 2, 0xF0C774)
-                }
-            }
+        case .computer: showManagement=true
+        case .workbench: if motel.actorTile.distance(to:FamilyHome.workbench)<=1 {showHome=true} else {toast="Walk to the workbench."}
+        case .player: panel = .desk
+        case .save: saveHere()
+        case .tools: change { _ = $0.receptionTools() }
+        case .paint: panel = .paint(nil)
+        case .bed: confirmRest = true
+        case .guest:
+            if let guest = motel.receptionGuest { openReceptionGuest(guest.id) }
+            else { toast = "The client is walking to the desk." }
+        case .chichu, .chichi, .samhil, .hildarelys: family = item
         }
     }
-}
-
-struct MotelOfficeCanvas: View, Animatable {
-    var sceneryOnly = false
-    let motel: Motel
-    var x: Double
-    var y: Double
-    var animatableData: AnimatablePair<Double, Double> {
-        get { AnimatablePair(x, y) }
-        set { x = newValue.first; y = newValue.second }
-    }
-    var body: some View {
-        Canvas { context, size in
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: 0x263D33)))
-            let scale = min(size.width / 144, size.height / 144)
-            context.translateBy(x: (size.width - 144 * scale) / 2, y: (size.height - 144 * scale) / 2)
-            context.scaleBy(x: scale, y: scale)
-            func rect(_ px: Double, _ py: Double, _ w: Double, _ h: Double, _ color: UInt32) {
-                context.fill(Path(CGRect(x: px, y: py, width: w, height: h)), with: .color(Color(hex: color)))
-            }
-            func label(_ text: String, _ px: Double, _ py: Double, _ tint: UInt32 = 0xEEDDB9) {
-                context.draw(Text(text).font(.system(size: 3.5, weight: .black, design: .monospaced)).foregroundColor(Color(hex: tint)), at: CGPoint(x: px, y: py))
-            }
-            rect(0, 0, 144, 144, 0xB69A73)
-            for row in 2..<9 { rect(0, Double(row * 16), 144, 0.6, 0x9B825F) }
-            let wall = Motel.themeColors[motel.officeTheme]
-            rect(0, 0, 144, 32, wall); rect(0, 0, 16, 144, wall); rect(128, 0, 16, 144, wall)
-            rect(0, 128, 144, 16, 0x526E5D); rect(64, 128, 16, 16, 0xE9D6AF)
-            rect(30, 32, 34, 17, 0x725A43); rect(32, 33, 30, 14, 0x8BA9A0); rect(33, 34, 14, 4, 0xF4E8CB)
-            label("SLEEP", 46, 26, 0x3F5E4B)
-            rect(48, 64, 48, 16, motel.officeLevel > 0 ? 0xB49A70 : 0x8B6C4F)
-            rect(49, 62, 46, 5, 0xD1B58A)
-            rect(54, 68, 12, 8, 0x3E574D); rect(56, 69, 8, 5, 0xA3C3AB)
-            rect(76, 68, 11, 7, 0xF0DFC2); rect(79, 69, 5, 1, 0x93856B)
-            label("FRONT DESK", 72, 59, 0x3F5E4B)
-            rect(17, 80, 13, 16, 0x81674D)
-            rect(19, 82, 3, 11, 0xDBBD7E); rect(24, 85, 4, 7, 0x9BBFAA)
-            label("TOOLS", 24, 77, 0x3F5E4B)
-            rect(113, 80, 13, 16, 0x81674D)
-            for i in 0..<4 { rect(114 + Double(i * 3), 84, 2, 5, Motel.themeColors[i]) }
-            label("PAINT", 119, 77, 0x3F5E4B)
-            rect(98, 32, 12, 14, 0x82694E); rect(100, 34, 8, 10, 0xE3D1A6)
-            label("SAVE", 104, 27, 0x3F5E4B)
-            if motel.officeLevel > 0 {
-                rect(34, 101, 21, 15, 0x987B87); rect(35, 99, 19, 4, 0xBA9FAC)
-                rect(110, 41, 10, 9, 0x6F8C50); rect(113, 49, 5, 7, 0x8E6E4A)
-            }
-            if !sceneryOnly { PaperPerson.draw(context: &context, x: x * 16, y: y * 16, color: 0x6AACA3, variant: 7, facing: motel.actorFacing, walk: sin((x + y) * .pi * 2)) }
-            label("EXIT", 72, 137, 0x425E4B)
+    private var familyTitle: String {
+        switch family {
+        case .chichu: return "Chichu"
+        case .chichi: return "Chichi"
+        case .samhil: return "Samhil"
+        case .hildarelys: return "Hildarelys"
+        default: return "Family"
         }
     }
-}
-
-struct MotelPocketMap: View {
-    let motel: Motel
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Airb&b grounds").font(.title.bold())
-            Text("Walk to places to interact. This map does not teleport you.").font(.subheadline).foregroundStyle(.secondary)
-            HStack(alignment: .top, spacing: 12) {
-                VStack(spacing: 12) {
-                    Label("Office", systemImage: "building.2.fill").padding(14).background(Color(hex: 0x385B50), in: RoundedRectangle(cornerRadius: 14))
-                    Text("Guests wait outside").font(.caption)
-                    Label("Pool", systemImage: "water.waves").padding(14).background(Color(hex: 0x467F7E), in: RoundedRectangle(cornerRadius: 14))
-                    Text("Build sign\nby the lower path").font(.caption)
-                }.frame(maxWidth: .infinity)
-                VStack(spacing: 10) {
-                    ForEach(0..<3) { row in
-                        HStack(spacing: 7) {
-                            ForEach(0..<3) { col in
-                                let id = row * 3 + col
-                                Text(id < motel.rooms.count ? "\(101 + id)" : "+").font(.caption.monospaced().bold()).frame(maxWidth: .infinity).padding(.vertical, 20)
-                                    .background(Color(hex: id < motel.rooms.count ? 0xB18564 : 0x4C5F4D), in: RoundedRectangle(cornerRadius: 8))
-                            }
-                        }
-                    }
-                }.frame(maxWidth: .infinity)
+    private var familyMessage: String {
+        switch family {
+        case .chichu: return "Your gray tabby looks up with green eyes and gives a soft meow."
+        case .chichi: return "Chichi flicks her calico tail and waits for some attention."
+        case .samhil: return "This cartoon is so funny! Can we watch another episode when you finish helping the guests?"
+        case .hildarelys: return "I love our new home. Samhil and the cats are happy here. Come visit whenever you can."
+        default: return ""
+        }
+    }
+    private func saveHere() {
+        guard motel.atSavePoint else { return }
+        stop(); game.save(); panel = nil; toast = "Checkpoint saved."
+    }
+    private func stop() { movement = nil; working = false; workProgress = 0 }
+    private func change(_ action: (inout Motel) -> Void) {
+        guard var current = game.motel else { return }
+        let before = current.lastEvent
+        let previousTile=current.actorTile
+        let previousMap=current.petMap
+        action(&current)
+        current.updateCompanions(from:previousTile,map:previousMap)
+        if current.lastEvent != before {
+            var state = current.operationsState
+            let event = current.lastEvent.lowercased()
+            if (state.actionUntil ?? 0) <= state.tick {
+                state.actionLabel = event.contains("fire") ? "??" : event.contains("pool") ? "?" : event.contains("fight") ? "?" : event.contains("paint") ? "?" : event.contains("clean") ? "?" : event.contains("room") ? "?" : "?"
+                state.actionUntil = state.tick + 3
+                current.operations = state
             }
-            Text("PARKING / ROAD").font(.caption.monospaced().bold()).frame(maxWidth: .infinity).padding().background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
-            Text("EAST > NEIGHBORHOOD").font(.headline)
-            Text("Family home: column 54, row 14, north of the town road. Enter to visit your family, save, upgrade and decorate.").font(.caption)
-            Text("Shops along the southern sidewalk: Willow Home (47,29), Thread & Co. (57,29), Second Chance Pawn (67,29). Walk to each door and press SHOP.").font(.caption)
-            if let incident=motel.operationsState.incident {Text("EMERGENCY: \(incident.kind.title) / column \(incident.tile.x), row \(incident.tile.y)").font(.caption.bold()).foregroundStyle(.orange)}
-            Text("You are in \(motel.mapName.lowercased()), column \(motel.actorTile.x), row \(motel.actorTile.y).").font(.footnote)
-            Text("Office: desk = save or upgrade; bed = next day; closet = cleaning kit; paint cabinet = wall colors. Rooms: hold work near mess to clean, use the bed to upgrade furnishings, and use the paint cabinet for colors.").font(.footnote).foregroundStyle(.secondary)
-        }.padding(24).foregroundStyle(Color(hex: 0xF5E7C8)).presentationBackground(Color(hex: 0x172A25))
+        }
+        if current.lastEvent != before && current.operationsState.visual?.id == game.motel?.operationsState.visual?.id {
+            let message = current.lastEvent.lowercased()
+            if message.contains("paint") { current.playVisual("paint") }
+            else if message.contains("built") || message.contains("furnish") || message.contains("upgraded") { current.playVisual("build") }
+            else if message.contains("tools collected") || message.contains("fresh sheets collected") { current.playVisual("laundry") }
+        }
+        game.motel = current
+        if current.lastEvent != before { toast = current.lastEvent }
     }
 }

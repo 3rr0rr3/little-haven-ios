@@ -1,7 +1,7 @@
 name: Test and build iPhone IPA
 on:
   push:
-    branches: [main, 'codex/reception-companions']
+    branches: [main, 'codex/elevated-3d']
     paths:
       - 'LittleHaven/**'
       - 'LittleHaven.xcodeproj/**'
@@ -114,7 +114,7 @@ jobs:
             kill -INT "$RECORD_PID"
             wait "$RECORD_PID" || true
           done
-          for MODE in family-home neighborhood home-store clothes-store pawn-store staff-posts parking-staff weather-storm weather-snow weather-wind; do
+          for MODE in home-exterior family-home neighborhood home-store clothes-store pawn-store staff-posts parking-staff weather-storm weather-snow weather-wind; do
             xcrun simctl terminate "$DEVICE" com.littlehaven.town || true
             xcrun simctl launch "$DEVICE" com.littlehaven.town "--ui-$MODE"
             sleep 3
