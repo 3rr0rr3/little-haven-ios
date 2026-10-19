@@ -1,3 +1,21 @@
+Little Haven 11.0 (15) — sideload-42-1 responsive controls and expressive guests
+
+- D-pad arrows deliver touch-down directly and start the first step immediately; release, cancellation or leaving the button stops walking. Player walk textures are prepared before movement.
+- Your original player character appears in the title courtyard with a subtle idle animation.
+- Idle and off-shift employees walk to the new staff break pavilion, with individual seats and a coffee table; available employees return to their jobs and emergencies when needed.
+- Pool emergencies animate the actual guest's skin, hair, clothing, accessories and face, with waving arms, bobbing and splashes. Event participants persist in checkpoints and are absent from their rooms during the emergency.
+- Guests have varied facial expressions. Fear, anger, concern and determination accompany emergencies and staff interventions. Bystanders and special visitors flee using routes that avoid danger, then return when the event ends.
+- Sedans, SUVs and pickups have distinct body details, windows, wheels, lamps, mirrors, handles, roof rails and pickup beds.
+- NPC hat designs use brims or visors, with no beanies.
+- Options, quit confirmation and the goodbye screen now use the game's green, cream and gold palette, bordered panels and motel-style controls.
+
+Verified: native model tests including staff breaks, evacuation/recovery and guest identity; all 19 iPhone simulator UI tests with zero failures; Release iPhoneOS compilation; arm64/platform/archive checks; title, options, quit, parking and staff emergency previews. Downloaded IPA SHA256 matched the published checksum. Physical-device installation has not been tested.
+IPA: https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-42-1/LittleHaven-unsigned.ipa
+Release: https://github.com/3rr0rr3/little-haven-ios/releases/tag/sideload-42-1
+Workflow: https://github.com/3rr0rr3/little-haven-ios/actions/runs/39235382334
+SHA256: 0f7974d6775b8f352491b54d022e196ed1020533c872b4e3c374f19853643143
+
+Previous release:
 Little Haven 10.0 (14) — sideload-37-1 start menu and movement
 
 - Courtyard title screen inspired by the supplied reference, with Continue/Start Game, New Game, Options and Quit.

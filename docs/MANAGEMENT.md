@@ -35,3 +35,10 @@ Festivals raise demand and noise; tourist season supports better rooms; factory 
 
 ## Story
 Ethical, greedy, criminal and cult-friendly decisions lead to different outcomes; serious debt can produce foreclosure. Endings can be recorded after day 14 or eighteen rooms, and play can continue. Shady offers are disabled by default and are fictional game choices. Existing police fines/bribes, car washing, weather, family reception, stealth and checkpoint recovery remain available.
+
+## Movement, rest and reactions (11.0)
+D-pad arrows start walking on touch-down. Hold to repeat and release, slide off or cancel to stop. VoiceOver activation takes one step. The player also appears on the title courtyard.
+
+Idle and off-shift employees use individual seats in the staff break pavilion beside the parking area. Available staff leave the lounge for cleaning, car washing, reception and emergency duties. Guests and special visitors flee emergencies along paths that avoid danger, then return afterward. Emergency guests retain their original design, and responders show concern or determination during rescues and interventions.
+
+NPC expressions vary by character and situation; hat shapes use brims or visors rather than beanies. Guest vehicles include sedan, SUV and pickup designs. Options and quit menus share the game's green, cream and gold colors.
