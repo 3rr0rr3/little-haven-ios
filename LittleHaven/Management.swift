@@ -21,6 +21,7 @@ struct PlacedHomeObject:Codable,Identifiable {
 struct FamilyHome:Codable {
     static let door=Tile(x:54,y:14)
     static let exit=Tile(x:7,y:13)
+    static let workbench=Tile(x:4,y:11)
     var level=0
     var wallpaper=0
     var floor=0
@@ -36,10 +37,10 @@ struct FamilyHome:Codable {
     static let outfitColors:[UInt32]=[0xC7D0D4,0x629FB4,0xBA735A,0x668B63]
 }
 extension Motel {
-    static let chaosLocations=[Tile(x:11,y:13),Tile(x:20,y:17),Tile(x:29,y:27),Tile(x:16,y:28),Tile(x:45,y:17),Tile(x:60,y:32),Tile(x:34,y:10),Tile(x:52,y:32)]
+    static let chaosLocations=[Tile(x:11,y:13),Tile(x:20,y:17),Tile(x:29,y:27),Tile(x:16,y:28),Tile(x:34,y:10)]
     var isAtHome:Bool {visit == nil && worldState.place == .house}
     func homeBlocked(_ tile:Tile)->Bool {
-        tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || (household.level == 0 && tile.x<5 && tile.y<7) || (10...12).contains(tile.x) && (5...6).contains(tile.y) || (11...13).contains(tile.x) && (10...11).contains(tile.y) || household.placed.contains{$0.tile == tile && $0.kind != .rug}
+        tile == FamilyHome.workbench || tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || (household.level == 0 && tile.x<5 && tile.y<7) || (10...12).contains(tile.x) && (5...6).contains(tile.y) || (11...13).contains(tile.x) && (10...11).contains(tile.y) || household.placed.contains{$0.tile == tile && $0.kind != .rug}
     }
     @discardableResult mutating func buyHomeObject(_ kind:HomeObject)->Bool {
         guard worldState.place == .grounds,actorTile.distance(to:NeighborhoodShop.furniture.door)<=1,cash>=kind.price else{return false}
@@ -266,6 +267,9 @@ extension Motel {
     mutating func tickManagement(advanceClock:Bool = true) {
         guard !caught else { return }
         var state = operationsState
+        // Migrate an active city fight from older checkpoints into the courtyard.
+        if let incident=state.incident, incident.kind == .fight,
+           !Self.chaosLocations.contains(incident.tile) { state.incident!.location=Self.chaosLocations[0] }
         var completedRepairs:[Int]=[]
         var completedIssues:[Int]=[]
         if advanceClock {
@@ -409,6 +413,7 @@ extension Motel {
         if advanceClock,var police = state.consequences?.police {
             if police.tile == Tile(x:6,y:10) { police.arrived = true }
             else if let next = MotelGrounds.nextStep(from:police.tile,to:Tile(x:6,y:10),avoiding:[]) { police.tile = next }
+            if police.tile == Tile(x:6,y:10) { police.arrived = true }
             state.consequences!.police = police
         }
         operations = state

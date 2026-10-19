@@ -81,7 +81,7 @@ enum RPGMaps {
             events.append(RPGMapEvent(id: "room-\(id)",tile: Tile(x: x+2,y: y+4),trigger: .action,destination: "room-\(id)",arrival: Tile(x: 4,y: 7)))
         }
         for x in [17,25,33] { obstacles.append(RPGRegion(x: x,y: 30,width: 3,height: 2)) }
-        obstacles.append(RPGRegion(x:48,y:4,width:14,height:10))
+        obstacles.append(RPGRegion(x:51,y:9,width:7,height:5))
         for shop in NeighborhoodShop.allCases {obstacles.append(RPGRegion(x:shop.door.x-3,y:23,width:7,height:6))}
         return RPGMapDefinition(id: "grounds",width: MotelGrounds.width,height: MotelGrounds.height,walkable: RPGRegion(x: 1,y: 1,width: MotelGrounds.width-2,height: MotelGrounds.height-2),obstacles: obstacles,events: events)
     }()

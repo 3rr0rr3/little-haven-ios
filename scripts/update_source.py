@@ -21,7 +21,7 @@ entry = {
     "version": version,
     "buildVersion": build,
     "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-    "localizedDescription": "Separate family house with upgrades and furniture placement, an open neighborhood with pedestrians, furniture and clothing shops, a pawn shop with explicit item sales, restored reception, and varied emergency locations.",
+    "localizedDescription": "Manage from the reception PC, decorate and renovate at the home workbench, take Chichu and Chichi along or ask them to stay, and handle hotel-only emergencies with responsive police. Smaller house and garden, subdued scenery, unchanged characters.",
     "downloadURL": f"{asset_base}/LittleHaven-unsigned.ipa",
     "size": pathlib.Path("LittleHaven-unsigned.ipa").stat().st_size,
     "minOSVersion": info["MinimumOSVersion"],

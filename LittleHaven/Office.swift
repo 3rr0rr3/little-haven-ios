@@ -1,5 +1,60 @@
 import Foundation
 
+struct PetCompanion: Codable {
+    var following = false
+    var map = "house"
+    var tile: Tile
+}
+
+extension Motel {
+    var petMap: String { visit.map { "room-\($0.roomID)" } ?? worldState.place.rawValue }
+    func petState(_ id: String) -> PetCompanion {
+        worldState.pets?[id] ?? PetCompanion(tile: id == "chichu" ? OfficeReception.chichu : OfficeReception.chichi)
+    }
+    var visiblePets: [(key: String, value: PetCompanion)] {
+        ["chichu", "chichi"].map { (key:$0,value:petState($0)) }.filter { $0.value.map == petMap }
+    }
+    mutating func togglePet(_ id: String) {
+        guard ["chichu", "chichi"].contains(id), petState(id).map == petMap else { return }
+        initializeWorld()
+        var pet=petState(id)
+        pet.following.toggle()
+        if world!.pets == nil { world!.pets=[:] }
+        world!.pets![id]=pet
+        lastEvent=id.capitalized + (pet.following ? " will follow you." : " will wait here.")
+    }
+    // Followers retrace the player's safe steps. Transfers place them on a safe
+    // arrival tile; waiting pets retain their map and position in checkpoints.
+    mutating func updateCompanions(from previous: Tile, map previousMap: String) {
+        guard previous != actorTile || previousMap != petMap else { return }
+        initializeWorld()
+        var trail=previous
+        var arrivals: Set<Tile> = []
+        for id in ["chichu", "chichi"] {
+            var pet=petState(id)
+            guard pet.following else { continue }
+            let old=pet.tile
+            if pet.map != petMap || previousMap != petMap {
+                let nearby=[Tile(x:actorTile.x-1,y:actorTile.y),Tile(x:actorTile.x+1,y:actorTile.y),Tile(x:actorTile.x,y:actorTile.y-1)]
+                pet.tile=nearby.first { tile in
+                    guard !arrivals.contains(tile) else { return false }
+                    if visit != nil { return !RPGMaps.room.blocked(tile) }
+                    if isAtHome { return !homeBlocked(tile) && tile != FamilyHome.exit }
+                    if isAtReception { return !RPGMaps.office.blocked(tile) && tile != OfficeReception.door }
+                    return !MotelGrounds.blocked(tile)
+                } ?? actorTile
+                arrivals.insert(pet.tile)
+            } else {
+                pet.tile=trail
+            }
+            pet.map=petMap
+            if world!.pets == nil { world!.pets=[:] }
+            world!.pets![id]=pet
+            trail=old
+        }
+    }
+}
+
 struct OfficeVisitor: Codable {
     enum Phase: String, Codable { case entering, waiting, leaving }
     let guest: MotelGuest
@@ -12,6 +67,7 @@ struct OfficeVisitor: Codable {
 struct OfficeReception: Codable {
     var tick = 0
     var visitor: OfficeVisitor?
+    static let computer = Tile(x:3,y:4)
     static let clerk = Tile(x: 4,y: 3)
     static let door = Tile(x: 7,y: 13)
     static let samhil = Tile(x:11,y:9)

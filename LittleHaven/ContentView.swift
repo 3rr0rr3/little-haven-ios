@@ -45,7 +45,7 @@ struct ContentView: View {
             _=sample.motel!.checkIn(guestID:10,roomID:0)
             sample.motel!.rooms[1].dirty=true
             var health=sample.motel!.rooms[1].health;health.cleanliness=35;health.faults=[.pipe];sample.motel!.rooms[1].hospitality=health
-            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:11,y:14)
+            sample.motel!.world!.place = .office;sample.motel!.world!.player=Tile(x:3,y:3)
             sample.motel!.operations!.nextIncidentTick=10000
             if args.contains("--ui-management-night") || args.contains("--ui-management-cameras") {
                 var state=sample.motel!.simulation;state.hour=22;state.absoluteHour=22;state.facilities=[.cameras,.nightVision,.adjacentLot,.upperFloor];state.nightVision=args.contains("--ui-management-cameras");sample.motel!.simulation=state

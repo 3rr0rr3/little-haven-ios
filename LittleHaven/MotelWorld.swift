@@ -24,9 +24,10 @@ struct MotelWorldState: Codable {
     var townPositions:[Int:Tile]?
     var townPrevious:[Int:Tile]?
     var townDestinations:[Int:Int]?
+    var pets: [String: PetCompanion]?
 }
 enum MotelAction: Hashable {
-    case home, homeDecor, shop(NeighborhoodShop)
+    case computer, pet(String), home, homeDecor, shop(NeighborhoodShop)
     case none, office, room(Int), guest(Int), construction, desk, save, rest, tools
     case paint(Int?), furniture(Int?), clean(Int), loot(Int), exit, incident
 }
@@ -123,27 +124,33 @@ extension Motel {
     var nearbyAction: MotelAction {
         if caught { return .none }
         let player = actorTile
+        let petAction: MotelAction = visiblePets.first(where: {player.distance(to:$0.value.tile)<=1}).map { .pet($0.key) } ?? .none
         if let visit {
             if player.distance(to: Tile(x: 4, y: 8)) <= 1 { return .exit }
             if visit.sneaking {
                 if let item = visit.nearbyLoot, !visit.loot.contains(item),
                    let room = rooms.first(where: { $0.id == visit.roomID }), !room.stolen.contains(item) { return .loot(item) }
-                return .none
+                return petAction
             }
             if let target = cleaningTarget { return .clean(target) }
             if player.distance(to: MotelGrounds.roomPaint) <= 1 { return .paint(visit.roomID) }
             if player.distance(to: Tile(x: 3, y: 2)) <= 1 { return .furniture(visit.roomID) }
-            return .none
+            return petAction
         }
-        if isAtHome { return player.distance(to:FamilyHome.exit) <= 1 ? .exit : .homeDecor }
+        if isAtHome {
+            if player.distance(to:FamilyHome.exit) <= 1 { return .exit }
+            if player.distance(to:FamilyHome.workbench) <= 1 { return .homeDecor }
+        }
+        if isAtHome { return petAction }
         if isAtReception {
             if player.distance(to:OfficeReception.door) <= 1 { return .exit }
             if player.distance(to:Tile(x:1,y:7)) <= 1 { return .tools }
             if player.distance(to:Tile(x:1,y:9)) <= 1 { return .paint(nil) }
             if player.distance(to:Tile(x:1,y:2)) <= 1 { return .rest }
+            if player.distance(to:OfficeReception.computer) <= 1 { return .computer }
             if player.distance(to:OfficeReception.clerk) <= 1 { return .desk }
             if player.distance(to:Tile(x:5,y:4)) <= 1 { return .save }
-            return .none
+            return petAction
         }
         if player.distance(to:FamilyHome.door) <= 1 { return .home }
         for shop in NeighborhoodShop.allCases where player.distance(to:shop.door) <= 1 { return .shop(shop) }
@@ -152,7 +159,7 @@ extension Motel {
         if player.distance(to: MotelGrounds.officeDoor) <= 1 { return .office }
         for room in rooms where room.id / 9 == viewingFloor && player.distance(to: MotelGrounds.roomDoor(room.id)) <= 1 { return .room(room.id) }
         if !goalReached && (player.distance(to: MotelGrounds.sign) <= 1 || player.distance(to: MotelGrounds.roomDoor(rooms.count)) <= 1) { return .construction }
-        return .none
+        return petAction
     }
     mutating func initializeWorld() {
         assignRoomColors()
