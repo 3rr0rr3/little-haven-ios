@@ -1,7 +1,7 @@
 name: Test and build iPhone IPA
 on:
   push:
-    branches: [main, 'codex/pixel-world']
+    branches: [main]
     paths:
       - 'LittleHaven/**'
       - 'LittleHaven.xcodeproj/**'
@@ -158,7 +158,7 @@ jobs:
           unzip -t LittleHaven-unsigned.ipa
           shasum -a 256 LittleHaven-unsigned.ipa > LittleHaven-unsigned.ipa.sha256
       - name: Publish IPA, previews and SideStore update
-        if: false # Publication held while the requested 3D scenery revision is in progress.
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
