@@ -247,9 +247,8 @@ final class RPGScene: SKScene {
         let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.effect)-\(actor.expression)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
-        renderer.scale = 1
+        renderer.scale = 3
         let texture = renderer.uiImage.map { SKTexture(image: $0) } ?? SKTexture()
-        texture.filteringMode = .nearest
         textures[key] = texture
         return texture
     }
