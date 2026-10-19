@@ -169,6 +169,7 @@ struct ContentView: View {
         }.environment(\.returnToTitle, {
             heldDirection = nil; game.save(); playing = false
         }).onChange(of:scenePhase) { _, phase in if phase != .active { heldDirection = nil } }
+        .onAppear { if ProcessInfo.processInfo.arguments.contains("--ui-title") { playing = false } }
     }
     private var gameplay: some View {
         Group {
