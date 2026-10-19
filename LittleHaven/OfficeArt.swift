@@ -85,6 +85,13 @@ struct ExpandedOfficeArt: View {
             rect(0,0,240,240,0xB49A75)
             for y in stride(from:32,to:224,by:16) { rect(16,Double(y),208,1,0x9D815F); for x in stride(from:20+(y%3)*8,to:220,by:32) { rect(Double(x),Double(y),1,16,0xA88C67) } }
             rect(0,0,240,32,Motel.themeColors[theme]); rect(0,0,16,240,0x526D5B); rect(224,0,16,240,0x526D5B); rect(0,224,240,16,0x526D5B)
+            // A separate family room within the office, entered through the open doorway.
+            rect(144,32,80,192,0xC3AD99)
+            for y in stride(from:48,to:224,by:16) { rect(144,Double(y),80,1,0xAD9580) }
+            rect(142,32,5,80,0x526D5B); rect(142,144,5,80,0x526D5B)
+            rect(142,109,7,3,0xEAD8AE); rect(142,144,7,3,0xEAD8AE)
+            rect(145,113,13,29,0xD6BD94)
+            text("FAMILY ROOM",185,43,4)
             // Reception desk, chair, key board and a logbook.
             rect(48,51,32,12,0x6D695C); rect(32,71,80,24,0x77553D); rect(30,68,84,7,0xD4B581)
             rect(39,76,19,12,0x3F5A4E); rect(41,77,15,8,0x93B3A3)
@@ -96,17 +103,17 @@ struct ExpandedOfficeArt: View {
             rect(160,77,46,25,0x343F3D); rect(164,80,38,18,0x8BB6B7)
             rect(168,91,30,7,0x7FA46B); rect(179,83,9,11,0xF1D184); rect(182,85,3,3,0x425B62)
             text("TV",183,104,3)
-            rect(144,160,72,23,0x6D647A); rect(148,153,64,24,0x9C8BA7)
-            rect(141,156,9,24,0x81728E); rect(210,156,9,24,0x81728E)
-            for x in [154.0,174.0,194.0] { rect(x,157,17,15,0xB1A1BA) }
+            rect(176,160,46,23,0x6D647A); rect(180,153,38,24,0x9C8BA7)
+            rect(173,156,9,24,0x81728E); rect(216,156,6,24,0x81728E)
+            for x in [180.0,199.0] { rect(x,157,17,15,0xB1A1BA) }
             // Rest nook, supplies and paint are tappable from the desk.
             rect(21,33,20,29,0x715743); rect(23,34,16,25,0x8CB3A4); rect(24,35,14,7,0xF0E3C7)
             rect(18,112,18,28,0x7A624B); rect(20,114,14,5,0xA5C3B0); rect(22,120,3,16,0xD1B576)
             text("TOOLS",27,109,3)
             rect(18,144,18,20,0x7A624B); for i in 0..<4 { rect(20+Double(i*4),148,3,7,Motel.themeColors[i]) }; text("PAINT",27,141,3)
             // Cat beds, food bowls, plants and entry rug.
-            rect(35,180,30,14,0xBD9976); rect(77,192,30,14,0xBD9976)
-            for x in [28.0,43.0] { rect(x,204,10,4,0x8DACA6); rect(x+2,204,6,2,0xD9BE86) }
+            rect(157,200,25,14,0xBD9976); rect(190,200,25,14,0xBD9976)
+            for x in [174.0,190.0] { rect(x,217,10,4,0x8DACA6); rect(x+2,217,6,2,0xD9BE86) }
             rect(97,180,46,29,0xA66F5B); rect(100,183,40,23,0xC59377)
             rect(112,208,16,32,0xEAD8AE); text("LEAVE",120,230,4)
             rect(207,35,10,12,0x80644A); rect(202,29,20,12,0x77975C)

@@ -21,7 +21,7 @@ entry = {
     "version": version,
     "buildVersion": build,
     "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-    "localizedDescription": "Immediate touch-down walking, animated player title portrait, staff break lounge, identity-preserving pool emergencies, expressive guests and responders, evacuation, sedan/SUV/pickup designs, brimmed hats and matching options/quit menus.",
+    "localizedDescription": "Separate family room inside the office, continuous emergency running, faster staff dispatch, visible job and supply status, physical maintenance and security tasks, and individual work posts replacing the shared break lounge.",
     "downloadURL": f"{asset_base}/LittleHaven-unsigned.ipa",
     "size": pathlib.Path("LittleHaven-unsigned.ipa").stat().st_size,
     "minOSVersion": info["MinimumOSVersion"],

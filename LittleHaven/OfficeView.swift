@@ -8,10 +8,10 @@ struct OfficeReceptionView: View {
     private var actors: [RPGActor] {
         var result = [RPGActor(id:"player",tile:motel.actorTile,color:0xC7D0D4,variant:7,facing:motel.actorFacing,name:"You"),
             RPGActor(id:"hildarelys",tile:motel.reception.hildarelys,color:0x292A2C,variant:8,facing:motel.reception.tick % 12 < 6 ? 2 : 1,name:"Hildarelys",duration:0.65),
-            RPGActor(id:"samhil",tile:Tile(x:11,y:9),color:0xD88BAA,variant:9,facing:3,name:"Samhil",displayScale:0.8),
-            RPGActor(id:"chichu",tile:Tile(x:3,y:10),color:0x85817C,variant:0,name:"Chichu",animal:1),
-            RPGActor(id:"chichi",tile:Tile(x:5,y:11),color:0xE9E2D0,variant:0,name:"Chichi",animal:2)]
-        if motel.operationsState.workers.contains(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:$0.role.home) <= 1}) && (!motel.waiting.isEmpty || motel.reception.visitor != nil) {
+            RPGActor(id:"samhil",tile:OfficeReception.samhil,color:0xD88BAA,variant:9,facing:3,name:"Samhil",displayScale:0.8),
+            RPGActor(id:"chichu",tile:OfficeReception.chichu,color:0x85817C,variant:0,name:"Chichu",animal:1),
+            RPGActor(id:"chichi",tile:OfficeReception.chichi,color:0xE9E2D0,variant:0,name:"Chichi",animal:2)]
+        if motel.operationsState.workers.contains(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:$0.role.home) <= 1})  {
             result.append(RPGActor(id:"clerk-nora",tile:Tile(x:6,y:3),color:StaffRole.clerk.color,variant:204,name:"Nora"))
         }
         if let visitor { result.append(RPGActor(id:"reception-guest",tile:visitor.tile,color:visitor.guest.color,variant:visitor.guest.appearanceSeed,facing:visitor.phase == .leaving ? 0 : 3,name:visitor.guest.name,duration:0.3)) }
@@ -25,12 +25,12 @@ struct OfficeReceptionView: View {
             let scale = min(proxy.size.width / 240, proxy.size.height / 240)
             let origin = CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-office",revision:"family-\(motel.officeTheme)",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme)) }
+                RPGSceneView(mapID:"family-office",revision:"family-room-\(motel.officeTheme)",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme)) }
                 target(.player,"Front desk",OfficeReception.clerk,scale,origin)
                 target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin)
-                target(.samhil,"Talk to Samhil",Tile(x:11,y:9),scale,origin)
-                target(.chichu,"Pet Chichu",Tile(x:3,y:10),scale,origin)
-                target(.chichi,"Pet Chichi",Tile(x:5,y:11),scale,origin)
+                target(.samhil,"Talk to Samhil",OfficeReception.samhil,scale,origin)
+                target(.chichu,"Pet Chichu",OfficeReception.chichu,scale,origin)
+                target(.chichi,"Pet Chichi",OfficeReception.chichi,scale,origin)
                 target(.door,"Leave office",OfficeReception.door,scale,origin)
                 target(.tools,"Take cleaning tools",Tile(x:1,y:7),scale,origin)
                 target(.paint,"Paint office",Tile(x:1,y:9),scale,origin)

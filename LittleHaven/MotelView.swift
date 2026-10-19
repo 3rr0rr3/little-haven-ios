@@ -103,14 +103,14 @@ struct MotelView: View {
             guard scenePhase == .active else { return }
             var ticks = 0
             while !Task.isCancelled && scenePhase == .active {
-                do { try await Task.sleep(for: .seconds(0.35)) } catch { break }
+                do { try await Task.sleep(for: .seconds(MotelCadence.travel)) } catch { break }
                 guard !Task.isCancelled, scenePhase == .active else { break }
                 if !paused && !motel.caught {
                     ticks += 1
-                    if !motel.worldState.travellers.isEmpty || !motel.waiting.isEmpty || !motel.simulation.issues.isEmpty { change { $0.tickWorld() } }
-                    if motel.isAtReception || motel.reception.visitor != nil { change { $0.tickReception() } }
-                    if ticks % 3 == 0 && motel.visit?.sneaking == true { change { $0.tick() } }
-                    if ticks % 3 == 0 { change { $0.tickManagement() } }
+                    if (motel.operationsState.incident != nil || ticks % 2 == 0) && (!motel.worldState.travellers.isEmpty || !motel.waiting.isEmpty || !motel.simulation.issues.isEmpty) { change { $0.tickWorld() } }
+                    if ticks % 2 == 0 && (motel.isAtReception || motel.reception.visitor != nil) { change { $0.tickReception() } }
+                    if ticks % 6 == 0 && motel.visit?.sneaking == true { change { $0.tick() } }
+                    change { $0.tickManagement(advanceClock:ticks % MotelCadence.businessSteps == 0) }
                 }
             }
         }
@@ -296,7 +296,7 @@ struct MotelView: View {
         } else {
             MotelRPGView(motel: motel)
                 .animation(.linear(duration: movementDuration), value: tile)
-                .animation(.linear(duration: 0.35), value: motel.worldState.tick).id(mapIdentity)
+                .id(mapIdentity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Airb&b GROUNDS. Column \(tile.x), row \(tile.y).")
                 .accessibilityValue("\(motel.worldState.travellers.count) guests walking to their destinations.")

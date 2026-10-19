@@ -167,16 +167,20 @@ final class RPGScene: SKScene {
             node.userData?["targetX"] = actor.tile.x
             node.userData?["targetY"] = actor.tile.y
             let idle = sprite(actor, stride: 0)
-            let appearance = "\(actor.color)-\(actor.variant)-\(actor.effect)-\(actor.expression)"
+            let appearance = "\(actor.color)-\(actor.variant)-\(actor.effect)-\(actor.expression)-\(actor.facing)"
             if node.userData?["appearance"] as? String != appearance {
                 node.removeAction(forKey:"effect"); node.removeAction(forKey:"walk"); node.removeAction(forKey:"spar")
+                node.removeAction(forKey:"walkEnd")
                 node.zRotation = 0; node.texture = idle; node.userData?["appearance"] = appearance
             }
             if actor.effect == 0 && node.action(forKey:"walk") == nil { node.texture = idle }
             if moving {
-                node.removeAction(forKey: "walk")
                 let frames = [sprite(actor, stride: 1), idle, sprite(actor, stride: -1), idle]
-                node.run(.animate(with: frames, timePerFrame: actor.duration / 4), withKey: "walk")
+                if node.action(forKey:"walk") == nil {node.run(.repeatForever(.animate(with:frames,timePerFrame:actor.duration/4)),withKey:"walk")}
+                node.removeAction(forKey:"walkEnd")
+                node.run(.sequence([.wait(forDuration:actor.duration*1.5),.run { [weak node] in
+                    node?.removeAction(forKey:"walk");node?.texture=idle
+                }]),withKey:"walkEnd")
                 node.removeAction(forKey: "move")
                 node.run(.move(to: target, duration: actor.duration), withKey: "move")
             }
@@ -418,19 +422,19 @@ struct MotelRPGView: View {
             let incident = motel.operationsState.incident
             let victim = incident?.guest ?? motel.rooms.compactMap(\.guest).first
             let other = incident?.otherGuest ?? motel.rooms.compactMap(\.guest).dropFirst().first
-            actors += motel.waiting.filter { $0.id != motel.reception.visitor?.guest.id }.map { RPGActor(id: "guest-\($0.id)", tile: motel.worldState.guestPositions?[$0.id] ?? MotelGrounds.guestTile($0.id), color: $0.color, variant: $0.appearanceSeed, name: $0.name,duration:incident == nil ? 0.35 : 0.22,expression:incident == nil ? "" : "scared") }
+            actors += motel.waiting.filter { $0.id != motel.reception.visitor?.guest.id }.map { RPGActor(id: "guest-\($0.id)", tile: motel.worldState.guestPositions?[$0.id] ?? MotelGrounds.guestTile($0.id), color: $0.color, variant: $0.appearanceSeed, name: $0.name,duration:incident == nil ? MotelCadence.guestWalk : MotelCadence.travel,expression:incident == nil ? "" : "scared") }
             actors += motel.worldState.travellers.map {
-                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.appearanceSeed, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: incident == nil ? 0.35 : 0.22,expression:incident == nil ? "" : "scared")
+                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.appearanceSeed, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: incident == nil ? MotelCadence.guestWalk : MotelCadence.travel,expression:incident == nil ? "" : "scared")
             }
-            for worker in motel.operationsState.workers where worker.role != .clerk || worker.tile.distance(to:worker.role.home)>1 || (motel.waiting.isEmpty && motel.reception.visitor == nil) || !worker.active || motel.isNight {
-                var workerActor = RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:200+(StaffRole.allCases.firstIndex(of:worker.role) ?? 0),name:worker.role.name,duration:0.35)
+            for worker in motel.operationsState.workers where worker.role != .clerk || worker.tile.distance(to:worker.role.home)>1 {
+                var workerActor = RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:200+(StaffRole.allCases.firstIndex(of:worker.role) ?? 0),facing:worker.tile.x < (worker.previous?.x ?? worker.tile.x) ? 1 : worker.tile.x > (worker.previous?.x ?? worker.tile.x) ? 2 : worker.tile.y < (worker.previous?.y ?? worker.tile.y) ? 3 : 0,name:worker.role.name,duration:MotelCadence.travel)
                 if let incident {
                     workerActor.expression = worker.role == incident.kind.responder ? (incident.kind == .pool ? "concerned" : "determined") : "scared"
                 }
-                if worker.progress > 0 {
-                    workerActor.action = worker.role == .valet ? "carwash" : "mop"
+                if worker.progress > 0 && (worker.previous == nil || worker.previous == worker.tile) && !(worker.status?.hasPrefix("NEED") ?? false) {
+                    workerActor.action = worker.role == .valet ? "carwash" : worker.role == .maintenance ? "repair" : worker.role == .security ? "calm" : "mop"
                 }
-                if incident == nil && worker.tile == worker.role.breakTile { workerActor.marker = "BREAK"; workerActor.expression = "happy" }
+                if incident == nil {workerActor.marker=worker.status ?? "AT POST"}
                 if let incident=motel.operationsState.incident,incident.kind.responder == worker.role,
                    worker.tile.distance(to:incident.kind.approach) <= 1 {
                     workerActor.action = incident.kind == .fire ? "extinguish" : incident.kind == .pool ? "rescue" : "calm"
@@ -442,7 +446,7 @@ struct MotelRPGView: View {
                 for issue in motel.simulation.issues {
                     let special=[HotelIssueKind.adultVisitor,.drugDeal,.cult,.celebrity].contains(issue.kind)
                     if special {
-                        actors.append(RPGActor(id:"request-\(issue.id)",tile:motel.worldState.witnessPositions?[issue.id] ?? Tile(x:8+issue.id%3,y:14),color:issue.kind == .cult ? 0x976AB0 : 0xD6BD71,variant:issue.id+220,name:issue.kind == .celebrity ? "VIP" : "Visitor",marker:"!",duration:0.22,expression:incident == nil ? "" : "scared"))
+                        actors.append(RPGActor(id:"request-\(issue.id)",tile:motel.worldState.witnessPositions?[issue.id] ?? Tile(x:8+issue.id%3,y:14),color:issue.kind == .cult ? 0x976AB0 : 0xD6BD71,variant:issue.id+220,name:issue.kind == .celebrity ? "VIP" : "Visitor",marker:"!",duration:incident == nil ? MotelCadence.guestWalk : MotelCadence.travel,expression:incident == nil ? "" : "scared"))
                     } else if issue.roomID / 9 == motel.viewingFloor {
                         let effect=issue.kind == .leak ? 4 : issue.kind == .ac || issue.kind == .temperature ? 5 : issue.kind == .bedbugs || issue.kind == .roaches ? 6 : issue.kind == .noise ? 7 : 0
                         if effect>0 {actors.append(RPGActor(id:"issue-\(issue.id)",tile:MotelGrounds.roomDoor(issue.roomID),color:0xD9AA71,variant:0,name:issue.kind.title,effect:effect))}
@@ -450,7 +454,7 @@ struct MotelRPGView: View {
                 }
             }
             if let police = motel.business.police {
-                actors.append(RPGActor(id:"police",tile:police.tile,color:0x54739C,variant:0,name:"Officer Vega",marker:"!",duration:0.9,expression:incident == nil ? "serious" : "determined"))
+                actors.append(RPGActor(id:"police",tile:police.tile,color:0x54739C,variant:0,name:"Officer Vega",marker:"!",duration:MotelCadence.travel*Double(MotelCadence.businessSteps),expression:incident == nil ? "serious" : "determined"))
             }
             if let incident = motel.operationsState.incident {
                 let kind = incident.kind

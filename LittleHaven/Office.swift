@@ -14,6 +14,9 @@ struct OfficeReception: Codable {
     var visitor: OfficeVisitor?
     static let clerk = Tile(x: 4,y: 3)
     static let door = Tile(x: 7,y: 13)
+    static let samhil = Tile(x:11,y:9)
+    static let chichu = Tile(x:10,y:12)
+    static let chichi = Tile(x:12,y:12)
     static let hildarelysRoute = [Tile(x: 10,y: 3),Tile(x: 11,y: 3),Tile(x: 12,y: 3),Tile(x: 12,y: 4),Tile(x: 11,y: 4),Tile(x: 10,y: 4)]
     var hildarelys: Tile { Self.hildarelysRoute[(tick / 2) % Self.hildarelysRoute.count] }
 }

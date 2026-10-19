@@ -57,7 +57,7 @@ enum RPGMaps {
         passages: [Tile(x: 4,y: 8)], events: [RPGMapEvent(id: "exit",tile: Tile(x: 4,y: 8),trigger: .playerTouch,destination: "town",arrival: Tile(x: 15,y: 7))])
     static let office = RPGMapDefinition(id: "office", width: 15,height: 15,
         walkable: RPGRegion(x: 1,y: 2,width: 13,height: 12),
-        obstacles: [RPGRegion(x: 2,y: 4,width: 5,height: 2),RPGRegion(x: 9,y: 10,width: 5,height: 2),RPGRegion(x: 10,y: 5,width: 3,height: 2)],
+        obstacles: [RPGRegion(x: 2,y: 4,width: 5,height: 2),RPGRegion(x: 11,y: 10,width: 3,height: 2),RPGRegion(x: 10,y: 5,width: 3,height: 2),RPGRegion(x:9,y:2,width:1,height:5),RPGRegion(x:9,y:9,width:1,height:5)],
         passages: [Tile(x: 7,y: 14)], events: [
             RPGMapEvent(id: "exit",tile: Tile(x: 7,y: 13),trigger: .action,destination: "grounds",arrival: Tile(x: 6,y: 10)),
             RPGMapEvent(id: "desk",tile: Tile(x: 4,y: 3),trigger: .action),

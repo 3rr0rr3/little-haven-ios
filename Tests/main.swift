@@ -674,16 +674,16 @@ func expandedManagementRules() {
 }
 expandedManagementRules()
 
-func reactiveGuestsAndStaffBreaks() {
+func reactiveGuestsAndStaffPosts() {
     var motel=Motel(); motel.initializeWorld(); motel.cash=5000; motel.waiting=[]
     for role in StaffRole.allCases { require(motel.hire(role),"Hire staff for lounge test") }
     for _ in 0..<90 { motel.tickManagement() }
-    require(motel.operationsState.workers.allSatisfy { $0.tile == $0.role.breakTile },"Idle employees walk to separate lounge seats")
+    require(motel.operationsState.workers.allSatisfy { $0.tile == $0.role.home },"Idle employees return to their own work posts")
     let cleaner=motel.operationsState.workers.firstIndex { $0.role == .cleaner }!
     motel.rooms[0].dirty=true
     for _ in 0..<90 { motel.tickManagement() }
-    require(!motel.rooms[0].dirty,"Employees leave the lounge when work appears")
-    require(motel.operationsState.workers[cleaner].tile == StaffRole.cleaner.breakTile,"Cleaner returns to break after work")
+    require(!motel.rooms[0].dirty,"Employees leave their work posts when work appears")
+    require(motel.operationsState.workers[cleaner].tile == StaffRole.cleaner.home,"Cleaner returns to housekeeping after work")
     var emergency=Motel(); emergency.initializeWorld()
     let guest=emergency.waiting[0]
     _=emergency.checkIn(guestID:guest.id,roomID:0)
@@ -699,6 +699,56 @@ func reactiveGuestsAndStaffBreaks() {
     emergency.operations!.incident=nil
     for _ in 0..<90 { emergency.tickWorld() }
     require(emergency.waitingTile(bystander.id) == MotelGrounds.guestTile(bystander.id),"Guests return after the emergency")
-    print("PASS: idle staff lounge, return to work, evacuation, recovery and emergency guest identity")
+    print("PASS: individual staff posts, return to work, evacuation, recovery and emergency guest identity")
 }
-reactiveGuestsAndStaffBreaks()
+reactiveGuestsAndStaffPosts()
+
+func continuousStaffAndFamilyRoomRules() {
+    var officeSeen:Set<Tile>=[OfficeReception.clerk],queue=[OfficeReception.clerk],cursor=0
+    while cursor<queue.count {
+        let tile=queue[cursor];cursor += 1
+        for (dx,dy) in [(1,0),(-1,0),(0,1),(0,-1)] {
+            let next=Tile(x:tile.x+dx,y:tile.y+dy)
+            if !MotelGrounds.officeBlocked(next),officeSeen.insert(next).inserted {queue.append(next)}
+        }
+    }
+    for tile in OfficeReception.hildarelysRoute+[OfficeReception.samhil,OfficeReception.chichu,OfficeReception.chichi] {
+        require(tile.x>=10 && officeSeen.contains(tile),"Family and cats stay in a reachable separate office room")
+    }
+    require(MotelGrounds.officeBlocked(Tile(x:9,y:4)) && !MotelGrounds.officeBlocked(Tile(x:9,y:7)),"Family room wall has an actual doorway")
+    var blocked=Motel();blocked.initializeWorld();blocked.cash=1000;blocked.waiting=[]
+    blocked.world!.place = .grounds;blocked.world!.player=MotelGrounds.roomDoor(0)
+    blocked.rooms[0].dirty=true;_=blocked.hire(.cleaner)
+    for frame in 0..<360 {blocked.tickManagement(advanceClock:frame%MotelCadence.businessSteps==0)}
+    require(!blocked.rooms[0].dirty,"Cleaner can work when the player occupies the room doorway")
+    var fast=Motel();fast.initializeWorld();fast.cash=1000;fast.waiting=[];_=fast.hire(.security)
+    fast.operations!.workers[0].tile=Tile(x:20,y:34)
+    fast.operations!.incident=MotelIncident(kind:.fight)
+    let oldClock=fast.operationsState.tick
+    var moved=0
+    for _ in 0..<8 {
+        let before=fast.operationsState.workers[0].tile
+        fast.tickManagement(advanceClock:false)
+        if fast.operationsState.workers[0].tile != before {moved += 1}
+    }
+    require(moved==8,"Staff run on every motion update, without the old business-clock pauses")
+    require(fast.operationsState.tick==oldClock && fast.operationsState.incident?.elapsed==0 && fast.operationsState.incident?.staffProgress==0,"Fast movement never speeds up incidents or paid work")
+    var business=Motel();business.initializeWorld();business.enableManagement();business.cash=5000
+    _=business.checkIn(guestID:10,roomID:2);business.waiting=[]
+    business.rooms[0].dirty=true
+    var health=business.rooms[1].health;health.faults=[.pipe];business.rooms[1].hospitality=health
+    business.injectIssue(.noise,roomID:2)
+    business.operations!.nextIncidentTick=10000
+    for role in [StaffRole.cleaner,.maintenance,.security,.valet] {require(business.hire(role),"Hire workers for real job dispatch")}
+    for frame in 0..<360 {business.tickManagement(advanceClock:frame%MotelCadence.businessSteps==0)}
+    require(!business.rooms[0].dirty,"Housekeeping completes actual room work")
+    require(business.rooms[1].health.faults.isEmpty,"Maintenance reaches and repairs the actual room")
+    require(!business.simulation.issues.contains{$0.kind == .noise},"Security reaches and handles complaints")
+    require((business.operationsState.washIncome ?? 0)>=35,"Valet reaches cars and earns wash income")
+    var tired=Motel();tired.initializeWorld();tired.enableManagement();tired.cash=5000;_=tired.hire(.clerk)
+    var profile=tired.simulation;profile.profiles[StaffRole.clerk.rawValue]!.fatigue=90;tired.simulation=profile
+    for _ in 0..<24 {tired.tickManagement()}
+    require(tired.guestsServed>0,"A tired clerk slows down without becoming permanently unable to work")
+    print("PASS: reachable family room, separate posts, continuous staff navigation, occupied doorways, independent clocks and real staff job completion")
+}
+continuousStaffAndFamilyRoomRules()

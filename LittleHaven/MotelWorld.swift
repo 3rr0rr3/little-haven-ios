@@ -77,6 +77,16 @@ enum MotelGrounds {
         }
         return nil
     }
+    static func staffStep(from start:Tile,to target:Tile,avoiding:Set<Tile>)->Tile? {
+        if !avoiding.contains(target) {return nextStep(from:start,to:target,avoiding:avoiding)}
+        let approaches=[Tile(x:target.x-1,y:target.y),Tile(x:target.x+1,y:target.y),Tile(x:target.x,y:target.y-1),Tile(x:target.x,y:target.y+1)]
+            .filter {!blocked($0) && !avoiding.contains($0)}.sorted {$0.distance(to:start)<$1.distance(to:start)}
+        for approach in approaches {
+            if approach == start {return nil}
+            if let step=nextStep(from:start,to:approach,avoiding:avoiding) {return step}
+        }
+        return nil
+    }
     static let desk = Tile(x: 4, y: 4)
     static let bed = Tile(x: 2, y: 2)
     static let tools = Tile(x: 1, y: 5)
@@ -140,6 +150,7 @@ extension Motel {
         assignRoomColors()
         if world == nil { world = MotelWorldState() }
         if world!.reception == nil { world!.reception = OfficeReception() }
+        if world!.place == .office,world!.player.x == 9,MotelGrounds.officeBlocked(world!.player) { world!.player.x=8 }
     }
     mutating func moveActor(dx: Int, dy: Int) {
         guard !caught, abs(dx) <= 1, abs(dy) <= 1, dx != 0 || dy != 0 else { return }

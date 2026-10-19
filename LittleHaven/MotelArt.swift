@@ -231,17 +231,14 @@ struct MotelGroundsCanvas: View, Animatable {
                     }
                 }
             }
-            // Open staff pavilion, with separate seats and a shared coffee table.
-            rect(368,520,184,36,0xA78A64)
-            rect(366,516,188,5,0x5A7869)
-            rect(369,521,3,34,0x71583F); rect(548,521,3,34,0x71583F)
-            for role in StaffRole.allCases {
-                let seat=role.breakTile
-                rect(Double(seat.x*16),Double(seat.y*16+8),16,6,0x9C7B91)
-                rect(Double(seat.x*16),Double(seat.y*16+4),16,4,0xBEA6B3)
+            // Individual work posts, not a shared break area.
+            for role in StaffRole.allCases where role != .clerk {
+                let px=Double(role.home.x*16),py=Double(role.home.y*16)
+                rect(px-6,py-4,28,23,0xC1B58E)
+                rect(px-6,py-4,28,1,role.color);rect(px-6,py+18,28,1,role.color)
+                rect(px+17,py-7,8,13,0x72583E);rect(px+18,py-6,6,4,role.color)
+                label(role.station,px+8,py-11,2.7,0x344D3C)
             }
-            rect(428,547,54,7,0x71583F); rect(439,541,6,6,0xE8E0C1); rect(459,541,6,6,0xE8E0C1)
-            label("STAFF BREAK LOUNGE",460,511,5)
             for tile in RPGMaps.landscapeTrees {
                 let tx = Double(tile.x*16), ty = Double(tile.y*16)
                 rect(tx+6,ty+8,4,8,0x816044)

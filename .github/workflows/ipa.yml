@@ -95,7 +95,7 @@ jobs:
           for MODE in pool fight fire; do
             xcrun simctl terminate "$DEVICE" com.littlehaven.town || true
             xcrun simctl launch "$DEVICE" com.littlehaven.town "--ui-chaos-$MODE"
-            sleep 2
+            sleep 0.5
             xcrun simctl io "$DEVICE" recordVideo --codec=h264 --force "LittleHaven-$MODE.mp4" &
             RECORD_PID=$!
             sleep 5
@@ -114,7 +114,7 @@ jobs:
             kill -INT "$RECORD_PID"
             wait "$RECORD_PID" || true
           done
-          for MODE in parking-staff weather-storm weather-snow weather-wind; do
+          for MODE in staff-posts parking-staff weather-storm weather-snow weather-wind; do
             xcrun simctl terminate "$DEVICE" com.littlehaven.town || true
             xcrun simctl launch "$DEVICE" com.littlehaven.town "--ui-$MODE"
             sleep 3
@@ -164,8 +164,8 @@ jobs:
         run: |
           set -euo pipefail
           TAG="sideload-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
-          printf '%s\n' 'Little Haven 11.0: Immediate D-pad touch response, your character on the title screen, employee break lounge, original guest designs during pool emergencies, expressive faces, emergency evacuation, sedan/SUV/pickup designs and matching options/quit menus. iOS 17+.' 'Wake up and walk around your motel grounds, office and rooms. Meet guests, collect payment, carry cleaning tools, make beds, collect trash, mop spills and expand your motel.' 'Explore occupied rooms, steal belongings and escape before suspicion reaches 100%. Getting caught returns you to your last saved checkpoint.' 'Save at the desk or end the day. Existing cottage saves migrate to the wake-up scene.' 'Unsigned arm64 iPhoneOS build. Sign through your sideloading tool before installing. Physical-device installation has not been verified.' > release-notes.txt
-          gh release create "$TAG" LittleHaven-pool-responder.png LittleHaven-pool-responder.mp4 LittleHaven-fight-responder.png LittleHaven-fight-responder.mp4 LittleHaven-title.png LittleHaven-options.png LittleHaven-quit.png LittleHaven-management-board.png LittleHaven-management-events.png LittleHaven-management-cameras.png LittleHaven-management-night.png LittleHaven-pool.mp4 LittleHaven-fight.mp4 LittleHaven-fire.mp4 LittleHaven-pool.png LittleHaven-fight.png LittleHaven-parking-staff.png LittleHaven-weather-storm.png LittleHaven-weather-snow.png LittleHaven-weather-wind.png LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png LittleHaven-wake.png LittleHaven-motel.png LittleHaven-stealth.png LittleHaven-cleaning.png LittleHaven-office.png LittleHaven-dialogue.png LittleHaven-chaos.png LittleHaven-police.png LittleHaven-hiring.png --target "$GITHUB_SHA" --title "Little Haven 11.0 - Expressive guests and responsive controls" --prerelease --notes-file release-notes.txt
+          printf '%s\n' 'Little Haven 12.0: Separate family room inside the office, continuous emergency running, repaired staff job dispatch and individual employee work posts. No shared break area. iOS 17+.' 'Wake up and walk around your motel grounds, office and rooms. Meet guests, collect payment, carry cleaning tools, make beds, collect trash, mop spills and expand your motel.' 'Explore occupied rooms, steal belongings and escape before suspicion reaches 100%. Getting caught returns you to your last saved checkpoint.' 'Save at the desk or end the day. Existing cottage saves migrate to the wake-up scene.' 'Unsigned arm64 iPhoneOS build. Sign through your sideloading tool before installing. Physical-device installation has not been verified.' > release-notes.txt
+          gh release create "$TAG" LittleHaven-staff-posts.png LittleHaven-pool-responder.png LittleHaven-pool-responder.mp4 LittleHaven-fight-responder.png LittleHaven-fight-responder.mp4 LittleHaven-title.png LittleHaven-options.png LittleHaven-quit.png LittleHaven-management-board.png LittleHaven-management-events.png LittleHaven-management-cameras.png LittleHaven-management-night.png LittleHaven-pool.mp4 LittleHaven-fight.mp4 LittleHaven-fire.mp4 LittleHaven-pool.png LittleHaven-fight.png LittleHaven-parking-staff.png LittleHaven-weather-storm.png LittleHaven-weather-snow.png LittleHaven-weather-wind.png LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png LittleHaven-wake.png LittleHaven-motel.png LittleHaven-stealth.png LittleHaven-cleaning.png LittleHaven-office.png LittleHaven-dialogue.png LittleHaven-chaos.png LittleHaven-police.png LittleHaven-hiring.png --target "$GITHUB_SHA" --title "Little Haven 12.0 - Family room and working staff" --prerelease --notes-file release-notes.txt
           gh api "repos/$GH_REPO/contents/sideStore.json" > live-source-response.json
           python3 scripts/update_source.py "$TAG"
           gh api --method PUT "repos/$GH_REPO/contents/sideStore.json" --input source-update.json

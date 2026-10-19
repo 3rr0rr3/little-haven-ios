@@ -61,7 +61,7 @@ struct StaffPanel: View {
                         Text(role.name+" / "+role.title).font(.subheadline.bold())
                         Text(role.duty).font(.caption)
                         Text("\(role.wage) coins/day").font(.caption.monospaced()).foregroundStyle(Color(hex:0xEFC977))
-                        if let worker { Text(worker.active ? "On duty" : "Off duty: unpaid shift").font(.caption.bold()) }
+                        if let worker { Text(worker.active ? (worker.status ?? "On duty") : "Off duty: unpaid shift").font(.caption.bold()) }
                         else { Button("Hire \(role.name) / \(role.hireCost)") { hire(role) }.buttonStyle(MotelButtonStyle()).disabled(motel.cash < role.hireCost).accessibilityIdentifier("hire_"+role.rawValue) }
                     }
                 }
@@ -491,7 +491,7 @@ struct ManagementHub:View {
                 }
             } else {Button("Check out & inspect") {_=perform{$0.checkoutGuest(room.id)}}}
             ForEach(Array(room.health.upgrades).sorted{$0.rawValue<$1.rawValue}) {upgrade in
-                Text("� \(upgrade.title): \(upgrade.benefit)").font(.caption2)
+                Text("? \(upgrade.title): \(upgrade.benefit)").font(.caption2)
             }
         }
     }

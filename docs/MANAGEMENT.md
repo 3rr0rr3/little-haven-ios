@@ -1,4 +1,4 @@
-# Hotel management — version 9.0
+# Hotel management - version 9.0
 
 Open **MANAGE** from the hotel HUD. The board keeps the hotel running and shows emergency/police alerts. Regular conversations pause gameplay. Existing checkpoints migrate when the hotel opens; save at the desk to retain progress.
 
@@ -27,7 +27,7 @@ Events covers noise, vandalism, bedbugs, roaches, power outages, water leaks, AC
 ## Costs, growth and monitoring
 Rent and utilities are charged each morning alongside payroll. Unpaid bills become debt; emergency credit provides 200 with 240 due and a capped outstanding balance. Books records bookings, supplies, wages, bills, services, repairs and debts.
 
-The initial lot supports six rooms. Adjacent land opens nine; an upper floor opens eighteen, including rooms 201–209. To use upstairs doors, stand outside and select the upper floor in Growth. Other developments include a staffed pool, patio restaurant, six-bay parking, fiber Wi-Fi, CCTV and night vision.
+The initial lot supports six rooms. Adjacent land opens nine; an upper floor opens eighteen, including rooms 201-209. To use upstairs doors, stand outside and select the upper floor in Growth. Other developments include a staffed pool, patio restaurant, six-bay parking, fiber Wi-Fi, CCTV and night vision.
 
 Cameras monitors the grounds and corridors; interiors remain private. Power failures disable the camera network. Night vision is available after buying the network and night-vision equipment.
 
@@ -36,9 +36,13 @@ Festivals raise demand and noise; tourist season supports better rooms; factory 
 ## Story
 Ethical, greedy, criminal and cult-friendly decisions lead to different outcomes; serious debt can produce foreclosure. Endings can be recorded after day 14 or eighteen rooms, and play can continue. Shady offers are disabled by default and are fictional game choices. Existing police fines/bribes, car washing, weather, family reception, stealth and checkpoint recovery remain available.
 
-## Movement, rest and reactions (11.0)
+## Family room, staff posts and movement (12.0)
 D-pad arrows start walking on touch-down. Hold to repeat and release, slide off or cancel to stop. VoiceOver activation takes one step. The player also appears on the title courtyard.
 
-Idle and off-shift employees use individual seats in the staff break pavilion beside the parking area. Available staff leave the lounge for cleaning, car washing, reception and emergency duties. Guests and special visitors flee emergencies along paths that avoid danger, then return afterward. Emergency guests retain their original design, and responders show concern or determination during rescues and interventions.
+Hildarelys, Samhil, Chichu and Chichi share a separate family room on the right side of the office, behind a partition with a walkable doorway. Their existing designs, movement, television, cat beds and interactions remain available.
+
+The shared employee break area has been removed. Nora waits at reception, Luna at housekeeping beside the laundry, Mateo at maintenance beside the pool pump, Riley at the security post outside reception, and Diego at the car wash. Idle and off-shift employees return to their own posts. Employees leave their posts for jobs and emergency responses, and visible statuses explain what they are doing or which supplies are missing.
+
+Emergency movement updates every 0.18 seconds independently of the business clock. Guests and employees run continuously; the timer, wages, wash payments and work progress retain their normal pace. Employees can approach a job from the side if a guest or the player occupies its exact destination. Maintenance and security travel to their assignments before working. Guest identity and facial reactions remain intact during emergencies.
 
 NPC expressions vary by character and situation; hat shapes use brims or visors rather than beanies. Guest vehicles include sedan, SUV and pickup designs. Options and quit menus share the game's green, cream and gold colors.

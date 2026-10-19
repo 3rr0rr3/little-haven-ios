@@ -31,6 +31,13 @@ struct ContentView: View {
     private static func initialGame() -> Game {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
+        if args.contains("--ui-staff-posts") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.cash=5000
+            sample.motel!.waiting=[];sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:12,y:23)
+            for role in StaffRole.allCases {_=sample.motel!.hire(role)}
+            sample.motel!.operations!.nextIncidentTick=10000
+            sample.save();return sample
+        }
         if args.contains(where:{$0.hasPrefix("--ui-management")}) {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement()
             sample.motel!.cash=6000
@@ -95,6 +102,7 @@ struct ContentView: View {
                 if args.contains("--ui-responder") {
                     _=sample.motel!.hire(kind.responder)
                     sample.motel!.operations!.workers[0].tile=kind.approach
+                    sample.motel!.world!.player=Tile(x:kind.approach.x+1,y:kind.approach.y)
                 }
             }
             if args.contains("--ui-police") {
