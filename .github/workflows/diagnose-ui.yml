@@ -1,0 +1,29 @@
+name: Diagnose 3D transitions
+on:
+  push:
+    branches: ['codex/elevated-3d']
+    paths: ['.github/workflows/diagnose-ui.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnose:
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export crash diagnostics from failed simulator run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run download 39302460325 -R 3rr0rr3/little-haven-ios -n Simulator-test-results -D old-results
+          RESULT=$(find old-results -name '*.xcresult' -type d | head -1)
+          xcrun xcresulttool export diagnostics --path "$RESULT" --output-path crash-logs
+          find crash-logs -type f | head -40
+          find crash-logs -type f \( -name '*.ips' -o -name '*.crash' \) -exec cat {} \;
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Transition-crash-diagnostics
+          path: crash-logs
