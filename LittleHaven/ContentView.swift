@@ -544,6 +544,12 @@ struct MotelTitleScreen: View {
                 }
             }.foregroundStyle(cream)
         }.accessibilityIdentifier("titleScreen")
+            .onAppear {
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("--ui-options-preview") { options=true }
+                if ProcessInfo.processInfo.arguments.contains("--ui-quit-preview") { confirmQuit=true }
+                #endif
+            }
             .sheet(isPresented:$options) { GameOptionsView() }
             .confirmationDialog("Start again from zero?",isPresented:$confirmNew,titleVisibility:.visible) {
                 Button("Erase checkpoint and start new game",role:.destructive,action:newGame)

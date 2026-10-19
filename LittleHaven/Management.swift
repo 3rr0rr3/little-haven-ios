@@ -218,7 +218,10 @@ extension Motel {
                 target = worker.role.breakTile
             }
             if worker.tile.distance(to:target) > (responding ? 1 : 0) {
-                if let next = MotelGrounds.nextStep(from:worker.tile,to:target,avoiding:occupied) { worker.tile = next }
+                let next:Tile?
+                if let incident=state.incident,!responding { next=MotelGrounds.escapeStep(from:worker.tile,danger:incident.kind.tile,avoiding:occupied) }
+                else { next=MotelGrounds.nextStep(from:worker.tile,to:target,avoiding:occupied) }
+                if let next { worker.tile=next }
             } else if responding {
                 state.incident!.staffProgress += 1
                 if state.incident!.staffProgress >= (state.simulation == nil ? 8 : max(4,12-workerSkill(worker.role)/12)) {

@@ -12,7 +12,7 @@ struct OfficeReceptionView: View {
             RPGActor(id:"chichu",tile:Tile(x:3,y:10),color:0x85817C,variant:0,name:"Chichu",animal:1),
             RPGActor(id:"chichi",tile:Tile(x:5,y:11),color:0xE9E2D0,variant:0,name:"Chichi",animal:2)]
         if motel.operationsState.workers.contains(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:$0.role.home) <= 1}) && (!motel.waiting.isEmpty || motel.reception.visitor != nil) {
-            result.append(RPGActor(id:"clerk-nora",tile:Tile(x:6,y:3),color:StaffRole.clerk.color,variant:5,name:"Nora"))
+            result.append(RPGActor(id:"clerk-nora",tile:Tile(x:6,y:3),color:StaffRole.clerk.color,variant:204,name:"Nora"))
         }
         if let visitor { result.append(RPGActor(id:"reception-guest",tile:visitor.tile,color:visitor.guest.color,variant:visitor.guest.appearanceSeed,facing:visitor.phase == .leaving ? 0 : 3,name:visitor.guest.name,duration:0.3)) }
         if (motel.operationsState.actionUntil ?? 0) > motel.operationsState.tick {

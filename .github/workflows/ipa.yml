@@ -118,6 +118,12 @@ jobs:
           xcrun simctl launch "$DEVICE" com.littlehaven.town --ui-title
           sleep 3
           xcrun simctl io "$DEVICE" screenshot LittleHaven-title.png
+          for MODE in options quit; do
+            xcrun simctl terminate "$DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$DEVICE" com.littlehaven.town --ui-title "--ui-$MODE-preview"
+            sleep 3
+            xcrun simctl io "$DEVICE" screenshot "LittleHaven-$MODE.png"
+          done
           for MODE in board events cameras night; do
             xcrun simctl terminate "$DEVICE" com.littlehaven.town || true
             xcrun simctl launch "$DEVICE" com.littlehaven.town "--ui-management-$MODE"
@@ -148,7 +154,7 @@ jobs:
           set -euo pipefail
           TAG="sideload-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
           printf '%s\n' 'Little Haven 11.0: Immediate D-pad touch response, your character on the title screen, employee break lounge, original guest designs during pool emergencies, expressive faces, emergency evacuation, sedan/SUV/pickup designs and matching options/quit menus. iOS 17+.' 'Wake up and walk around your motel grounds, office and rooms. Meet guests, collect payment, carry cleaning tools, make beds, collect trash, mop spills and expand your motel.' 'Explore occupied rooms, steal belongings and escape before suspicion reaches 100%. Getting caught returns you to your last saved checkpoint.' 'Save at the desk or end the day. Existing cottage saves migrate to the wake-up scene.' 'Unsigned arm64 iPhoneOS build. Sign through your sideloading tool before installing. Physical-device installation has not been verified.' > release-notes.txt
-          gh release create "$TAG" LittleHaven-title.png LittleHaven-management-board.png LittleHaven-management-events.png LittleHaven-management-cameras.png LittleHaven-management-night.png LittleHaven-pool.mp4 LittleHaven-fight.mp4 LittleHaven-fire.mp4 LittleHaven-pool.png LittleHaven-fight.png LittleHaven-parking-staff.png LittleHaven-weather-storm.png LittleHaven-weather-snow.png LittleHaven-weather-wind.png LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png LittleHaven-wake.png LittleHaven-motel.png LittleHaven-stealth.png LittleHaven-cleaning.png LittleHaven-office.png LittleHaven-dialogue.png LittleHaven-chaos.png LittleHaven-police.png LittleHaven-hiring.png --target "$GITHUB_SHA" --title "Little Haven 11.0 - Expressive guests and responsive controls" --prerelease --notes-file release-notes.txt
+          gh release create "$TAG" LittleHaven-title.png LittleHaven-options.png LittleHaven-quit.png LittleHaven-management-board.png LittleHaven-management-events.png LittleHaven-management-cameras.png LittleHaven-management-night.png LittleHaven-pool.mp4 LittleHaven-fight.mp4 LittleHaven-fire.mp4 LittleHaven-pool.png LittleHaven-fight.png LittleHaven-parking-staff.png LittleHaven-weather-storm.png LittleHaven-weather-snow.png LittleHaven-weather-wind.png LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png LittleHaven-wake.png LittleHaven-motel.png LittleHaven-stealth.png LittleHaven-cleaning.png LittleHaven-office.png LittleHaven-dialogue.png LittleHaven-chaos.png LittleHaven-police.png LittleHaven-hiring.png --target "$GITHUB_SHA" --title "Little Haven 11.0 - Expressive guests and responsive controls" --prerelease --notes-file release-notes.txt
           gh api "repos/$GH_REPO/contents/sideStore.json" > live-source-response.json
           python3 scripts/update_source.py "$TAG"
           gh api --method PUT "repos/$GH_REPO/contents/sideStore.json" --input source-update.json

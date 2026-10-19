@@ -41,6 +41,15 @@ enum MotelGrounds {
         [Tile(x:2,y:12),Tile(x:11,y:32),Tile(x:35,y:25),Tile(x:12,y:3)]
             .max { $0.distance(to:danger) < $1.distance(to:danger) } ?? tile
     }
+    static func escapeStep(from start:Tile,danger:Tile,avoiding:Set<Tile>) -> Tile? {
+        let clearance=min(12,start.distance(to:danger))
+        var unsafe=avoiding
+        for y in 1..<height-1 { for x in 1..<width-1 {
+            let tile=Tile(x:x,y:y)
+            if tile.distance(to:danger)<clearance { unsafe.insert(tile) }
+        }}
+        return nextStep(from:start,to:refuge(from:start,danger:danger),avoiding:unsafe)
+    }
     static func blocked(_ tile: Tile) -> Bool {
         RPGMaps.grounds.blocked(tile)
     }
@@ -277,7 +286,10 @@ extension Motel {
             if let danger = operationsState.incident?.kind.tile, current.distance(to:danger) < 12 || positions[guest.id] != nil {
                 target = MotelGrounds.refuge(from:current,danger:danger)
             } else { target = MotelGrounds.guestTile(guest.id) }
-            positions[guest.id] = MotelGrounds.nextStep(from:current,to:target,avoiding:Set(positions.filter { $0.key != guest.id }.map(\.value))) ?? current
+            let occupied=Set(positions.filter { $0.key != guest.id }.map(\.value))
+            if let danger=operationsState.incident?.kind.tile {
+                positions[guest.id]=MotelGrounds.escapeStep(from:current,danger:danger,avoiding:occupied) ?? current
+            } else { positions[guest.id]=MotelGrounds.nextStep(from:current,to:target,avoiding:occupied) ?? current }
         }
         state.guestPositions = positions
         var occupied = Set(waiting.map { positions[$0.id] ?? MotelGrounds.guestTile($0.id) } + state.travellers.map(\.player))
@@ -288,7 +300,10 @@ extension Motel {
             walker.previous = walker.player
             let danger = operationsState.incident?.kind.tile
             let target = danger.map { MotelGrounds.refuge(from:walker.player,danger:$0) } ?? walker.destination
-            if let step = MotelGrounds.nextStep(from: walker.player, to: target, avoiding: occupied) { walker.player = step }
+            let next:Tile?
+            if let danger { next=MotelGrounds.escapeStep(from:walker.player,danger:danger,avoiding:occupied) }
+            else { next=MotelGrounds.nextStep(from:walker.player,to:target,avoiding:occupied) }
+            if let step=next { walker.player=step }
             occupied.insert(walker.player)
             state.travellers[index] = walker
         }
