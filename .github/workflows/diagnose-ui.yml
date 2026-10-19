@@ -18,8 +18,8 @@ jobs:
         run: |
           set -euo pipefail
           gh run download 39302460325 -R 3rr0rr3/little-haven-ios -n Simulator-test-results -D old-results
-          RESULT=$(find old-results -name '*.xcresult' -type d | head -1)
-          xcrun xcresulttool export diagnostics --path "$RESULT" --output-path crash-logs
+          mv old-results Recovered.xcresult
+          xcrun xcresulttool export diagnostics --path Recovered.xcresult --output-path crash-logs
           find crash-logs -type f | head -40
           find crash-logs -type f \( -name '*.ips' -o -name '*.crash' \) -exec cat {} \;
       - uses: actions/upload-artifact@v4
