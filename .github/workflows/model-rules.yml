@@ -1,0 +1,22 @@
+name: Test portable game rules
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'LittleHaven/**'
+      - 'Tests/**'
+      - '.github/workflows/model-rules.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rules:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and test economy, home, shops, navigation and checkpoints
+        run: |
+          set -euo pipefail
+          swiftc -swift-version 5 LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
+          /tmp/little-haven-tests
