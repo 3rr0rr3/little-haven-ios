@@ -1,6 +1,16 @@
-# Little Haven - Family Reception
+# Little Haven - 2D Pixel World
 
-An original iPhone RPG with cut-paper cartoon characters, a town dream, and a motel you run by walking around its grounds and interiors.
+An original iPhone RPG with cut-paper cartoon characters, pixel-art scenery, a town dream, and a motel you run by walking around its grounds and interiors.
+
+## Current version (15.0)
+
+- Original player, family, NPC and pet artwork with its original smooth rendering; the environment uses original pixel tiles inspired by classic handheld RPGs.
+- A proportional family house, matching grass and paths, and continuous walkable flooring inside.
+- Management at the reception PC; home decoration and renovation at the physical workbench.
+- Follow me / Stay here interactions for Chichu and Chichi, including travel between maps and saved waiting locations.
+- Hotel-only emergency locations, responsive police cases, and a Team HUD button shown after hiring employees.
+
+Refresh the existing SideStore source or download the current IPA from [Releases](https://github.com/3rr0rr3/little-haven-ios/releases).
 
 ## Start the shift
 
@@ -10,7 +20,7 @@ Use the movement stick to walk in eight directions, or press and hold the arrow 
 
 ## Work in the world
 
-There is no motel management dashboard. Walk to a person or object and use the context action button.
+Walk to a person or object and use the context action button. Use the reception PC to open motel management, and the home workbench to decorate or renovate.
 
 - Office door: walk through to enter or leave the office.
 - Waiting clients outside reception: talk, choose a clean empty room, collect payment, and hand over a key. Guests then walk to their rooms.
@@ -29,7 +39,7 @@ Guests pay for their full one- or two-night stay at check-in. Room furniture upg
 
 ## Sneaking
 
-Occupied rooms have highlighted belongings. Move beside them to take them, keep away from the guest, and return to the lower exit. Suspicion rises with time, movement and theft. Reaching 100 percent or getting too close to the guest means game over. Stolen items become money only after you escape.
+Occupied rooms have highlighted belongings. Move beside them to take them, keep away from the guest, and return to the lower exit. Suspicion rises with time, movement and theft. Reaching 100 percent or getting too close to the guest means game over. Stolen items stay in your inventory until you sell them at the pawn shop.
 
 ## Checkpoints
 
@@ -60,19 +70,21 @@ All characters, artwork and dialogue are original. There are no ads, accounts, n
 
 ## Native RPG engine
 
-Version 3.2 restores the original cut-paper characters and scenery from 3.0. The playable town, cottage, motel grounds, office and rooms now run in SpriteKit scenes. Independent actor nodes have cached directional artwork, walk cycles, depth ordering, and a following camera. Scenery is cached per map revision rather than redrawn every frame. SwiftUI provides the touch controls and dialogs.
+The playable town, cottage, motel grounds, office and rooms run in 2D SpriteKit scenes. Original character artwork retains smooth rendering while scenery uses crisp pixel tiles. Independent actor nodes have cached directional artwork, walk cycles, depth ordering, and a following camera. Scenery is cached per map revision rather than redrawn every frame. SwiftUI provides the touch controls and dialogs.
 
 RPGMap.swift defines serializable map boundaries, collision regions, passages, object events and map transfer metadata. These definitions drive game collision and office event dispatch. RPGScene.swift presents the maps and actors. Existing Codable game models remain authoritative for payments, cleaning, stealth and checkpoints, preserving save compatibility.
 
-This is a custom iPhone-native RPG foundation using Apple's SpriteKit. It is not RPG Maker, Pok�mon Essentials, or compatible with their project files. No proprietary RPG Maker runtime is included.
-## Family reception (4.0)
+This is a custom iPhone-native RPG foundation using Apple's SpriteKit. It is not RPG Maker, Pokémon Essentials, or compatible with their project files. No proprietary RPG Maker runtime is included.
+## Earlier releases
+
+### Family reception (4.0)
 
 The expanded 15-by-15 office is operated from a fixed position behind the desk. Clients walk through the entrance one at a time, introduce themselves and request a stay. Choose a clean room to accept and collect payment, or politely decline. Visitors walk back through the door and continue to their assigned room or the road. Tap the lower office door to resume free walking on the grounds. Returning to the office puts you behind the desk again.
 
 Tap the gray tabby Chichu or calico Chichi to pet them or offer a treat. Samhil sits on the couch watching TV, and Hildarelys walks around the office. Tap either to chat. The owner has dark spiky hair, rectangular glasses, a beard and a light collared shirt; Hildarelys has long dark hair, red lipstick and a black-and-white outfit. Artwork is an original cut-paper cartoon interpretation of the provided references. Original photos are not bundled or published.
 
 Tap the desk or logbook to save, the closet to collect cleaning tools, the paint shelf to redecorate, and the bed to end the day. Existing saves retain motel cash, rooms, upgrades and quests. Older office positions migrate to the desk. Reception visitors and their decisions are included in checkpoints.
-## Motel mayhem (5.0)
+### Motel mayhem (5.0)
 
 Guests leave one-to-five-star reviews when they check out. Upgraded rooms improve reviews; unresolved outdoor emergencies and stolen belongings hurt them. Open the review board from the HUD or desk. Reviews, staff, payroll status, incidents and guest complaints are saved with your checkpoint.
 
@@ -81,7 +93,7 @@ From the desk, hire Luna (housekeeper, 100 coins, 15/day), Mateo (groundskeeper,
 When guests are staying, incidents periodically occur outside: a courtyard fire, a guest falling in the pool, or a fight near reception. Follow the persistent alarm, walk to the scene and use HELP to intervene, or let matching hired staff respond. Incidents have a 90-second active-play deadline; ignored events cost up to 40 coins and can produce bad reviews. Dialogue and management panels pause simulation time. Office reception and the family remain unchanged.
 
 Character conversations and game decisions now appear as portrait dialogue boxes within the scene, rather than system iPhone alerts.
-## Airb&b chaos (6.0)
+### Airb&b chaos (6.0)
 Neglected fires, pool accidents and fights can kill an occupied guest. Officer Vega walks in from the road. Pay the 200-coin fine (any shortfall becomes debt paid from room revenue), or risk 80 coins on a bribe. Refusal adds 150 to the fine and further reputation damage. Legal cases, debt and outcomes are saved. A fatality adds a safety review and reduces future daily bookings; emergency cycles now begin sooner. Police cases must be settled before sleeping. Deaths are presented without gore.
 
 Use the large **Hire employees** button beside **Front desk**, or **HIRE / TEAM** at the top from any location. Three roles remain available with daily wages. Rooms start in distinct colors; painting changes both interior accents/flooring and exterior walls. Existing uncustomized rooms receive colors once; later paint choices are preserved.
