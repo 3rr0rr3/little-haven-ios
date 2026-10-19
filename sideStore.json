@@ -16,17 +16,25 @@
       "tintColor": "4C8C85",
       "category": "games",
       "screenshotURLs": [
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-title.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-management-board.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-management-events.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-management-cameras.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-management-night.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-parking-staff.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-pool.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-fight.png",
-        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-47-1/LittleHaven-stealth.png"
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-56-1/LittleHaven-home-exterior.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-56-1/LittleHaven-family-home.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-56-1/LittleHaven-office.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-56-1/LittleHaven-neighborhood.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-56-1/LittleHaven-parking-staff.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-56-1/LittleHaven-pool.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-56-1/LittleHaven-fight.png",
+        "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-56-1/LittleHaven-stealth.png"
       ],
       "versions": [
+        {
+          "version": "15.0",
+          "buildVersion": "19",
+          "date": "2026-10-19",
+          "localizedDescription": "Explore the hotel and neighborhood in a crisp 2D pixel-art world with tiled roofs, textured grass, coordinated paths and detailed interiors. The original characters remain unchanged. The home has continuous walkable flooring. Manage from the reception PC, use the home workbench, take Chichu and Chichi along, and handle hotel-only emergencies with responsive police.",
+          "downloadURL": "https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-56-1/LittleHaven-unsigned.ipa",
+          "size": 1726117,
+          "minOSVersion": "17.0"
+        },
         {
           "version": "13.0",
           "buildVersion": "17",
