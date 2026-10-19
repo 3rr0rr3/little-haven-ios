@@ -219,8 +219,8 @@ struct MotelView: View {
                         stop(); change { _ = $0.performService(service) }
                     }.buttonStyle(MotelButtonStyle()).disabled(!motel.serviceAvailable(service))
                 } else if motel.isAtHome {
-            FamilyHouseView(motel:motel,tap:officeTap,decorate:{stop();showHome=true}).id(mapIdentity)
-        } else if motel.isAtReception {
+                    Button("Decorate home") {stop();showHome=true}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("homeDesignShortcut")
+                } else if motel.isAtReception {
                     HStack(spacing:10) {
                         Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
                         Button("Hire employees") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")

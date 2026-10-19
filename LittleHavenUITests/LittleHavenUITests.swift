@@ -361,7 +361,7 @@ final class LittleHavenUITests: XCTestCase {
         for _ in 0..<count { app.buttons["Walk " + direction].tap() }
     }
     private func cash(_ app: XCUIApplication) -> String {
-        app.descendants(matching: .any)["motelCash"].firstMatch.label
+        app.descendants(matching: .any)["motelCash"].firstMatch.label.replacingOccurrences(of:",",with:"")
     }
     private func capture(_ app: XCUIApplication, _ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())

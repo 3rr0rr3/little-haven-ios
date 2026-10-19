@@ -35,7 +35,8 @@ struct FamilyHouseView:View {
                 target(.player,"Home checkpoint",Tile(x:2,y:10),scale,origin)
                 Button("Decorate",action:decorate).font(.caption.bold()).padding(8).background(Color(hex:0x395B49),in:Capsule()).position(x:origin.x+80*scale,y:origin.y+207*scale).accessibilityIdentifier("openHomeDesigner")
             }
-        }.accessibilityIdentifier("familyHouseScene")
+        }.accessibilityElement(children:.contain).accessibilityIdentifier("familyHouseScene")
+            .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
     }
     private func target(_ item:OfficeTap,_ label:String,_ tile:Tile,_ scale:CGFloat,_ origin:CGPoint)->some View {
         Button {tap(item)} label:{Color.white.opacity(0.001).contentShape(Rectangle())}.buttonStyle(.plain).frame(width:max(44,24*scale),height:max(44,26*scale)).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+CGFloat(tile.y*16+5)*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
