@@ -406,7 +406,7 @@ func managementRules() {
     for _ in 0..<40 { manual.tickManagement() }
     require(manual.operationsState.incident?.kind == .fire && !manual.resolveNearbyIncident(), "Incidents occur during a shift and require a physical response")
     _ = manual.leaveReception()
-    manual.world!.player = ChaosKind.fire.approach
+    manual.world!.player = manual.operationsState.incident!.approach
     require(manual.nearbyAction == .incident && manual.resolveNearbyIncident(), "Walking to the scene allows manual intervention")
     require(!manual.resolveNearbyIncident(), "Resolved incidents cannot be claimed twice")
     let data = try! JSONEncoder().encode(staff)
