@@ -157,7 +157,7 @@ struct PaperPortrait: View {
 enum PaperPerson {
     static func draw(context: inout GraphicsContext, x: Double, y: Double,
                      color: UInt32, variant: Int, facing: Int, walk: Double, expression: String = "") {
-        if [7,8,9].contains(variant) { PersonalArt.draw(context: &context, x: x, y: y, variant: variant, facing: facing, walk: walk); return }
+        if [7,8,9].contains(variant) { PersonalArt.draw(context: &context, x: x, y: y, variant: variant, facing: facing, walk: walk,shirt:color); return }
         let ink: UInt32 = 0x343333
         let seed = abs(variant)
         let skin: UInt32 = [UInt32(0xF0C9A0),0xD6A477,0xA87350,0x734A37,0xE9B693][seed % 5]

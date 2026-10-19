@@ -1,5 +1,83 @@
 import SwiftUI
 
+struct NeighborhoodStoreView:View {
+    @Binding var game:Game
+    let shop:NeighborhoodShop
+    @Environment(\.dismiss) private var dismiss
+    private var motel:Motel {game.motel ?? Motel()}
+    private func change(_ action:(inout Motel)->Void) {var value=motel;action(&value);game.motel=value}
+    var body:some View {
+        ScrollView {
+            VStack(alignment:.leading,spacing:18) {
+                HStack {Text(shop.title).font(.largeTitle.bold());Spacer();Button("Close"){dismiss()}}
+                Text("\(motel.cash) COINS").font(.headline.monospaced()).foregroundStyle(Color(hex:0xEFC977))
+                Text(shop.detail)
+                if shop == .furniture {
+                    ForEach(HomeObject.allCases) {kind in
+                        HStack {HomeItemIcon(kind:kind).frame(width:46,height:46);Text(kind.title);Spacer();Button("Buy / \(kind.price)"){change{_=$0.buyHomeObject(kind)}}.disabled(motel.cash<kind.price).accessibilityIdentifier("buy_home_"+kind.rawValue)}
+                    }
+                    Text("Walk north to your house, enter and choose DECORATE to place purchases.").font(.caption)
+                } else if shop == .clothing {
+                    ForEach(FamilyHome.outfitNames.indices,id:\.self) {index in
+                        HStack {
+                            RoundedRectangle(cornerRadius:8).fill(Color(hex:FamilyHome.outfitColors[index])).frame(width:44,height:44)
+                            Text(FamilyHome.outfitNames[index]);Spacer()
+                            Button(motel.household.outfit == index ? "Wearing" : motel.household.outfits.contains(index) ? "Wear" : "Buy / 80") {change{_=$0.wearOutfit(index)}}.disabled(motel.household.outfit == index || (!motel.household.outfits.contains(index) && motel.cash<80)).accessibilityIdentifier("outfit_\(index)")
+                        }
+                    }
+                } else {
+                    if motel.household.stolen.isEmpty {Text("Your bag is empty. No belongings have been sold automatically.")}
+                    ForEach(RoomVisit.lootNames.indices,id:\.self) {item in
+                        let count=motel.household.stolen.filter{$0 == item}.count
+                        if count>0 {HStack {Text("\(RoomVisit.lootNames[item]) x \(count)");Spacer();Button("Sell / \(RoomVisit.lootValues[item])"){change{_=$0.sellBelonging(item)}}.accessibilityIdentifier("pawn_sell_\(item)")}}
+                    }
+                }
+            }.padding(24)
+        }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x233E33)).tint(Color(hex:0xEFC977)).buttonStyle(.bordered).accessibilityIdentifier("neighborhoodShop")
+    }
+}
+struct HomeDesignView:View {
+    @Binding var game:Game
+    @Environment(\.dismiss) private var dismiss
+    @State private var selected:HomeObject?
+    @State private var message="Select a stored item, then tap an empty floor tile. Family paths and the entrance stay clear."
+    private var motel:Motel {game.motel ?? Motel()}
+    private func change(_ action:(inout Motel)->Void) {var value=motel;action(&value);game.motel=value}
+    var body:some View {
+        ScrollView {
+            VStack(alignment:.leading,spacing:14) {
+                HStack {Text("Make it home").font(.title.bold());Spacer();Button("Done"){dismiss()}}
+                Text("\(motel.cash) COINS / LEVEL \(motel.household.level) / \(motel.household.placed.count) OF \(motel.household.capacity) OBJECTS").font(.caption.monospaced())
+                if motel.household.level<3 {
+                    Text(motel.household.level == 0 ? "Open the west room and add furniture space." : "Expand furniture space and renovate the exterior.")
+                    Button("Upgrade home / \(motel.household.upgradeCost)"){change{_=$0.upgradeHome()}}.disabled(motel.cash<motel.household.upgradeCost).accessibilityIdentifier("upgradeHome")
+                }
+                HStack {Text("Walls / 25");ForEach(0..<4,id:\.self) {index in Button {change{_=$0.finishHome(wall:true,color:index)}} label:{Circle().fill(Color(hex:Motel.themeColors[index])).frame(width:28,height:28)}.disabled(motel.cash<25 || motel.household.wallpaper == index)}}
+                HStack {Text("Floor / 25");ForEach(0..<4,id:\.self) {index in Button {change{_=$0.finishHome(wall:false,color:index)}} label:{Circle().fill(Color(hex:HomeInteriorArt.floors[index])).frame(width:28,height:28)}.disabled(motel.cash<25 || motel.household.floor == index)}}
+                Text("Storage").font(.headline)
+                if motel.household.storage.isEmpty {Text("Visit Willow Home east of the motel to buy furniture.").font(.caption)}
+                ScrollView(.horizontal) {HStack {ForEach(HomeObject.allCases.filter{motel.household.storage.contains($0)}) {kind in Button("\(kind.title) x \(motel.household.storage.filter{$0 == kind}.count)"){selected=kind}.tint(selected == kind ? .orange : Color(hex:0xEFC977))}}}
+                Text(message).font(.caption)
+                LazyVGrid(columns:Array(repeating:GridItem(.flexible(),spacing:2),count:13),spacing:2) {
+                    ForEach(2..<13,id:\.self) {y in ForEach(1..<14,id:\.self) {x in
+                        let tile=Tile(x:x,y:y)
+                        let object=motel.household.placed.first{$0.tile == tile}
+                        Button {
+                            if let object {change{_=$0.storeHomeObject(object.id)};message="Returned to storage. Select it to move it."}
+                            else if let selected {change {value in message=value.placeHomeObject(selected,at:tile) ? "Placed \(selected.title). Tap it to return it to storage." : "Keep family paths clear. Try another tile or upgrade for more space."}}
+                        } label:{ZStack {Rectangle().fill(Color(hex:motel.homeBlocked(tile) ? 0x496451 : HomeInteriorArt.floors[motel.household.floor]));if let object {HomeItemIcon(kind:object.kind)}else if Motel.familyTiles.contains(tile) || OfficeReception.hildarelysRoute.contains(tile) {Image(systemName:"heart.fill").font(.caption2)}}.frame(height:28)}.buttonStyle(.plain).accessibilityIdentifier("home_tile_\(x)_\(y)")
+                    }}
+                }
+                Text("Tap placed furniture to store it, then select it and tap another tile to move it. A rug can be walked over.").font(.caption)
+            }.padding(22)
+        }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x233E33)).tint(Color(hex:0xEFC977)).buttonStyle(.bordered).accessibilityIdentifier("homeDesigner")
+    }
+}
+struct HomeItemIcon:View {
+    let kind:HomeObject
+    var body:some View {Canvas {context,size in context.scaleBy(x:size.width/16,y:size.height/16);HomeInteriorArt.object(context:&context,kind:kind,x:0,y:0)}}
+}
+
 struct DialogueChoice: Identifiable {
     let title: String
     let action: () -> Void
@@ -648,7 +726,7 @@ struct ManagementHub:View {
             else if motel.simulation.powerOut {Text("Cameras offline: restore the power.").foregroundStyle(.orange)}
             else {
                 MotelGroundsCanvas(motel:motel,x:Double(motel.actorTile.x),y:Double(motel.actorTile.y),npcTick:Double(motel.worldState.tick),fullMap:true)
-                    .frame(width:640,height:608).scaleEffect(0.45,anchor:.topLeading).frame(width:288,height:274,alignment:.topLeading)
+                    .frame(width:Double(MotelGrounds.width*16),height:Double(MotelGrounds.height*16)).scaleEffect(0.25,anchor:.topLeading).frame(width:288,height:192,alignment:.topLeading)
                     .colorMultiply(motel.simulation.nightVision ? Color.green : .white)
                     .brightness(motel.isNight && !motel.simulation.nightVision ? -0.3 : 0)
                     .clipped().accessibilityElement(children:.ignore).accessibilityLabel("Live corridor and grounds cameras").accessibilityIdentifier("cameraMonitor")

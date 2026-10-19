@@ -213,8 +213,8 @@ struct MotelGroundsCanvas: View, Animatable {
             for row in 0..<MotelGrounds.height {
                 for col in 0..<MotelGrounds.width {
                     let px = Double(col * 16), py = Double(row * 16)
-                    let paved = col >= 11 && (7...34).contains(row) || (col >= 2 && col <= 12 && (9...15).contains(row)) || ((5...7).contains(col) && row >= 9)
-                    let road = row >= 35
+                    let paved = (col >= 43 && (14...34).contains(row)) || col >= 11 && col < 39 && (7...34).contains(row) || (col >= 2 && col <= 12 && (9...15).contains(row)) || ((5...7).contains(col) && row >= 9)
+                    let road = (35...37).contains(row) || ((40...42).contains(col) && row > 1) || (col > 39 && (18...20).contains(row))
                     rect(px, py, 16, 16, road ? 0x666F69 : paved ? 0xD0C39D : (col + row) % 3 == 0 ? 0x86AE6D : 0x7EAA68)
                     if road && row == 36 && col % 3 != 0 { rect(px + 2, py + 6, 12, 1, 0xF2D69C) }
                     if !paved && !road {
@@ -231,6 +231,7 @@ struct MotelGroundsCanvas: View, Animatable {
                     }
                 }
             }
+            NeighborhoodArt.draw(context:&context,level:motel.household.level)
             // Individual work posts, not a shared break area.
             for role in StaffRole.allCases where role != .clerk {
                 let px=Double(role.home.x*16),py=Double(role.home.y*16)
@@ -464,6 +465,10 @@ struct MotelPocketMap: View {
                 }.frame(maxWidth: .infinity)
             }
             Text("PARKING / ROAD").font(.caption.monospaced().bold()).frame(maxWidth: .infinity).padding().background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+            Text("EAST > NEIGHBORHOOD").font(.headline)
+            Text("Family home: column 54, row 14, north of the town road. Enter to visit your family, save, upgrade and decorate.").font(.caption)
+            Text("Shops along the southern sidewalk: Willow Home (47,29), Thread & Co. (57,29), Second Chance Pawn (67,29). Walk to each door and press SHOP.").font(.caption)
+            if let incident=motel.operationsState.incident {Text("EMERGENCY: \(incident.kind.title) / column \(incident.tile.x), row \(incident.tile.y)").font(.caption.bold()).foregroundStyle(.orange)}
             Text("You are in \(motel.mapName.lowercased()), column \(motel.actorTile.x), row \(motel.actorTile.y).").font(.footnote)
             Text("Office: desk = save or upgrade; bed = next day; closet = cleaning kit; paint cabinet = wall colors. Rooms: hold work near mess to clean, use the bed to upgrade furnishings, and use the paint cabinet for colors.").font(.footnote).foregroundStyle(.secondary)
         }.padding(24).foregroundStyle(Color(hex: 0xF5E7C8)).presentationBackground(Color(hex: 0x172A25))

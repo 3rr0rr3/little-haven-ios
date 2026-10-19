@@ -134,7 +134,7 @@ func motelRules() {
     theft.move(dx: 0, dy: 1)
     theft.move(dx: -1, dy: 0)
     theft.move(dx: 0, dy: 1)
-    require(theft.visit == nil && theft.cash == legalCash + 70, "Escaping banks the stolen item")
+    require(theft.visit == nil && theft.cash == legalCash && theft.household.stolen == [1], "Escaping carries the stolen item without paying cash")
     _ = theft.enter(0)
     theft.move(dx: 1, dy: 0)
     theft.move(dx: 0, dy: -1)
@@ -715,7 +715,7 @@ func continuousStaffAndFamilyRoomRules() {
     for tile in OfficeReception.hildarelysRoute+[OfficeReception.samhil,OfficeReception.chichu,OfficeReception.chichi] {
         require(tile.x>=10 && officeSeen.contains(tile),"Family and cats stay in a reachable separate office room")
     }
-    require(MotelGrounds.officeBlocked(Tile(x:9,y:4)) && !MotelGrounds.officeBlocked(Tile(x:9,y:7)),"Family room wall has an actual doorway")
+    require(!MotelGrounds.officeBlocked(Tile(x:9,y:4)) && !MotelGrounds.officeBlocked(Tile(x:9,y:7)),"Office is restored without family partitions")
     var blocked=Motel();blocked.initializeWorld();blocked.cash=1000;blocked.waiting=[]
     blocked.world!.place = .grounds;blocked.world!.player=MotelGrounds.roomDoor(0)
     blocked.rooms[0].dirty=true;_=blocked.hire(.cleaner)
@@ -752,3 +752,55 @@ func continuousStaffAndFamilyRoomRules() {
     print("PASS: reachable family room, separate posts, continuous staff navigation, occupied doorways, independent clocks and real staff job completion")
 }
 continuousStaffAndFamilyRoomRules()
+
+func familyHomeAndNeighborhoodRules() {
+    var motel=Motel();motel.initializeWorld();motel.cash=3000;motel.waiting=[]
+    motel.world!.place = .grounds
+    for door in [FamilyHome.door]+NeighborhoodShop.allCases.map(\.door) {
+        require(!MotelGrounds.blocked(door),"Every neighborhood entrance is walkable")
+        require(MotelGrounds.nextStep(from:MotelGrounds.officeDoor,to:door,avoiding:[]) != nil,"Office connects to the house and every shop")
+    }
+    motel.world!.player=NeighborhoodShop.furniture.door
+    require(motel.nearbyAction == .shop(.furniture),"Furniture shop has a physical interaction")
+    let initial=motel.cash
+    require(motel.buyHomeObject(.plant) && motel.cash == initial-30 && motel.household.storage == [.plant],"Furniture is paid from business profits and delivered to storage")
+    motel.cash=0;require(!motel.buyHomeObject(.table),"Cannot buy furniture without money");motel.cash=initial-30
+    motel.world!.player=FamilyHome.door
+    require(motel.useEntrance() && motel.isAtHome,"Enter the separate family house")
+    let hildarelys=motel.reception.hildarelys
+    for _ in 0..<2 {motel.tickReception()}
+    require(motel.reception.hildarelys != hildarelys,"Family animations continue at home")
+    require(!motel.placeHomeObject(.plant,at:OfficeReception.samhil),"Furniture cannot cover the family")
+    require(motel.placeHomeObject(.plant,at:Tile(x:6,y:8)),"Purchased furniture can be placed on an open home tile")
+    require(motel.homeBlocked(Tile(x:6,y:8)),"Placed furniture affects movement")
+    require(motel.storeHomeObject(motel.household.placed[0].id) && motel.placeHomeObject(.plant,at:Tile(x:8,y:8)),"Furniture can be stored and moved")
+    require(motel.homeBlocked(Tile(x:2,y:3)),"Unrenovated west room is locked")
+    let beforeUpgrade=motel.cash
+    require(motel.upgradeHome() && motel.cash == beforeUpgrade-250 && !motel.homeBlocked(Tile(x:2,y:3)) && motel.household.capacity == 10,"Home upgrade charges profits, opens a room and increases furnishing space")
+    require(motel.finishHome(wall:true,color:2) && motel.finishHome(wall:false,color:3),"Wall and floor customization")
+    motel.world!.place = .grounds;motel.world!.player=NeighborhoodShop.clothing.door
+    let beforeOutfit=motel.cash
+    require(motel.wearOutfit(2) && motel.cash == beforeOutfit-80 && motel.household.outfit == 2,"Clothing purchases equip a persistent outfit")
+    require(motel.wearOutfit(0) && motel.wearOutfit(2) && motel.cash == beforeOutfit-80,"Owned outfits are free to wear again")
+    var state=motel.household;state.stolen=[1,2];motel.home=state
+    let beforeSale=motel.cash
+    require(!motel.sellBelonging(1),"Belongings cannot be sold away from the pawn shop")
+    motel.world!.player=NeighborhoodShop.pawn.door
+    require(motel.sellBelonging(1) && motel.cash == beforeSale+70 && motel.household.stolen == [2],"Explicit pawn sale pays only for the chosen carried item")
+    require(!motel.sellBelonging(1) && motel.cash == beforeSale+70,"Cannot sell an item twice")
+    let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(motel))
+    require(restored.household.placed.count == 1 && restored.household.level == 1 && restored.household.outfit == 2 && restored.household.stolen == [2] && restored.household.floor == 3,"Checkpoint preserves home, decorations, clothes and unsold inventory")
+    for tile in Motel.chaosLocations {
+        require(!MotelGrounds.blocked(tile) && !MotelGrounds.blocked(Tile(x:tile.x+1,y:tile.y)) && !MotelGrounds.blocked(Tile(x:tile.x,y:tile.y+1)),"Every varied emergency location supports both fighters and responders")
+        var incident=MotelIncident(kind:.fight);incident.location=tile
+        require(incident.tile == tile && incident.approach == Tile(x:tile.x,y:tile.y+1),"Emergency actors and staff share the incident location")
+    }
+    var pool=MotelIncident(kind:.pool);pool.location=Tile(x:55,y:30)
+    require(pool.tile == ChaosKind.pool.tile && pool.approach == ChaosKind.pool.approach,"Only pool incidents remain fixed")
+    for _ in 0..<3 {motel.tickWorld()}
+    let pedestrians=motel.worldState.townPositions
+    for _ in 0..<8 {motel.tickWorld()}
+    require(motel.worldState.townPositions?.count == 7 && motel.worldState.townPositions != pedestrians,"Neighborhood NPCs keep walking even without hotel arrivals")
+    print("PASS: open neighborhood, physical shops, separate animated family home, upgrades, decoration placement, clothing, explicit pawn sales and saved belongings")
+}
+familyHomeAndNeighborhoodRules()

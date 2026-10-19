@@ -65,6 +65,8 @@ struct Motel: Codable {
     var totalStolen = 0
     var world: MotelWorldState?
     var operations: MotelOperations?
+    var home: FamilyHome?
+    var household: FamilyHome { home ?? FamilyHome() }
     var expansionCost: Int { 250 + (rooms.count - 3) * 150 }
     var occupancy: Int { rooms.filter { $0.guest != nil }.count }
     var goalReached: Bool { rooms.count >= expansionCapacity }
@@ -237,10 +239,12 @@ struct Motel: Codable {
         if let index = rooms.firstIndex(where: { $0.id == roomVisit.roomID }) {
             rooms[index].stolen.formUnion(roomVisit.loot)
         }
-        cash += roomVisit.pocket
+        var belongings=household
+        belongings.stolen += roomVisit.loot.sorted()
+        home=belongings
         totalStolen += roomVisit.pocket
-        if roomVisit.pocket>0 {logMoney(roomVisit.pocket,category:"Stolen belongings",note:"Off-books escape")}
-        lastEvent = roomVisit.pocket > 0 ? "You slipped out with \(roomVisit.pocket) coins worth of belongings. Save at the desk to keep this progress." : "Back outside. The desk is waiting."
+
+        lastEvent = roomVisit.pocket > 0 ? "You slipped out with \(roomVisit.pocket) coins worth of belongings. Visit the pawn shop to sell them." : "Back outside. The desk is waiting."
         visit = nil
         if world != nil {
             let door = MotelGrounds.roomDoor(roomVisit.roomID)

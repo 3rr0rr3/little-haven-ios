@@ -58,7 +58,7 @@ final class LittleHavenUITests: XCTestCase {
         capture(app,"Reception decisions and saved desk checkpoint")
     }
     func testFamilyAndCatsAreTappable() {
-        let app = launch("--ui-office-family")
+        let app = launch("--ui-family-home")
         XCTAssertTrue(app.buttons["office_chichu"].waitForExistence(timeout:10), app.debugDescription)
         app.buttons["office_chichu"].tap()
         XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
@@ -76,6 +76,42 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.buttons["saveCheckpoint"].waitForExistence(timeout:3))
         app.buttons["saveCheckpoint"].tap()
         capture(app,"Expanded office with family, cats, sofa and television")
+    }
+
+    func testHomeDesignerAndFurniturePurchase() {
+        let app=launch("--ui-home-store")
+        XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.buttons["buy_home_plant"].waitForExistence(timeout:5))
+        app.buttons["buy_home_plant"].tap()
+        capture(app,"Furniture shop purchases paid from motel profits")
+        app.terminate();app.launchArguments=["--ui-testing","--ui-family-home"];app.launch()
+        XCTAssertTrue(app.buttons["openHomeDesigner"].waitForExistence(timeout:10))
+        app.buttons["openHomeDesigner"].tap()
+        XCTAssertTrue(app.buttons["upgradeHome"].waitForExistence(timeout:5))
+        app.buttons["upgradeHome"].tap()
+        capture(app,"Home upgrades wallpaper flooring and furniture placement")
+    }
+    func testPawnShopRequiresExplicitSale() {
+        let app=launch("--ui-pawn-store")
+        XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
+        XCTAssertTrue(cash(app).contains("2500"))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.buttons["pawn_sell_1"].waitForExistence(timeout:5))
+        app.buttons["pawn_sell_1"].tap()
+        XCTAssertFalse(app.buttons["pawn_sell_1"].exists)
+        capture(app,"Pawn shop sells carried items individually")
+        app.buttons["Close"].tap()
+        XCTAssertTrue(cash(app).contains("2570"))
+    }
+    func testClothingShopBuysAndEquips() {
+        let app=launch("--ui-clothes-store")
+        XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.buttons["outfit_2"].waitForExistence(timeout:5))
+        app.buttons["outfit_2"].tap()
+        XCTAssertEqual(app.buttons["outfit_2"].label,"Wearing")
+        capture(app,"Clothing shop owned and equipped outfits")
     }
 
     func testPhysicalRoomCleaning() {

@@ -43,6 +43,8 @@ struct MotelView: View {
     @Environment(\.returnToTitle) private var returnToTitle
     @AppStorage("littlehaven.hints") private var showHints = true
     @AppStorage("littlehaven.haptics") private var haptics = true
+    @State private var neighborhood: NeighborhoodShop?
+    @State private var showHome = false
     @State private var showOptions = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var movement: Tile?
@@ -73,7 +75,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { neighborhood != nil || showHome || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
@@ -107,8 +109,8 @@ struct MotelView: View {
                 guard !Task.isCancelled, scenePhase == .active else { break }
                 if !paused && !motel.caught {
                     ticks += 1
-                    if (motel.operationsState.incident != nil || ticks % 2 == 0) && (!motel.worldState.travellers.isEmpty || !motel.waiting.isEmpty || !motel.simulation.issues.isEmpty) { change { $0.tickWorld() } }
-                    if ticks % 2 == 0 && (motel.isAtReception || motel.reception.visitor != nil) { change { $0.tickReception() } }
+                    if (motel.operationsState.incident != nil || ticks % 2 == 0)  { change { $0.tickWorld() } }
+                    if ticks % 2 == 0 && (motel.isAtReception || motel.isAtHome || motel.reception.visitor != nil) { change { $0.tickReception() } }
                     if ticks % 6 == 0 && motel.visit?.sneaking == true { change { $0.tick() } }
                     change { $0.tickManagement(advanceClock:ticks % MotelCadence.businessSteps == 0) }
                 }
@@ -143,6 +145,8 @@ struct MotelView: View {
         .onChange(of: paused) { _, value in if value { stop() } }
         .onChange(of: scenePhase) { _, phase in if phase != .active { stop() } }
         .onDisappear { stop() }
+        .sheet(item:$neighborhood) { shop in NeighborhoodStoreView(game:$game,shop:shop) }
+        .sheet(isPresented:$showHome) { HomeDesignView(game:$game) }
         .sheet(isPresented:$showManagement) {
             ManagementHub(game:$game).presentationDetents([.large]).presentationDragIndicator(.visible)
         }
@@ -214,7 +218,9 @@ struct MotelView: View {
                     Button(service.title + " / +\(service.reward) coins") {
                         stop(); change { _ = $0.performService(service) }
                     }.buttonStyle(MotelButtonStyle()).disabled(!motel.serviceAvailable(service))
-                } else if motel.isAtReception {
+                } else if motel.isAtHome {
+            FamilyHouseView(motel:motel,tap:officeTap,decorate:{stop();showHome=true}).id(mapIdentity)
+        } else if motel.isAtReception {
                     HStack(spacing:10) {
                         Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
                         Button("Hire employees") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")
@@ -291,6 +297,8 @@ struct MotelView: View {
                 .accessibilityLabel("\(motel.mapName). Column \(tile.x), row \(tile.y).")
                 .accessibilityValue("\(room.dirty ? "Cleaning \(room.cleanedTasks?.count ?? 0)/3" : "Ready for guests"). Theme \(room.theme). Furnishings \(room.furniture).")
                 .accessibilityIdentifier("motelWorld")
+        } else if motel.isAtHome {
+            FamilyHouseView(motel:motel,tap:officeTap,decorate:{stop();showHome=true}).id(mapIdentity)
         } else if motel.isAtReception {
             OfficeReceptionView(motel: motel, tap: officeTap).id(mapIdentity)
         } else {
@@ -306,6 +314,9 @@ struct MotelView: View {
 
     private var actionName: String {
         switch motel.nearbyAction {
+        case .home: return "HOME"
+        case .homeDecor: return "DECORATE"
+        case .shop: return "SHOP"
         case .incident: return "HELP"
         case .office, .room: return "ENTER"
         case .guest: return "TALK"
@@ -345,6 +356,9 @@ struct MotelView: View {
     }
     private var hint: String {
         switch motel.nearbyAction {
+        case .home: return "Your family home. Visit, decorate and upgrade with motel profits."
+        case .homeDecor: return "Talk to family or decorate your home. Bought furniture goes into storage."
+        case .shop(let shop): return shop.detail
         case .incident: return motel.operationsState.incident?.kind.detail ?? "The grounds are quiet."
         case .guest(let id):
             let guest = motel.waiting.first { $0.id == id }
@@ -362,7 +376,7 @@ struct MotelView: View {
         case .office: return "Office entrance. Walk through the door or tap ENTER."
         case .exit: return "Walk through the lower door to go outside."
         case .construction: return "Build room \(101 + motel.rooms.count) here for \(motel.expansionCost) coins."
-        case .loot(let item): return "\(RoomVisit.lootNames[item]): +\(RoomVisit.lootValues[item]) coins, +\(RoomVisit.lootNoise[item]) suspicion. Escape to keep it."
+        case .loot(let item): return "\(RoomVisit.lootNames[item]): +\(RoomVisit.lootValues[item]) value, +\(RoomVisit.lootNoise[item]) suspicion. Sell it at the pawn shop after escaping."
         case .none:
             if motel.visit?.sneaking == true { return "Avoid the guest. Take belongings and return to the door before suspicion reaches 100%." }
             if motel.visit != nil { return "Walk to the bed, trash or spill to clean. Paint cabinet is in the upper right." }
@@ -375,6 +389,9 @@ struct MotelView: View {
         stop()
         if haptics { UIImpactFeedbackGenerator(style:.light).impactOccurred() }
         switch motel.nearbyAction {
+        case .home: change { _ = $0.useEntrance() }
+        case .homeDecor: showHome=true
+        case .shop(let shop): neighborhood=shop
         case .incident: showIncident = true
         case .office, .exit: change { _ = $0.useEntrance() }
         case .room(let id):
@@ -538,10 +555,14 @@ struct MotelView: View {
         stop(); selectedRoom = motel.rooms.first(where: \.available)?.id; panel = .guest(id)
     }
     private func officeTap(_ item: OfficeTap) {
-        guard !paused, motel.isAtReception else { return }
+        guard !paused, motel.isAtReception || motel.isAtHome else { return }
         stop()
         switch item {
-        case .door: change { _ = $0.leaveReception() }
+        case .door:
+            change { value in
+                if value.isAtHome {value.world!.place = .grounds;value.world!.player=Tile(x:FamilyHome.door.x,y:FamilyHome.door.y+1)}
+                else {_=value.leaveReception()}
+            }
         case .player: panel = .desk
         case .save: saveHere()
         case .tools: change { _ = $0.receptionTools() }
@@ -567,13 +588,13 @@ struct MotelView: View {
         case .chichu: return "Your gray tabby looks up with green eyes and gives a soft meow."
         case .chichi: return "Chichi flicks her calico tail and waits for some attention."
         case .samhil: return "This cartoon is so funny! Can we watch another episode when you finish helping the guests?"
-        case .hildarelys: return "I love our little office. I will keep Samhil and the cats company while you welcome the guests."
+        case .hildarelys: return "I love our new home. Samhil and the cats are happy here. Come visit whenever you can."
         default: return ""
         }
     }
     private func saveHere() {
         guard motel.atSavePoint else { return }
-        stop(); game.save(); panel = nil; toast = "Checkpoint saved at the office."
+        stop(); game.save(); panel = nil; toast = "Checkpoint saved."
     }
     private func stop() { movement = nil; working = false; workProgress = 0 }
     private func change(_ action: (inout Motel) -> Void) {

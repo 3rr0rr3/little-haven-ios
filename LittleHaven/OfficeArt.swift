@@ -1,7 +1,69 @@
 import SwiftUI
 
+enum NeighborhoodArt {
+    static func draw(context:inout GraphicsContext,level:Int) {
+        func rect(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ c:UInt32){context.fill(Path(CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:c)))}
+        func label(_ text:String,_ x:Double,_ y:Double){context.draw(Text(text).font(.system(size:6,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x,y:y))}
+        // A pitched roof, chimney, porch and garden distinguish the house from motel cabins.
+        rect(752,64,256,192,0xB3BD86)
+        rect(770,119,218,105,level>1 ? 0xD9B6A1 : 0xEAD6B0)
+        var roof=Path();roof.move(to:CGPoint(x:759,y:126));roof.addLine(to:CGPoint(x:879,y:53));roof.addLine(to:CGPoint(x:999,y:126));roof.closeSubpath();context.fill(roof,with:.color(Color(hex:level>1 ? 0x577E89 : 0x9D6654)))
+        rect(943,65,16,38,0x8D6153);rect(939,63,24,6,0x6F5149)
+        rect(789,144,36,35,0x8DBCB7);rect(930,144,36,35,0x8DBCB7)
+        for x in [805.0,946.0] {rect(x,144,2,35,0xF3E4BE);rect(x-16,160,36,2,0xF3E4BE)}
+        rect(864,174,24,50,0x6A735B);rect(881,197,3,3,0xF2D58C)
+        rect(848,224,56,9,0xE4C498);rect(856,233,40,7,0xC3AB84)
+        label("OUR HOME",879,139)
+        for x in stride(from:754,to:1004,by:16) where x<846 || x>909 {rect(Double(x),245,3,16,0xEFE1BC);rect(Double(x),251,15,2,0xEFE1BC)}
+        for x in [765.0,980.0] {rect(x,216,13,13,0xAA7B58);context.fill(Path(ellipseIn:CGRect(x:x-6,y:201,width:25,height:20)),with:.color(Color(hex:0x65884F)))}
+        if level>0 {rect(780,185,58,29,0xBBA3BA);label("WEST WING",809,199)}
+        if level>2 {rect(920,233,63,7,0x9B7957);for x in [925.0,966.0] {rect(x,224,4,17,0x775F44)}}
+        for shop in NeighborhoodShop.allCases {
+            let x=Double((shop.door.x-3)*16),y=368.0
+            let color:UInt32=shop == .furniture ? 0x9B9279 : shop == .clothing ? 0xA18BA8 : 0x6D9492
+            rect(x+3,y+8,106,88,0xE4CDA6);rect(x,y,112,23,color)
+            rect(x+9,y+29,94,13,0x365247);label(shop.title.uppercased(),x+56,y+35)
+            rect(x+8,y+49,31,33,0x8DBCB7);rect(x+73,y+49,31,33,0x8DBCB7)
+            rect(x+48,y+48,16,48,0x665A48);rect(x+59,y+71,2,2,0xEED187)
+            for stripe in 0..<8 {rect(x+Double(stripe*14),y+43,14,8,stripe%2 == 0 ? color : 0xF1DFC0)}
+            label(shop == .furniture ? "FURNITURE" : shop == .clothing ? "CLOTHES" : "BUY / SELL",x+56,y+105)
+        }
+        rect(628,281,31,16,0x506D57);label("TOWN >",643,289)
+    }
+}
+struct HomeInteriorArt:View {
+    let home:FamilyHome
+    static let floors:[UInt32]=[0xBC9E79,0xC6B7A2,0xA2AD9D,0x9C8071]
+    static func object(context:inout GraphicsContext,kind:HomeObject,x:Double,y:Double) {
+        func rect(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ c:UInt32){context.fill(Path(roundedRect:CGRect(x:x+dx,y:y+dy,width:w,height:h),cornerRadius:1),with:.color(Color(hex:c)))}
+        switch kind {
+        case .plant:rect(4,9,8,6,0xB4815F);for dx in [1.0,6.0,10.0] {context.fill(Path(ellipseIn:CGRect(x:x+dx,y:y+1,width:6,height:10)),with:.color(Color(hex:0x5D8956)))}
+        case .rug:rect(0,1,16,14,0xAC6F62);rect(2,3,12,10,0xDEC69A);rect(5,5,6,6,0xAC6F62)
+        case .lamp:rect(6,6,3,9,0x7D694F);rect(3,13,10,2,0x7D694F);rect(1,1,14,7,0xEACD85)
+        case .bookshelf:rect(0,0,16,16,0x77573D);for row in 0..<2 {for col in 0..<4 {rect(Double(col*3+2),Double(row*7+1),2,5,Motel.themeColors[(col+row)%4])}}
+        case .table:rect(2,7,2,9,0x76583E);rect(12,7,2,9,0x76583E);rect(0,1,16,9,0xBD9569);rect(4,3,8,1,0xDBC08E)
+        case .armchair:rect(1,2,14,12,0x8B7D9B);rect(4,4,8,8,0xBEA9BC);rect(0,5,3,10,0x9E8BA8);rect(13,5,3,10,0x9E8BA8)
+        }
+    }
+    var body:some View {
+        Canvas {context,_ in
+            func rect(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ c:UInt32){context.fill(Path(CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:c)))}
+            rect(0,0,240,240,0x4F6957);rect(16,32,208,192,Self.floors[home.floor]);rect(16,0,208,32,Motel.themeColors[home.wallpaper])
+            for y in stride(from:48,to:224,by:16) {rect(16,Double(y),208,1,0x9A805F)}
+            if home.level == 0 {rect(16,32,64,80,0x55715C);context.draw(Text("RENOVATE").font(.system(size:5,weight:.bold)).foregroundColor(.white),at:CGPoint(x:48,y:70))}
+            else {rect(20,38,47,30,0xE3CAB1);rect(22,40,43,8,0xF5E9D2)}
+            rect(154,81,60,28,0x775F49);rect(160,72,47,28,0x303C3C);rect(164,76,39,19,0x86B2B2);rect(176,85,15,8,0xE2CB86)
+            rect(171,162,50,22,0x8E7B9E);rect(176,154,40,21,0xB8A3BA)
+            for x in [157.0,190.0] {rect(x,201,25,13,0xBE9A76);rect(x+7,216,10,4,0x82ACA5)}
+            rect(111,208,18,32,0xE7D1AD)
+            for item in home.placed {Self.object(context:&context,kind:item.kind,x:Double(item.tile.x*16),y:Double(item.tile.y*16))}
+            context.draw(Text("HOME SWEET HOME").font(.system(size:7,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:120,y:17))
+        }.frame(width:240,height:240)
+    }
+}
+
 enum PersonalArt {
-    static func draw(context: inout GraphicsContext,x: Double,y: Double,variant: Int,facing: Int,walk: Double) {
+    static func draw(context: inout GraphicsContext,x: Double,y: Double,variant: Int,facing: Int,walk: Double,shirt:UInt32=0xC7D0D4) {
         let woman = variant == 8, child = variant == 9
         let ink: UInt32 = 0x302D2D
         let skin: UInt32 = woman ? 0xD79F77 : 0xE3B38E
@@ -17,7 +79,7 @@ enum PersonalArt {
         if woman || child { oval(1,-5,14,17,hair) }
         box(4,11,3.5,4+walk*0.4,0x41414A); box(8.5,11,3.5,4-walk*0.4,0x41414A)
         oval(3,14+walk*0.4,5,1.8,ink); oval(8,14-walk*0.4,5,1.8,ink)
-        box(2.5,5,11,9,child ? 0xD88BAA : woman ? 0x292A2C : 0xC7D0D4)
+        box(2.5,5,11,9,child ? 0xD88BAA : woman ? 0x292A2C : shirt)
         oval(0.8,8,3.5,4,skin); oval(11.7,8,3.5,4,skin)
         if woman {
             for i in 0..<5 { oval(3+Double(i*2),8+Double(i%2)*3,2,1.6,0xE8E2CF) }
@@ -85,39 +147,22 @@ struct ExpandedOfficeArt: View {
             rect(0,0,240,240,0xB49A75)
             for y in stride(from:32,to:224,by:16) { rect(16,Double(y),208,1,0x9D815F); for x in stride(from:20+(y%3)*8,to:220,by:32) { rect(Double(x),Double(y),1,16,0xA88C67) } }
             rect(0,0,240,32,Motel.themeColors[theme]); rect(0,0,16,240,0x526D5B); rect(224,0,16,240,0x526D5B); rect(0,224,240,16,0x526D5B)
-            // A separate family room within the office, entered through the open doorway.
-            rect(144,32,80,192,0xC3AD99)
-            for y in stride(from:48,to:224,by:16) { rect(144,Double(y),80,1,0xAD9580) }
-            rect(142,32,5,80,0x526D5B); rect(142,144,5,80,0x526D5B)
-            rect(142,109,7,3,0xEAD8AE); rect(142,144,7,3,0xEAD8AE)
-            rect(145,113,13,29,0xD6BD94)
-            text("FAMILY ROOM",185,43,4)
             // Reception desk, chair, key board and a logbook.
             rect(48,51,32,12,0x6D695C); rect(32,71,80,24,0x77553D); rect(30,68,84,7,0xD4B581)
             rect(39,76,19,12,0x3F5A4E); rect(41,77,15,8,0x93B3A3)
             rect(82,73,17,13,0xEEE1C1); rect(90,74,1,11,0xA28B63)
             text("RECEPTION",72,91,4)
             rect(40,9,60,18,0x765C43); for i in 0..<6 { rect(45+Double(i*8),14,3,7,0xE8C677) }
-            // Family lounge: television above a plush couch.
-            rect(153,100,60,7,0x796048); rect(161,108,4,6,0x796048); rect(202,108,4,6,0x796048)
-            rect(160,77,46,25,0x343F3D); rect(164,80,38,18,0x8BB6B7)
-            rect(168,91,30,7,0x7FA46B); rect(179,83,9,11,0xF1D184); rect(182,85,3,3,0x425B62)
-            text("TV",183,104,3)
-            rect(176,160,46,23,0x6D647A); rect(180,153,38,24,0x9C8BA7)
-            rect(173,156,9,24,0x81728E); rect(216,156,6,24,0x81728E)
-            for x in [180.0,199.0] { rect(x,157,17,15,0xB1A1BA) }
             // Rest nook, supplies and paint are tappable from the desk.
             rect(21,33,20,29,0x715743); rect(23,34,16,25,0x8CB3A4); rect(24,35,14,7,0xF0E3C7)
             rect(18,112,18,28,0x7A624B); rect(20,114,14,5,0xA5C3B0); rect(22,120,3,16,0xD1B576)
             text("TOOLS",27,109,3)
             rect(18,144,18,20,0x7A624B); for i in 0..<4 { rect(20+Double(i*4),148,3,7,Motel.themeColors[i]) }; text("PAINT",27,141,3)
             // Cat beds, food bowls, plants and entry rug.
-            rect(157,200,25,14,0xBD9976); rect(190,200,25,14,0xBD9976)
-            for x in [174.0,190.0] { rect(x,217,10,4,0x8DACA6); rect(x+2,217,6,2,0xD9BE86) }
             rect(97,180,46,29,0xA66F5B); rect(100,183,40,23,0xC59377)
             rect(112,208,16,32,0xEAD8AE); text("LEAVE",120,230,4)
             rect(207,35,10,12,0x80644A); rect(202,29,20,12,0x77975C)
-            text("LITTLE HAVEN / FAMILY OFFICE",120,20,4)
+            text("LITTLE HAVEN / RECEPTION",120,20,4)
         }.frame(width:240,height:240)
     }
 }

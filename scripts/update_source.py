@@ -21,7 +21,7 @@ entry = {
     "version": version,
     "buildVersion": build,
     "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-    "localizedDescription": "Separate family room inside the office, continuous emergency running, faster staff dispatch, visible job and supply status, physical maintenance and security tasks, and individual work posts replacing the shared break lounge.",
+    "localizedDescription": "Separate family house with upgrades and furniture placement, an open neighborhood with pedestrians, furniture and clothing shops, a pawn shop with explicit item sales, restored reception, and varied emergency locations.",
     "downloadURL": f"{asset_base}/LittleHaven-unsigned.ipa",
     "size": pathlib.Path("LittleHaven-unsigned.ipa").stat().st_size,
     "minOSVersion": info["MinimumOSVersion"],
