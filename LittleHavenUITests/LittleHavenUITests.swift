@@ -236,10 +236,14 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.buttons["OPTIONS"].waitForExistence(timeout:10))
         app.buttons["OPTIONS"].tap()
         XCTAssertTrue(app.switches["optionHints"].waitForExistence(timeout:5))
-        let originalHintValue = app.switches["optionHints"].value as? String
-        app.switches["optionHints"].tap()
-        let changedHintValue = app.switches["optionHints"].value as? String
-        XCTAssertNotEqual(changedHintValue, originalHintValue)
+        let hintSwitch = app.switches["optionHints"]
+        let originalHintValue = hintSwitch.value as? String
+        let expectedHintValue = originalHintValue == "1" ? "0" : "1"
+        hintSwitch.tap()
+        expectation(for: NSPredicate(format:"value == %@", expectedHintValue), evaluatedWith:hintSwitch)
+        waitForExpectations(timeout:3)
+        let changedHintValue = hintSwitch.value as? String
+        XCTAssertEqual(changedHintValue, expectedHintValue)
         app.buttons["Done"].tap()
         app.buttons["OPTIONS"].tap()
         XCTAssertEqual(app.switches["optionHints"].value as? String, changedHintValue)
