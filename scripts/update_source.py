@@ -21,7 +21,7 @@ entry = {
     "version": version,
     "buildVersion": build,
     "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-    "localizedDescription": "Manage from the reception PC, decorate and renovate at the home workbench, take Chichu and Chichi along or ask them to stay, and handle hotel-only emergencies with responsive police. Smaller house and garden, subdued scenery, unchanged characters.",
+    "localizedDescription": "Explore the hotel and neighborhood in a crisp 2D pixel-art world with tiled roofs, textured grass, coordinated paths and detailed interiors. The original characters remain unchanged. The home has continuous walkable flooring. Manage from the reception PC, use the home workbench, take Chichu and Chichi along, and handle hotel-only emergencies with responsive police.",
     "downloadURL": f"{asset_base}/LittleHaven-unsigned.ipa",
     "size": pathlib.Path("LittleHaven-unsigned.ipa").stat().st_size,
     "minOSVersion": info["MinimumOSVersion"],
@@ -29,7 +29,7 @@ entry = {
 app["versions"] = [entry] + [item for item in app["versions"] if item["version"] != version or item.get("buildVersion") != build]
 app["subtitle"] = "Rooms, guests, night shifts and consequences."
 app["localizedDescription"] = "Build and run an animated roadside Airb&b with day/night shifts, room condition, guest personalities, hourly and weekly contracts, dynamic rates, stock and ongoing bills. Hire and train staff, respond to complaints, develop up to eighteen rooms, operate a car wash and restaurant, monitor corridor cameras and night vision, and shape ethical, greedy, criminal or cult-friendly story paths. Existing saves and the family reception, weather, emergencies and stealth chapter are supported."
-app["screenshotURLs"] = [f"{asset_base}/LittleHaven-title.png", f"{asset_base}/LittleHaven-management-board.png", f"{asset_base}/LittleHaven-management-events.png", f"{asset_base}/LittleHaven-management-cameras.png", f"{asset_base}/LittleHaven-management-night.png", f"{asset_base}/LittleHaven-parking-staff.png", f"{asset_base}/LittleHaven-pool.png", f"{asset_base}/LittleHaven-fight.png", f"{asset_base}/LittleHaven-stealth.png"]
+app["screenshotURLs"] = [f"{asset_base}/LittleHaven-home-exterior.png", f"{asset_base}/LittleHaven-family-home.png", f"{asset_base}/LittleHaven-office.png", f"{asset_base}/LittleHaven-neighborhood.png", f"{asset_base}/LittleHaven-parking-staff.png", f"{asset_base}/LittleHaven-pool.png", f"{asset_base}/LittleHaven-fight.png", f"{asset_base}/LittleHaven-stealth.png"]
 source["subtitle"] = "A town dream and a roadside Airb&b"
 body = {
     "message": f"Update SideStore feed for Little Haven {version} [skip ci]",

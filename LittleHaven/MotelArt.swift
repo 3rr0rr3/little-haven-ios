@@ -213,23 +213,10 @@ struct MotelGroundsCanvas: View, Animatable {
             for row in 0..<MotelGrounds.height {
                 for col in 0..<MotelGrounds.width {
                     let px = Double(col * 16), py = Double(row * 16)
-                    let paved = (col >= 43 && (14...34).contains(row)) || col >= 11 && col < 39 && (7...34).contains(row) || (col >= 2 && col <= 12 && (9...15).contains(row)) || ((5...7).contains(col) && row >= 9)
                     let road = (35...37).contains(row) || ((40...42).contains(col) && row > 1) || (col > 39 && (18...20).contains(row))
-                    rect(px, py, 16, 16, road ? 0x666F69 : paved ? 0xB9B199 : 0x73866A)
-                    if road && row == 36 && col % 3 != 0 { rect(px + 2, py + 6, 12, 1, 0xF2D69C) }
-                    if !paved && !road {
-                        let variation=Double((col*17+row*31)%7)/100
-                        context.fill(Path(ellipseIn:CGRect(x:px-8,y:py-5,width:30,height:25)),with:.radialGradient(Gradient(colors:[Color(hex:0xA6B68A).opacity(0.13+variation),.clear]),center:CGPoint(x:px+7,y:py+7),startRadius:0,endRadius:17))
-                        for blade in 0..<3 {
-                            let gx=px+Double((col*7+row*3+blade*5)%16)
-                            let gy=py+Double((col*3+row*7+blade*4)%16)
-                            var grass=Path();grass.move(to:CGPoint(x:gx,y:gy));grass.addQuadCurve(to:CGPoint(x:gx+1,y:gy-3),control:CGPoint(x:gx-1,y:gy-2))
-                            context.stroke(grass,with:.color(Color(hex:0xB0B997).opacity(0.35)),lineWidth:0.4)
-                        }
-                        if (col * 3 + row * 11) % 37 == 0 {
-                            rect(px + 7, py + 6, 2, 5, 0x668E54); rect(px + 6, py + 5, 4, 3, 0xE9BC96)
-                        }
-                    } else if !road && (col + row) % 4 == 0 { rect(px + 3, py + 7, 2, 1, 0xBDAF8C) }
+                    let paved = ((11...38).contains(col) && [8,9,17,18,26,27,33,34].contains(row)) || ((11...12).contains(col) && (8...34).contains(row)) || ((3...10).contains(col) && (9...15).contains(row)) || ((5...7).contains(col) && (23...35).contains(row)) || ((43...70).contains(col) && (29...31).contains(row))
+                    PixelTiles.ground(context:&context,x:px,y:py,kind:road ? 2 : paved ? 1 : 0,seed:col*17+row*31)
+                    if road && row == 36 && col % 3 != 0 { rect(px+2,py+7,12,2,0xF8E8A0) }
                     if col == 0 || col == MotelGrounds.width - 1 || row == 0 || row == MotelGrounds.height - 1 {
                         rect(px + 6, py + 8, 4, 9, 0x7C6B50)
                         rect(px + 1, py + 1, 14, 12, 0x4E7851)
@@ -248,12 +235,7 @@ struct MotelGroundsCanvas: View, Animatable {
                 label(role.station,px+8,py-11,2.7,0x344D3C)
             }
             for tile in RPGMaps.landscapeTrees {
-                let tx = Double(tile.x*16), ty = Double(tile.y*16)
-                context.fill(Path(ellipseIn:CGRect(x:tx-5,y:ty+10,width:28,height:8)),with:.radialGradient(Gradient(colors:[Color.black.opacity(0.24),.clear]),center:CGPoint(x:tx+9,y:ty+14),startRadius:0,endRadius:15))
-                rect(tx+6,ty+8,4,8,0x816044)
-                for layer in 0..<3 {
-                    context.fill(Path(ellipseIn:CGRect(x:tx-2+Double(layer),y:ty-10+Double(layer*4),width:20-Double(layer*2),height:15)),with:.linearGradient(Gradient(colors:[Color(hex:0x9CA779),Color(hex:0x647C5B),Color(hex:0x3E594B)]),startPoint:CGPoint(x:tx,y:ty-10),endPoint:CGPoint(x:tx+17,y:ty+14)))
-                }
+                PixelTiles.tree(context:&context,x:Double(tile.x*16),y:Double(tile.y*16))
             }
             for tile in RPGMaps.landscapeBenches {
                 let tx=Double(tile.x*16), ty=Double(tile.y*16)
@@ -290,24 +272,7 @@ struct MotelGroundsCanvas: View, Animatable {
             }
             // The office and nine physical room plots, connected by walkable lanes.
             func building(_ origin: Tile, _ width: Int, _ height: Int, _ door: Tile, _ name: String, _ roof: UInt32, _ paint: UInt32) {
-                let px = Double(origin.x * 16), py = Double(origin.y * 16), w = Double(width * 16), h = Double(height * 16)
-                context.fill(Path(roundedRect:CGRect(x:px+4,y:py+8,width:w+5,height:h),cornerRadius:5),with:.color(Color(hex:0x253C35).opacity(0.23)))
-                rect(px + 2, py + 15, w - 4, h - 15, paint)
-                context.fill(Path(CGRect(x:px+2,y:py+15,width:w-4,height:h-15)),with:.linearGradient(Gradient(colors:[Color.white.opacity(0.12),Color.black.opacity(0.18)]),startPoint:CGPoint(x:px,y:py+15),endPoint:CGPoint(x:px+w,y:py+h)))
-                rect(px, py + 4, w, 21, roof)
-                rect(px + 4, py, w - 8, 6, roof)
-                context.fill(Path(CGRect(x:px,y:py+4,width:w,height:21)),with:.linearGradient(Gradient(colors:[Color.white.opacity(0.18),Color.black.opacity(0.22)]),startPoint:CGPoint(x:px,y:py+4),endPoint:CGPoint(x:px,y:py+25)))
-                rect(px+2,py+25,w-4,3,0x666951)
-                for line in 0..<3 { rect(px, py + 9 + Double(line * 6), w, 1, 0x795E50) }
-                let dx = Double(door.x * 16), dy = Double(door.y * 16)
-                rect(dx, py + h - 20, 16, 20, 0x6C6651)
-                rect(dx + 11, py + h - 11, 2, 2, 0xF3D18B)
-                rect(dx - 1, dy, 18, 4, 0xEFE0B5)
-                rect(px + w - 30, py + h - 25, 20, 15, 0x82ACA8)
-                rect(px + w - 20, py + h - 25, 1, 15, 0xF0DFBC)
-                rect(px + w - 30, py + h - 18, 20, 1, 0xF0DFBC)
-                rect(px + 9, py + 28, w - 18, 8, 0x425E50)
-                label(name, px + w / 2, py + 32, 4)
+                PixelTiles.building(context:&context,x:Double(origin.x*16),y:Double(origin.y*16),w:Double(width*16),h:Double(height*16),doorX:Double(door.x*16),name:name,roof:roof,paint:paint)
             }
             building(Tile(x: 3, y: 3), 8, 6, MotelGrounds.officeDoor, "OFFICE / RECEPTION", 0x739998, 0xE2CEA4)
             for index in 0..<9 {

@@ -117,10 +117,10 @@ struct ContentView: View {
             sample.save()
             return sample
         }
-        if args.contains("--ui-family-home") || args.contains("--ui-neighborhood") || args.contains("--ui-home-store") || args.contains("--ui-clothes-store") || args.contains("--ui-pawn-store") {
+        if args.contains("--ui-home-exterior") || args.contains("--ui-family-home") || args.contains("--ui-neighborhood") || args.contains("--ui-home-store") || args.contains("--ui-clothes-store") || args.contains("--ui-pawn-store") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.cash=2500;sample.motel!.waiting=[]
             sample.motel!.world!.place = args.contains("--ui-family-home") ? .house : .grounds
-            sample.motel!.world!.player = args.contains("--ui-family-home") ? Tile(x:7,y:12) : Tile(x:43,y:18)
+            sample.motel!.world!.player = args.contains("--ui-family-home") ? Tile(x:7,y:12) : args.contains("--ui-home-exterior") ? Tile(x:54,y:17) : Tile(x:43,y:18)
             if args.contains("--ui-home-store") {sample.motel!.world!.player=NeighborhoodShop.furniture.door}
             if args.contains("--ui-clothes-store") {sample.motel!.world!.player=NeighborhoodShop.clothing.door}
             if args.contains("--ui-pawn-store") {sample.motel!.world!.player=NeighborhoodShop.pawn.door;sample.motel!.home=FamilyHome();sample.motel!.home!.stolen=[0,1,2]}
