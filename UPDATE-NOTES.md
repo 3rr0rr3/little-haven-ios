@@ -1,3 +1,20 @@
+Little Haven 12.0 (16) — sideload-43-1 family room and continuous staff work
+
+- Hildarelys, Samhil, Chichu and Chichi now occupy a separate room inside the office, with a partition, walkable doorway, television, couch, cat beds and bowls. Their character designs, animation routes and existing interactions remain supported.
+- Removed the shared staff break pavilion. Nora uses reception, Luna housekeeping by the laundry, Mateo maintenance by the pool pump, Riley the security post and Diego the car wash. Idle and off-shift employees return to their own posts.
+- Emergency movement and staff navigation update every 0.18 seconds independently of the business clock. Walk cycles continue between movement updates and update facing at turns, eliminating the former step/wait/step cadence.
+- Staff no longer wait for the business-clock speed filter before moving. They can approach a job from a neighboring tile if the player occupies its destination. Fatigue slows clerks without permanently preventing work.
+- Maintenance and security travel to assignments before working. Housekeeping, repairs, complaint handling and paid car washes complete actual model tasks. Staff statuses identify jobs and missing water, stock or funds; restocking resumes work.
+- Work progress, emergency countdowns, parking arrivals, wages and paid services retain their own business cadence. Faster navigation cannot duplicate car-wash income or accelerate emergency resolution.
+- Existing checkpoints migrate through optional worker fields and relocate a saved player off the new partition if necessary.
+
+Verified: native model tests including family-room reachability, individual work posts, continuous staff navigation, occupied job destinations, independent clocks, tired-clerk recovery and actual housekeeping/maintenance/security/car-wash completion. All 19 iPhone simulator UI tests passed with zero failures. Release iPhoneOS compilation, arm64/platform/archive checks and generated previews passed. Downloaded IPA matched its published SHA256. Physical-device installation has not been tested.
+IPA: https://github.com/3rr0rr3/little-haven-ios/releases/download/sideload-43-1/LittleHaven-unsigned.ipa
+Release: https://github.com/3rr0rr3/little-haven-ios/releases/tag/sideload-43-1
+Workflow: https://github.com/3rr0rr3/little-haven-ios/actions/runs/39259345255
+SHA256: ebc9bd4ce39beb26c53651661b40b71ba114f1e5bc149e567651f7128be25e81
+
+Previous release:
 Little Haven 11.0 (15) — sideload-42-1 responsive controls and expressive guests
 
 - D-pad arrows deliver touch-down directly and start the first step immediately; release, cancellation or leaving the button stops walking. Player walk textures are prepared before movement.
