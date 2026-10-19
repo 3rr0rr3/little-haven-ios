@@ -19,6 +19,7 @@ struct MotelWorldState: Codable {
     var travellers: [MotelWalker] = []
     var tick = 0
     var reception: OfficeReception?
+    var guestPositions: [Int:Tile]?
 }
 enum MotelAction: Hashable {
     case none, office, room(Int), guest(Int), construction, desk, save, rest, tools
@@ -36,6 +37,10 @@ enum MotelGrounds {
         return Tile(x: origin.x + 2, y: origin.y + 4)
     }
     static func guestTile(_ id: Int) -> Tile { Tile(x: 4 + (id % 5) * 2, y: 11 + ((id % 10) / 5) * 2) }
+    static func refuge(from tile: Tile, danger: Tile) -> Tile {
+        [Tile(x:2,y:12),Tile(x:11,y:32),Tile(x:35,y:25),Tile(x:12,y:3)]
+            .max { $0.distance(to:danger) < $1.distance(to:danger) } ?? tile
+    }
     static func blocked(_ tile: Tile) -> Bool {
         RPGMaps.grounds.blocked(tile)
     }
@@ -76,6 +81,7 @@ enum MotelGrounds {
 }
 
 extension Motel {
+    func waitingTile(_ id:Int) -> Tile { worldState.guestPositions?[id] ?? MotelGrounds.guestTile(id) }
     var worldState: MotelWorldState { world ?? MotelWorldState() }
     var actorTile: Tile { visit?.player ?? worldState.player }
     var actorFacing: Int { visit?.facing ?? worldState.facing }
@@ -114,7 +120,7 @@ extension Motel {
             return .none
         }
         if nearbyIncident { return .incident }
-        if let guest = waiting.first(where: { player.distance(to: MotelGrounds.guestTile($0.id)) <= 1 }) { return .guest(guest.id) }
+        if let guest = waiting.first(where: { player.distance(to: waitingTile($0.id)) <= 1 }) { return .guest(guest.id) }
         if player.distance(to: MotelGrounds.officeDoor) <= 1 { return .office }
         for room in rooms where room.id / 9 == viewingFloor && player.distance(to: MotelGrounds.roomDoor(room.id)) <= 1 { return .room(room.id) }
         if !goalReached && (player.distance(to: MotelGrounds.sign) <= 1 || player.distance(to: MotelGrounds.roomDoor(rooms.count)) <= 1) { return .construction }
@@ -144,7 +150,7 @@ extension Motel {
             world = state
             return
         }
-        let occupied = Set(waiting.map { MotelGrounds.guestTile($0.id) } + state.travellers.map(\.player))
+        let occupied = Set(waiting.map { waitingTile($0.id) } + state.travellers.map(\.player))
         guard !MotelGrounds.blocked(next), !occupied.contains(next) else { world = state; return }
         if dx != 0 && dy != 0 {
             for tile in [Tile(x: state.player.x + dx, y: state.player.y), Tile(x: state.player.x, y: state.player.y + dy)] {
@@ -177,7 +183,7 @@ extension Motel {
         guard let guest = waiting.first(where: { $0.id == guestID }) else { return false }
         guard checkIn(guestID: guestID, roomID: roomID) else { return false }
         initializeWorld()
-        let start = MotelGrounds.guestTile(guest.id)
+        let start = waitingTile(guest.id)
         world!.travellers.append(MotelWalker(id: guest.id, name: guest.name, color: guest.color, roomID: roomID, player: start, previous: start, destination: MotelGrounds.roomDoor(roomID)))
         return true
     }
@@ -251,6 +257,10 @@ extension Motel {
     var atSavePoint: Bool { nearbyAction == .desk || nearbyAction == .save }
     func guestPresent(in roomID: Int) -> Bool {
         guard let guest = rooms.first(where: { $0.id == roomID })?.guest else { return false }
+        if let incident = operationsState.incident, incident.kind != .fire {
+            let participants = [incident.guest ?? rooms.compactMap(\.guest).first, incident.kind == .fight ? (incident.otherGuest ?? rooms.compactMap(\.guest).dropFirst().first) : nil].compactMap { $0 }
+            if participants.contains(where: { $0.id == guest.id }) { return false }
+        }
         if reception.visitor?.guest.id == guest.id { return false }
         return !worldState.travellers.contains { $0.id == guest.id && $0.destination == MotelGrounds.roomDoor(roomID) }
     }
@@ -259,17 +269,30 @@ extension Motel {
         initializeWorld()
         var state = worldState
         state.tick += 1
-        var occupied = Set(waiting.map { MotelGrounds.guestTile($0.id) } + state.travellers.map(\.player))
+        var positions = state.guestPositions ?? [:]
+        positions = positions.filter { id,_ in waiting.contains { $0.id == id } }
+        for guest in waiting {
+            let current = positions[guest.id] ?? MotelGrounds.guestTile(guest.id)
+            let target: Tile
+            if let danger = operationsState.incident?.kind.tile, current.distance(to:danger) < 12 || positions[guest.id] != nil {
+                target = MotelGrounds.refuge(from:current,danger:danger)
+            } else { target = MotelGrounds.guestTile(guest.id) }
+            positions[guest.id] = MotelGrounds.nextStep(from:current,to:target,avoiding:Set(positions.filter { $0.key != guest.id }.map(\.value))) ?? current
+        }
+        state.guestPositions = positions
+        var occupied = Set(waiting.map { positions[$0.id] ?? MotelGrounds.guestTile($0.id) } + state.travellers.map(\.player))
         if state.place == .grounds && visit == nil { occupied.insert(state.player) }
         for index in state.travellers.indices {
             var walker = state.travellers[index]
             occupied.remove(walker.player)
             walker.previous = walker.player
-            if let step = MotelGrounds.nextStep(from: walker.player, to: walker.destination, avoiding: occupied) { walker.player = step }
+            let danger = operationsState.incident?.kind.tile
+            let target = danger.map { MotelGrounds.refuge(from:walker.player,danger:$0) } ?? walker.destination
+            if let step = MotelGrounds.nextStep(from: walker.player, to: target, avoiding: occupied) { walker.player = step }
             occupied.insert(walker.player)
             state.travellers[index] = walker
         }
-        state.travellers.removeAll { $0.player == $0.destination }
+        if operationsState.incident == nil { state.travellers.removeAll { $0.player == $0.destination } }
         world = state
     }
 }

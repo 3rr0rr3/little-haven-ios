@@ -673,3 +673,32 @@ func expandedManagementRules() {
     print("PASS: day/night, room types and wear, contracts, pricing, inventory, bills, staff, complaints, guests, demand, expansion, cameras, minigames, story endings and migration")
 }
 expandedManagementRules()
+
+func reactiveGuestsAndStaffBreaks() {
+    var motel=Motel(); motel.initializeWorld(); motel.cash=5000; motel.waiting=[]
+    for role in StaffRole.allCases { require(motel.hire(role),"Hire staff for lounge test") }
+    for _ in 0..<90 { motel.tickManagement() }
+    require(motel.operationsState.workers.allSatisfy { $0.tile == $0.role.breakTile },"Idle employees walk to separate lounge seats")
+    let cleaner=motel.operationsState.workers.firstIndex { $0.role == .cleaner }!
+    motel.rooms[0].dirty=true
+    for _ in 0..<90 { motel.tickManagement() }
+    require(!motel.rooms[0].dirty,"Employees leave the lounge when work appears")
+    require(motel.operationsState.workers[cleaner].tile == StaffRole.cleaner.breakTile,"Cleaner returns to break after work")
+    var emergency=Motel(); emergency.initializeWorld()
+    let guest=emergency.waiting[0]
+    _=emergency.checkIn(guestID:guest.id,roomID:0)
+    emergency.operations!.incident=MotelIncident(kind:.pool,guest:guest)
+    require(!emergency.guestPresent(in:0),"Guest in pool is absent from their room")
+    let bystander=emergency.waiting[0]
+    let before=emergency.waitingTile(bystander.id)
+    for _ in 0..<10 { emergency.tickWorld() }
+    let after=emergency.waitingTile(bystander.id)
+    require(after != before && after.distance(to:ChaosKind.pool.tile)>before.distance(to:ChaosKind.pool.tile),"Bystanders run away from danger")
+    let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(emergency))
+    require(saved.operationsState.incident?.guest?.appearanceSeed == guest.appearanceSeed && saved.operationsState.incident?.guest?.color == guest.color,"Pool event preserves guest identity through checkpoints")
+    emergency.operations!.incident=nil
+    for _ in 0..<90 { emergency.tickWorld() }
+    require(emergency.waitingTile(bystander.id) == MotelGrounds.guestTile(bystander.id),"Guests return after the emergency")
+    print("PASS: idle staff lounge, return to work, evacuation, recovery and emergency guest identity")
+}
+reactiveGuestsAndStaffBreaks()

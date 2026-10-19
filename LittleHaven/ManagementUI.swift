@@ -136,15 +136,16 @@ enum ChaosArt {
                 oval(x+3,20-rise,1.2,1.8,0xFFD879)
             }
         } else if kind == 2 {
-            // Only head/shoulders stay above the water; both arms wave for help.
+            // Render the same guest, then submerge the lower body. Identity survives the event.
             let bob=sin(phase)*2
+            var swimmer=context
+            swimmer.clip(to:Path(CGRect(x:0,y:0,width:24,height:23)))
+            swimmer.translateBy(x:0,y:bob+4)
+            PaperPerson.draw(context:&swimmer,x:4,y:9,color:color,variant:variant,facing:0,walk:0,expression:"scared")
             oval(2,21,21,5,0x71B2BA)
-            oval(7,10+bob,11,11,0xE5B18A)
-            oval(7,9+bob,11,4,0x624838)
-            oval(9,14+bob,1.2,1.2,0x343C42); oval(14,14+bob,1.2,1.2,0x343C42)
-            oval(11,17+bob,2,2.8,0x6A413B)
-            line([CGPoint(x:8,y:21),CGPoint(x:3,y:14+bob),CGPoint(x:2,y:7+sin(phase)*4)],0xE5B18A,3)
-            line([CGPoint(x:17,y:21),CGPoint(x:21,y:13-bob),CGPoint(x:22,y:7-sin(phase)*4)],0xE5B18A,3)
+            let skin:UInt32 = [UInt32(0xF0C9A0),0xD6A477,0xA87350,0x734A37,0xE9B693][abs(variant)%5]
+            line([CGPoint(x:8,y:21),CGPoint(x:3,y:14+bob),CGPoint(x:2,y:7+sin(phase)*4)],skin,3)
+            line([CGPoint(x:17,y:21),CGPoint(x:21,y:13-bob),CGPoint(x:22,y:7-sin(phase)*4)],skin,3)
             for i in 0..<4 {
                 let dx=Double(i)*6, rise=abs(sin(phase+Double(i)))*5
                 oval(dx,22-rise,1.5,3,0xD7F3F1)
@@ -176,11 +177,8 @@ enum ChaosArt {
             let hit=max(0,sin(phase+(left ? .pi : 0)))
             var actorContext=context
             actorContext.translateBy(x:(left ? -1 : 1)*hit,y:0)
-            PaperPerson.draw(context:&actorContext,x:4,y:9,color:color,variant:variant,facing:facing,walk:sin(phase))
-            // Angry eyebrows, scowl, clenched fists, alternating punches.
-            line([CGPoint(x:8,y:9),CGPoint(x:11,y:10.5)],0x473329,0.9)
-            line([CGPoint(x:13,y:10.5),CGPoint(x:16,y:9)],0x473329,0.9)
-            line([CGPoint(x:10,y:14.5),CGPoint(x:12,y:13.8),CGPoint(x:14,y:14.5)],0x7B3D35,0.8)
+            PaperPerson.draw(context:&actorContext,x:4,y:9,color:color,variant:variant,facing:facing,walk:sin(phase),expression:"angry")
+            // Clenched fists and alternating punches; the shared face renders the anger.
             let handX=left ? 5-hit*6 : 17+hit*5
             line([CGPoint(x:left ? 8 : 16,y:18),CGPoint(x:handX,y:15)],color,3)
             oval(handX-2,13,4,4,0xDEAB83)
@@ -335,11 +333,14 @@ struct HotelActionArtwork: View {
 struct HotelCarArtwork: View {
     let color:UInt32
     let dirty:Bool
+    var model = 0
     var body: some View {
         Canvas { context,_ in
             func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ tint:UInt32,_ radius:Double = 2) {
                 context.fill(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:radius),with:.color(Color(hex:tint)))
             }
+            let suv = model % 3 == 1
+            let pickup = model % 3 == 2
             box(5,8,38,18,0x303D42,5)
             box(2,7,8,6,0x293137); box(38,7,8,6,0x293137)
             box(2,24,8,6,0x293137); box(38,24,8,6,0x293137)
@@ -348,6 +349,23 @@ struct HotelCarArtwork: View {
             box(34,7,7,18,color); box(4,8,5,3,0xFFF1BE); box(4,21,5,3,0xFFF1BE)
             box(40,8,3,3,0xD77364); box(40,21,3,3,0xD77364)
             box(10,15,2,4,0xD5D9C5); box(35,15,2,4,0xD5D9C5)
+            // Recognizable sedan, SUV and pickup silhouettes with glass, panels and hardware.
+            box(12,7,suv ? 24 : 19,17,0x344F64,3)
+            box(14,8,suv ? 20 : 15,6,0xA8D1D5,2)
+            box(14,17,suv ? 20 : 15,5,0x7AA6B8,2)
+            box(13,14,suv ? 22 : 17,2,color)
+            box(22,7,1,17,0x263F4A,0)
+            box(9,4,5,2,color); box(9,26,5,2,color)
+            box(3,13,2,8,0x3A4547,1)
+            for slat in 0..<4 { box(3,14+Double(slat)*1.7,2,0.6,0xB8C4C2,0) }
+            box(2,16,1,3,0xF1E9CF,0); box(43,15,2,4,0xF1E9CF,0)
+            box(6,6,3,1,0xF1D49A,0); box(6,25,3,1,0xF1D49A,0)
+            box(31,7,2,1,0xD6DBCC,0); box(31,24,2,1,0xD6DBCC,0)
+            if suv { box(13,6,22,1,0xCDD3C9,0); box(13,25,22,1,0xCDD3C9,0) }
+            if pickup {
+                box(30,7,12,18,color,2); box(32,9,8,14,0x4C5756,1)
+                for rib in 0..<4 { box(33+Double(rib)*2,10,0.6,12,0x78807A,0) }
+            }
             if dirty { for i in 0..<7 { box(6+Double(i*5),12+Double(i%3)*4,4,3,0x927A58) } }
         }.frame(width:48,height:34)
     }
@@ -380,10 +398,10 @@ struct ManagementHub:View {
                     Text("\(motel.cash) coins  /  REP \(motel.simulation.reputation)").font(.caption.bold()).foregroundStyle(gold)
                 }.padding(.horizontal)
                 if let incident=motel.operationsState.incident {
-                    Button("EMERGENCY: \(incident.kind.title) / \(incident.remaining)s — return to grounds") {dismiss()}
+                    Button("EMERGENCY: \(incident.kind.title) / \(incident.remaining)s - return to grounds") {dismiss()}
                         .font(.caption.bold()).foregroundStyle(.orange).accessibilityIdentifier("managementEmergency")
                 }
-                if motel.business.police != nil {Button("Police case needs attention — return to grounds"){dismiss()}.font(.caption.bold()).foregroundStyle(.orange)}
+                if motel.business.police != nil {Button("Police case needs attention - return to grounds"){dismiss()}.font(.caption.bold()).foregroundStyle(.orange)}
                 Text(motel.simulation.news).font(.caption).frame(maxWidth:.infinity,alignment:.leading).padding(.horizontal).accessibilityIdentifier("managementNews")
                 ScrollView(.horizontal,showsIndicators:false) {
                     HStack(spacing:8) {
@@ -473,13 +491,13 @@ struct ManagementHub:View {
                 }
             } else {Button("Check out & inspect") {_=perform{$0.checkoutGuest(room.id)}}}
             ForEach(Array(room.health.upgrades).sorted{$0.rawValue<$1.rawValue}) {upgrade in
-                Text("✓ \(upgrade.title): \(upgrade.benefit)").font(.caption2)
+                Text("� \(upgrade.title): \(upgrade.benefit)").font(.caption2)
             }
         }
     }
     private var deskPanel:some View {
         VStack(alignment:.leading,spacing:16) {
-            Text("Daytime check-in: 07:00–19:00. Hourly visits check out after two game hours. Weekly stays receive a 20% discount.").font(.caption)
+            Text("Daytime check-in: 07:00-19:00. Hourly visits check out after two game hours. Weekly stays receive a 20% discount.").font(.caption)
             Picker("Price policy",selection:Binding(get:{motel.simulation.prices},set:{value in change{$0.setPrices(value,plan:$0.simulation.plan)}})) {
                 ForEach(PricePolicy.allCases) {value in Text(value.rawValue.capitalized).tag(value)}
             }.pickerStyle(.segmented).accessibilityIdentifier("pricingPolicy")

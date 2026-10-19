@@ -21,7 +21,7 @@ entry = {
     "version": version,
     "buildVersion": build,
     "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-    "localizedDescription": "New courtyard start screen, Continue and confirmed New Game, persistent options, free office walking, stable outdoor controls and immediate D-pad release stop.",
+    "localizedDescription": "Immediate touch-down walking, animated player title portrait, staff break lounge, identity-preserving pool emergencies, expressive guests and responders, evacuation, sedan/SUV/pickup designs, brimmed hats and matching options/quit menus.",
     "downloadURL": f"{asset_base}/LittleHaven-unsigned.ipa",
     "size": pathlib.Path("LittleHaven-unsigned.ipa").stat().st_size,
     "minOSVersion": info["MinimumOSVersion"],

@@ -156,12 +156,12 @@ struct PaperPortrait: View {
 // Layered geometric paper shapes: round heads, wide eyes, mitten hands and short coats.
 enum PaperPerson {
     static func draw(context: inout GraphicsContext, x: Double, y: Double,
-                     color: UInt32, variant: Int, facing: Int, walk: Double) {
+                     color: UInt32, variant: Int, facing: Int, walk: Double, expression: String = "") {
         if [7,8,9].contains(variant) { PersonalArt.draw(context: &context, x: x, y: y, variant: variant, facing: facing, walk: walk); return }
         let ink: UInt32 = 0x343333
         let seed = abs(variant)
         let skin: UInt32 = [UInt32(0xF0C9A0),0xD6A477,0xA87350,0x734A37,0xE9B693][seed % 5]
-        let hair: UInt32 = [0x795334, 0x52362B, 0x554432, 0xA15D3A, 0x493A30, 0xBA8C48, 0xC2BDB0, 0x594537][variant % 8]
+        let hair: UInt32 = [0x795334, 0x52362B, 0x554432, 0xA15D3A, 0x493A30, 0xBA8C48, 0xC2BDB0, 0x594537][seed % 8]
         let style = seed % 7
         let bob = abs(walk) * 0.35
         func shape(_ path: Path, _ fill: UInt32, _ outline: Bool = true) {
@@ -211,16 +211,41 @@ enum PaperPerson {
             let look = facing == 1 ? -0.55 : facing == 2 ? 0.55 : 0
             oval(5.5 + look, 0.5, 0.75, 1, ink, false)
             oval(9.3 + look, 0.5, 0.75, 1, ink, false)
-            line([CGPoint(x: 6.1, y: 5), CGPoint(x: 8, y: 5.4), CGPoint(x: 9.9, y: 5)], ink, 0.35)
+            let mood = expression.isEmpty ? ["happy","calm","curious","sleepy","serious","cheerful"][seed % 6] : expression
+            if mood == "scared" || mood == "concerned" {
+                line([CGPoint(x:4,y:-2.8),CGPoint(x:7,y:-3.7)],ink,0.65)
+                line([CGPoint(x:9,y:-3.7),CGPoint(x:12,y:-2.8)],ink,0.65)
+                if mood == "scared" { oval(6.8,4,2.4,2.7,0x6A413B,false) }
+                else { line([CGPoint(x:6,y:5.5),CGPoint(x:8,y:4.5),CGPoint(x:10,y:5.5)],ink,0.5) }
+            } else if mood == "angry" || mood == "determined" {
+                line([CGPoint(x:4,y:-2.8),CGPoint(x:7,y:-1.4)],ink,0.75)
+                line([CGPoint(x:9,y:-1.4),CGPoint(x:12,y:-2.8)],ink,0.75)
+                line([CGPoint(x:6,y:5.6),CGPoint(x:8,y:4.7),CGPoint(x:10,y:5.6)],ink,0.6)
+            } else if mood == "curious" {
+                line([CGPoint(x:4,y:-3),CGPoint(x:7,y:-3.5)],ink,0.6)
+                oval(7,4.5,2,1.5,0x6A413B,false)
+            } else if mood == "sleepy" {
+                line([CGPoint(x:4,y:0),CGPoint(x:7,y:0)],hair,0.7)
+                line([CGPoint(x:9,y:0),CGPoint(x:12,y:0)],hair,0.7)
+                line([CGPoint(x:6,y:5),CGPoint(x:10,y:5)],ink,0.45)
+            } else if mood == "serious" || mood == "calm" {
+                line([CGPoint(x:6,y:5),CGPoint(x:10,y:5+(mood == "calm" ? 0.3 : 0))],ink,0.45)
+            } else {
+                line([CGPoint(x:5.5,y:4.6),CGPoint(x:8,y:6),CGPoint(x:10.5,y:4.6)],ink,0.5)
+                if mood == "cheerful" { oval(3,3.2,2,1,0xD58A79,false); oval(11,3.2,2,1,0xD58A79,false) }
+            }
             if style == 3 || style == 6 {
                 context.stroke(Path(ellipseIn: CGRect(x: x + 3.1, y: y - 1.7 - bob, width: 4.8, height: 5.3)), with: .color(Color(hex: ink)), lineWidth: 0.45)
                 context.stroke(Path(ellipseIn: CGRect(x: x + 8, y: y - 1.7 - bob, width: 4.8, height: 5.3)), with: .color(Color(hex: ink)), lineWidth: 0.45)
             }
         }
-        if variant == 7 || style == 2 || style == 5 {
-            oval(1.6, -6, 12.8, 5.2, variant == 7 ? 0x4C8C85 : color)
-            box(1.3, -2.5, 13.4, 1.7, variant == 7 ? 0xE8BC65 : 0xE9DFBA)
-            oval(6.4, -7.5, 3.2, 2.6, variant == 7 ? 0xE8BC65 : color)
+        if style == 2 || style == 5 {
+            // Brimmed fedora, baseball cap, straw sunhat or tall top hat. No knit caps.
+            let hat = (seed / 7) % 4
+            box(3,-7,10,hat == 3 ? 7 : 4,color)
+            if hat == 0 { box(4,-8,8,2,color) }
+            box(hat == 1 ? 4 : -0.5,-2.8,hat == 1 ? 14 : 17,1.6,hat == 2 ? 0xDBBB76 : color)
+            box(3,-4,10,1,0xE9DFBA)
         } else {
             oval(2, -5.5, 12, 3.7, hair)
             if style == 1 { oval(10.8, -6.5, 4, 4, hair) }

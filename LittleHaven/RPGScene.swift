@@ -17,6 +17,7 @@ struct RPGActor {
     var displayScale = 1.0
     var effect = 0
     var action = ""
+    var expression = ""
 }
 
 struct RPGSceneView: UIViewRepresentable {
@@ -68,7 +69,7 @@ private struct ActorArtwork: View {
             if actor.effect > 0 {
                 ChaosArt.draw(context:&context,kind:actor.effect,stride:stride,color:actor.color,variant:actor.variant,facing:actor.facing)
             } else if actor.animal > 0 { CatArt.draw(context:&context,gray:actor.animal == 1,walk:stride) }
-            else { PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:stride) }
+            else { PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:stride,expression:actor.expression) }
         }.frame(width: 24, height: 28)
     }
 }
@@ -156,10 +157,21 @@ final class RPGScene: SKScene {
                 node.position = target
                 node.userData = NSMutableDictionary()
                 world.addChild(node)
+                if actor.id == "player" {
+                    for facing in 0..<4 {
+                        var preview=actor; preview.facing=facing
+                        for stride in [-1.0,0,1] { _ = sprite(preview,stride:stride) }
+                    }
+                }
             }
             node.userData?["targetX"] = actor.tile.x
             node.userData?["targetY"] = actor.tile.y
             let idle = sprite(actor, stride: 0)
+            let appearance = "\(actor.color)-\(actor.variant)-\(actor.effect)-\(actor.expression)"
+            if node.userData?["appearance"] as? String != appearance {
+                node.removeAction(forKey:"effect"); node.removeAction(forKey:"walk"); node.removeAction(forKey:"spar")
+                node.zRotation = 0; node.texture = idle; node.userData?["appearance"] = appearance
+            }
             if actor.effect == 0 && node.action(forKey:"walk") == nil { node.texture = idle }
             if moving {
                 node.removeAction(forKey: "walk")
@@ -228,7 +240,7 @@ final class RPGScene: SKScene {
         layoutCamera(jump: changedMap)
     }
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
-        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.effect)"
+        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.effect)-\(actor.expression)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
         renderer.scale = 3
@@ -271,11 +283,11 @@ final class RPGScene: SKScene {
         for car in cars {
             let name="car:\(car.id)"
             let existing=world.childNode(withName:name) as? SKSpriteNode
-            let key="\(car.color)-\(car.washedDay == day)"
+            let key="\(car.color)-\(car.id%3)-\(car.washedDay == day)"
             let texture:SKTexture
             if let cached=carTextures[key] { texture=cached }
             else {
-                let renderer=ImageRenderer(content:HotelCarArtwork(color:car.color,dirty:car.washedDay != day))
+                let renderer=ImageRenderer(content:HotelCarArtwork(color:car.color,dirty:car.washedDay != day,model:car.id%3))
                 renderer.scale=3
                 texture=renderer.uiImage.map { SKTexture(image:$0) } ?? SKTexture()
                 carTextures[key]=texture
@@ -403,18 +415,26 @@ struct MotelRPGView: View {
         let worldRevision=revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
         var actors = [RPGActor(id: "player", tile: motel.actorTile, color: 0x6AACA3, variant: 7, facing: motel.actorFacing)]
         if !interior {
-            actors += motel.waiting.filter { $0.id != motel.reception.visitor?.guest.id }.map { RPGActor(id: "guest-\($0.id)", tile: MotelGrounds.guestTile($0.id), color: $0.color, variant: $0.appearanceSeed, name: $0.name) }
+            let incident = motel.operationsState.incident
+            let victim = incident?.guest ?? motel.rooms.compactMap(\.guest).first
+            let other = incident?.otherGuest ?? motel.rooms.compactMap(\.guest).dropFirst().first
+            actors += motel.waiting.filter { $0.id != motel.reception.visitor?.guest.id }.map { RPGActor(id: "guest-\($0.id)", tile: motel.worldState.guestPositions?[$0.id] ?? MotelGrounds.guestTile($0.id), color: $0.color, variant: $0.appearanceSeed, name: $0.name,duration:incident == nil ? 0.35 : 0.22,expression:incident == nil ? "" : "scared") }
             actors += motel.worldState.travellers.map {
-                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.appearanceSeed, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: 0.35)
+                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.appearanceSeed, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: incident == nil ? 0.35 : 0.22,expression:incident == nil ? "" : "scared")
             }
-            for worker in motel.operationsState.workers where worker.active && worker.role != .clerk {
-                var workerActor = RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:worker.role == .cleaner ? 1 : worker.role == .maintenance ? 4 : 0,name:worker.role.name,duration:0.9)
+            for worker in motel.operationsState.workers where worker.role != .clerk || worker.tile.distance(to:worker.role.home)>1 || (motel.waiting.isEmpty && motel.reception.visitor == nil) || !worker.active || motel.isNight {
+                var workerActor = RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:200+(StaffRole.allCases.firstIndex(of:worker.role) ?? 0),name:worker.role.name,duration:0.35)
+                if let incident {
+                    workerActor.expression = worker.role == incident.kind.responder ? (incident.kind == .pool ? "concerned" : "determined") : "scared"
+                }
                 if worker.progress > 0 {
                     workerActor.action = worker.role == .valet ? "carwash" : "mop"
                 }
+                if worker.tile == worker.role.breakTile { workerActor.marker = "BREAK"; workerActor.expression = "happy" }
                 if let incident=motel.operationsState.incident,incident.kind.responder == worker.role,
                    worker.tile.distance(to:incident.kind.approach) <= 1 {
                     workerActor.action = incident.kind == .fire ? "extinguish" : incident.kind == .pool ? "rescue" : "calm"
+                    workerActor.expression = incident.kind == .pool ? "concerned" : "determined"
                 }
                 actors.append(workerActor)
             }
@@ -434,8 +454,11 @@ struct MotelRPGView: View {
             }
             if let incident = motel.operationsState.incident {
                 let kind = incident.kind
-                actors.append(RPGActor(id:"chaos",tile:kind.tile,color:0xD99B7E,variant:0,facing:2,name:kind == .fire ? "FIRE!" : kind == .pool ? "HELP!" : "FIGHT!",effect:kind == .fire ? 1 : kind == .pool ? 2 : 3))
-                if kind == .fight { actors.append(RPGActor(id:"chaos-other",tile:Tile(x:kind.tile.x+1,y:kind.tile.y),color:0x82AFC1,variant:4,facing:1,marker:"!",effect:3)) }
+                if kind != .fire {
+                    actors.removeAll { $0.id == "guest-\(victim?.id ?? -999)" || (kind == .fight && $0.id == "guest-\(other?.id ?? -999)") }
+                }
+                actors.append(RPGActor(id:"chaos",tile:kind.tile,color:victim?.color ?? 0xD99B7E,variant:victim?.appearanceSeed ?? 100,facing:2,name:kind == .fire ? "FIRE!" : kind == .pool ? "HELP!" : "FIGHT!",effect:kind == .fire ? 1 : kind == .pool ? 2 : 3))
+                if kind == .fight { actors.append(RPGActor(id:"chaos-other",tile:Tile(x:kind.tile.x+1,y:kind.tile.y),color:other?.color ?? 0x82AFC1,variant:other?.appearanceSeed ?? 104,facing:1,marker:"!",effect:3)) }
             }
         } else if let room, let guest = room.guest, let visit, motel.guestPresent(in: room.id) {
             actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.appearanceSeed, danger: true))

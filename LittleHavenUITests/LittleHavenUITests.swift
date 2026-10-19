@@ -251,7 +251,9 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["Done"].tap()
         app.buttons["OPTIONS"].tap()
         XCTAssertEqual(app.switches["optionHints"].value as? String, changedHintValue)
-        app.buttons["Restore default options"].tap()
+        let defaults=app.buttons["Restore default options"]
+        if !defaults.isHittable { app.swipeUp() }
+        defaults.tap()
         app.buttons["Done"].tap()
         app.buttons["QUIT"].tap()
         app.buttons["Quit session"].tap()
@@ -285,6 +287,17 @@ final class LittleHavenUITests: XCTestCase {
         Thread.sleep(forTimeInterval:0.7)
         XCTAssertEqual(office.value as? String,after,"Release stops movement even as reception ticks")
         capture(app,"Free office movement")
+    }
+    func testShortDpadTapMovesImmediatelyAndStops() {
+        let app=launch("--ui-office-family")
+        let office=app.otherElements["officeScene"]
+        XCTAssertTrue(office.waitForExistence(timeout:10))
+        let before=office.value as? String
+        app.buttons["Walk east"].tap()
+        let after=office.value as? String
+        XCTAssertNotEqual(before,after,"A quick tap starts the first step without a hold delay")
+        Thread.sleep(forTimeInterval:0.5)
+        XCTAssertEqual(office.value as? String,after,"A short tap does not keep walking")
     }
     func testOutdoorControlsStayPutNearTasks() {
         let app=launch("--ui-parking")

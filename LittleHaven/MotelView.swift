@@ -94,8 +94,9 @@ struct MotelView: View {
         .task(id: movement) {
             guard let direction = movement else { return }
             while !Task.isCancelled && movement == direction && scenePhase == .active && !motel.caught && !paused {
-                change { $0.moveActor(dx: direction.x, dy: direction.y) }
                 do { try await Task.sleep(for: .seconds(direction.x != 0 && direction.y != 0 ? 0.19 : 0.14)) } catch { break }
+                guard movement == direction, !Task.isCancelled, !paused else { break }
+                change { $0.moveActor(dx: direction.x, dy: direction.y) }
             }
         }
         .task(id: scenePhase) {
@@ -222,7 +223,11 @@ struct MotelView: View {
             }.frame(height:44).clipped()
             HStack(spacing: 16) {
                 MotelJoystick(direction: { direction in
-                    if direction == nil || (!paused && !motel.caught) { movement = direction }
+                    if let direction, !paused && !motel.caught {
+                        guard movement != direction else { return }
+                        movement = direction
+                        change { $0.moveActor(dx: direction.x, dy: direction.y) }
+                    } else if direction == nil { movement = nil }
                 }, active: movement, step: { direction in
                     stop()
                     if !paused && !motel.caught { change { $0.moveActor(dx: direction.x, dy: direction.y) } }

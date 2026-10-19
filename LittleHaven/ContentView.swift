@@ -87,7 +87,11 @@ struct ContentView: View {
             if let kind {
                 sample.motel!.world!.place = .grounds
                 sample.motel!.world!.player = kind.approach
-                sample.motel!.operations!.incident = MotelIncident(kind:kind)
+                let guests=Motel.arrivals(day:1,count:4)
+                sample.motel!.rooms[0].guest=guests[0]
+                sample.motel!.rooms[1].guest=guests[1]
+                sample.motel!.waiting=Array(guests.dropFirst(2))
+                sample.motel!.operations!.incident = MotelIncident(kind:kind,guest:guests[0],otherGuest:guests[1])
             }
             if args.contains("--ui-police") {
                 _ = sample.motel!.checkIn(guestID:10,roomID:0)
@@ -261,12 +265,12 @@ struct ContentView: View {
         .task(id: heldDirection) {
             guard let direction = heldDirection else { return }
             while !Task.isCancelled && scenePhase == .active {
+                do { try await Task.sleep(for: .seconds(stepDuration)) } catch { break }
+                guard heldDirection == direction, !Task.isCancelled else { break }
                 guard conversation == nil, message == nil, !showHouse, !showJournal else { break }
                 let wasInside = game.inside
                 game.move(dx: direction.x, dy: direction.y)
                 if wasInside != game.inside { stopMoving(); break }
-                do { try await Task.sleep(for: .seconds(stepDuration)) }
-                catch { break }
             }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -307,6 +311,9 @@ struct ContentView: View {
             if pressed {
                 guard scenePhase == .active, conversation == nil, message == nil, !showHouse, !showJournal else { return }
                 heldDirection = direction
+                let wasInside = game.inside
+                game.move(dx: dx, dy: dy)
+                if wasInside != game.inside { stopMoving() }
             } else if heldDirection == direction {
                 stopMoving()
             }
@@ -389,7 +396,6 @@ struct HoldDirection: View {
     let isActive: Bool
     let changed: (Bool) -> Void
     let singleStep: () -> Void
-    @GestureState private var pressed = false
 
     var body: some View {
         Image(systemName: symbol)
@@ -397,17 +403,35 @@ struct HoldDirection: View {
             .frame(width: largeControls ? 50 : 44, height: largeControls ? 46 : 40)
             .background(Color(hex: isActive ? 0x65866B : 0x344B40), in: RoundedRectangle(cornerRadius: 10))
             .contentShape(Rectangle())
-            .gesture(DragGesture(minimumDistance: 0)
-                .updating($pressed) { value, state, _ in
-                    state = CGRect(x: 0, y: 0, width: largeControls ? 50 : 44, height: largeControls ? 46 : 40).contains(value.location)
-                }.onEnded { _ in changed(false) })
-            .onChange(of: pressed) { _, value in changed(value) }
+            .overlay(DirectionTouchSurface(changed: changed).accessibilityHidden(true))
             .onDisappear { changed(false) }
             .accessibilityLabel(label)
             .accessibilityHint("Hold to keep walking; activate to take one step.")
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { singleStep() }
     }
+}
+
+/// Touch-down delivery avoids gesture recognition and SwiftUI gesture-state latency.
+private struct DirectionTouchSurface: UIViewRepresentable {
+    let changed: (Bool) -> Void
+    func makeUIView(context: Context) -> DirectionTouchView {
+        let view = DirectionTouchView(); view.changed = changed; return view
+    }
+    func updateUIView(_ view: DirectionTouchView, context: Context) { view.changed = changed }
+    static func dismantleUIView(_ view: DirectionTouchView, coordinator: ()) { view.setHeld(false) }
+}
+private final class DirectionTouchView: UIView {
+    var changed: (Bool) -> Void = { _ in }
+    private var held = false
+    func setHeld(_ value: Bool) { guard held != value else { return }; held = value; changed(value) }
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) { setHeld(true) }
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if let touch = touches.first { setHeld(bounds.contains(touch.location(in: self))) }
+    }
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) { setHeld(false) }
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) { setHeld(false) }
+    override func didMoveToWindow() { if window == nil { setHeld(false) } }
 }
 
 
@@ -428,21 +452,30 @@ struct GameOptionsView: View {
     @AppStorage("littlehaven.largeControls") private var largeControls = false
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Gameplay") {
+            ScrollView {
+                VStack(alignment:.leading,spacing:22) {
+                    Text("MAKE YOURSELF AT HOME").font(.caption.monospaced().bold()).foregroundStyle(Color(hex:0xEFC977))
+                    Text("Gameplay").font(.title2.monospaced().bold())
                     Toggle("Show gameplay hints", isOn: $hints).accessibilityIdentifier("optionHints")
                     Toggle("Action haptics", isOn: $haptics)
                     Toggle("Larger D-pad buttons", isOn: $largeControls).accessibilityIdentifier("optionLargeControls")
-                }
-                Section("Controls") {
+                    Divider().overlay(Color(hex:0xEFC977))
+                    Text("Controls").font(.title2.monospaced().bold())
                     Text("Hold an arrow to walk. Release or slide off the button to stop. Nearby tasks never move your character; press their action button when you want to work.")
                     Text("Inside the office, walk freely and tap guests, the desk, tools, family, or the door to interact.")
-                }
-                Section("Saved game") {
+                    Divider().overlay(Color(hex:0xEFC977))
+                    Text("Saved game").font(.title2.monospaced().bold())
                     Text("Continue loads your last checkpoint. New Game starts from zero after confirmation. Save at the office before leaving. Quit closes the game session; use the Home gesture to leave the app.")
                     Button("Restore default options") { hints = true; haptics = true; largeControls = false }
-                }
+                        .buttonStyle(MotelButtonStyle(subdued:true))
+                }.font(.subheadline).padding(22)
+                    .background(Color(hex:0x29483D),in:RoundedRectangle(cornerRadius:16))
+                    .overlay(RoundedRectangle(cornerRadius:16).stroke(Color(hex:0xC6DDC8),lineWidth:2))
+                    .padding(18)
             }.navigationTitle("Options")
+                .background(Color(hex:0x172A25)).foregroundStyle(Color(hex:0xF5E7C8))
+                .toolbarBackground(Color(hex:0x172A25),for:.navigationBar).toolbarBackground(.visible,for:.navigationBar)
+                .toolbarColorScheme(.dark,for:.navigationBar)
                 .toolbar { Button("Done") { dismiss() } }
         }.tint(Color(hex:0xEFC977))
     }
@@ -461,6 +494,12 @@ struct MotelTitleScreen: View {
         GeometryReader { proxy in
             ZStack {
                 MotelTitleLandscape().ignoresSafeArea()
+                TimelineView(.animation(minimumInterval:0.16)) { timeline in
+                    Canvas { context,_ in
+                        context.scaleBy(x:3,y:3)
+                        PaperPerson.draw(context:&context,x:4,y:9,color:0x6AACA3,variant:7,facing:0,walk:sin(timeline.date.timeIntervalSinceReferenceDate*3)*0.25)
+                    }.frame(width:72,height:84)
+                }.position(x:proxy.size.width*0.72,y:proxy.size.height*0.52).allowsHitTesting(false)
                 Color.black.opacity(0.13).ignoresSafeArea()
                 if closed {
                     VStack(spacing:24) {
@@ -468,7 +507,8 @@ struct MotelTitleScreen: View {
                         Text("See you soon").font(.largeTitle.bold())
                         Text("Your game session is closed.\nUse the Home gesture to leave the app.").multilineTextAlignment(.center)
                         menuButton("RETURN TO TITLE", tint:0x344B40, id:"returnTitle") { closed = false }
-                    }.padding(30).frame(maxWidth:.infinity,maxHeight:.infinity).background(Color(hex:0x172A25).opacity(0.97))
+                    }.padding(28).background(Color(hex:0x29483D),in:RoundedRectangle(cornerRadius:16))
+                        .overlay(RoundedRectangle(cornerRadius:16).stroke(Color(hex:0xEFC977),lineWidth:3)).padding(24)
                 } else {
                     VStack(spacing:12) {
                         VStack(spacing:0) {
@@ -491,6 +531,17 @@ struct MotelTitleScreen: View {
                         Text("LITTLE HAVEN / YOUR NEXT SHIFT AWAITS").font(.system(size:9,weight:.bold,design:.monospaced)).shadow(color:.black,radius:3)
                     }.padding(24)
                 }
+                if confirmQuit {
+                    Color(hex:0x172A25).opacity(0.8).ignoresSafeArea()
+                    VStack(spacing:20) {
+                        Image(systemName:"key.fill").font(.system(size:34)).foregroundStyle(Color(hex:0xEFC977))
+                        Text("END YOUR SHIFT?").font(.title2.monospaced().bold())
+                        Text("Close this game session and return when you're ready for another shift.").multilineTextAlignment(.center)
+                        menuButton("Quit session",tint:0x653C35,id:"confirmQuit") { confirmQuit = false; closed = true }
+                        menuButton("Cancel",tint:0x344B40,id:"cancelQuit") { confirmQuit = false }
+                    }.padding(24).background(Color(hex:0x29483D),in:RoundedRectangle(cornerRadius:16))
+                        .overlay(RoundedRectangle(cornerRadius:16).stroke(Color(hex:0xEFC977),lineWidth:3)).padding(24)
+                }
             }.foregroundStyle(cream)
         }.accessibilityIdentifier("titleScreen")
             .sheet(isPresented:$options) { GameOptionsView() }
@@ -498,10 +549,6 @@ struct MotelTitleScreen: View {
                 Button("Erase checkpoint and start new game",role:.destructive,action:newGame)
                 Button("Cancel",role:.cancel) {}
             } message: { Text("Your current saved adventure will be replaced. Your options will be kept.") }
-            .confirmationDialog("Close this game session?",isPresented:$confirmQuit,titleVisibility:.visible) {
-                Button("Quit session") { closed = true }
-                Button("Cancel",role:.cancel) {}
-            }
     }
     private func menuButton(_ title:String,tint:UInt32,id:String,action:@escaping ()->Void)->some View {
         Button(action:action) {

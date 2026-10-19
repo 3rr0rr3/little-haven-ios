@@ -10,6 +10,7 @@ enum StaffRole: String, Codable, CaseIterable, Identifiable {
     var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office."; case .valet: return "Walks to parked guest cars, scrubs and rinses them. Each car earns 35 coins once per day."; case .clerk: return "Handles daytime arrivals, assigns suitable rooms and collects payments while you work outside." } }
     var home: Tile { self == .clerk ? Tile(x:6,y:10) : self == .valet ? Tile(x:15,y:32) : Tile(x:11,y:self == .cleaner ? 10 : self == .maintenance ? 11 : 12) }
     var color: UInt32 { switch self { case .cleaner: return 0xB4A1C5; case .maintenance: return 0xD8AC66; case .security: return 0x718DA9; case .valet: return 0x5DA6B0; case .clerk: return 0xD0B777 } }
+    var breakTile: Tile { Tile(x:24 + (Self.allCases.firstIndex(of:self) ?? 0)*2,y:26) }
 }
 struct MotelWorker: Codable, Identifiable {
     let role: StaffRole
@@ -38,6 +39,8 @@ enum ChaosKind: String, Codable, CaseIterable {
 }
 struct MotelIncident: Codable {
     let kind: ChaosKind
+    var guest: MotelGuest?
+    var otherGuest: MotelGuest?
     var elapsed = 0
     var staffProgress = 0
     let limit = 90
@@ -170,7 +173,8 @@ extension Motel {
         if state.incident == nil && state.consequences?.police == nil && occupancy > 0 && state.tick >= state.nextIncidentTick {
             let kind = ChaosKind.allCases[state.incidentsStarted % ChaosKind.allCases.count]
             state.incidentsStarted += 1
-            state.incident = MotelIncident(kind:kind)
+            let guests = rooms.compactMap(\.guest)
+            state.incident = MotelIncident(kind:kind,guest:guests.first,otherGuest:guests.dropFirst().first)
             lastEvent = kind.title + " Check the grounds or send a trained employee."
         }
         if var incident = state.incident {
@@ -180,14 +184,21 @@ extension Motel {
                 failIncident(&state)
             }
         }
-        var occupied = Set(waiting.filter { $0.id != reception.visitor?.guest.id }.map { MotelGrounds.guestTile($0.id) } + worldState.travellers.map(\.player))
+        var occupied = Set(waiting.filter { $0.id != reception.visitor?.guest.id }.map { waitingTile($0.id) } + worldState.travellers.map(\.player))
         if !isAtReception && visit == nil { occupied.insert(actorTile) }
-        for index in state.workers.indices where state.workers[index].active {
+        for index in state.workers.indices {
             var worker = state.workers[index]
-            if state.simulation != nil && !workerCanWork(worker, tick:state.tick) { continue }
+            let offShift = !worker.active || (state.simulation != nil && isNight && !(state.simulation!.profiles[worker.role.rawValue]?.nightShift ?? false))
+            if !offShift && state.simulation != nil && !workerCanWork(worker, tick:state.tick) { continue }
             let target: Tile
-            let responding = state.incident?.kind.responder == worker.role
-            if responding, let incident = state.incident {
+            let responding = !offShift && state.incident?.kind.responder == worker.role
+            if let incident=state.incident,!responding {
+                worker.roomID = nil; worker.progress = 0
+                target = MotelGrounds.refuge(from:worker.tile,danger:incident.kind.tile)
+            } else if offShift {
+                worker.roomID = nil; worker.progress = 0
+                target = worker.role.breakTile
+            } else if responding, let incident = state.incident {
                 worker.roomID = nil
                 target = incident.kind.approach
             } else if worker.role == .valet, let car = state.cars?.first(where: { $0.arrival >= 8 && $0.washedDay != day }) {
@@ -198,10 +209,13 @@ extension Motel {
                 if worker.roomID != room.id { worker.progress = 0 }
                 worker.roomID = room.id
                 target = MotelGrounds.roomDoor(room.id)
+            } else if worker.role == .clerk && (!waiting.isEmpty || reception.visitor != nil) {
+                worker.roomID = nil; worker.progress = 0
+                target = worker.role.home
             } else {
                 worker.roomID = nil
                 worker.progress = 0
-                target = worker.role.home
+                target = worker.role.breakTile
             }
             if worker.tile.distance(to:target) > (responding ? 1 : 0) {
                 if let next = MotelGrounds.nextStep(from:worker.tile,to:target,avoiding:occupied) { worker.tile = next }
@@ -887,7 +901,7 @@ extension Motel {
                         if kind == .vandalism && !h.upgrades.contains(.locks) {h.condition=max(0,h.condition-25);h.faults.insert(.light)}
                         rooms[i].hospitality=h
                     }
-                    s.news=kind.title+" — room \(guestRoom.number)"
+                    s.news=kind.title+" - room \(guestRoom.number)"
                 }
             }
         }
