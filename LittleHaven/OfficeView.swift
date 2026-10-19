@@ -1,6 +1,11 @@
 import SwiftUI
 
 extension Motel {
+    var petActors: [RPGActor] {
+        visiblePets.map { pet in
+            RPGActor(id:pet.key,tile:pet.value.tile,color:pet.key == "chichu" ? 0x85817C : 0xE9E2D0,variant:0,facing:actorFacing,name:pet.key.capitalized,duration:0.14,animal:pet.key == "chichu" ? 1 : 2)
+        }
+    }
     var neighborhoodActors:[RPGActor] {
         (worldState.townPositions ?? [:]).sorted{$0.key<$1.key}.map {id,tile in
             let previous=worldState.townPrevious?[id] ?? tile
@@ -10,30 +15,29 @@ extension Motel {
     }
 }
 
-enum OfficeTap: String { case player, guest, door, chichu, chichi, samhil, hildarelys, tools, paint, bed, save }
+enum OfficeTap: String { case computer, workbench, player, guest, door, chichu, chichi, samhil, hildarelys, tools, paint, bed, save }
 struct FamilyHouseView:View {
     let motel:Motel
     let tap:(OfficeTap)->Void
-    let decorate:()->Void
     private var actors:[RPGActor] {[
         RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You"),
         RPGActor(id:"hildarelys",tile:motel.reception.hildarelys,color:0x292A2C,variant:8,facing:motel.reception.tick%12<6 ? 2 : 1,name:"Hildarelys",duration:0.65),
         RPGActor(id:"samhil",tile:OfficeReception.samhil,color:0xD88BAA,variant:9,facing:3,name:"Samhil",displayScale:0.8),
-        RPGActor(id:"chichu",tile:OfficeReception.chichu,color:0x85817C,variant:0,name:"Chichu",animal:1),
-        RPGActor(id:"chichi",tile:OfficeReception.chichi,color:0xE9E2D0,variant:0,name:"Chichi",animal:2)]}
+        ] + motel.petActors}
     var body:some View {
         GeometryReader {proxy in
             let scale=min(proxy.size.width/240,proxy.size.height/240)
             let origin=CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-house",revision:"\(motel.household.level)-\(motel.household.wallpaper)-\(motel.household.floor)-\(motel.household.placed.map{"\($0.id):\($0.tile.x):\($0.tile.y)"}.joined())",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeInteriorArt(home:motel.household))}
+                RPGSceneView(mapID:"family-house",revision:"workbench-\(motel.household.level)-\(motel.household.wallpaper)-\(motel.household.floor)-\(motel.household.placed.map{"\($0.id):\($0.tile.x):\($0.tile.y)"}.joined())",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeInteriorArt(home:motel.household))}
                 target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin)
                 target(.samhil,"Talk to Samhil",OfficeReception.samhil,scale,origin)
-                target(.chichu,"Pet Chichu",OfficeReception.chichu,scale,origin)
-                target(.chichi,"Pet Chichi",OfficeReception.chichi,scale,origin)
+                ForEach(motel.visiblePets, id: \.key) { pet in
+                    target(pet.key == "chichu" ? .chichu : .chichi,"Talk to \(pet.key)",pet.value.tile,scale,origin)
+                }
                 target(.door,"Leave home",FamilyHome.exit,scale,origin)
                 target(.player,"Home checkpoint",Tile(x:2,y:10),scale,origin)
-                Button("Decorate",action:decorate).font(.caption.bold()).padding(8).background(Color(hex:0x395B49),in:Capsule()).position(x:origin.x+80*scale,y:origin.y+207*scale).accessibilityIdentifier("openHomeDesigner")
+                target(.workbench,"Use workbench",FamilyHome.workbench,scale,origin)
             }
         }.accessibilityElement(children:.contain).accessibilityIdentifier("familyHouseScene")
             .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
@@ -55,15 +59,19 @@ struct OfficeReceptionView: View {
         if (motel.operationsState.actionUntil ?? 0) > motel.operationsState.tick {
             result[0].action = motel.operationsState.visual?.kind ?? ""
         }
-        return result
+        return result + motel.petActors
     }
     var body: some View {
         GeometryReader { proxy in
             let scale = min(proxy.size.width / 240, proxy.size.height / 240)
             let origin = CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-office",revision:"restored-office-\(motel.officeTheme)",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme)) }
+                RPGSceneView(mapID:"family-office",revision:"reception-pc-\(motel.officeTheme)",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme)) }
                 target(.player,"Front desk",OfficeReception.clerk,scale,origin)
+                target(.computer,"Reception computer",OfficeReception.computer,scale,origin)
+                ForEach(motel.visiblePets, id: \.key) { pet in
+                    target(pet.key == "chichu" ? .chichu : .chichi,"Talk to \(pet.key)",pet.value.tile,scale,origin)
+                }
                 target(.door,"Leave office",OfficeReception.door,scale,origin)
                 target(.tools,"Take cleaning tools",Tile(x:1,y:7),scale,origin)
                 target(.paint,"Paint office",Tile(x:1,y:9),scale,origin)

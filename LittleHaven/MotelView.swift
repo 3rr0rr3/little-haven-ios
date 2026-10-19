@@ -75,7 +75,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { neighborhood != nil || showHome || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
@@ -86,6 +86,7 @@ struct MotelView: View {
         .transaction { if testingUI { $0.disablesAnimations = true } }
         .task {
             change { $0.initializeWorld(); if !testingUI || ProcessInfo.processInfo.arguments.contains("--ui-management") { $0.enableManagement() } }
+            if motel.business.police?.arrived == true { showPolice=true }
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--ui-dialogue") { family = .hildarelys }
             if ProcessInfo.processInfo.arguments.contains("--ui-police") { showPolice = true }
@@ -139,6 +140,9 @@ struct MotelView: View {
             try? await Task.sleep(for: .seconds(3))
             if !Task.isCancelled && toast == text { toast = nil }
         }
+        .onChange(of: motel.business.police?.arrived) { _, arrived in
+            if arrived == true { stop(); panel=nil; family=nil; showIncident=false; showPolice=true }
+        }
         .onChange(of: mapIdentity) { _, _ in stop() }
         .onChange(of: motel.actorTile) { _, _ in working = false; workProgress = 0 }
         .onChange(of: motel.caught) { _, caught in if caught { stop(); panel = nil } }
@@ -173,10 +177,9 @@ struct MotelView: View {
             HStack {
                 Button { stop(); panel = .reviews } label: { Text(motel.reviewAverage.map { String(format:"RATING %.1f",$0) } ?? "NEW REVIEWS") }.accessibilityIdentifier("openReviews")
                 Spacer()
-                if motel.managementEnabled {
-                    Button("MANAGE \(motel.simulation.issues.count)") {stop();panel=nil;showManagement=true}.accessibilityIdentifier("openManagement")
+                if !motel.operationsState.workers.isEmpty {
+                    Button("TEAM \(motel.operationsState.workers.count)") { stop(); panel = .staff }.accessibilityIdentifier("openStaff")
                 }
-                Button("TEAM \(motel.operationsState.workers.count)") { stop(); panel = .staff }.accessibilityIdentifier("openStaff")
                 if let incident = motel.operationsState.incident {
                     Button("! \(incident.kind.rawValue.uppercased()) / \(incident.remaining)s") { stop(); showIncident = true }.foregroundStyle(Color(hex:0xEE9E78)).accessibilityIdentifier("incidentAlarm")
                 }
@@ -218,12 +221,17 @@ struct MotelView: View {
                     Button(service.title + " / +\(service.reward) coins") {
                         stop(); change { _ = $0.performService(service) }
                     }.buttonStyle(MotelButtonStyle()).disabled(!motel.serviceAvailable(service))
-                } else if motel.isAtHome {
-                    Button("Decorate home") {stop();showHome=true}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("homeDesignShortcut")
+
                 } else if motel.isAtReception {
                     HStack(spacing:10) {
                         Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
                         Button("Hire employees") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")
+                    }
+                } else if !motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}).isEmpty {
+                    HStack {
+                        ForEach(motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}), id: \.key) { pet in
+                            Button(pet.key.capitalized) { stop(); family=OfficeTap(rawValue:pet.key) }.buttonStyle(MotelButtonStyle(subdued:true))
+                        }
                     }
                 } else { Color.clear }
             }.frame(height:44).clipped()
@@ -298,7 +306,7 @@ struct MotelView: View {
                 .accessibilityValue("\(room.dirty ? "Cleaning \(room.cleanedTasks?.count ?? 0)/3" : "Ready for guests"). Theme \(room.theme). Furnishings \(room.furniture).")
                 .accessibilityIdentifier("motelWorld")
         } else if motel.isAtHome {
-            FamilyHouseView(motel:motel,tap:officeTap,decorate:{stop();showHome=true}).id(mapIdentity)
+            FamilyHouseView(motel:motel,tap:officeTap).id(mapIdentity)
         } else if motel.isAtReception {
             OfficeReceptionView(motel: motel, tap: officeTap).id(mapIdentity)
         } else {
@@ -314,8 +322,10 @@ struct MotelView: View {
 
     private var actionName: String {
         switch motel.nearbyAction {
+        case .computer: return "RECEPTION PC"
+        case .pet: return "CALL PET"
         case .home: return "HOME"
-        case .homeDecor: return "DECORATE"
+        case .homeDecor: return "WORKBENCH"
         case .shop: return "SHOP"
         case .incident: return "HELP"
         case .office, .room: return "ENTER"
@@ -356,8 +366,10 @@ struct MotelView: View {
     }
     private var hint: String {
         switch motel.nearbyAction {
+        case .computer: return "RECEPTION PC"
+        case .pet: return "CALL PET"
         case .home: return "Your family home. Visit, decorate and upgrade with motel profits."
-        case .homeDecor: return "Talk to family or decorate your home. Bought furniture goes into storage."
+        case .homeDecor: return "Use the workbench to decorate or renovate. Bought furniture goes into storage."
         case .shop(let shop): return shop.detail
         case .incident: return motel.operationsState.incident?.kind.detail ?? "The grounds are quiet."
         case .guest(let id):
@@ -390,6 +402,8 @@ struct MotelView: View {
         if haptics { UIImpactFeedbackGenerator(style:.light).impactOccurred() }
         switch motel.nearbyAction {
         case .home: change { _ = $0.useEntrance() }
+        case .computer: showManagement=true
+        case .pet(let id): family=OfficeTap(rawValue:id)
         case .homeDecor: showHome=true
         case .shop(let shop): neighborhood=shop
         case .incident: showIncident = true
@@ -537,7 +551,9 @@ struct MotelView: View {
     }
     private func familyChoices(_ person: OfficeTap) -> [DialogueChoice] {
         if person == .chichu || person == .chichi {
-            return [DialogueChoice(title:"Pet",action:{ toast = "\(familyTitle) purrs happily."; family = nil }),
+            return [DialogueChoice(title:motel.petState(person.rawValue).following ? "Stay here" : "Follow me",action:{
+                        change { $0.togglePet(person.rawValue) }; family=nil
+                    }), DialogueChoice(title:"Pet",action:{ toast = "\(familyTitle) purrs happily."; family = nil }),
                     DialogueChoice(title:"Give a treat",action:{ toast = "\(familyTitle) enjoys a little treat."; family = nil })]
         }
         if person == .hildarelys { return [DialogueChoice(title:"Give her a kiss",action:{ toast = "Hildarelys smiles: We make a good team."; family = nil })] }
@@ -563,6 +579,8 @@ struct MotelView: View {
                 if value.isAtHome {value.world!.place = .grounds;value.world!.player=Tile(x:FamilyHome.door.x,y:FamilyHome.door.y+1)}
                 else {_=value.leaveReception()}
             }
+        case .computer: showManagement=true
+        case .workbench: if motel.actorTile.distance(to:FamilyHome.workbench)<=1 {showHome=true} else {toast="Walk to the workbench."}
         case .player: panel = .desk
         case .save: saveHere()
         case .tools: change { _ = $0.receptionTools() }
@@ -600,7 +618,10 @@ struct MotelView: View {
     private func change(_ action: (inout Motel) -> Void) {
         guard var current = game.motel else { return }
         let before = current.lastEvent
+        let previousTile=current.actorTile
+        let previousMap=current.petMap
         action(&current)
+        current.updateCompanions(from:previousTile,map:previousMap)
         if current.lastEvent != before {
             var state = current.operationsState
             let event = current.lastEvent.lowercased()

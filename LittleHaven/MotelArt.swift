@@ -215,10 +215,17 @@ struct MotelGroundsCanvas: View, Animatable {
                     let px = Double(col * 16), py = Double(row * 16)
                     let paved = (col >= 43 && (14...34).contains(row)) || col >= 11 && col < 39 && (7...34).contains(row) || (col >= 2 && col <= 12 && (9...15).contains(row)) || ((5...7).contains(col) && row >= 9)
                     let road = (35...37).contains(row) || ((40...42).contains(col) && row > 1) || (col > 39 && (18...20).contains(row))
-                    rect(px, py, 16, 16, road ? 0x666F69 : paved ? 0xD0C39D : (col + row) % 3 == 0 ? 0x86AE6D : 0x7EAA68)
+                    rect(px, py, 16, 16, road ? 0x666F69 : paved ? 0xB9B199 : 0x73866A)
                     if road && row == 36 && col % 3 != 0 { rect(px + 2, py + 6, 12, 1, 0xF2D69C) }
                     if !paved && !road {
-                        rect(px + Double((col * 7 + row) % 13), py + 11, 2, 1, 0x9BBC79)
+                        let variation=Double((col*17+row*31)%7)/100
+                        context.fill(Path(ellipseIn:CGRect(x:px-8,y:py-5,width:30,height:25)),with:.radialGradient(Gradient(colors:[Color(hex:0xA6B68A).opacity(0.13+variation),.clear]),center:CGPoint(x:px+7,y:py+7),startRadius:0,endRadius:17))
+                        for blade in 0..<3 {
+                            let gx=px+Double((col*7+row*3+blade*5)%16)
+                            let gy=py+Double((col*3+row*7+blade*4)%16)
+                            var grass=Path();grass.move(to:CGPoint(x:gx,y:gy));grass.addQuadCurve(to:CGPoint(x:gx+1,y:gy-3),control:CGPoint(x:gx-1,y:gy-2))
+                            context.stroke(grass,with:.color(Color(hex:0xB0B997).opacity(0.35)),lineWidth:0.4)
+                        }
                         if (col * 3 + row * 11) % 37 == 0 {
                             rect(px + 7, py + 6, 2, 5, 0x668E54); rect(px + 6, py + 5, 4, 3, 0xE9BC96)
                         }
@@ -242,11 +249,11 @@ struct MotelGroundsCanvas: View, Animatable {
             }
             for tile in RPGMaps.landscapeTrees {
                 let tx = Double(tile.x*16), ty = Double(tile.y*16)
+                context.fill(Path(ellipseIn:CGRect(x:tx-5,y:ty+10,width:28,height:8)),with:.radialGradient(Gradient(colors:[Color.black.opacity(0.24),.clear]),center:CGPoint(x:tx+9,y:ty+14),startRadius:0,endRadius:15))
                 rect(tx+6,ty+8,4,8,0x816044)
                 for layer in 0..<3 {
-                    context.fill(Path(ellipseIn:CGRect(x:tx-2+Double(layer),y:ty-10+Double(layer*4),width:20-Double(layer*2),height:15)),with:.color(Color(hex:layer == 1 ? 0x426E50 : 0x5B8D58)))
+                    context.fill(Path(ellipseIn:CGRect(x:tx-2+Double(layer),y:ty-10+Double(layer*4),width:20-Double(layer*2),height:15)),with:.linearGradient(Gradient(colors:[Color(hex:0x9CA779),Color(hex:0x647C5B),Color(hex:0x3E594B)]),startPoint:CGPoint(x:tx,y:ty-10),endPoint:CGPoint(x:tx+17,y:ty+14)))
                 }
-                if tile.x % 2 == 0 { rect(tx+3,ty+1,3,3,0xE5A18E); rect(tx+11,ty+4,3,3,0xE5A18E) }
             }
             for tile in RPGMaps.landscapeBenches {
                 let tx=Double(tile.x*16), ty=Double(tile.y*16)
@@ -284,10 +291,13 @@ struct MotelGroundsCanvas: View, Animatable {
             // The office and nine physical room plots, connected by walkable lanes.
             func building(_ origin: Tile, _ width: Int, _ height: Int, _ door: Tile, _ name: String, _ roof: UInt32, _ paint: UInt32) {
                 let px = Double(origin.x * 16), py = Double(origin.y * 16), w = Double(width * 16), h = Double(height * 16)
-                rect(px + 3, py + h - 1, w, 4, 0x769163)
+                context.fill(Path(roundedRect:CGRect(x:px+4,y:py+8,width:w+5,height:h),cornerRadius:5),with:.color(Color(hex:0x253C35).opacity(0.23)))
                 rect(px + 2, py + 15, w - 4, h - 15, paint)
+                context.fill(Path(CGRect(x:px+2,y:py+15,width:w-4,height:h-15)),with:.linearGradient(Gradient(colors:[Color.white.opacity(0.12),Color.black.opacity(0.18)]),startPoint:CGPoint(x:px,y:py+15),endPoint:CGPoint(x:px+w,y:py+h)))
                 rect(px, py + 4, w, 21, roof)
                 rect(px + 4, py, w - 8, 6, roof)
+                context.fill(Path(CGRect(x:px,y:py+4,width:w,height:21)),with:.linearGradient(Gradient(colors:[Color.white.opacity(0.18),Color.black.opacity(0.22)]),startPoint:CGPoint(x:px,y:py+4),endPoint:CGPoint(x:px,y:py+25)))
+                rect(px+2,py+25,w-4,3,0x666951)
                 for line in 0..<3 { rect(px, py + 9 + Double(line * 6), w, 1, 0x795E50) }
                 let dx = Double(door.x * 16), dy = Double(door.y * 16)
                 rect(dx, py + h - 20, 16, 20, 0x6C6651)

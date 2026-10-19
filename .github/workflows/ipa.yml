@@ -1,7 +1,7 @@
 name: Test and build iPhone IPA
 on:
   push:
-    branches: [main]
+    branches: [main, 'codex/reception-companions']
     paths:
       - 'LittleHaven/**'
       - 'LittleHaven.xcodeproj/**'
@@ -11,7 +11,7 @@ on:
       - '.github/workflows/ipa.yml'
   workflow_dispatch:
 concurrency:
-  group: iphone-ipa
+  group: iphone-ipa-${{ github.ref }}
   cancel-in-progress: true
 permissions:
   contents: read
@@ -158,17 +158,26 @@ jobs:
           unzip -t LittleHaven-unsigned.ipa
           shasum -a 256 LittleHaven-unsigned.ipa > LittleHaven-unsigned.ipa.sha256
       - name: Publish IPA, previews and SideStore update
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           TAG="sideload-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
-          printf '%s\n' 'Little Haven 13.0: Separate family house, home upgrades and decorating, open neighborhood, furniture and clothing stores, pawn shop inventory sales and varied emergencies. iOS 17+.' 'Wake up and walk around your motel grounds, office and rooms. Meet guests, collect payment, carry cleaning tools, make beds, collect trash, mop spills and expand your motel.' 'Explore occupied rooms, steal belongings and escape before suspicion reaches 100%. Getting caught returns you to your last saved checkpoint.' 'Save at the desk or end the day. Existing cottage saves migrate to the wake-up scene.' 'Unsigned arm64 iPhoneOS build. Sign through your sideloading tool before installing. Physical-device installation has not been verified.' > release-notes.txt
-          gh release create "$TAG" LittleHaven-family-home.png LittleHaven-neighborhood.png LittleHaven-home-store.png LittleHaven-clothes-store.png LittleHaven-pawn-store.png LittleHaven-staff-posts.png LittleHaven-pool-responder.png LittleHaven-pool-responder.mp4 LittleHaven-fight-responder.png LittleHaven-fight-responder.mp4 LittleHaven-title.png LittleHaven-options.png LittleHaven-quit.png LittleHaven-management-board.png LittleHaven-management-events.png LittleHaven-management-cameras.png LittleHaven-management-night.png LittleHaven-pool.mp4 LittleHaven-fight.mp4 LittleHaven-fire.mp4 LittleHaven-pool.png LittleHaven-fight.png LittleHaven-parking-staff.png LittleHaven-weather-storm.png LittleHaven-weather-snow.png LittleHaven-weather-wind.png LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png LittleHaven-wake.png LittleHaven-motel.png LittleHaven-stealth.png LittleHaven-cleaning.png LittleHaven-office.png LittleHaven-dialogue.png LittleHaven-chaos.png LittleHaven-police.png LittleHaven-hiring.png --target "$GITHUB_SHA" --title "Little Haven 13.0 - Family home and open neighborhood" --prerelease --notes-file release-notes.txt
+          printf '%s\n' 'Little Haven 14.0: Reception PC, home workbench, Chichu and Chichi companions, hotel-only emergencies, responsive police, proportional house and natural scenery. iOS 17+.' 'Wake up and walk around your motel grounds, office and rooms. Meet guests, collect payment, carry cleaning tools, make beds, collect trash, mop spills and expand your motel.' 'Explore occupied rooms, steal belongings and escape before suspicion reaches 100%. Getting caught returns you to your last saved checkpoint.' 'Save at the desk or end the day. Existing cottage saves migrate to the wake-up scene.' 'Unsigned arm64 iPhoneOS build. Sign through your sideloading tool before installing. Physical-device installation has not been verified.' > release-notes.txt
+          gh release create "$TAG" LittleHaven-family-home.png LittleHaven-neighborhood.png LittleHaven-home-store.png LittleHaven-clothes-store.png LittleHaven-pawn-store.png LittleHaven-staff-posts.png LittleHaven-pool-responder.png LittleHaven-pool-responder.mp4 LittleHaven-fight-responder.png LittleHaven-fight-responder.mp4 LittleHaven-title.png LittleHaven-options.png LittleHaven-quit.png LittleHaven-management-board.png LittleHaven-management-events.png LittleHaven-management-cameras.png LittleHaven-management-night.png LittleHaven-pool.mp4 LittleHaven-fight.mp4 LittleHaven-fire.mp4 LittleHaven-pool.png LittleHaven-fight.png LittleHaven-parking-staff.png LittleHaven-weather-storm.png LittleHaven-weather-snow.png LittleHaven-weather-wind.png LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png LittleHaven-wake.png LittleHaven-motel.png LittleHaven-stealth.png LittleHaven-cleaning.png LittleHaven-office.png LittleHaven-dialogue.png LittleHaven-chaos.png LittleHaven-police.png LittleHaven-hiring.png --target "$GITHUB_SHA" --title "Little Haven 14.0 - Reception and companions" --prerelease --notes-file release-notes.txt
           gh api "repos/$GH_REPO/contents/sideStore.json" > live-source-response.json
           python3 scripts/update_source.py "$TAG"
           gh api --method PUT "repos/$GH_REPO/contents/sideStore.json" --input source-update.json
+      - name: Preserve verified iPhone package
+        uses: actions/upload-artifact@v4
+        with:
+          name: LittleHaven-iPhone-IPA
+          path: |
+            LittleHaven-unsigned.ipa
+            LittleHaven-unsigned.ipa.sha256
+          if-no-files-found: error
       - name: Preserve gameplay previews
         if: always()
         uses: actions/upload-artifact@v4

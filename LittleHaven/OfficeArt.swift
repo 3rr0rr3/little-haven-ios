@@ -5,8 +5,12 @@ enum NeighborhoodArt {
         func rect(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ c:UInt32){context.fill(Path(CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:c)))}
         func label(_ text:String,_ x:Double,_ y:Double){context.draw(Text(text).font(.system(size:6,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x,y:y))}
         // A pitched roof, chimney, porch and garden distinguish the house from motel cabins.
-        rect(752,64,256,192,0xB3BD86)
+        let neighborhoodContext=context
+        context.translateBy(x:438,y:112)
+        context.scaleBy(x:0.5,y:0.5)
+        rect(752,64,256,192,0x73866A)
         rect(770,119,218,105,level>1 ? 0xD9B6A1 : 0xEAD6B0)
+        context.fill(Path(CGRect(x:770,y:126,width:218,height:98)),with:.linearGradient(Gradient(colors:[Color.white.opacity(0.12),Color.black.opacity(0.18)]),startPoint:CGPoint(x:770,y:126),endPoint:CGPoint(x:988,y:224)))
         var roof=Path();roof.move(to:CGPoint(x:759,y:126));roof.addLine(to:CGPoint(x:879,y:53));roof.addLine(to:CGPoint(x:999,y:126));roof.closeSubpath();context.fill(roof,with:.color(Color(hex:level>1 ? 0x577E89 : 0x9D6654)))
         rect(943,65,16,38,0x8D6153);rect(939,63,24,6,0x6F5149)
         rect(789,144,36,35,0x8DBCB7);rect(930,144,36,35,0x8DBCB7)
@@ -18,10 +22,15 @@ enum NeighborhoodArt {
         for x in [765.0,980.0] {rect(x,216,13,13,0xAA7B58);context.fill(Path(ellipseIn:CGRect(x:x-6,y:201,width:25,height:20)),with:.color(Color(hex:0x65884F)))}
         if level>0 {rect(780,185,58,29,0xBBA3BA);label("WEST WING",809,199)}
         if level>2 {rect(920,233,63,7,0x9B7957);for x in [925.0,966.0] {rect(x,224,4,17,0x775F44)}}
+        context=neighborhoodContext
+        // Stone approach joins the original doorway to the town sidewalk.
+        rect(864,232,24,56,0xB9B199)
+        for y in stride(from:234,to:286,by:9) {rect(865,Double(y),22,1,0x96967F)}
         for shop in NeighborhoodShop.allCases {
             let x=Double((shop.door.x-3)*16),y=368.0
             let color:UInt32=shop == .furniture ? 0x9B9279 : shop == .clothing ? 0xA18BA8 : 0x6D9492
             rect(x+3,y+8,106,88,0xE4CDA6);rect(x,y,112,23,color)
+            context.fill(Path(CGRect(x:x+3,y:y+23,width:106,height:73)),with:.linearGradient(Gradient(colors:[Color.white.opacity(0.1),Color.black.opacity(0.18)]),startPoint:CGPoint(x:x,y:y+23),endPoint:CGPoint(x:x+106,y:y+96)))
             rect(x+9,y+29,94,13,0x365247);label(shop.title.uppercased(),x+56,y+35)
             rect(x+8,y+49,31,33,0x8DBCB7);rect(x+73,y+49,31,33,0x8DBCB7)
             rect(x+48,y+48,16,48,0x665A48);rect(x+59,y+71,2,2,0xEED187)
@@ -50,13 +59,16 @@ struct HomeInteriorArt:View {
             func rect(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ c:UInt32){context.fill(Path(CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:c)))}
             rect(0,0,240,240,0x4F6957);rect(16,32,208,192,Self.floors[home.floor]);rect(16,0,208,32,Motel.themeColors[home.wallpaper])
             for y in stride(from:48,to:224,by:16) {rect(16,Double(y),208,1,0x9A805F)}
-            if home.level == 0 {rect(16,32,64,80,0x55715C);context.draw(Text("RENOVATE").font(.system(size:5,weight:.bold)).foregroundColor(.white),at:CGPoint(x:48,y:70))}
+            if home.level == 0 {rect(16,32,64,80,0x55715C)}
             else {rect(20,38,47,30,0xE3CAB1);rect(22,40,43,8,0xF5E9D2)}
             rect(154,81,60,28,0x775F49);rect(160,72,47,28,0x303C3C);rect(164,76,39,19,0x86B2B2);rect(176,85,15,8,0xE2CB86)
             rect(171,162,50,22,0x8E7B9E);rect(176,154,40,21,0xB8A3BA)
             for x in [157.0,190.0] {rect(x,201,25,13,0xBE9A76);rect(x+7,216,10,4,0x82ACA5)}
             rect(30,155,27,17,0x88684B);rect(34,157,18,12,0xF2E2BC);rect(43,158,1,10,0xB89B70)
             context.draw(Text("SAVE").font(.system(size:4,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:44,y:176))
+            // Physical workbench: supplies, plans and a hammer, without floating menus.
+            rect(64,176,16,12,0x755D44);rect(62,174,20,5,0xAF936A)
+            rect(65,175,8,3,0xE4DDC5);rect(76,175,2,7,0x59625E);rect(73,175,7,2,0x83918D)
             rect(111,208,18,32,0xE7D1AD)
             for item in home.placed {Self.object(context:&context,kind:item.kind,x:Double(item.tile.x*16),y:Double(item.tile.y*16))}
             context.draw(Text("HOME SWEET HOME").font(.system(size:7,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:120,y:17))
@@ -151,7 +163,9 @@ struct ExpandedOfficeArt: View {
             rect(0,0,240,32,Motel.themeColors[theme]); rect(0,0,16,240,0x526D5B); rect(224,0,16,240,0x526D5B); rect(0,224,240,16,0x526D5B)
             // Reception desk, chair, key board and a logbook.
             rect(48,51,32,12,0x6D695C); rect(32,71,80,24,0x77553D); rect(30,68,84,7,0xD4B581)
-            rect(39,76,19,12,0x3F5A4E); rect(41,77,15,8,0x93B3A3)
+            rect(45,58,22,15,0x303D3C);rect(47,60,18,10,0x8CAFA4)
+            rect(54,73,4,4,0x3D4843);rect(48,77,17,2,0x4E5952)
+            rect(46,81,21,5,0xCCC7B5);text("PC",56,65,4)
             rect(82,73,17,13,0xEEE1C1); rect(90,74,1,11,0xA28B63)
             text("RECEPTION",72,91,4)
             rect(40,9,60,18,0x765C43); for i in 0..<6 { rect(45+Double(i*8),14,3,7,0xE8C677) }

@@ -86,11 +86,31 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["buy_home_plant"].tap()
         capture(app,"Furniture shop purchases paid from motel profits")
         app.terminate();app.launchArguments=["--ui-testing","--ui-family-home"];app.launch()
-        XCTAssertTrue(app.buttons["openHomeDesigner"].waitForExistence(timeout:10))
-        app.buttons["openHomeDesigner"].tap()
+        XCTAssertTrue(app.buttons["office_workbench"].waitForExistence(timeout:10))
+        XCTAssertFalse(app.buttons["openHomeDesigner"].exists)
+        for _ in 0..<3 { app.buttons["Walk west"].tap() }
+        app.buttons["office_workbench"].tap()
         XCTAssertTrue(app.buttons["upgradeHome"].waitForExistence(timeout:5))
         app.buttons["upgradeHome"].tap()
         capture(app,"Home upgrades wallpaper flooring and furniture placement")
+    }
+    func testPetsFollowOutsideAndWaitIndependently() {
+        let app=launch("--ui-family-home")
+        XCTAssertTrue(app.buttons["office_chichu"].waitForExistence(timeout:10))
+        app.buttons["office_chichu"].tap()
+        app.buttons["Follow me"].tap()
+        app.buttons["office_chichi"].tap()
+        app.buttons["Follow me"].tap()
+        app.buttons["office_door"].tap()
+        XCTAssertTrue(app.buttons["Chichu"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["Chichi"].exists)
+        app.buttons["Chichu"].tap()
+        XCTAssertTrue(app.buttons["Stay here"].waitForExistence(timeout:3))
+        app.buttons["Stay here"].tap()
+        for _ in 0..<3 { app.buttons["Walk south"].tap() }
+        XCTAssertFalse(app.buttons["Chichu"].exists)
+        XCTAssertTrue(app.buttons["Chichi"].exists)
+        capture(app,"Chichi follows outside while Chichu waits near home")
     }
     func testPawnShopRequiresExplicitSale() {
         let app=launch("--ui-pawn-store")
@@ -168,11 +188,13 @@ final class LittleHavenUITests: XCTestCase {
 
     func testStaffReviewsAndDeskUpgrades() {
         let app = launch("--ui-operations")
-        XCTAssertTrue(app.buttons["openStaff"].waitForExistence(timeout:10))
-        app.buttons["openStaff"].tap()
+        XCTAssertTrue(app.buttons["hireEmployees"].waitForExistence(timeout:10))
+        XCTAssertFalse(app.buttons["openStaff"].exists)
+        app.buttons["hireEmployees"].tap()
         app.buttons["hire_cleaner"].tap()
         XCTAssertTrue(cash(app).contains("800"))
         app.buttons["Close interaction"].tap()
+        XCTAssertTrue(app.buttons["openStaff"].exists)
         app.buttons["receptionDesk"].tap()
         app.buttons["deskRooms"].tap()
         app.buttons["deskUpgrade_0"].tap()
@@ -232,8 +254,9 @@ final class LittleHavenUITests: XCTestCase {
     }
     func testManagementBoardSuppliesAndMiniGame() {
         let app=launch("--ui-management")
-        XCTAssertTrue(app.buttons["openManagement"].waitForExistence(timeout:10))
-        app.buttons["openManagement"].tap()
+        XCTAssertTrue(app.buttons["office_computer"].waitForExistence(timeout:10))
+        XCTAssertFalse(app.buttons["openManagement"].exists)
+        app.buttons["office_computer"].tap()
         XCTAssertTrue(app.buttons["miniClean_1"].waitForExistence(timeout:5))
         app.buttons["miniClean_1"].tap()
         XCTAssertTrue(app.buttons["miniGameTap"].waitForExistence(timeout:3))
@@ -261,7 +284,7 @@ final class LittleHavenUITests: XCTestCase {
         let app=launch("--ui-management-night")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS %@", "22:00 NIGHT")).firstMatch.waitForExistence(timeout:10))
         capture(app,"Night shift hotel grounds")
-        app.buttons["openManagement"].tap()
+        app.buttons["office_computer"].tap()
         app.buttons["manageTab_Desk"].tap()
         XCTAssertTrue(app.segmentedControls["pricingPolicy"].waitForExistence(timeout:5))
         capture(app,"Hourly nightly and weekly pricing")

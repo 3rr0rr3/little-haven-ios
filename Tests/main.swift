@@ -804,3 +804,56 @@ func familyHomeAndNeighborhoodRules() {
     print("PASS: open neighborhood, physical shops, separate animated family home, upgrades, decoration placement, clothing, explicit pawn sales and saved belongings")
 }
 familyHomeAndNeighborhoodRules()
+
+func receptionAndCompanionRules() {
+    var motel=Motel()
+    motel.initializeWorld()
+    require(motel.visiblePets.isEmpty,"Legacy saves keep pets at home, not in reception")
+    motel.world!.player=Tile(x:3,y:3)
+    require(motel.nearbyAction == .computer,"The physical PC opens business management")
+    motel.world!.place = .house
+    motel.world!.player=Tile(x:7,y:8)
+    require(motel.nearbyAction != .homeDecor,"Decorating is not offered throughout the house")
+    motel.world!.player=Tile(x:4,y:12)
+    require(motel.nearbyAction == .homeDecor && motel.homeBlocked(FamilyHome.workbench),"Workbench is solid and usable from beside it")
+    motel.world!.player=Tile(x:9,y:12)
+    motel.togglePet("chichu")
+    let old=motel.actorTile, oldMap=motel.petMap
+    motel.moveActor(dx:-1,dy:0)
+    motel.updateCompanions(from:old,map:oldMap)
+    require(motel.petState("chichu").tile == old,"Follower retraces a safe player step")
+    motel.world!.place = .grounds
+    motel.world!.player=Tile(x:54,y:15)
+    motel.updateCompanions(from:old,map:oldMap)
+    require(motel.petState("chichu").map == "grounds" && !MotelGrounds.blocked(motel.petState("chichu").tile),"Pet follows a map transfer onto walkable ground")
+    require(motel.nearbyAction == .home,"A following pet does not hide the nearby doorway action")
+    motel.togglePet("chichu")
+    let waiting=motel.petState("chichu").tile
+    motel.world!.place = .office
+    motel.world!.player=OfficeReception.clerk
+    motel.updateCompanions(from:Tile(x:54,y:15),map:"grounds")
+    require(motel.petState("chichu").tile == waiting && motel.petState("chichu").map == "grounds", "Stay here preserves the pet's location")
+    let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(motel))
+    require(restored.petState("chichu").tile == waiting && !restored.petState("chichu").following,"Checkpoint preserves waiting pets")
+    require(restored.petState("chichi").map == "house","Unselected pet remains home")
+    for tile in Motel.chaosLocations { require(tile.x<39 && tile.y<35,"Emergencies remain inside hotel grounds") }
+    var state=motel.operationsState
+    var fight=MotelIncident(kind:.fight)
+    fight.location=Tile(x:60,y:32)
+    state.incident=fight
+    motel.operations=state
+    motel.tickManagement(advanceClock:false)
+    require(motel.operationsState.incident?.tile == Motel.chaosLocations[0],"A saved city fight migrates back to the hotel")
+    state=motel.operationsState
+    state.incident=nil
+    state.consequences=BusinessConsequences()
+    var police=PoliceCase(number:1,guest:"Test",cause:.fight)
+    police.tile=Tile(x:6,y:11)
+    state.consequences!.police=police
+    motel.operations=state
+    motel.tickManagement()
+    require(motel.business.police?.arrived == true,"Police arrival registers on the final movement step")
+    require(motel.payPoliceFine() && motel.business.police == nil,"The arrived case can be settled")
+    print("PASS: physical PC, workbench, pet follow/stay/checkpoints, hotel-only fights and police arrival")
+}
+receptionAndCompanionRules()
