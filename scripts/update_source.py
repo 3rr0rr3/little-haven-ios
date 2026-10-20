@@ -21,7 +21,7 @@ entry = {
     "version": version,
     "buildVersion": build,
     "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-    "localizedDescription": "Explore the hotel and neighborhood in a crisp 2D pixel-art world with tiled roofs, textured grass, coordinated paths and detailed interiors. The original characters remain unchanged. The home has continuous walkable flooring. Manage from the reception PC, use the home workbench, take Chichu and Chichi along, and handle hotel-only emergencies with responsive police.",
+    "localizedDescription": "Explore the hotel and neighborhood in a soft diorama world with rounded foliage, warm roofs, shaded furniture, smooth paths and gentle lighting. The original characters remain unchanged. The home has continuous walkable flooring. Manage from the reception PC, use the home workbench, take Chichu and Chichi along, and handle hotel-only emergencies with responsive police.",
     "downloadURL": f"{asset_base}/LittleHaven-unsigned.ipa",
     "size": pathlib.Path("LittleHaven-unsigned.ipa").stat().st_size,
     "minOSVersion": info["MinimumOSVersion"],

@@ -119,10 +119,10 @@ final class RPGScene: SKScene {
             // Rasterize the original vector scenery once per map/state change,
             // never once per frame. Actor sprites are independent scene nodes.
             let renderer = ImageRenderer(content: scenery().frame(width: mapSize.width, height: mapSize.height))
-            renderer.scale = 1
+            renderer.scale = 3
             guard let image = renderer.uiImage else { return }
             let texture = SKTexture(image: image)
-            texture.filteringMode = .nearest
+            texture.filteringMode = .linear
             if changedMap { world.removeAllChildren() }
             world.childNode(withName: "scenery")?.removeFromParent()
             let map = SKSpriteNode(texture: texture, size: mapSize)
@@ -257,9 +257,9 @@ final class RPGScene: SKScene {
         if let cached=actionTextures[kind] { return cached }
         let frames=(0..<8).map { frame -> SKTexture in
             let renderer=ImageRenderer(content:HotelActionArtwork(kind:kind,frame:frame))
-            renderer.scale=1
+            renderer.scale=3
             let texture=renderer.uiImage.map { SKTexture(image:$0) } ?? SKTexture()
-            texture.filteringMode = .nearest
+            texture.filteringMode = .linear
             return texture
         }
         actionTextures[kind]=frames
@@ -294,9 +294,9 @@ final class RPGScene: SKScene {
             if let cached=carTextures[key] { texture=cached }
             else {
                 let renderer=ImageRenderer(content:HotelCarArtwork(color:car.color,dirty:car.washedDay != day,model:car.id%3))
-                renderer.scale=1
+                renderer.scale=3
                 texture=renderer.uiImage.map { SKTexture(image:$0) } ?? SKTexture()
-                texture.filteringMode = .nearest
+                texture.filteringMode = .linear
                 carTextures[key]=texture
             }
             let node=existing ?? SKSpriteNode(texture:texture)
@@ -419,7 +419,7 @@ struct MotelRPGView: View {
         let interior = visit != nil || motel.worldState.place == .office
         let mapID = visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue
         let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
-        let worldRevision="pixel-world-15-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
+        let worldRevision="cozy-world-16-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
         var actors = [RPGActor(id: "player", tile: motel.actorTile, color: FamilyHome.outfitColors[motel.household.outfit], variant: 7, facing: motel.actorFacing)]
         if !interior {
             actors += motel.neighborhoodActors

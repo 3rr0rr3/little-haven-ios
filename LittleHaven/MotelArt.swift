@@ -15,19 +15,12 @@ struct RoomIllustration: View {
 enum InteriorArt {
     static func draw(context: inout GraphicsContext, theme: Int, level: Int, office: Bool) {
         func rect(_ x: Double, _ y: Double, _ w: Double, _ h: Double, _ color: UInt32) {
-            context.fill(Path(CGRect(x: x, y: y, width: w, height: h)), with: .color(Color(hex: color)))
+            CozyScenery.block(context:&context,x:x,y:y,w:w,h:h,color:color,depth:0.6)
         }
-        rect(0, 0, 144, 144, 0x4A6457)
-        rect(16, 16, 112, 112, office ? 0xBA9B75 : [UInt32(0xBAAA84),0xD3AF98,0xA4BBC2,0xB5A4BC][theme])
-        for y in stride(from: 32, to: 128, by: 16) { rect(16, Double(y), 112, 0.6, office ? 0xA78A66 : Motel.themeColors[theme]) }
-        rect(0, 0, 144, 32, Motel.themeColors[theme])
-        rect(0, 0, 16, 144, Motel.themeColors[theme])
-        rect(128, 0, 16, 144, Motel.themeColors[theme])
-        rect(0, 128, 144, 16, 0x577263)
-        rect(64, 128, 16, 16, 0xE6D2AA)
-        rect(84, 7, 30, 19, 0xEAD7B0)
-        rect(87, 10, 24, 13, 0x99BFC0)
-        rect(98, 10, 2, 13, 0xF3E5C5)
+        CozyScenery.interior(context:&context,width:144,height:144,floor:office ? 0xC4AD89 : [UInt32(0xD6C5A3),0xDEC4B0,0xC3D4D3,0xD3C5D5][theme],wall:Motel.themeColors[theme])
+        CozyScenery.block(context:&context,x:84,y:7,w:30,h:19,color:0xF0E5CD,depth:0.8)
+        CozyScenery.block(context:&context,x:87,y:10,w:24,h:13,color:0xA7CED0,depth:0.2)
+        rect(98,10,1.5,13,0xF5EBD6)
         if level > 0 {
             rect(45, 70, 43, 33, 0xC47D68)
             rect(48, 73, 37, 27, Motel.themeColors[theme])
@@ -205,7 +198,7 @@ struct MotelGroundsCanvas: View, Animatable {
             context.translateBy(x: -cameraX * unit, y: -cameraY * unit)
             context.scaleBy(x: unit / 16, y: unit / 16)
             func rect(_ px: Double, _ py: Double, _ w: Double, _ h: Double, _ color: UInt32) {
-                context.fill(Path(CGRect(x: px, y: py, width: w, height: h)), with: .color(Color(hex: color)))
+                CozyScenery.block(context:&context,x:px,y:py,w:w,h:h,color:color,depth:h>2 ? 0.7 : 0)
             }
             func label(_ text: String, _ px: Double, _ py: Double, _ size: Double = 4, _ tint: UInt32 = 0xF6E7C4) {
                 context.draw(Text(text).font(.system(size: size, weight: .black, design: .monospaced)).foregroundColor(Color(hex: tint)), at: CGPoint(x: px, y: py))
@@ -215,13 +208,10 @@ struct MotelGroundsCanvas: View, Animatable {
                     let px = Double(col * 16), py = Double(row * 16)
                     let road = (35...37).contains(row) || ((40...42).contains(col) && row > 1) || (col > 39 && (18...20).contains(row))
                     let paved = ((11...38).contains(col) && [8,9,17,18,26,27,33,34].contains(row)) || ((11...12).contains(col) && (8...34).contains(row)) || ((3...10).contains(col) && (9...15).contains(row)) || ((5...7).contains(col) && (23...35).contains(row)) || ((43...70).contains(col) && (29...31).contains(row))
-                    PixelTiles.ground(context:&context,x:px,y:py,kind:road ? 2 : paved ? 1 : 0,seed:col*17+row*31)
+                    CozyScenery.ground(context:&context,x:px,y:py,kind:road ? 2 : paved ? 1 : 0,seed:col*17+row*31)
                     if road && row == 36 && col % 3 != 0 { rect(px+2,py+7,12,2,0xF8E8A0) }
                     if col == 0 || col == MotelGrounds.width - 1 || row == 0 || row == MotelGrounds.height - 1 {
-                        rect(px + 6, py + 8, 4, 9, 0x7C6B50)
-                        rect(px + 1, py + 1, 14, 12, 0x4E7851)
-                        rect(px + 3, py - 1, 10, 10, 0x66935C)
-                        rect(px + 5, py, 5, 3, 0x85A567)
+                        CozyScenery.tree(context:&context,x:px,y:py)
                     }
                 }
             }
@@ -235,7 +225,7 @@ struct MotelGroundsCanvas: View, Animatable {
                 label(role.station,px+8,py-11,2.7,0x344D3C)
             }
             for tile in RPGMaps.landscapeTrees {
-                PixelTiles.tree(context:&context,x:Double(tile.x*16),y:Double(tile.y*16))
+                CozyScenery.tree(context:&context,x:Double(tile.x*16),y:Double(tile.y*16))
             }
             for tile in RPGMaps.landscapeBenches {
                 let tx=Double(tile.x*16), ty=Double(tile.y*16)
@@ -272,7 +262,7 @@ struct MotelGroundsCanvas: View, Animatable {
             }
             // The office and nine physical room plots, connected by walkable lanes.
             func building(_ origin: Tile, _ width: Int, _ height: Int, _ door: Tile, _ name: String, _ roof: UInt32, _ paint: UInt32) {
-                PixelTiles.building(context:&context,x:Double(origin.x*16),y:Double(origin.y*16),w:Double(width*16),h:Double(height*16),doorX:Double(door.x*16),name:name,roof:roof,paint:paint)
+                CozyScenery.building(context:&context,x:Double(origin.x*16),y:Double(origin.y*16),w:Double(width*16),h:Double(height*16),doorX:Double(door.x*16),name:name,roof:roof,paint:paint)
             }
             building(Tile(x: 3, y: 3), 8, 6, MotelGrounds.officeDoor, "OFFICE / RECEPTION", 0x739998, 0xE2CEA4)
             for index in 0..<9 {
@@ -314,10 +304,7 @@ struct MotelGroundsCanvas: View, Animatable {
                 }
             }
             // Pool, courtyard, parking spaces and roadside sign.
-            rect(47, 287, 115, 83, 0xE8D7B1)
-            rect(50, 290, 109, 77, 0x6DACA9)
-            rect(54, 294, 101, 69, 0x8BC3B8)
-            for i in 0..<6 { rect(59 + Double(i % 3) * 27, 302 + Double(i / 3) * 32, 18, 1, 0xCEE4CD) }
+            CozyScenery.pool(context:&context,x:47,y:287,w:115,h:83)
             label("POOL", 105, 278, 4, 0x4A664A)
             rect(64, 252, 40, 5, 0x9F7854); rect(68, 257, 3, 6, 0x6B634D); rect(97, 257, 3, 6, 0x6B634D)
             rect(240,472,365,80,0x747E78)

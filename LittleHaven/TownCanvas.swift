@@ -30,11 +30,7 @@ struct TownCanvas: View, Animatable {
                 context.draw(Text(value).font(.system(size: fontSize, weight: .black, design: .monospaced)).foregroundColor(Color(hex: color)), at: CGPoint(x: x, y: y))
             }
             func tree(_ x: Double, _ y: Double) {
-                rect(x + 6, y + 10, 5, 7, 0x6C6550)
-                rect(x + 2, y + 4, 14, 10, 0x35644B)
-                rect(x, y + 2, 14, 8, 0x477B50)
-                rect(x + 3, y - 2, 9, 10, 0x578D56)
-                rect(x + 4, y, 5, 2, 0x76A55F)
+                CozyScenery.tree(context:&context,x:x,y:y)
             }
             func person(_ x: Double, _ y: Double, _ color: UInt32, _ player: Bool, _ donated: Bool, _ variant: Int = 0) {
                 guard !sceneryOnly else { return }
@@ -77,42 +73,14 @@ struct TownCanvas: View, Animatable {
                     for x in 0..<Town.width {
                         let px = Double(x * 16), py = Double(y * 16)
                         let path = (9...10).contains(x) || (7...8).contains(y) || (18...19).contains(y) || (x == 6 && (9...17).contains(y)) || (y == 16 && x >= 10) || (x == 15 && (7...12).contains(y))
-                        rect(px, py, 16, 16, path ? 0xD3C399 : ((x + y) % 3 == 0 ? 0x83AE68 : 0x7CA761))
-                        if path {
-                            if (x + y) % 3 == 0 { rect(px + 3, py + 9, 3, 1, 0xC2AF86); rect(px + 12, py + 4, 2, 1, 0xE3D1A6) }
-                        } else {
-                            rect(px + Double((x * 7 + y) % 11), py + 10, 2, 2, 0x90B774)
-                            if (x * 3 + y * 7) % 13 == 0 { rect(px + 7, py + 7, 2, 3, 0x568951); rect(px + 6, py + 5, 4, 3, y % 2 == 0 ? 0xEBC88D : 0xDFA4A0) }
-                        }
+                        CozyScenery.ground(context:&context,x:px,y:py,kind:path ? 1 : 0,seed:x*17+y*31)
                     }
                 }
-                // Pond: stepped edges and bright ripples.
-                rect(223, 207, 66, 50, 0xC4C494)
-                rect(224, 208, 64, 48, 0x649C9D)
-                rect(227, 211, 58, 42, 0x79B3B2)
-                for i in 0..<5 { rect(Double(232 + (i * 11) % 43), Double(216 + i * 7), 10, 1, 0xB4D6C7) }
-                rect(252, 242, 8, 4, 0x729653)
-                rect(253, 240, 3, 3, 0xE8C4B2)
+                CozyScenery.pool(context:&context,x:223,y:207,w:66,h:50)
                 // Three original village buildings.
                 for (index, b) in Town.buildings.enumerated() {
                     let x = Double(b.0 * 16), y = Double(b.1 * 16), w = Double((b.2 - b.0 + 1) * 16), h = Double((b.3 - b.1 + 1) * 16)
-                    rect(x + 3, y + h - 3, w + 3, 7, 0x658D55)
-                    rect(x + 3, y + 22, w - 6, h - 22, 0xEAD6AC)
-                    rect(x + 3, y + h - 6, w - 6, 6, 0xB59D7D)
-                    rect(x, y + 5, w, 23, index == 1 ? 0x597F80 : 0xB77160)
-                    rect(x + 4, y, w - 8, 7, index == 1 ? 0x759C95 : 0xD28C70)
-                    for line in 0..<3 { rect(x, y + 10 + Double(line * 7), w, 2, index == 1 ? 0x496C6D : 0x985D51) }
-                    rect(x + 10, y + 33, 12, 13, 0x7B9F9B)
-                    rect(x + 15, y + 33, 2, 13, 0xF7E9C7)
-                    rect(x + 10, y + 39, 12, 2, 0xF7E9C7)
-                    rect(x + w - 23, y + 33, 12, 13, 0x7B9F9B)
-                    rect(x + w - 18, y + 33, 2, 13, 0xF7E9C7)
-                    rect(x + w / 2 - 6, y + h - 19, 12, 19, 0x6C604F)
-                    rect(x + w / 2 + 2, y + h - 10, 2, 2, 0xF0CE8A)
-                    if index == 1 {
-                        rect(x + 25, y + 26, 30, 7, 0xF3E4BA)
-                        text(game.ownsHouse ? "HOME" : "FOR SALE", x + 40, y + 29.5, 0x4B675B, 3.2)
-                    }
+                    CozyScenery.building(context:&context,x:x,y:y,w:w,h:h,doorX:index == 1 ? Double(Town.door.x*16) : x+w/2-8,name:index == 1 ? (game.ownsHouse ? "HOME" : "FOR SALE") : index == 0 ? "MARKET" : "WORKSHOP",roof:index == 1 ? 0x8AAC98 : 0xC88A70,paint:0xE8D6B4)
                 }
                 for y in 0..<Town.height {
                     for x in 0..<Town.width where x == 0 || x == Town.width - 1 || y == 0 || y == Town.height - 1 {
