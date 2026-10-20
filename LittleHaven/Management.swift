@@ -1271,9 +1271,12 @@ struct GuestFavour:Codable {
     var status:Status = .pending
 }
 extension Motel {
+    private func guestFavourSeconds(_ deadline:Int)->Int {
+        Int(ceil(Double(max(0,deadline-operationsState.tick))*MotelCadence.travel*Double(MotelCadence.businessSteps)))
+    }
     var guestFavourSummary:String? {
         guard let f=worldState.guestFavour,f.status == .pending else {return nil}
-        return f.collected ? "DELIVER "+f.kind.title.uppercased()+" / "+f.guestName+" / "+String(max(0,f.deadline-operationsState.tick))+" ticks" : "GUEST REQUEST: "+f.kind.title+" / "+f.kind.sourceName
+        return f.collected ? "DELIVER "+f.kind.title.uppercased()+" / "+f.guestName+" / "+String(guestFavourSeconds(f.deadline))+"s" : "GUEST REQUEST: "+f.kind.title+" / "+f.kind.sourceName
     }
     var nearbyHospitalityRoom:MotelRoom? {
         guard !caught,visit == nil,worldState.place == .grounds else {return nil}
@@ -1288,7 +1291,7 @@ extension Motel {
         if let f=worldState.guestFavour,f.guestID==guest.id {
             switch f.status {
             case .pending:
-                return f.collected ? "You have my "+f.kind.title+". Please bring them to my door. A small tip is waiting." : "Please collect "+f.kind.title+" from "+f.kind.sourceName+" and return before the promise expires. Remaining: "+String(max(0,f.deadline-operationsState.tick))+" hotel ticks."
+                return f.collected ? "You have my "+f.kind.title+". Please bring them to my door. A small tip is waiting." : "Please collect "+f.kind.title+" from "+f.kind.sourceName+" and return before the promise expires. Remaining: "+String(guestFavourSeconds(f.deadline))+"s."
             case .fulfilled:return "Thank you for keeping your promise. I'll remember the thoughtful service."
             case .declined:return "Thanks for being honest that you couldn't help right now."
             case .expired:return "You promised to help and never came back. That will affect my review."
@@ -1313,7 +1316,7 @@ extension Motel {
         initializeWorld()
         world!.guestFavour=GuestFavour(guestID:guest.id,guestName:guest.name,roomID:roomID,day:day,deadline:operationsState.tick+90,kind:.forGuest(guest.id))
         world!.guestFavourDays=world!.guestFavourDays ?? [:];world!.guestFavourDays![guest.id]=day
-        lastEvent="Promise accepted: collect "+GuestFavourKind.forGuest(guest.id).title+" from "+GuestFavourKind.forGuest(guest.id).sourceName+". Return to room "+String(rooms.first(where:{$0.id==roomID})!.number)+" before 90 hotel ticks."
+        lastEvent="Promise accepted: collect "+GuestFavourKind.forGuest(guest.id).title+" from "+GuestFavourKind.forGuest(guest.id).sourceName+". Return to room "+String(rooms.first(where:{$0.id==roomID})!.number)+" before the request timer runs out."
         return true
     }
     var canCollectGuestFavour:Bool {
