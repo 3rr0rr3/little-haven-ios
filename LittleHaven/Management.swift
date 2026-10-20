@@ -229,6 +229,7 @@ extension Motel {
     mutating func recordCheckoutReview(_ room: MotelRoom) {
         guard let guest = room.guest else { return }
         expireGuestFavour(leavingGuestID:guest.id)
+        let brokenPromise=worldState.brokenGuestPromises?.contains(guest.id) == true
         var state = operationsState
         let id = "\(day)-\(guest.id)"
         guard !state.reviews.contains(where: { $0.id == id }) else { return }
@@ -238,7 +239,7 @@ extension Motel {
         let stars = managementEnabled ? max(1,min(5,baseStars - room.health.faults.count - (room.health.cleanliness < 60 ? 2 : 0) + (room.health.upgrades.contains(.bed) ? 1 : 0))) : baseStars
         let text: String
         if theft > 0 { text = "My belongings disappeared. I cannot recommend this Airb&b." }
-        else if worldState.guestFavour?.guestID == guest.id && (worldState.guestFavour?.status == .expired || worldState.guestFavour?.status == .apologized) { text = "The host promised supplies and never delivered them. That hurt my trust." }
+        else if brokenPromise { text = "The host promised supplies and never delivered them. That hurt my trust." }
         else if penalty > 0 { text = "The trouble outside was not handled in time. It spoiled my stay." }
         else if managementEnabled && !room.health.faults.isEmpty {text="Maintenance and pest problems interrupted my stay."}
         else if managementEnabled && room.health.cleanliness<60 {text="The room needed cleaning. I would expect better hygiene."}
@@ -1347,6 +1348,8 @@ extension Motel {
         guard let f=worldState.guestFavour,f.status == .pending else{return}
         guard leavingGuestID == f.guestID || operationsState.tick>=f.deadline || day != f.day || rooms.first(where:{$0.id==f.roomID})?.guest?.id != f.guestID else{return}
         world!.guestFavour!.status = .expired
+        world!.brokenGuestPromises=world!.brokenGuestPromises ?? []
+        world!.brokenGuestPromises!.insert(f.guestID)
         var s=simulation;s.relationships[f.guestName,default:0]-=2;s.reputation=max(0,s.reputation-2);simulation=s
         // Feed the existing checkout review system, once per broken promise.
         var state=operationsState;state.guestPenalties[f.guestID,default:0]+=1;operations=state

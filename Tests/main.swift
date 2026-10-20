@@ -898,6 +898,7 @@ func fluidMovementAndGuestFavourRules() {
     require(expired.simulation.reputation==reputation-2 && expired.operationsState.guestPenalties[guest.id]==1,"A missed promise applies consequences exactly once")
     require(!expired.deliverGuestFavour(0),"Late delivery cannot collect a tip")
     require(expired.apologizeGuestFavour(0) && expired.cash==80 && !expired.apologizeGuestFavour(0),"One refund can recover some trust")
+    expired.world!.guestFavour=nil // Another conversation must not erase the checkout history.
     expired.recordCheckoutReview(expired.rooms[0])
     require(expired.operationsState.reviews.first?.text.contains("promised")==true,"Checkout review remembers the broken promise")
     var declined=Motel();declined.initializeWorld();declined.rooms[0].guest=guest;declined.world!.place = .grounds;declined.world!.player=Tile(x:16,y:9)

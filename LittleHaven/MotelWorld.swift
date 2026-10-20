@@ -28,6 +28,7 @@ struct MotelWorldState: Codable {
     var guestFavour: GuestFavour?
     var guestFavourDays: [Int:Int]?
     var guestGreetingDays: [Int:Int]?
+    var brokenGuestPromises: Set<Int>?
 }
 enum MotelAction: Hashable {
     case computer, pet(String), home, homeDecor, shop(NeighborhoodShop)
