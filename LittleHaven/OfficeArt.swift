@@ -303,7 +303,7 @@ struct ExpandedOfficeArt: View {
             rect(50,80,12,3,0xCCC7B5);text("PC",56,69,2.6)
             rect(83,73,10,8,0xEEE1C1);rect(88,74,0.6,6,0xA28B63)
             text("RECEPTION",75,87,3)
-            rect(50,12,40,12,0x765C43);for i in 0..<6 {rect(54+Double(i*5.5),15,2,5,0xE8C677)}
+            rect(50,12,40,12,0x765C43);for i in 0..<6 {rect(54+Double(i)*5.5,15,2,5,0xE8C677)}
             // Rest nook, supplies and paint are tappable from the desk.
             rect(19,33,23,40,0x715743);rect(21,35,19,36,0x8CB3A4);rect(23,37,15,8,0xF0E3C7)
             rect(20,114,14,23,0x7A624B);rect(21,116,12,4,0xA5C3B0);rect(24,121,2,13,0xD1B576)
