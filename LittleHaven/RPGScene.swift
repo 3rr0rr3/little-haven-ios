@@ -84,6 +84,7 @@ final class RPGScene: SKScene {
     private let followCamera = SKCameraNode()
     private var playerTarget = CGPoint.zero
     private var cameraDestination: CGPoint?
+    private var cameraMoveDuration = 0.14
     private var textures: [String: SKTexture] = [:]
     private var configured = false
     private var viewSize = CGSize.zero
@@ -231,6 +232,7 @@ final class RPGScene: SKScene {
             }
             if actor.id == "player" {
                 playerTarget = target
+                cameraMoveDuration=stepDuration
                 if node.userData?["workKind"] as? String != workKind {
                     node.childNode(withName:"work")?.removeFromParent()
                     node.userData?["workKind"] = workKind
@@ -391,7 +393,7 @@ final class RPGScene: SKScene {
         cameraDestination=point
         followCamera.removeAction(forKey:"follow")
         if jump { followCamera.position=point }
-        else { followCamera.run(.move(to:point,duration:0.14),withKey:"follow") }
+        else { followCamera.run(.move(to:point,duration:cameraMoveDuration),withKey:"follow") }
     }
     override func didChangeSize(_ oldSize: CGSize) { layoutCamera(jump: true) }
     override func update(_ currentTime: TimeInterval) {
