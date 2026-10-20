@@ -71,7 +71,14 @@ enum MotelGrounds {
     }()
     static func blocked(_ tile: Tile) -> Bool { !walkableTiles.contains(tile) }
     static func nextStep(from start: Tile, to target: Tile, avoiding: Set<Tile>) -> Tile? {
-        if start == target || blocked(target) || avoiding.contains(target) { return nil }
+        if start == target || blocked(target) { return nil }
+        if avoiding.contains(target) {
+            // Keep approaching a busy destination, but never scan the entire
+            // map for a path that cannot finish on its occupied final tile.
+            return [(0,1),(1,0),(-1,0),(0,-1)].map { Tile(x:start.x+$0.0,y:start.y+$0.1) }.first {
+                !blocked($0) && !avoiding.contains($0) && $0.distance(to:target)<start.distance(to:target)
+            }
+        }
         var queue = [start]
         var seen: Set<Tile> = [start]
         var parents: [Tile: Tile] = [:]
