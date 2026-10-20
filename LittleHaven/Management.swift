@@ -1276,7 +1276,7 @@ extension Motel {
     }
     var guestFavourSummary:String? {
         guard let f=worldState.guestFavour,f.status == .pending else {return nil}
-        return f.collected ? "DELIVER "+f.kind.title.uppercased()+" / "+f.guestName+" / "+String(guestFavourSeconds(f.deadline))+"s" : "GUEST REQUEST: "+f.kind.title+" / "+f.kind.sourceName
+        return f.collected ? "DELIVER "+f.kind.title.uppercased()+" / "+f.guestName+" / "+String(guestFavourSeconds(f.deadline))+"s" : "GUEST REQUEST: "+f.kind.title+" / "+f.kind.sourceName+" / "+String(guestFavourSeconds(f.deadline))+"s"
     }
     var nearbyHospitalityRoom:MotelRoom? {
         guard !caught,visit == nil,worldState.place == .grounds else {return nil}
