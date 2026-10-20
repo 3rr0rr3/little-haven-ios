@@ -274,9 +274,9 @@ struct MotelGroundsCanvas: View, Animatable {
                 label("RECYCLE",px+8,py+8,2,0xF1E4C1)
             }
             // Supply rack used by personal guest requests.
-            rect(176,191,14,15,0x9E8061)
-            for i in 0..<3 {rect(178+Double(i*4),193,3,8,0xD9E1C8)}
-            label("GUEST SUPPLIES",184,186,2.8,0x344D3C)
+            rect(192,239,14,15,0x9E8061)
+            for i in 0..<3 {rect(194+Double(i*4),241,3,8,0xD9E1C8)}
+            label("GUEST SUPPLIES",200,234,2.8,0x344D3C)
             for (col,row) in [(46,38),(58,38),(65,38)] {
                 let px=Double(col*16),py=Double(row*16)
                 rect(px,py+3,22,4,0xAD8B64);rect(px,py+10,22,4,0xAD8B64)

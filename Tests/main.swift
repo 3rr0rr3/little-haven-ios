@@ -863,7 +863,7 @@ func fluidMovementAndGuestFavourRules() {
         let tile=Tile(x:x,y:y)
         require(MotelGrounds.blocked(tile)==RPGMaps.grounds.blocked(tile),"Cached terrain exactly preserves collisions")
     }}
-    require(MotelGrounds.nextStep(from:Tile(x:12,y:14),to:Tile(x:12,y:15),avoiding:[Tile(x:12,y:15)]) == nil,"Occupied destination waits without searching the entire map")
+    require(MotelGrounds.nextStep(from:Tile(x:43,y:18),to:Tile(x:44,y:18),avoiding:[Tile(x:44,y:18)]) == nil,"Occupied destination waits without searching the entire map")
     let started=Date().timeIntervalSinceReferenceDate
     for _ in 0..<30 {_=MotelGrounds.nextStep(from:Tile(x:43,y:16),to:Tile(x:68,y:32),avoiding:[])}
     print("Route benchmark (30 city searches):",Date().timeIntervalSinceReferenceDate-started,"seconds")
