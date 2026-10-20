@@ -199,7 +199,7 @@ struct HomeInteriorArt:View {
             if home.level > 0 {rect(20,38,47,30,0xE3CAB1);rect(22,40,43,8,0xF5E9D2)}
             rect(154,81,60,28,0x775F49);rect(160,72,47,28,0x303C3C);rect(164,76,39,19,0x86B2B2);rect(176,85,15,8,0xE2CB86)
             rect(171,162,50,22,0x8E7B9E);rect(176,154,40,21,0xB8A3BA)
-            for x in [157.0,190.0] {rect(x,201,25,13,0xBE9A76);rect(x+7,216,10,4,0x82ACA5)}
+            for x in [157.0,190.0] {rect(x+5,207,15,8,0xBE9A76);rect(x+9,217,6,3,0x82ACA5)}
             rect(30,155,27,17,0x88684B);rect(34,157,18,12,0xF2E2BC);rect(43,158,1,10,0xB89B70)
             context.draw(Text("SAVE").font(.system(size:4,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:44,y:176))
             // Physical workbench: supplies, plans and a hammer, without floating menus.
@@ -295,19 +295,20 @@ struct ExpandedOfficeArt: View {
             func rect(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) { CozyScenery.block(context:&context,x:x,y:y,w:w,h:h,color:color,depth:0.8) }
             func text(_ value:String,_ x:Double,_ y:Double,_ size:Double=4) { context.draw(Text(value).font(.system(size:size,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0xF4E4C0)),at:CGPoint(x:x,y:y)) }
             CozyScenery.interior(context:&context,width:240,height:240,floor:0xC4AD89,wall:Motel.themeColors[theme])
-            // Reception desk, chair, key board and a logbook.
-            rect(48,51,32,12,0x6D695C); rect(32,71,80,24,0x77553D); rect(30,68,84,7,0xD4B581)
-            rect(45,58,22,15,0x303D3C);rect(47,60,18,10,0x8CAFA4)
-            rect(54,73,4,4,0x3D4843);rect(48,77,17,2,0x4E5952)
-            rect(46,81,21,5,0xCCC7B5);text("PC",56,65,4)
-            rect(82,73,17,13,0xEEE1C1); rect(90,74,1,11,0xA28B63)
-            text("RECEPTION",72,91,4)
-            rect(40,9,60,18,0x765C43); for i in 0..<6 { rect(45+Double(i*8),14,3,7,0xE8C677) }
+            // Furniture is sized against the unchanged 24-by-28 actor canvas.
+            rect(64,52,14,11,0x6D695C)
+            rect(44,74,60,17,0x77553D);rect(42,71,64,5,0xD4B581)
+            rect(49,64,14,10,0x303D3C);rect(50.5,65.5,11,6.5,0x8CAFA4)
+            rect(55,74,2,3,0x3D4843);rect(51,77,10,1.5,0x4E5952)
+            rect(50,80,12,3,0xCCC7B5);text("PC",56,69,2.6)
+            rect(83,73,10,8,0xEEE1C1);rect(88,74,0.6,6,0xA28B63)
+            text("RECEPTION",75,87,3)
+            rect(50,12,40,12,0x765C43);for i in 0..<6 {rect(54+Double(i*5.5),15,2,5,0xE8C677)}
             // Rest nook, supplies and paint are tappable from the desk.
-            rect(21,33,20,29,0x715743); rect(23,34,16,25,0x8CB3A4); rect(24,35,14,7,0xF0E3C7)
-            rect(18,112,18,28,0x7A624B); rect(20,114,14,5,0xA5C3B0); rect(22,120,3,16,0xD1B576)
+            rect(19,33,23,40,0x715743);rect(21,35,19,36,0x8CB3A4);rect(23,37,15,8,0xF0E3C7)
+            rect(20,114,14,23,0x7A624B);rect(21,116,12,4,0xA5C3B0);rect(24,121,2,13,0xD1B576)
             text("TOOLS",27,109,3)
-            rect(18,144,18,20,0x7A624B); for i in 0..<4 { rect(20+Double(i*4),148,3,7,Motel.themeColors[i]) }; text("PAINT",27,141,3)
+            rect(20,146,14,15,0x7A624B);for i in 0..<4 {rect(21+Double(i*3),149,2,5,Motel.themeColors[i])}; text("PAINT",27,141,3)
             // Cat beds, food bowls, plants and entry rug.
             rect(97,180,46,29,0xA66F5B); rect(100,183,40,23,0xC59377)
             rect(112,208,16,32,0xEAD8AE); text("LEAVE",120,230,4)

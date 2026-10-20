@@ -149,7 +149,8 @@ final class RPGScene: SKScene {
             let name = "actor:" + actor.id
             let existing = world.childNode(withName: name) as? SKSpriteNode
             let node = existing ?? SKSpriteNode()
-            let target = CGPoint(x: CGFloat(actor.tile.x * 16 + 8), y: -CGFloat(actor.tile.y * 16 + 5))
+            let footOffset = actor.animal > 0 ? 11 * (1 - actor.displayScale) : 0
+            let target = CGPoint(x: CGFloat(actor.tile.x * 16 + 8), y: -CGFloat(actor.tile.y * 16 + 5) - CGFloat(footOffset))
             let moving = existing != nil && node.userData?["targetX"] as? Int != actor.tile.x || existing != nil && node.userData?["targetY"] as? Int != actor.tile.y
             if existing == nil {
                 node.name = name
@@ -221,7 +222,7 @@ final class RPGScene: SKScene {
                 label.text = caption
                 label.fontSize = 3.5
                 label.fontColor = UIColor(red: 0.18, green: 0.29, blue: 0.23, alpha: 1)
-                label.position = CGPoint(x: 0, y: 17)
+                label.position = CGPoint(x: 0, y: actor.animal > 0 ? 17 * actor.displayScale : 17)
                 label.zPosition = 1
                 node.addChild(label)
             }

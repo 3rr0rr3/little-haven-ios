@@ -3,7 +3,7 @@ import SwiftUI
 extension Motel {
     var petActors: [RPGActor] {
         visiblePets.map { pet in
-            RPGActor(id:pet.key,tile:pet.value.tile,color:pet.key == "chichu" ? 0x85817C : 0xE9E2D0,variant:0,facing:actorFacing,name:pet.key.capitalized,duration:0.14,animal:pet.key == "chichu" ? 1 : 2)
+            RPGActor(id:pet.key,tile:pet.value.tile,color:pet.key == "chichu" ? 0x85817C : 0xE9E2D0,variant:0,facing:actorFacing,name:pet.key.capitalized,duration:0.14,animal:pet.key == "chichu" ? 1 : 2,displayScale:0.55)
         }
     }
     var neighborhoodActors:[RPGActor] {
@@ -66,7 +66,7 @@ struct OfficeReceptionView: View {
             let scale = min(proxy.size.width / 240, proxy.size.height / 240)
             let origin = CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-office",revision:"reception-pc-\(motel.officeTheme)",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme)) }
+                RPGSceneView(mapID:"family-office",revision:"reception-proportions-16-\(motel.officeTheme)",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme)) }
                 target(.player,"Front desk",OfficeReception.clerk,scale,origin)
                 target(.computer,"Reception computer",OfficeReception.computer,scale,origin)
                 ForEach(motel.visiblePets, id: \.key) { pet in
