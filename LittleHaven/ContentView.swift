@@ -31,6 +31,15 @@ struct ContentView: View {
     private static func initialGame() -> Game {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
+        if args.contains("--ui-guest-favour") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.enableManagement();sample.motel!.cash=900
+            sample.motel!.rooms[0].guest=Motel.arrivals(day:1,count:1)[0]
+            sample.motel!.waiting=[];sample.motel!.world!.place = .grounds
+            sample.motel!.world!.player=Tile(x:16,y:9)
+            sample.motel!.operations!.nextIncidentTick=10000
+            sample.save();return sample
+        }
         if args.contains("--ui-staff-posts") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.cash=5000
             sample.motel!.waiting=[];sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:12,y:23)

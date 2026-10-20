@@ -260,6 +260,29 @@ struct MotelGroundsCanvas: View, Animatable {
                 }
                 label(service.rawValue.uppercased(),tx+8,ty-4,3,0x243D32)
             }
+            // Small everyday objects keep the grounds lived in, without moving paths.
+            for x in [44.0,49,59,69] {CozyScenery.planter(context:&context,x:x*16,y:21*16)}
+            for (col,row) in [(44,16),(52,21),(62,21),(69,32)] {
+                let px=Double(col*16),py=Double(row*16)
+                rect(px+6,py-20,2,34,0x64736A)
+                rect(px+2,py-23,10,7,0xE3D49E)
+                context.fill(Path(ellipseIn:CGRect(x:px+3,y:py-22,width:8,height:4)),with:.color(Color(hex:0xFFF0BA)))
+            }
+            for (col,row) in [(45,32),(60,32)] {
+                let px=Double(col*16),py=Double(row*16)
+                rect(px+3,py+3,10,12,0x6D9988);rect(px+2,py+1,12,3,0x496F63)
+                label("RECYCLE",px+8,py+8,2,0xF1E4C1)
+            }
+            // Supply rack used by personal guest requests.
+            rect(176,207,14,15,0x9E8061)
+            for i in 0..<3 {rect(178+Double(i*4),209,3,8,0xD9E1C8)}
+            label("GUEST SUPPLIES",184,202,2.8,0x344D3C)
+            for (col,row) in [(46,38),(58,38),(65,38)] {
+                let px=Double(col*16),py=Double(row*16)
+                rect(px,py+3,22,4,0xAD8B64);rect(px,py+10,22,4,0xAD8B64)
+                rect(px+2,py+14,2,3,0x526B59);rect(px+18,py+14,2,3,0x526B59)
+                CozyScenery.planter(context:&context,x:px+28,y:py+3)
+            }
             // The office and nine physical room plots, connected by walkable lanes.
             func building(_ origin: Tile, _ width: Int, _ height: Int, _ door: Tile, _ name: String, _ roof: UInt32, _ paint: UInt32) {
                 CozyScenery.building(context:&context,x:Double(origin.x*16),y:Double(origin.y*16),w:Double(width*16),h:Double(height*16),doorX:Double(door.x*16),name:name,roof:roof,paint:paint)

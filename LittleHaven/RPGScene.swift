@@ -83,6 +83,7 @@ final class RPGScene: SKScene {
     private let world = SKNode()
     private let followCamera = SKCameraNode()
     private var playerTarget = CGPoint.zero
+    private var cameraDestination: CGPoint?
     private var textures: [String: SKTexture] = [:]
     private var configured = false
     private var viewSize = CGSize.zero
@@ -152,6 +153,8 @@ final class RPGScene: SKScene {
             let footOffset = actor.animal > 0 ? 11 * (1 - actor.displayScale) : 0
             let target = CGPoint(x: CGFloat(actor.tile.x * 16 + 8), y: -CGFloat(actor.tile.y * 16 + 5) - CGFloat(footOffset))
             let moving = existing != nil && node.userData?["targetX"] as? Int != actor.tile.x || existing != nil && node.userData?["targetY"] as? Int != actor.tile.y
+            let diagonal = existing != nil && node.userData?["targetX"] as? Int != actor.tile.x && node.userData?["targetY"] as? Int != actor.tile.y
+            let stepDuration = actor.id == "player" && diagonal ? 0.19 : actor.duration
             if existing == nil {
                 node.name = name
                 node.size = CGSize(width: 24 * actor.displayScale, height: 28 * actor.displayScale)
@@ -177,13 +180,13 @@ final class RPGScene: SKScene {
             if actor.effect == 0 && node.action(forKey:"walk") == nil { node.texture = idle }
             if moving {
                 let frames = [sprite(actor, stride: 1), idle, sprite(actor, stride: -1), idle]
-                if node.action(forKey:"walk") == nil {node.run(.repeatForever(.animate(with:frames,timePerFrame:actor.duration/4)),withKey:"walk")}
+                if node.action(forKey:"walk") == nil {node.run(.repeatForever(.animate(with:frames,timePerFrame:stepDuration/4)),withKey:"walk")}
                 node.removeAction(forKey:"walkEnd")
-                node.run(.sequence([.wait(forDuration:actor.duration*1.5),.run { [weak node] in
+                node.run(.sequence([.wait(forDuration:stepDuration*1.5),.run { [weak node] in
                     node?.removeAction(forKey:"walk");node?.texture=idle
                 }]),withKey:"walkEnd")
                 node.removeAction(forKey: "move")
-                node.run(.move(to: target, duration: actor.duration), withKey: "move")
+                node.run(.move(to: target, duration: stepDuration), withKey: "move")
             }
             if actor.effect > 0 && node.action(forKey:"effect") == nil {
                 node.run(.repeatForever(.animate(with:(0..<8).map { sprite(actor,stride:Double($0)) },timePerFrame:0.1)),withKey:"effect")
@@ -214,17 +217,17 @@ final class RPGScene: SKScene {
                 node.run(.repeatForever(.sequence([.rotate(toAngle:0.18,duration:0.12),.rotate(toAngle:-0.18,duration:0.12),.rotate(toAngle:0,duration:0.16)])),withKey:"spar")
             }
             node.zPosition = CGFloat(actor.tile.y * 16)
-            node.childNode(withName: "caption")?.removeFromParent()
             let caption = [actor.name, actor.marker].filter { !$0.isEmpty }.joined(separator: " ")
-            if !caption.isEmpty {
-                let label = SKLabelNode(fontNamed: "Menlo-Bold")
-                label.name = "caption"
-                label.text = caption
-                label.fontSize = 3.5
-                label.fontColor = UIColor(red: 0.18, green: 0.29, blue: 0.23, alpha: 1)
-                label.position = CGPoint(x: 0, y: actor.animal > 0 ? 17 * actor.displayScale : 17)
-                label.zPosition = 1
-                node.addChild(label)
+            if caption.isEmpty { node.childNode(withName:"caption")?.removeFromParent() }
+            else {
+                let label = (node.childNode(withName:"caption") as? SKLabelNode) ?? SKLabelNode(fontNamed:"Menlo-Bold")
+                if label.parent == nil {
+                    label.name="caption";label.fontSize=3.5
+                    label.fontColor=UIColor(red:0.18,green:0.29,blue:0.23,alpha:1)
+                    label.position=CGPoint(x:0,y:actor.animal > 0 ? 17 * actor.displayScale : 17)
+                    label.zPosition=1;node.addChild(label)
+                }
+                if label.text != caption { label.text=caption }
             }
             if actor.id == "player" {
                 playerTarget = target
@@ -384,9 +387,11 @@ final class RPGScene: SKScene {
         let cx = indoors ? dimensions.width / 2 : max(viewport.width / 2, min(playerTarget.x, dimensions.width - viewport.width / 2))
         let cy = indoors ? -dimensions.height / 2 : -max(viewport.height / 2, min(-playerTarget.y, max(viewport.height / 2, dimensions.height - viewport.height / 2)))
         let point = CGPoint(x: cx, y: cy)
-        followCamera.removeAllActions()
-        if jump { followCamera.position = point }
-        else { followCamera.run(.move(to: point, duration: 0.14)) }
+        guard jump || cameraDestination != point else { return }
+        cameraDestination=point
+        followCamera.removeAction(forKey:"follow")
+        if jump { followCamera.position=point }
+        else { followCamera.run(.move(to:point,duration:0.14),withKey:"follow") }
     }
     override func didChangeSize(_ oldSize: CGSize) { layoutCamera(jump: true) }
     override func update(_ currentTime: TimeInterval) {

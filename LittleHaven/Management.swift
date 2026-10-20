@@ -228,6 +228,7 @@ extension Motel {
     }
     mutating func recordCheckoutReview(_ room: MotelRoom) {
         guard let guest = room.guest else { return }
+        expireGuestFavour(leavingGuestID:guest.id)
         var state = operationsState
         let id = "\(day)-\(guest.id)"
         guard !state.reviews.contains(where: { $0.id == id }) else { return }
@@ -237,6 +238,7 @@ extension Motel {
         let stars = managementEnabled ? max(1,min(5,baseStars - room.health.faults.count - (room.health.cleanliness < 60 ? 2 : 0) + (room.health.upgrades.contains(.bed) ? 1 : 0))) : baseStars
         let text: String
         if theft > 0 { text = "My belongings disappeared. I cannot recommend this Airb&b." }
+        else if worldState.guestFavour?.guestID == guest.id && (worldState.guestFavour?.status == .expired || worldState.guestFavour?.status == .apologized) { text = "The host promised supplies and never delivered them. That hurt my trust." }
         else if penalty > 0 { text = "The trouble outside was not handled in time. It spoiled my stay." }
         else if managementEnabled && !room.health.faults.isEmpty {text="Maintenance and pest problems interrupted my stay."}
         else if managementEnabled && room.health.cleanliness<60 {text="The room needed cleaning. I would expect better hygiene."}
@@ -266,6 +268,7 @@ extension Motel {
     }
     mutating func tickManagement(advanceClock:Bool = true) {
         guard !caught else { return }
+        expireGuestFavour()
         var state = operationsState
         // Migrate an active city fight from older checkpoints into the courtyard.
         if let incident=state.incident, incident.kind == .fight,
@@ -1244,5 +1247,117 @@ extension Motel {
 extension Motel {
     func guestBudget(_ guest:MotelGuest)->Int {
         guest.kind.budget+simulation.reputation+max(-20,min(50,simulation.relationships[guest.name,default:0]*5))
+    }
+}
+
+enum GuestFavourKind:String,Codable,CaseIterable {
+    case towels, snacks, toiletries
+    static func forGuest(_ id:Int)->Self { allCases[abs(id % allCases.count)] }
+    var title:String { switch self { case .towels:return "fresh towels";case .snacks:return "a snack";case .toiletries:return "toiletries" } }
+    var stockKey:String { rawValue }
+    var source:Tile { switch self { case .towels:return HotelService.laundry.tile;case .snacks:return HotelService.breakfast.tile;case .toiletries:return Tile(x:11,y:13) } }
+    var sourceName:String { switch self {case .towels:return "the laundry station";case .snacks:return "the breakfast station";case .toiletries:return "the supplies shelf beside reception"} }
+}
+struct GuestFavour:Codable {
+    enum Status:String,Codable {case pending,fulfilled,declined,expired,apologized}
+    let guestID:Int
+    let guestName:String
+    let roomID:Int
+    let day:Int
+    let deadline:Int
+    let kind:GuestFavourKind
+    var collected=false
+    var status:Status = .pending
+}
+extension Motel {
+    var guestFavourSummary:String? {
+        guard let f=worldState.guestFavour,f.status == .pending else {return nil}
+        return f.collected ? "DELIVER "+f.kind.title.uppercased()+" / "+f.guestName+" / "+String(max(0,f.deadline-operationsState.tick))+" ticks" : "GUEST REQUEST: "+f.kind.title+" / "+f.kind.sourceName
+    }
+    var nearbyHospitalityRoom:MotelRoom? {
+        guard !caught,visit == nil,worldState.place == .grounds else {return nil}
+        return rooms.first {$0.id/9 == viewingFloor && $0.guest != nil && actorTile.distance(to:MotelGrounds.roomDoor($0.id))<=1}
+    }
+    func canOfferGuestFavour(_ roomID:Int)->Bool {
+        guard nearbyHospitalityRoom?.id == roomID,let guest=rooms.first(where:{$0.id==roomID})?.guest else {return false}
+        return worldState.guestFavour?.status != .pending && worldState.guestFavourDays?[guest.id] != day
+    }
+    func guestConversation(_ roomID:Int)->String {
+        guard let room=rooms.first(where:{$0.id==roomID}),let guest=room.guest else {return "The guest is no longer here."}
+        if let f=worldState.guestFavour,f.guestID==guest.id {
+            switch f.status {
+            case .pending:
+                return f.collected ? "You have my "+f.kind.title+". Please bring them to my door. A small tip is waiting." : "Please collect "+f.kind.title+" from "+f.kind.sourceName+" and return before the promise expires. Remaining: "+String(max(0,f.deadline-operationsState.tick))+" hotel ticks."
+            case .fulfilled:return "Thank you for keeping your promise. I'll remember the thoughtful service."
+            case .declined:return "Thanks for being honest that you couldn't help right now."
+            case .expired:return "You promised to help and never came back. That will affect my review."
+            case .apologized:return "I appreciate the apology and refund. Please keep your promises next time."
+            }
+        }
+        if worldState.guestFavour?.status == .pending {return guest.kind.preference+" You already promised to help another guest first."}
+        if worldState.guestFavourDays?[guest.id] == day {return guest.kind.preference+" Thank you for checking on me."}
+        return guest.kind.preference+" Could you bring me "+GuestFavourKind.forGuest(guest.id).title+"? Please only promise if you can come back in time."
+    }
+    @discardableResult mutating func greetGuest(_ roomID:Int)->Bool {
+        guard nearbyHospitalityRoom?.id==roomID,let guest=rooms.first(where:{$0.id==roomID})?.guest else {return false}
+        initializeWorld()
+        guard world!.guestGreetingDays?[guest.id] != day else {lastEvent=guest.name+" appreciates the visit. You already checked in today.";return false}
+        world!.guestGreetingDays=world!.guestGreetingDays ?? [:];world!.guestGreetingDays![guest.id]=day
+        var s=simulation;s.relationships[guest.name,default:0]+=1;simulation=s
+        lastEvent=guest.name+": "+guest.kind.preference+" Your relationship improved."
+        return true
+    }
+    @discardableResult mutating func acceptGuestFavour(_ roomID:Int)->Bool {
+        guard canOfferGuestFavour(roomID),let guest=rooms.first(where:{$0.id==roomID})?.guest else {return false}
+        initializeWorld()
+        world!.guestFavour=GuestFavour(guestID:guest.id,guestName:guest.name,roomID:roomID,day:day,deadline:operationsState.tick+90,kind:.forGuest(guest.id))
+        world!.guestFavourDays=world!.guestFavourDays ?? [:];world!.guestFavourDays![guest.id]=day
+        lastEvent="Promise accepted: collect "+GuestFavourKind.forGuest(guest.id).title+" from "+GuestFavourKind.forGuest(guest.id).sourceName+". Return to room "+String(rooms.first(where:{$0.id==roomID})!.number)+" before 90 hotel ticks."
+        return true
+    }
+    var canCollectGuestFavour:Bool {
+        guard !caught,visit == nil,worldState.place == .grounds,let f=worldState.guestFavour,f.status == .pending,!f.collected,operationsState.tick<f.deadline else{return false}
+        return actorTile.distance(to:f.kind.source)<=1
+    }
+    @discardableResult mutating func collectGuestFavour()->Bool {
+        guard canCollectGuestFavour,let f=worldState.guestFavour else{return false}
+        var s=simulation
+        guard s.stock[f.kind.stockKey,default:0]>0 else {lastEvent="Out of "+f.kind.title+". Restock using the reception PC.";return false}
+        s.stock[f.kind.stockKey,default:0]-=1;simulation=s
+        world!.guestFavour!.collected=true
+        lastEvent="Collected "+f.kind.title+" for "+f.guestName+". Return to their room door."
+        return true
+    }
+    @discardableResult mutating func deliverGuestFavour(_ roomID:Int)->Bool {
+        expireGuestFavour()
+        guard nearbyHospitalityRoom?.id==roomID,let f=worldState.guestFavour,f.roomID==roomID,f.status == .pending,f.collected,nearbyHospitalityRoom?.guest?.id==f.guestID else{return false}
+        world!.guestFavour!.status = .fulfilled
+        cash+=25;logMoney(25,category:"Guest tip",note:f.guestName+" / "+f.kind.title)
+        var s=simulation;s.relationships[f.guestName,default:0]+=2;s.reputation=min(100,s.reputation+1);simulation=s
+        lastEvent=f.guestName+" thanks you! +25 tip, better relationship and reputation."
+        return true
+    }
+    @discardableResult mutating func declineGuestFavour(_ roomID:Int)->Bool {
+        guard acceptGuestFavour(roomID),let f=worldState.guestFavour else{return false}
+        world!.guestFavour!.status = .declined
+        lastEvent="You honestly declined "+f.guestName+"'s request. No broken promise or review penalty."
+        return true
+    }
+    mutating func expireGuestFavour(leavingGuestID:Int? = nil) {
+        guard let f=worldState.guestFavour,f.status == .pending else{return}
+        guard leavingGuestID == f.guestID || operationsState.tick>=f.deadline || day != f.day || rooms.first(where:{$0.id==f.roomID})?.guest?.id != f.guestID else{return}
+        world!.guestFavour!.status = .expired
+        var s=simulation;s.relationships[f.guestName,default:0]-=2;s.reputation=max(0,s.reputation-2);simulation=s
+        // Feed the existing checkout review system, once per broken promise.
+        var state=operationsState;state.guestPenalties[f.guestID,default:0]+=1;operations=state
+        lastEvent="Broken promise to "+f.guestName+": relationship and reputation fell; their checkout review will reflect it."
+    }
+    @discardableResult mutating func apologizeGuestFavour(_ roomID:Int)->Bool {
+        guard cash>=20,nearbyHospitalityRoom?.id==roomID,let f=worldState.guestFavour,f.roomID==roomID,f.status == .expired,nearbyHospitalityRoom?.guest?.id==f.guestID else{return false}
+        cash-=20;logMoney(-20,category:"Guest refund",note:f.guestName)
+        world!.guestFavour!.status = .apologized
+        var s=simulation;s.relationships[f.guestName,default:0]+=1;simulation=s
+        lastEvent="Refunded 20 coins to "+f.guestName+". Trust recovered a little; the missed promise remains in their review."
+        return true
     }
 }

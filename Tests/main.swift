@@ -857,3 +857,53 @@ func receptionAndCompanionRules() {
     print("PASS: physical PC, workbench, pet follow/stay/checkpoints, hotel-only fights and police arrival")
 }
 receptionAndCompanionRules()
+
+func fluidMovementAndGuestFavourRules() {
+    for y in -1...MotelGrounds.height {for x in -1...MotelGrounds.width {
+        let tile=Tile(x:x,y:y)
+        require(MotelGrounds.blocked(tile)==RPGMaps.grounds.blocked(tile),"Cached terrain exactly preserves collisions")
+    }}
+    require(MotelGrounds.nextStep(from:Tile(x:12,y:14),to:Tile(x:12,y:15),avoiding:[Tile(x:12,y:15)]) == nil,"Occupied destination waits without searching the entire map")
+    let started=Date().timeIntervalSinceReferenceDate
+    for _ in 0..<30 {_=MotelGrounds.nextStep(from:Tile(x:43,y:16),to:Tile(x:68,y:32),avoiding:[])}
+    print("Route benchmark (30 city searches):",Date().timeIntervalSinceReferenceDate-started,"seconds")
+    var motel=Motel();motel.initializeWorld();motel.enableManagement()
+    motel.rooms[0].guest=Motel.arrivals(day:1,count:1)[0]
+    motel.world!.place = .grounds;motel.world!.player=Tile(x:16,y:9)
+    let guest=motel.rooms[0].guest!
+    require(motel.greetGuest(0),"Guest can discuss their stay from the doorway")
+    let relation=motel.simulation.relationships[guest.name]
+    require(!motel.greetGuest(0) && motel.simulation.relationships[guest.name]==relation,"Repeated greetings cannot farm trust")
+    require(motel.acceptGuestFavour(0),"A guest request can be promised")
+    require(!motel.deliverGuestFavour(0),"Supplies must actually be collected")
+    let kind=motel.worldState.guestFavour!.kind
+    motel.world!.player=kind.source
+    let stock=motel.simulation.stock[kind.stockKey]!
+    var empty=motel;var sim=empty.simulation;sim.stock[kind.stockKey]=0;empty.simulation=sim
+    require(!empty.collectGuestFavour(),"Empty stock cannot produce supplies")
+    require(motel.collectGuestFavour() && motel.simulation.stock[kind.stockKey]==stock-1,"Collection consumes one real inventory item")
+    require(!motel.collectGuestFavour(),"Supplies cannot be collected twice")
+    motel=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(motel))
+    require(motel.worldState.guestFavour?.collected==true,"Checkpoint retains a carried delivery")
+    motel.world!.player=Tile(x:16,y:9)
+    let before=motel.cash
+    require(motel.deliverGuestFavour(0) && motel.cash==before+25,"Delivery pays the promised tip")
+    require(!motel.deliverGuestFavour(0) && !motel.acceptGuestFavour(0),"Daily requests and tips cannot be farmed")
+    var expired=Motel();expired.initializeWorld();expired.enableManagement();expired.cash=100
+    expired.rooms[0].guest=guest;expired.world!.place = .grounds;expired.world!.player=Tile(x:16,y:9)
+    require(expired.acceptGuestFavour(0),"A separate promise starts")
+    expired.operations!.tick=expired.worldState.guestFavour!.deadline
+    let reputation=expired.simulation.reputation
+    expired.expireGuestFavour();expired.expireGuestFavour()
+    require(expired.simulation.reputation==reputation-2 && expired.operationsState.guestPenalties[guest.id]==1,"A missed promise applies consequences exactly once")
+    require(!expired.deliverGuestFavour(0),"Late delivery cannot collect a tip")
+    require(expired.apologizeGuestFavour(0) && expired.cash==80 && !expired.apologizeGuestFavour(0),"One refund can recover some trust")
+    expired.recordCheckoutReview(expired.rooms[0])
+    require(expired.operationsState.reviews.first?.text.contains("promised")==true,"Checkout review remembers the broken promise")
+    var declined=Motel();declined.initializeWorld();declined.rooms[0].guest=guest;declined.world!.place = .grounds;declined.world!.player=Tile(x:16,y:9)
+    require(declined.declineGuestFavour(0),"Guest request can be politely declined")
+    declined.expireGuestFavour()
+    require(declined.operationsState.guestPenalties[guest.id]==nil,"An honest refusal is not a broken promise")
+    print("PASS: cached terrain, daily guest conversations, supply delivery, saved requests, stock checks, tips, deadlines, refunds and checkout consequences")
+}
+fluidMovementAndGuestFavourRules()

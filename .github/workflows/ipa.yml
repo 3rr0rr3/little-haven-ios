@@ -120,6 +120,14 @@ jobs:
             sleep 3
             xcrun simctl io "$DEVICE" screenshot "LittleHaven-$MODE.png"
           done
+      - name: Capture guest interaction
+        if: ${{ success() && env.SIM_DEVICE != '' }}
+        run: |
+          set -euo pipefail
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-guest-favour --ui-guest-dialogue
+          sleep 2
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-guest-conversation.png
       - name: Capture management simulation
         if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |

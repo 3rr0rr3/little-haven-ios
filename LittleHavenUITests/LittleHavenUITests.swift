@@ -374,6 +374,29 @@ final class LittleHavenUITests: XCTestCase {
         Thread.sleep(forTimeInterval:0.7)
         XCTAssertEqual(world.label,stoppedAgain)
     }
+    func testWalkingPastDoorActionsKeepsMoving() {
+        let app=launch("--ui-guest-favour")
+        let world=app.otherElements["motelWorld"]
+        XCTAssertTrue(world.waitForExistence(timeout:10))
+        app.buttons["Walk east"].press(forDuration:1.6)
+        let label=world.label
+        let column=Int(label.components(separatedBy:"Column ").last?.components(separatedBy:",").first ?? "") ?? 0
+        XCTAssertGreaterThanOrEqual(column,24,"A held direction continues through nearby room actions")
+        Thread.sleep(forTimeInterval:0.5)
+        XCTAssertEqual(world.label,label,"Releasing still stops immediately")
+    }
+    func testGuestConversationCanAcceptAPersonalRequest() {
+        let app=launch("--ui-guest-favour")
+        let talk=app.buttons["talkToGuest"]
+        XCTAssertTrue(talk.waitForExistence(timeout:10))
+        talk.tap()
+        let promise=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@", "Promise to bring")).firstMatch
+        XCTAssertTrue(promise.waitForExistence(timeout:5))
+        capture(app,"Guest conversation and personal request")
+        promise.tap()
+        XCTAssertFalse(promise.exists)
+        XCTAssertTrue(app.buttons["Walk east"].exists)
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

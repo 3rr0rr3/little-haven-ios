@@ -63,9 +63,9 @@ struct MotelView: View {
     @State private var family: OfficeTap?
     @State private var showPolice = false
     @State private var showIncident = false
+    @State private var talkingRoom: Int?
     private var motel: Motel { game.motel ?? Motel() }
     private var mapIdentity: String { motel.visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue }
-    private var movementDuration: Double { movement.map { $0.x != 0 && $0.y != 0 ? 0.19 : 0.14 } ?? 0.14 }
     private let cream = Color(hex: 0xF5E7C8)
     private let gold = Color(hex: 0xEFC977)
     private var testingUI: Bool {
@@ -75,7 +75,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
@@ -89,6 +89,7 @@ struct MotelView: View {
             if motel.business.police?.arrived == true { showPolice=true }
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--ui-dialogue") { family = .hildarelys }
+            if ProcessInfo.processInfo.arguments.contains("--ui-guest-dialogue") { talkingRoom=0 }
             if ProcessInfo.processInfo.arguments.contains("--ui-police") { showPolice = true }
             if ProcessInfo.processInfo.arguments.contains("--ui-hiring") { panel = .staff }
             if ProcessInfo.processInfo.arguments.contains(where:{$0.hasPrefix("--ui-management-") && $0 != "--ui-management-night"}) {showManagement=true}
@@ -96,10 +97,14 @@ struct MotelView: View {
         }
         .task(id: movement) {
             guard let direction = movement else { return }
+            let clock=ContinuousClock()
+            let interval=Duration.seconds(direction.x != 0 && direction.y != 0 ? 0.19 : 0.14)
+            var nextStep=clock.now+interval
             while !Task.isCancelled && movement == direction && scenePhase == .active && !motel.caught && !paused {
-                do { try await Task.sleep(for: .seconds(direction.x != 0 && direction.y != 0 ? 0.19 : 0.14)) } catch { break }
+                do { try await clock.sleep(until:nextStep) } catch { break }
                 guard movement == direction, !Task.isCancelled, !paused else { break }
                 change { $0.moveActor(dx: direction.x, dy: direction.y) }
+                nextStep=max(nextStep+interval,clock.now+interval/4)
             }
         }
         .task(id: scenePhase) {
@@ -184,7 +189,7 @@ struct MotelView: View {
                     Button("! \(incident.kind.rawValue.uppercased()) / \(incident.remaining)s") { stop(); showIncident = true }.foregroundStyle(Color(hex:0xEE9E78)).accessibilityIdentifier("incidentAlarm")
                 }
             }.font(.system(size:10,weight:.bold,design:.monospaced)).foregroundStyle(gold)
-            if motel.managementEnabled {Text(motel.simulation.news).font(.system(size:10)).foregroundStyle(gold).lineLimit(1)}
+            if motel.managementEnabled {Text(motel.guestFavourSummary ?? motel.simulation.news).font(.system(size:10)).foregroundStyle(gold).lineLimit(1)}
             if let police = motel.business.police {
                 Button { stop(); showPolice = true } label: {
                     Label(police.arrived ? "POLICE HERE - FINE / BRIBE" : "POLICE ON THE WAY",systemImage:"light.beacon.max.fill")
@@ -217,6 +222,12 @@ struct MotelView: View {
                     Button("Wash car / +35 coins") { stop(); change { _ = $0.washNearbyCar() } }
                         .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("washCar")
                         .accessibilityHint("Parking bay \(car.slot+1)")
+                } else if motel.canCollectGuestFavour {
+                    Button("Collect guest supplies") { stop();change { _ = $0.collectGuestFavour() } }
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("collectGuestSupplies")
+                } else if let room=motel.nearbyHospitalityRoom {
+                    Button("Talk to "+(room.guest?.name ?? "guest")) { stop();talkingRoom=room.id }
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("talkToGuest")
                 } else if let service = motel.nearbyService {
                     Button(service.title + " / +\(service.reward) coins") {
                         stop(); change { _ = $0.performService(service) }
@@ -272,6 +283,8 @@ struct MotelView: View {
     @ViewBuilder private var worldOverlay: some View {
                 if showPolice, let police = motel.business.police {
                     policeDialogue(police).padding(12)
+                } else if let id=talkingRoom, let room=motel.rooms.first(where:{$0.id==id}), let guest=room.guest {
+                    guestDialogue(room:room,guest:guest).padding(12)
                 } else if let family {
                     GameDialogue(speaker:familyTitle,text:familyMessage,portrait:familyPortrait(family),choices:familyChoices(family)) { self.family = nil }.padding(12)
                 } else if showIncident, let incident = motel.operationsState.incident {
@@ -300,7 +313,7 @@ struct MotelView: View {
         let tile = motel.actorTile
         if let visit = motel.visit, let room = motel.rooms.first(where: { $0.id == visit.roomID }) {
             MotelRPGView(motel: motel, workProgress: workProgress)
-                .animation(.linear(duration: movementDuration), value: tile).id(mapIdentity)
+                .id(mapIdentity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(motel.mapName). Column \(tile.x), row \(tile.y).")
                 .accessibilityValue("\(room.dirty ? "Cleaning \(room.cleanedTasks?.count ?? 0)/3" : "Ready for guests"). Theme \(room.theme). Furnishings \(room.furniture).")
@@ -311,7 +324,6 @@ struct MotelView: View {
             OfficeReceptionView(motel: motel, tap: officeTap).id(mapIdentity)
         } else {
             MotelRPGView(motel: motel)
-                .animation(.linear(duration: movementDuration), value: tile)
                 .id(mapIdentity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Airb&b GROUNDS. Column \(tile.x), row \(tile.y).")
@@ -394,6 +406,22 @@ struct MotelView: View {
             if motel.visit != nil { return "Walk to the bed, trash or spill to clean. Paint cabinet is in the upper right." }
             return motel.worldState.place == .office ? "Move with the stick or hold an arrow. Desk, tools, paint, bed and logbook are physical objects." : "Explore the grounds. Guests wait outside the office. Room entrances lead inside."
         }
+    }
+
+    private func guestDialogue(room:MotelRoom,guest:MotelGuest)->some View {
+        var choices=[DialogueChoice(title:"Ask about their stay",action:{change { _ = $0.greetGuest(room.id) };talkingRoom=nil})]
+        let favour=motel.worldState.guestFavour
+        if favour?.guestID == guest.id && favour?.status == .pending {
+            if favour?.collected == true {
+                choices.append(DialogueChoice(title:"Deliver supplies / +25 tip",action:{change { _ = $0.deliverGuestFavour(room.id) };talkingRoom=nil}))
+            }
+        } else if favour?.guestID == guest.id && favour?.status == .expired {
+            choices.append(DialogueChoice(title:"Apologize and refund 20",action:{change { _ = $0.apologizeGuestFavour(room.id) };talkingRoom=nil}))
+        } else if motel.canOfferGuestFavour(room.id) {
+            choices.append(DialogueChoice(title:"Promise to bring "+GuestFavourKind.forGuest(guest.id).title,action:{change { _ = $0.acceptGuestFavour(room.id) };talkingRoom=nil}))
+            choices.append(DialogueChoice(title:"Politely decline the request",action:{change { _ = $0.declineGuestFavour(room.id) };talkingRoom=nil}))
+        }
+        return GameDialogue(speaker:guest.name,text:motel.guestConversation(room.id),portrait:AnyView(PaperPortrait(color:guest.color,variant:guest.appearanceSeed)),choices:choices) { talkingRoom=nil }
     }
 
     private func performAction() {

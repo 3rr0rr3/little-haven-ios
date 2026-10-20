@@ -25,6 +25,9 @@ struct MotelWorldState: Codable {
     var townPrevious:[Int:Tile]?
     var townDestinations:[Int:Int]?
     var pets: [String: PetCompanion]?
+    var guestFavour: GuestFavour?
+    var guestFavourDays: [Int:Int]?
+    var guestGreetingDays: [Int:Int]?
 }
 enum MotelAction: Hashable {
     case computer, pet(String), home, homeDecor, shop(NeighborhoodShop)
@@ -56,11 +59,18 @@ enum MotelGrounds {
         }}
         return nextStep(from:start,to:refuge(from:start,danger:danger),avoiding:unsafe)
     }
-    static func blocked(_ tile: Tile) -> Bool {
-        RPGMaps.grounds.blocked(tile)
-    }
+    // Immutable terrain is shared by player movement and every NPC route search.
+    static let walkableTiles: Set<Tile> = {
+        var tiles:Set<Tile>=[]
+        for y in 0..<height { for x in 0..<width {
+            let tile=Tile(x:x,y:y)
+            if !RPGMaps.grounds.blocked(tile) { tiles.insert(tile) }
+        }}
+        return tiles
+    }()
+    static func blocked(_ tile: Tile) -> Bool { !walkableTiles.contains(tile) }
     static func nextStep(from start: Tile, to target: Tile, avoiding: Set<Tile>) -> Tile? {
-        if start == target { return nil }
+        if start == target || blocked(target) || avoiding.contains(target) { return nil }
         var queue = [start]
         var seen: Set<Tile> = [start]
         var parents: [Tile: Tile] = [:]
