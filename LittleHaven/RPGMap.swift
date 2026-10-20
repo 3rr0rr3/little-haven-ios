@@ -74,7 +74,7 @@ enum RPGMaps {
         for tile in landscapeTrees + landscapeBenches {
             obstacles.append(RPGRegion(x:tile.x,y:tile.y,width:1,height:1))
         }
-        for (x,y,w) in [(44,21,1),(49,21,1),(59,21,1),(69,21,1),(45,32,1),(60,32,1),(46,38,2),(58,38,2),(65,38,2),(48,38,1),(60,38,1),(67,38,1),(11,13,1)] {
+        for (x,y,w) in [(44,21,1),(49,21,1),(59,21,1),(69,21,1),(45,32,1),(60,32,1),(46,38,2),(58,38,2),(65,38,2),(48,38,1),(60,38,1),(67,38,1),(11,12,1)] {
             obstacles.append(RPGRegion(x:x,y:y,width:w,height:1))
         }
         var events = [RPGMapEvent(id: "office",tile: Tile(x: 6,y: 9),trigger: .action,destination: "office",arrival: Tile(x: 4,y: 7)),RPGMapEvent(id: "construction",tile: Tile(x: 12,y: 26),trigger: .action)]
