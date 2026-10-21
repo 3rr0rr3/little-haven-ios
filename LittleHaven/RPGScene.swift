@@ -25,14 +25,21 @@ struct RPGActor {
 private struct WorldTouchKey: EnvironmentKey {
     static let defaultValue: ((Tile, (() -> Void)?) -> Void)? = nil
 }
+private struct WorldSteerKey: EnvironmentKey {
+    static let defaultValue: ((Tile?)->Void)? = nil
+}
 extension EnvironmentValues {
+    var worldSteer: ((Tile?)->Void)? {
+        get {self[WorldSteerKey.self]}
+        set {self[WorldSteerKey.self]=newValue}
+    }
     var worldTouch: ((Tile, (() -> Void)?) -> Void)? {
         get {self[WorldTouchKey.self]}
         set {self[WorldTouchKey.self]=newValue}
     }
 }
 struct RPGSceneView: UIViewRepresentable {
-    @Environment(\.worldTouch) private var worldTouch
+    @Environment(\.worldSteer) private var worldSteer
     let mapID: String
     let revision: String
     let mapSize: CGSize
@@ -56,6 +63,7 @@ struct RPGSceneView: UIViewRepresentable {
         view.preferredFramesPerSecond = 60
         view.ignoresSiblingOrder = true
         view.isAccessibilityElement = false
+        view.isMultipleTouchEnabled = true
         let scene = RPGScene()
         scene.scaleMode = .resizeFill
         view.presentScene(scene)
@@ -63,13 +71,14 @@ struct RPGSceneView: UIViewRepresentable {
     }
     func updateUIView(_ view: SKView, context: Context) {
         guard let scene = view.scene as? RPGScene else { return }
-        scene.tileTap = worldTouch.map { handler in {tile in handler(tile,nil)} }
+        scene.setSteering(worldSteer)
         scene.configure(mapID: mapID, revision: revision, mapSize: mapSize,
                         columns: columns, interior: interior, actors: actors,
                         working: working, workKind: workKind, visual: visual,
                         weather:weather,cars:cars,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,scenery: scenery)
     }
     static func dismantleUIView(_ view: SKView, coordinator: ()) {
+        (view.scene as? RPGScene)?.cancelSteering(notify:false)
         view.scene?.removeAllActions()
         view.presentScene(nil)
     }
@@ -90,12 +99,34 @@ private struct ActorArtwork: View {
 }
 
 final class RPGScene: SKScene {
-    var tileTap: ((Tile)->Void)?
+    private var steering:((Tile?)->Void)?
+    private var movementTouch:UITouch?
+    private var touchOrigin=CGPoint.zero
+    private var dragDirection:Tile?
+    func setSteering(_ handler:((Tile?)->Void)?) {
+        guard let handler else {cancelSteering(notify:false);steering=nil;return}
+        steering=handler
+    }
+    func cancelSteering(notify:Bool=true) {
+        let wasActive=movementTouch != nil || dragDirection != nil
+        movementTouch=nil;dragDirection=nil
+        if notify && wasActive {steering?(nil)}
+    }
+    override func touchesBegan(_ touches:Set<UITouch>,with event:UIEvent?) {
+        guard steering != nil,movementTouch == nil,let view,let touch=touches.first else{return}
+        movementTouch=touch;touchOrigin=touch.location(in:view)
+    }
+    override func touchesMoved(_ touches:Set<UITouch>,with event:UIEvent?) {
+        guard let touch=movementTouch,touches.contains(touch),let view else{return}
+        let point=touch.location(in:view)
+        let direction=DragSteering.direction(dx:Double(point.x-touchOrigin.x),dy:Double(point.y-touchOrigin.y),diagonals:worldID != "town" && worldID != "cottage")
+        if direction != dragDirection {dragDirection=direction;steering?(direction)}
+    }
     override func touchesEnded(_ touches:Set<UITouch>,with event:UIEvent?) {
-        guard let touch=touches.first else{return}
-        let point=touch.location(in:world)
-        guard point.x>=0,point.y<=0,point.x<dimensions.width,-point.y<dimensions.height else{return}
-        tileTap?(Tile(x:Int(point.x/16),y:Int(-point.y/16)))
+        if let touch=movementTouch,touches.contains(touch) {cancelSteering()}
+    }
+    override func touchesCancelled(_ touches:Set<UITouch>,with event:UIEvent?) {
+        if let touch=movementTouch,touches.contains(touch) {cancelSteering()}
     }
 
     private var worldID = ""
@@ -137,6 +168,7 @@ final class RPGScene: SKScene {
                              visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,pumpFault:Bool,
                              scenery: () -> AnyView) {
         let changedMap = worldID != mapID
+        if changedMap {cancelSteering(notify:false)}
         dimensions = mapSize
         visibleColumns = columns
         indoors = interior

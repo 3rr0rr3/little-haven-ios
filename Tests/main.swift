@@ -1080,28 +1080,19 @@ func touchAndSidewalkRules() {
     require(HotelService.laundry.tile == FacilityLayout.laundry,"Laundry service shares the physical pavilion")
     require(GuestFavourKind.toiletries.source == FacilityLayout.supplies,"Guest supplies use the laundry area")
     require(FacilityLayout.supplies.distance(to:FacilityLayout.laundry)<=2,"Laundry and supplies are together")
-    var game=Motel();game.initializeWorld();game.waiting=[];game.world!.place = .grounds;game.world!.player=MotelGrounds.gate
-    for target in [FacilityLayout.laundry,FacilityLayout.supplies,Tile(x:12,y:15),BeachLayout.approach(0)] {
-        let route=game.touchRoute(to:target)!
-        var previous=game.actorTile
-        for tile in route {
-            require(!game.touchBlocked(tile) && previous.distance(to:tile)==1,"Tap route uses safe neighboring tiles")
-            previous=tile
-        }
-        require(previous == target,"Tap route reaches destination")
-    }
-    let wall=Tile(x:3,y:18)
-    let approach=game.touchRoute(to:wall)!
-    require((approach.last ?? game.actorTile).distance(to:wall)<=1,"Tapping an object approaches its edge")
-    require(game.touchRoute(to:Tile(x:999,y:999)) == nil,"Off-map taps cannot start a route")
-    let sealed=TouchPath.route(from:Tile(x:1,y:1),to:Tile(x:3,y:3),width:5,height:5,blocked:{$0 != Tile(x:1,y:1)})
-    require(sealed == nil,"Unreachable destinations do not teleport")
-    for place in [MotelPlace.office,.house,.shop] {
-        game.world!.place=place;game.world!.shop=place == .shop ? .furniture : nil
-        game.world!.player=place == .house ? Tile(x:7,y:12) : place == .shop ? ShopLayout.arrival : OfficeReception.clerk
-        let target=place == .house ? FamilyHome.workbench : place == .shop ? ShopLayout.counter : Tile(x:1,y:7)
-        require(game.touchRoute(to:target,adjacent:true) != nil,"Tap paths work across interior layouts")
-    }
-    print("PASS: cleared sidewalk collisions, grouped laundry facilities and safe touch navigation")
+    require(DragSteering.direction(dx:0,dy:0) == nil,"A tap never requests movement")
+    require(DragSteering.direction(dx:8,dy:6) == nil,"Thumb jitter inside the dead zone stays still")
+    require(DragSteering.direction(dx:60,dy:0) == Tile(x:1,y:0),"Drag right steers east")
+    require(DragSteering.direction(dx:-60,dy:0) == Tile(x:-1,y:0),"Drag left reverses direction")
+    require(DragSteering.direction(dx:0,dy:-60) == Tile(x:0,y:-1),"Screen-up drags walk north")
+    require(DragSteering.direction(dx:0,dy:60) == Tile(x:0,y:1),"Screen-down drags walk south")
+    require(DragSteering.direction(dx:45,dy:-45) == Tile(x:1,y:-1),"Diagonal thumb steering is supported")
+    require(DragSteering.direction(dx:500,dy:0) == DragSteering.direction(dx:60,dy:0),"Long drags keep normal walking speed")
+    require(DragSteering.direction(dx:45,dy:30,diagonals:false) == Tile(x:1,y:0),"Prologue uses its cardinal movement rules")
+    require(DragSteering.direction(dx:.infinity,dy:0) == nil,"Invalid touch coordinates cannot move the character")
+    var game=Motel();game.initializeWorld();game.world!.place = .house;game.world!.player=Tile(x:9,y:8)
+    game.moveActor(dx:1,dy:1)
+    require(game.actorTile == Tile(x:9,y:8),"Diagonal steering cannot cut through the sofa corner")
+    print("PASS: clear sidewalks, grouped laundry, thumb dead zone, direction changes, diagonal safety and bounded speed")
 }
 touchAndSidewalkRules()

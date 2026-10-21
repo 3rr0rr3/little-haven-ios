@@ -42,9 +42,7 @@ struct MotelView: View {
     @Binding var game: Game
     @Environment(\.returnToTitle) private var returnToTitle
     @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
-    @State private var touchRouteID=UUID()
-    @State private var touchSteps:[Tile]=[]
-    @State private var touchCompletion:(()->Void)?
+    @State private var dragDirection:Tile?
     @AppStorage("littlehaven.hints") private var showHints = true
     @AppStorage("littlehaven.haptics") private var haptics = true
     @State private var neighborhood: NeighborhoodShop?
@@ -108,22 +106,14 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains(where:{$0.hasPrefix("--ui-management-") && $0 != "--ui-management-night"}) {showManagement=true}
             #endif
         }
-        .task(id:touchRouteID) {
-            guard fullscreenTouch,!paused else{return}
-            let map=mapIdentity
-            let steps=touchSteps
-            let completion=touchCompletion
-            touchCompletion=nil
-            for tile in steps {
-                guard !Task.isCancelled,!paused,scenePhase == .active,mapIdentity == map else{return}
-                let start=motel.actorTile
-                guard !motel.touchBlocked(tile) else{return}
-                change {$0.moveActor(dx:tile.x-start.x,dy:tile.y-start.y)}
-                guard motel.actorTile != start else{return}
-                do {try await Task.sleep(for:.seconds(0.14))} catch {return}
+        .task(id:dragDirection != nil) {
+            guard fullscreenTouch,dragDirection != nil else{return}
+            let clock=ContinuousClock()
+            while !Task.isCancelled,let direction=dragDirection,!paused,!motel.caught,scenePhase == .active {
+                change {$0.moveActor(dx:direction.x,dy:direction.y)}
+                let interval=Duration.seconds(direction.x != 0 && direction.y != 0 ? 0.19 : 0.14)
+                do {try await clock.sleep(for:interval)} catch {return}
             }
-            guard !Task.isCancelled,!paused,scenePhase == .active,mapIdentity == map else{return}
-            completion?()
         }
         .onChange(of:fullscreenTouch) {_,_ in stop()}
         .task(id: movement) {
@@ -237,7 +227,9 @@ struct MotelView: View {
     }
     private var fullscreenWorld:some View {
         ZStack {
-            scene.ignoresSafeArea().environment(\.worldTouch,walkToTouch)
+            scene.ignoresSafeArea()
+                .environment(\.worldSteer,paused ? nil : steer)
+                .environment(\.worldTouch,interactAtTouch)
             VStack(spacing:8) {
                 HStack {
                     VStack(alignment:.leading) {
@@ -260,32 +252,16 @@ struct MotelView: View {
             worldOverlay
         }
     }
-    private func walkToTouch(_ target:Tile,_ completion:(()->Void)?) {
+    private func steer(_ direction:Tile?) {
+        guard !paused,!motel.caught,scenePhase == .active else{dragDirection=nil;return}
+        if direction != nil {movement=nil;working=false;workProgress=0}
+        dragDirection=direction
+    }
+    private func interactAtTouch(_ target:Tile,_ completion:(()->Void)?) {
         guard fullscreenTouch,!paused,!motel.caught else{return}
         stop()
-        var destination=target
-        var finish=completion
-        if completion == nil,motel.visit == nil,motel.worldState.place == .grounds {
-            if RPGRegion(x:7,y:30,width:2,height:2).contains(target) {
-                destination=FacilityLayout.laundry
-                finish={change{_=$0.performService(.laundry)}}
-            } else if RPGRegion(x:10,y:30,width:1,height:2).contains(target) {
-                destination=FacilityLayout.supplies
-                finish={change{_=$0.collectGuestFavour()}}
-            } else if RPGRegion(x:10,y:21,width:1,height:2).contains(target) {
-                destination=HotelService.repair.tile
-                finish={change{_=$0.performService(.repair)}}
-            }
-        }
-        let adjacent=completion != nil
-        guard let route=motel.touchRoute(to:destination,adjacent:adjacent) else{toast="That spot is out of reach.";return}
-        touchSteps=route
-        let object = motel.touchBlocked(target) || (motel.worldState.place == .grounds && (
-            NeighborhoodShop.allCases.contains{$0.door.distance(to:target)<=1} ||
-            target.distance(to:FamilyHome.door)<=1 ||
-            RPGMaps.grounds.events.contains{$0.tile == target}))
-        touchCompletion=finish ?? (object ? {performAction()} : nil)
-        touchRouteID=UUID()
+        guard motel.actorTile.distance(to:target)<=2 else {toast="Move closer to interact.";return}
+        completion?()
     }
     private var worldScreen: some View {
         VStack(spacing: 10) {
@@ -804,7 +780,7 @@ struct MotelView: View {
         guard motel.atSavePoint else { return }
         stop(); game.save(); panel = nil; toast = "Checkpoint saved."
     }
-    private func stop() { movement = nil; working = false; workProgress = 0; touchSteps=[]; touchCompletion=nil; touchRouteID=UUID() }
+    private func stop() { movement = nil; working = false; workProgress = 0; dragDirection=nil }
     private func change(_ action: (inout Motel) -> Void) {
         guard var current = game.motel else { return }
         let before = current.lastEvent

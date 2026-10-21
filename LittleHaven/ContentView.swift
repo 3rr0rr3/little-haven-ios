@@ -10,9 +10,7 @@ struct ContentView: View {
     @State private var playing = ContentView.bypassTitle
     @State private var sessionID = UUID()
     @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
-    @State private var townRouteID=UUID()
-    @State private var townRoute:[Tile]=[]
-    @State private var townInteraction=false
+    @State private var townDirection:Tile?
     @State private var showTownOptions=false
     @AppStorage("littlehaven.hints") private var showHints = true
     private static var bypassTitle: Bool {
@@ -278,41 +276,33 @@ struct ContentView: View {
     private var touchTown:some View {
         ZStack {
             TownRPGView(game:game).ignoresSafeArea()
-                .environment(\.worldTouch,{tile,_ in
-                    guard conversation == nil,message == nil,!showHouse,!showJournal else{return}
-                    let map=game.inside ? RPGMaps.cottage : RPGMaps.town
-                    let occupied=game.inside ? Set<Tile>() : Set(Town.neighbors.map(\.tile))
-                    townInteraction = !game.inside && (Town.neighbors.contains{$0.tile == tile} || tile == Town.door)
-                    guard let path=TouchPath.route(from:game.player,to:tile,width:map.width,height:map.height,adjacent:map.blocked(tile,occupied:occupied) || townInteraction,blocked:{map.blocked($0,occupied:occupied)}) else{return}
-                    townRoute=path
-                    townRouteID=UUID()
-                })
+                .environment(\.worldSteer,conversation != nil || message != nil || showHouse || showJournal ? nil : {townDirection=$0})
             VStack {
                 HStack {
                     Text("LITTLE HAVEN").font(.headline)
                     Spacer()
-                    Button {townRoute=[];showJournal=true} label:{Image(systemName:"book.closed.fill").padding(12)}.accessibilityLabel("Open journal")
+                    Button {townDirection=nil;showJournal=true} label:{Image(systemName:"book.closed.fill").padding(12)}.accessibilityLabel("Open journal")
                 }.padding(10).background(Color(hex:0x172A25).opacity(0.9),in:RoundedRectangle(cornerRadius:16))
                 Spacer()
                 Button(game.atHouse ? "Cottage" : "Talk",action:interact).buttonStyle(MotelButtonStyle()).accessibilityIdentifier("interact")
             }.padding(16)
         }
         .foregroundStyle(cream).background(Color(hex:0x172A25))
-        .task(id:townRouteID) {
+        .task(id:townDirection != nil) {
+            guard townDirection != nil else{return}
             defer {game.save()}
-            let inside=game.inside
-            let shouldInteract=townInteraction
-            for tile in townRoute {
-                guard !Task.isCancelled,scenePhase == .active,conversation == nil,message == nil,!showHouse,!showJournal,game.inside == inside else{return}
-                let before=game.player
-                game.move(dx:tile.x-before.x,dy:tile.y-before.y)
-                if game.player == before {return}
-                do {try await Task.sleep(for:.seconds(0.14))} catch {break}
+            let clock=ContinuousClock()
+            while !Task.isCancelled,let direction=townDirection,scenePhase == .active,conversation == nil,message == nil,!showHouse,!showJournal {
+                let inside=game.inside
+                game.move(dx:direction.x,dy:direction.y)
+                if game.inside != inside {townDirection=nil;return}
+                do {try await clock.sleep(for:.seconds(0.14))} catch {return}
             }
-            if !Task.isCancelled,game.inside == inside,shouldInteract,conversation == nil,message == nil,!showHouse,!showJournal {interact()}
         }
-        .onChange(of:scenePhase) {_,phase in if phase != .active {townRoute=[];townRouteID=UUID()}}
-        .onDisappear {townRoute=[];townRouteID=UUID();game.save()}
+        .onChange(of:conversation != nil || message != nil || showHouse || showJournal) {_,paused in if paused {townDirection=nil}}
+        .onChange(of:scenePhase) {_,phase in if phase != .active {townDirection=nil}}
+        .onChange(of:fullscreenTouch) {_,_ in townDirection=nil}
+        .onDisappear {townDirection=nil;game.save()}
     }
     private var townBody: some View {
         Group {
@@ -452,6 +442,7 @@ struct ContentView: View {
         }
     }
     private func stopMoving() {
+        townDirection = nil
         heldDirection = nil
         game.save()
     }
@@ -601,12 +592,12 @@ struct GameOptionsView: View {
                     Text("Gameplay").font(.title2.monospaced().bold())
                     Toggle("Show gameplay hints", isOn: $hints).accessibilityIdentifier("optionHints")
                     Toggle("Action haptics", isOn: $haptics)
-                    Toggle("Full screen / touch to walk", isOn: $fullscreenTouch).accessibilityIdentifier("optionFullscreenTouch")
-                    Text("Fill the screen with the world. Tap the ground to walk, and tap objects or use the nearby action to interact. No D-pad or joystick.").font(.caption)
+                    Toggle("Full screen / drag to move", isOn: $fullscreenTouch).accessibilityIdentifier("optionFullscreenTouch")
+                    Text("Fill the screen with the world. Hold and drag anywhere on the map to steer. Release to stop. Tap nearby objects or use the action button. No visible D-pad or joystick.").font(.caption)
                     if !fullscreenTouch { Toggle("Larger D-pad buttons", isOn: $largeControls).accessibilityIdentifier("optionLargeControls") }
                     Divider().overlay(Color(hex:0xEFC977))
                     Text("Controls").font(.title2.monospaced().bold())
-                    Text(fullscreenTouch ? "Tap a clear spot to walk there. Tap again to choose a new destination. Open Pause to change controls." : "Hold an arrow to walk. Release or slide off the button to stop. Nearby tasks never move your character; press their action button when you want to work.")
+                    Text(fullscreenTouch ? "Touch the map and drag in the direction you want to walk. Keep holding to move, change direction with your thumb, and release to stop. A stationary tap never moves you. Open Pause to change controls." : "Hold an arrow to walk. Release or slide off the button to stop. Nearby tasks never move your character; press their action button when you want to work.")
                     Text("Inside the office, walk freely and tap guests, the desk, tools, family, or the door to interact.")
                     Divider().overlay(Color(hex:0xEFC977))
                     Text("Saved game").font(.title2.monospaced().bold())

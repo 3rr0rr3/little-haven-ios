@@ -101,28 +101,15 @@ enum RPGMaps {
     }()
 }
 
- 
-// One breadth-first search per tap; movement follows the route at walking cadence.
-enum TouchPath {
-    static func route(from start:Tile,to target:Tile,width:Int,height:Int,adjacent:Bool=false,blocked:(Tile)->Bool)->[Tile]? {
-        guard target.x>=0,target.y>=0,target.x<width,target.y<height else{return nil}
-        func arrived(_ tile:Tile)->Bool {adjacent ? tile.distance(to:target)<=1 : tile == target}
-        if arrived(start) {return []}
-        var queue=[start],seen:Set<Tile>=[start],parents:[Tile:Tile]=[:],cursor=0
-        while cursor<queue.count {
-            let tile=queue[cursor];cursor+=1
-            for (dx,dy) in [(0,1),(1,0),(-1,0),(0,-1)] {
-                let next=Tile(x:tile.x+dx,y:tile.y+dy)
-                guard next.x>=0,next.y>=0,next.x<width,next.y<height,!blocked(next),seen.insert(next).inserted else{continue}
-                parents[next]=tile
-                if arrived(next) {
-                    var path=[next],current=next
-                    while let parent=parents[current],parent != start {path.append(parent);current=parent}
-                    return path.reversed()
-                }
-                queue.append(next)
-            }
+// Finger displacement uses screen points, independent of camera zoom or movement.
+enum DragSteering {
+    static func direction(dx:Double,dy:Double,diagonals:Bool=true)->Tile? {
+        guard dx.isFinite,dy.isFinite,hypot(dx,dy)>=12 else{return nil}
+        if !diagonals {
+            return abs(dx)>abs(dy) ? Tile(x:dx>0 ? 1 : -1,y:0) : Tile(x:0,y:dy>0 ? 1 : -1)
         }
-        return nil
+        let x=abs(dx)>abs(dy)*0.45 ? (dx>0 ? 1 : -1) : 0
+        let y=abs(dy)>abs(dx)*0.45 ? (dy>0 ? 1 : -1) : 0
+        return Tile(x:x,y:y)
     }
 }
