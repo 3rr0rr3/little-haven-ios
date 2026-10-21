@@ -1063,7 +1063,7 @@ func neighborhoodAndFacilitiesRules() {
     require(game.worldState.neighborPositions?.count == 3,"Residential neighbors live on the map")
     require(game.worldState.neighborPositions!.values.allSatisfy{!MotelGrounds.blocked($0)},"Neighbors use safe routes")
     game.world!.townPositions=[0:Tile(x:57,y:33)]
-    game.world!.travellers=[MotelWalker(id:99,name:"Visitor",color:0x91B7A1,roomID:0,player:Tile(x:8,y:31),previous:Tile(x:8,y:31),destination:MotelGrounds.roomDoor(0))]
+    game.world!.travellers=[MotelWalker(id:99,name:"Visitor",color:0x91B7A1,roomID:0,player:Tile(x:36,y:11),previous:Tile(x:36,y:11),destination:MotelGrounds.roomDoor(0))]
     game.reconcileInteriorSpawn()
     require(!MotelGrounds.blocked(game.worldState.townPositions![0]!),"Saved townspeople relocate out of the moved bar")
     require(!MotelGrounds.blocked(game.worldState.travellers[0].player),"Saved guests relocate out of new facilities")
@@ -1080,6 +1080,19 @@ func touchAndSidewalkRules() {
     require(HotelService.laundry.tile == FacilityLayout.laundry,"Laundry service shares the physical pavilion")
     require(GuestFavourKind.toiletries.source == FacilityLayout.supplies,"Guest supplies use the laundry area")
     require(FacilityLayout.supplies.distance(to:FacilityLayout.laundry)<=2,"Laundry and supplies are together")
+    for y in 0..<MotelGrounds.height {for x in 0..<MotelGrounds.width {
+        let tile=Tile(x:x,y:y)
+        if RPGMaps.hotelSidewalk(tile) {require(!MotelGrounds.blocked(tile),"Every hotel sidewalk remains free of fixtures")}
+        if FacilityLayout.laundryFootprint.contains(tile) {
+            require(!RPGMaps.hotelSidewalk(tile) && x<40,"Laundry footprint stays on grass outside sidewalks and the road")
+        }
+    }}
+    for y in 30...33 {for x in 7...10 {
+        require(!MotelGrounds.blocked(Tile(x:x,y:y)),"Old laundry site leaves no invisible furniture collisions")
+    }}
+    require(!MotelGrounds.blocked(Tile(x:38,y:16)),"Laundry has a clear entrance facing the room walkway")
+    require(MotelGrounds.nextStep(from:MotelGrounds.roomDoor(5),to:FacilityLayout.laundry,avoiding:[]) != nil,"Laundry is reachable from the motel room row")
+    require(MotelGrounds.nextStep(from:FacilityLayout.laundry,to:FacilityLayout.supplies,avoiding:[]) != nil,"Supplies share the laundry aisle")
     require(DragSteering.direction(dx:0,dy:0) == nil,"A tap never requests movement")
     require(DragSteering.direction(dx:8,dy:6) == nil,"Thumb jitter inside the dead zone stays still")
     require(DragSteering.direction(dx:60,dy:0) == Tile(x:1,y:0),"Drag right steers east")

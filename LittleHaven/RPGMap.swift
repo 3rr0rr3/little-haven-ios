@@ -45,7 +45,14 @@ struct RPGMapDefinition: Codable {
     }
 }
 enum RPGMaps {
-    static let landscapeTrees = [Tile(x:2,y:2),Tile(x:12,y:2),Tile(x:21,y:2),Tile(x:29,y:2),Tile(x:37,y:2),Tile(x:2,y:16),Tile(x:2,y:24),Tile(x:3,y:33),Tile(x:37,y:10),Tile(x:37,y:19),Tile(x:37,y:28)]
+    static func hotelSidewalk(_ tile:Tile)->Bool {
+        let x=tile.x,y=tile.y
+        return ((11...38).contains(x) && [8,9,17,18,26,27,33,34].contains(y)) ||
+            ((11...12).contains(x) && (8...34).contains(y)) ||
+            ((3...10).contains(x) && (9...15).contains(y)) ||
+            ((5...7).contains(x) && (23...35).contains(y))
+    }
+    static let landscapeTrees = [Tile(x:2,y:2),Tile(x:12,y:2),Tile(x:21,y:2),Tile(x:29,y:2),Tile(x:37,y:2),Tile(x:2,y:16),Tile(x:2,y:24),Tile(x:3,y:33),Tile(x:37,y:6),Tile(x:37,y:19),Tile(x:37,y:28)]
     static let landscapeBenches = [Tile(x:8,y:16),Tile(x:3,y:25),Tile(x:8,y:25)]
     static let town = RPGMapDefinition(id: "town", width: 20, height: 23,
         walkable: RPGRegion(x: 1, y: 1, width: 18, height: 21),

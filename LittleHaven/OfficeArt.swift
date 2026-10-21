@@ -695,28 +695,29 @@ enum FacilitiesArt {
         block(32,464,47,12,0xAB855C);block(36,477,3,6,0x705C46);block(72,477,3,6,0x705C46)
         for x in [40.0,58] {c.fill(Path(ellipseIn:CGRect(x:x,y:467,width:11,height:4)),with:.color(Color(hex:0xF0E3C6)))}
         block(34,455,39,5,0x7F9D88);block(34,482,39,5,0x7F9D88)
-        // Open-front laundry pavilion: clear central aisle, washer and supply shelves.
-        block(110,478,67,66,0xCAB995)
-        block(110,475,67,5,0x6A8D80)
-        block(110,480,2,64,0x6A8D80);block(175,480,2,64,0x6A8D80)
-        // Working laundry cabinet and folded linen cart.
-        block(112,480,30,26,0x8BA69A);block(114,482,26,4,0xDFDDC4)
-        c.fill(Path(ellipseIn:CGRect(x:117,y:489,width:17,height:14)),with:.color(Color(hex:0x537F83)))
-        c.stroke(Path(ellipseIn:CGRect(x:119,y:491,width:13,height:10)),with:.color(Color(hex:0xBBCFC6)),lineWidth:1.2)
-        block(115,483,3,2,0xD6B675);block(131,483,6,2,0x6B837B)
-
-        block(160,480,14,29,0x6F6552)
-        for y in [483.0,493,503] {
-            block(161,y+5,12,2,0xC7AB7C)
-            block(162,y,5,5,0xE6E0C7);block(168,y,5,5,0x9DBFAF)
+        // Compact service wing on grass beside the motel rooms.
+        // Every piece stays inside the footprint, including signs and staff props.
+        let x=Double(FacilityLayout.laundryFootprint.x*16),y=Double(FacilityLayout.laundryFootprint.y*16)
+        block(x,y+16,64,80,0xCAB995)
+        block(x,y+12,64,6,0x6A8D80)
+        block(x,y+16,2,80,0x6A8D80)
+        block(x+62,y+16,2,32,0x6A8D80)
+        sign("LAUNDRY / GUEST SUPPLIES",x,y,64)
+        block(x+2,y+18,28,28,0x8BA69A);block(x+4,y+20,24,4,0xDFDDC4)
+        c.fill(Path(ellipseIn:CGRect(x:x+6,y:y+27,width:18,height:15)),with:.color(Color(hex:0x537F83)))
+        c.stroke(Path(ellipseIn:CGRect(x:x+8,y:y+29,width:14,height:11)),with:.color(Color(hex:0xBBCFC6)),lineWidth:1.2)
+        block(x+5,y+21,3,2,0xD6B675);block(x+20,y+21,6,2,0x6B837B)
+        block(x+49,y+18,13,28,0x6F6552)
+        for offset in [20.0,29,38] {
+            block(x+50,y+offset+6,11,2,0xC7AB7C)
+            block(x+50,y+offset,5,5,0xE6E0C7);block(x+56,y+offset,5,5,0x9DBFAF)
         }
-        block(114,530,58,10,0xA99370)
+        block(x+3,y+65,28,28,0xA99370);block(x+3,y+65,28,4,0xD5C29B)
         if motel.staffStations.contains(.cleaner) {
-            block(116,528,12,12,0x748F87)
-            for y in [528.0,532,536] {block(117,y,10,3,0xF1E4C5)}
-            sign("HOUSEKEEPING",118,543,48)
+            block(x+5,y+70,12,12,0x748F87)
+            for offset in [70.0,74,78] {block(x+6,y+offset,10,3,0xF1E4C5)}
+            sign("HOUSEKEEPING",x+1,y+83,30)
         }
-        sign("LAUNDRY / GUEST SUPPLIES",110,466,67)
         block(49,269,12,5,0x9FB8A2);CozyScenery.planter(context:&c,x:47,y:270)
         RoomObjectArt.draw(context:&c,index:0,x:128,y:176)
     }

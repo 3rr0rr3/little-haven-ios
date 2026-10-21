@@ -236,7 +236,7 @@ struct MotelGroundsCanvas: View, Animatable {
                     let px = Double(col * 16), py = Double(row * 16)
                     let road = (35...37).contains(row) || ((40...42).contains(col) && row > 1) || (col > 39 && (18...20).contains(row))
                     let residentialPath=((43...68).contains(col) && [8,9,16,17].contains(row)) || ((58...59).contains(col) && (8...18).contains(row))
-                    let paved = residentialPath || ((11...38).contains(col) && [8,9,17,18,26,27,33,34].contains(row)) || ((11...12).contains(col) && (8...34).contains(row)) || ((3...10).contains(col) && (9...15).contains(row)) || ((5...7).contains(col) && (23...35).contains(row)) || ((43...70).contains(col) && (29...31).contains(row))
+                    let paved = residentialPath || RPGMaps.hotelSidewalk(Tile(x:col,y:row)) || ((43...70).contains(col) && (29...31).contains(row))
                     CozyScenery.ground(context:&context,x:px,y:py,kind:road ? 2 : paved ? 1 : 0,seed:col*17+row*31)
                     if road && row == 36 && col % 3 != 0 { rect(px+2,py+7,12,2,0xF8E8A0) }
                     if !BeachLayout.contains(Tile(x:col,y:row)) && (col == 0 || col == MotelGrounds.width - 1 || row == 0 || row == MotelGrounds.height - 1) {

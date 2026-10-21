@@ -38,7 +38,7 @@ struct ContentView: View {
         if args.contains("--ui-neighbors") || args.contains("--ui-chair") || args.contains("--ui-facilities") || args.contains("--ui-laundry") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.cash=900;sample.motel!.waiting=[];sample.motel!.world!.place = .grounds
-            sample.motel!.world!.player=args.contains("--ui-neighbors") ? Tile(x:58,y:9) : args.contains("--ui-chair") ? BeachLayout.approach(0) : args.contains("--ui-laundry") ? Tile(x:12,y:32) : HotelService.repair.tile
+            sample.motel!.world!.player=args.contains("--ui-neighbors") ? Tile(x:58,y:9) : args.contains("--ui-chair") ? BeachLayout.approach(0) : args.contains("--ui-laundry") ? Tile(x:38,y:16) : HotelService.repair.tile
             sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
             for _ in 0..<12 {sample.motel!.tickWorld()}
             if args.contains("--ui-chair") {_=sample.motel!.sitOnBeachChair()}
