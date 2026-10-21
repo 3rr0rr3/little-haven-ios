@@ -713,8 +713,18 @@ func continuousStaffAndFamilyRoomRules() {
             if !MotelGrounds.officeBlocked(next),officeSeen.insert(next).inserted {queue.append(next)}
         }
     }
-    for tile in OfficeReception.hildarelysRoute+[OfficeReception.samhil,OfficeReception.chichu,OfficeReception.chichi] {
-        require(tile.x>=10 && officeSeen.contains(tile),"Family and cats stay in a reachable separate office room")
+    var familyHome=Motel();familyHome.initializeWorld();familyHome.world!.place = .house
+    var homeSeen:Set<Tile>=[Tile(x:7,y:12)],homeQueue=[Tile(x:7,y:12)],homeCursor=0
+    while homeCursor<homeQueue.count {
+        let tile=homeQueue[homeCursor];homeCursor+=1
+        for (dx,dy) in [(1,0),(-1,0),(0,1),(0,-1)] {
+            let next=Tile(x:tile.x+dx,y:tile.y+dy)
+            if !familyHome.homeBlocked(next),homeSeen.insert(next).inserted {homeQueue.append(next)}
+        }
+    }
+    for tile in OfficeReception.hildarelysRoute {require(homeSeen.contains(tile),"Family walking route stays clear of the TV and decoration")}
+    for tile in [OfficeReception.samhil,OfficeReception.chichu,OfficeReception.chichi] {
+        require(homeSeen.contains{$0.distance(to:tile)<=1},"Family seating and cat beds remain approachable in their separate home")
     }
     require(!MotelGrounds.officeBlocked(Tile(x:9,y:4)) && !MotelGrounds.officeBlocked(Tile(x:9,y:7)),"Office is restored without family partitions")
     var blocked=Motel();blocked.initializeWorld();blocked.cash=1000;blocked.waiting=[]
