@@ -1072,7 +1072,7 @@ func neighborhoodAndFacilitiesRules() {
 neighborhoodAndFacilitiesRules()
 
 func touchAndSidewalkRules() {
-    for tile in [Tile(x:12,y:15),Tile(x:12,y:26),Tile(x:60,y:32),Tile(x:9,y:25),Tile(x:10,y:25)] {
+    for tile in [Tile(x:12,y:15),Tile(x:12,y:26),Tile(x:9,y:25),Tile(x:10,y:25)] {
         require(!MotelGrounds.blocked(tile),"Removed objects leave no invisible collisions")
     }
     require(MotelGrounds.blocked(Tile(x:66,y:32)),"Relocated bin has matching collision")

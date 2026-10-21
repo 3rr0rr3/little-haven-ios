@@ -262,14 +262,28 @@ struct MotelView: View {
     private func walkToTouch(_ target:Tile,_ completion:(()->Void)?) {
         guard fullscreenTouch,!paused,!motel.caught else{return}
         stop()
+        var destination=target
+        var finish=completion
+        if completion == nil,motel.visit == nil,motel.worldState.place == .grounds {
+            if RPGRegion(x:7,y:30,width:2,height:2).contains(target) {
+                destination=FacilityLayout.laundry
+                finish={change{_=$0.performService(.laundry)}}
+            } else if RPGRegion(x:10,y:30,width:1,height:2).contains(target) {
+                destination=FacilityLayout.supplies
+                finish={change{_=$0.collectGuestFavour()}}
+            } else if RPGRegion(x:10,y:21,width:1,height:2).contains(target) {
+                destination=HotelService.repair.tile
+                finish={change{_=$0.performService(.repair)}}
+            }
+        }
         let adjacent=completion != nil
-        guard let route=motel.touchRoute(to:target,adjacent:adjacent) else{toast="That spot is out of reach.";return}
+        guard let route=motel.touchRoute(to:destination,adjacent:adjacent) else{toast="That spot is out of reach.";return}
         touchSteps=route
         let object = motel.touchBlocked(target) || (motel.worldState.place == .grounds && (
             NeighborhoodShop.allCases.contains{$0.door.distance(to:target)<=1} ||
             target.distance(to:FamilyHome.door)<=1 ||
             RPGMaps.grounds.events.contains{$0.tile == target}))
-        touchCompletion=completion ?? (object ? {performAction()} : nil)
+        touchCompletion=finish ?? (object ? {performAction()} : nil)
         touchRouteID=UUID()
     }
     private var worldScreen: some View {
@@ -514,7 +528,7 @@ struct MotelView: View {
         WorkActionButton(title: actionName, symbol: actionSymbol, cleaning: motel.cleaningTarget != nil,
                          enabled: !paused && motel.nearbyAction != .none && (motel.cleaningTarget == nil || motel.worldState.hasCleaningKit),
                          progress: workProgress, pressed: { pressed in
-            if pressed { movement = nil }
+            if pressed { stop() }
             working = pressed
         }, action: performAction).accessibilityIdentifier("worldAction")
     }
