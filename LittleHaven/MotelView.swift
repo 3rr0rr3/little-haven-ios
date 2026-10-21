@@ -219,7 +219,7 @@ struct MotelView: View {
                 } else if !motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}).isEmpty {
                     HStack {
                         ForEach(motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}), id: \.key) { pet in
-                            Button(pet.key.capitalized) { stop(); family=OfficeTap(rawValue:pet.key) }.buttonStyle(MotelButtonStyle(subdued:true))
+                            Button(motel.companionName(pet.key)) { stop(); family=OfficeTap(rawValue:pet.key) }.buttonStyle(MotelButtonStyle(subdued:true))
                         }
                     }
                 } else { Color.clear }
@@ -719,7 +719,7 @@ struct MotelView: View {
     }
     private func familyChoices(_ person: OfficeTap) -> [DialogueChoice] {
         if person == .mochi {
-            return [DialogueChoice(title:motel.petState("mochi").following ? "Stay here" : "Follow me",action:{change{$0.togglePet("mochi")};family=nil}),DialogueChoice(title:"Play",action:{toast="Mochi wiggles its little feet and chirps happily.";family=nil})]
+            return [DialogueChoice(title:motel.petState("mochi").following ? "Stay here" : "Follow me",action:{change{$0.togglePet("mochi")};family=nil}),DialogueChoice(title:"Play",action:{toast="Tuki wiggles its little feet and chirps happily.";family=nil})]
         }
         if person == .chichu || person == .chichi {
             return [DialogueChoice(title:motel.petState(person.rawValue).following ? "Stay here" : "Follow me",action:{
@@ -767,7 +767,7 @@ struct MotelView: View {
         switch family {
         case .chichu: return "Chichu"
         case .chichi: return "Chichi"
-        case .mochi: return "Mochi"
+        case .mochi: return "Tuki"
         case .samhil: return "Samhil"
         case .hildarelys: return "Hildarelys"
         default: return "Family"

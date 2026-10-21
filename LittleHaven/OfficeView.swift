@@ -3,7 +3,7 @@ import SwiftUI
 extension Motel {
     var petActors: [RPGActor] {
         visiblePets.map { pet in
-            RPGActor(id:pet.key,tile:pet.value.tile,color:pet.key == "chichu" ? 0x85817C : 0xE9E2D0,variant:0,facing:actorFacing,name:pet.key.capitalized,duration:0.14,creature:pet.key == "mochi",animal:pet.key == "mochi" ? 0 : pet.key == "chichu" ? 1 : 2,displayScale:pet.key == "mochi" ? 0.7 : 0.55)
+            RPGActor(id:pet.key,tile:pet.value.tile,color:pet.key == "chichu" ? 0x85817C : 0xE9E2D0,variant:0,facing:actorFacing,name:companionName(pet.key),duration:0.14,creature:pet.key == "mochi",animal:pet.key == "mochi" ? 0 : pet.key == "chichu" ? 1 : 2,displayScale:pet.key == "mochi" ? 0.7 : 0.55)
         }
     }
     var neighborActors:[RPGActor] {
@@ -41,7 +41,7 @@ struct FamilyHouseView:View {
                 target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin)
                 target(.samhil,"Talk to Samhil",OfficeReception.samhil,scale,origin)
                 ForEach(motel.visiblePets, id: \.key) { pet in
-                    target(OfficeTap(rawValue:pet.key)!,"Talk to \(pet.key)",pet.value.tile,scale,origin)
+                    target(OfficeTap(rawValue:pet.key)!,"Talk to \(motel.companionName(pet.key))",pet.value.tile,scale,origin)
                 }
                 target(.door,"Leave home",FamilyHome.exit,scale,origin)
                 target(.player,"Home checkpoint",Tile(x:2,y:10),scale,origin)
@@ -79,7 +79,7 @@ struct OfficeReceptionView: View {
                 target(.player,"Front desk",OfficeReception.clerk,scale,origin)
                 target(.computer,"Reception computer",OfficeReception.computer,scale,origin)
                 ForEach(motel.visiblePets, id: \.key) { pet in
-                    target(OfficeTap(rawValue:pet.key)!,"Talk to \(pet.key)",pet.value.tile,scale,origin)
+                    target(OfficeTap(rawValue:pet.key)!,"Talk to \(motel.companionName(pet.key))",pet.value.tile,scale,origin)
                 }
                 target(.door,"Leave office",OfficeReception.door,scale,origin)
                 target(.tools,"Take cleaning tools",Tile(x:1,y:7),scale,origin)

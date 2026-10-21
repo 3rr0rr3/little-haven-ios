@@ -7,6 +7,7 @@ struct PetCompanion: Codable {
 }
 
 extension Motel {
+    func companionName(_ id:String)->String {id == "mochi" ? "Tuki" : id.capitalized}
     var petMap: String { visit.map { "room-\($0.roomID)" } ?? (currentShop.map {"shop-"+$0.rawValue} ?? worldState.place.rawValue) }
     func petState(_ id: String) -> PetCompanion {
         worldState.pets?[id] ?? PetCompanion(tile: id == "mochi" ? Tile(x:4,y:8) : id == "chichu" ? OfficeReception.chichu : OfficeReception.chichi)
@@ -21,7 +22,7 @@ extension Motel {
         pet.following.toggle()
         if world!.pets == nil { world!.pets=[:] }
         world!.pets![id]=pet
-        lastEvent=id.capitalized + (pet.following ? " will follow you." : " will wait here.")
+        lastEvent=companionName(id) + (pet.following ? " will follow you." : " will wait here.")
     }
     // Followers retrace the player's safe steps. Transfers place them on a safe
     // arrival tile; waiting pets retain their map and position in checkpoints.
