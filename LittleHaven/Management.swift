@@ -1464,7 +1464,8 @@ enum FacilityLayout {
         RPGRegion(x:36,y:11,width:1,height:5), // western wall
         RPGRegion(x:36,y:11,width:2,height:2), // washer
         RPGRegion(x:39,y:11,width:1,height:2), // guest supplies
-        RPGRegion(x:36,y:14,width:2,height:2)  // folding counter; entrance aisle stays open]
+        RPGRegion(x:36,y:14,width:2,height:2)  // folding counter; entrance aisle stays open
+    ]
 }
 extension Motel {
     var nearbyBeachChair:Int? {
