@@ -320,7 +320,7 @@ struct MotelGroundsCanvas: View, Animatable {
                 let actual=index+motel.viewingFloor*9
                 if actual < motel.rooms.count {
                     let room = motel.rooms[actual]
-                    building(o, 6, 4, MotelGrounds.roomDoor(index), "\(room.number) / \(room.guest != nil ? "GUEST" : room.dirty ? "DIRTY" : "VACANT")", Motel.themeColors[room.theme], Motel.themeColors[room.theme])
+                    DecorArt.motelUnit(&context,x:Double(o.x*16),y:Double(o.y*16),number:room.number,status:room.guest != nil ? "GUEST" : room.dirty ? "DIRTY" : "VACANT",theme:Motel.themeColors[room.theme])
                     let door = MotelGrounds.roomDoor(index)
                     if room.health.upgrades.contains(.camera) {rect(Double(door.x*16+20),Double(door.y*16-22),5,3,0x344D50)}
                     rect(Double(door.x * 16 + 19), Double(door.y * 16 - 13), 3, 3, room.guest != nil ? 0xD7927A : room.dirty ? 0xD9AF5C : 0x8AA96A)

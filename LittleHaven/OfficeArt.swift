@@ -494,3 +494,25 @@ enum BeachArt {
         c.draw(Text("BEACH / FOLLOW THE BOARDWALK").font(.system(size:3.2,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0x6D735E)),at:CGPoint(x:789,y:632))
     }
 }
+
+extension DecorArt {
+    static func motelUnit(_ c:inout GraphicsContext,x:Double,y:Double,number:Int,status:String,theme:UInt32) {
+        func block(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ color:UInt32){CozyScenery.block(context:&c,x:x+dx,y:y+dy,w:w,h:h,color:color,depth:0.7)}
+        CozyScenery.shadow(context:&c,x:x-4,y:y+59,w:105,h:13)
+        block(1,13,94,51,0xE4D3AE)
+        for yy in [28.0,44] {block(3,yy,90,0.7,0xD0BE98)}
+        // Low continuous awning and fascia, rather than a cottage roof.
+        block(-2,2,100,13,theme);block(-3,12,102,5,0xECE2C7)
+        block(3,17,3,46,0xD2BD95);block(90,17,3,46,0xD2BD95)
+        block(29,33,22,31,0xEEDFC0);block(32,36,16,28,0x8E7355)
+        block(35,39,10,17,0xAE9270);block(44,50,1.5,2,0xF0DA9A)
+        block(29,20,22,9,0x5B766E)
+        c.draw(Text(String(number)).font(.system(size:5.5,weight:.heavy,design:.rounded)).foregroundColor(Color(hex:0xFFF2CF)),at:CGPoint(x:x+40,y:y+24))
+        block(59,24,29,23,0xEEDFC3);block(61,26,25,18,0x98BEC3)
+        block(61,26,4,18,theme);block(82,26,4,18,theme);block(73,26,1,18,0xF8ECD1)
+        block(62,50,24,10,0xADBCB1)
+        for row in 0..<3 {block(65,52+Double(row*2),18,0.7,0x7A9088)}
+        block(-2,62,100,4,0xC6B796);block(31,63,19,3,0xEADCC2)
+        c.draw(Text(status).font(.system(size:3,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0x465D50)),at:CGPoint(x:x+75,y:y+20))
+    }
+}
