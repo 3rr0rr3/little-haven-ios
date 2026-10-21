@@ -26,6 +26,7 @@ func hiringMilestoneRules() {
     require(saved.staffStations.count == 5 && saved.hiringUnlocked(.clerk),"Milestones and stations survive saves")
     business.guestsServed=0
     require(business.hiringUnlocked(.clerk),"Existing employees are preserved in older saves")
+    business.enableManagement()
     business.dismissStaff(.cleaner)
     require(!business.staffStations.contains(.cleaner),"Dismissal removes the employee station")
     print("PASS: unlockable hiring, no-charge locked actions, stations and saved employees")
