@@ -12,6 +12,7 @@ struct ContentView: View {
     @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
     @State private var townRouteID=UUID()
     @State private var townRoute:[Tile]=[]
+    @State private var townInteraction=false
     @AppStorage("littlehaven.hints") private var showHints = true
     private static var bypassTitle: Bool {
         #if DEBUG
@@ -34,11 +35,11 @@ struct ContentView: View {
     private static func initialGame() -> Game {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
-        if args.contains("--ui-testing") {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch")}
-        if args.contains("--ui-neighbors") || args.contains("--ui-chair") || args.contains("--ui-facilities") {
+        if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch")}
+        if args.contains("--ui-neighbors") || args.contains("--ui-chair") || args.contains("--ui-facilities") || args.contains("--ui-laundry") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.cash=900;sample.motel!.waiting=[];sample.motel!.world!.place = .grounds
-            sample.motel!.world!.player=args.contains("--ui-neighbors") ? Tile(x:58,y:9) : args.contains("--ui-chair") ? BeachLayout.approach(0) : HotelService.repair.tile
+            sample.motel!.world!.player=args.contains("--ui-neighbors") ? Tile(x:58,y:9) : args.contains("--ui-chair") ? BeachLayout.approach(0) : args.contains("--ui-laundry") ? Tile(x:12,y:32) : HotelService.repair.tile
             sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
             for _ in 0..<12 {sample.motel!.tickWorld()}
             if args.contains("--ui-chair") {_=sample.motel!.sitOnBeachChair()}
@@ -277,7 +278,10 @@ struct ContentView: View {
                 .environment(\.worldTouch,{tile,_ in
                     guard conversation == nil,message == nil,!showHouse,!showJournal else{return}
                     let map=game.inside ? RPGMaps.cottage : RPGMaps.town
-                    townRoute=TouchPath.route(from:game.player,to:tile,width:map.width,height:map.height,adjacent:map.blocked(tile),blocked:{map.blocked($0)}) ?? []
+                    let occupied=game.inside ? Set<Tile>() : Set(Town.neighbors.map(\.tile))
+                    townInteraction = !game.inside && (Town.neighbors.contains{$0.tile == tile} || tile == Town.door)
+                    guard let path=TouchPath.route(from:game.player,to:tile,width:map.width,height:map.height,adjacent:map.blocked(tile,occupied:occupied) || townInteraction,blocked:{map.blocked($0,occupied:occupied)}) else{return}
+                    townRoute=path
                     townRouteID=UUID()
                 })
             VStack {
@@ -293,13 +297,15 @@ struct ContentView: View {
         .foregroundStyle(cream).background(Color(hex:0x172A25))
         .task(id:townRouteID) {
             let inside=game.inside
+            let shouldInteract=townInteraction
             for tile in townRoute {
-                guard !Task.isCancelled,scenePhase == .active,conversation == nil,message == nil,!showHouse,!showJournal,game.inside == inside else{break}
+                guard !Task.isCancelled,scenePhase == .active,conversation == nil,message == nil,!showHouse,!showJournal,game.inside == inside else{return}
                 let before=game.player
                 game.move(dx:tile.x-before.x,dy:tile.y-before.y)
-                if game.player == before {break}
+                if game.player == before {return}
                 do {try await Task.sleep(for:.seconds(0.14))} catch {break}
             }
+            if !Task.isCancelled,game.inside == inside,shouldInteract,conversation == nil,message == nil,!showHouse,!showJournal {interact()}
         }
         .onChange(of:scenePhase) {_,phase in if phase != .active {townRoute=[];townRouteID=UUID()}}
         .onDisappear {townRoute=[];townRouteID=UUID()}
