@@ -71,6 +71,12 @@ enum MotelGrounds {
         return tiles
     }()
     static func blocked(_ tile: Tile) -> Bool { !walkableTiles.contains(tile) }
+    static func nearestWalkable(to point:Tile)->Tile {
+        walkableTiles.min {a,b in
+            let da=a.distance(to:point),db=b.distance(to:point)
+            return da != db ? da<db : a.y != b.y ? a.y<b.y : a.x<b.x
+        } ?? gate
+    }
     static func nextStep(from start: Tile, to target: Tile, avoiding: Set<Tile>) -> Tile? {
         if start == target || blocked(target) { return nil }
         if avoiding.contains(target) {
@@ -197,16 +203,20 @@ extension Motel {
     mutating func reconcileInteriorSpawn() {
         initializeWorld()
         if visit == nil && world!.place == .grounds && MotelGrounds.blocked(world!.player) {
-            let before=world!.player
-            world!.player=MotelGrounds.walkableTiles.min {a,b in
-                let da=a.distance(to:before),db=b.distance(to:before)
-                return da != db ? da<db : a.y != b.y ? a.y<b.y : a.x<b.x
-            } ?? MotelGrounds.gate
+            world!.player=MotelGrounds.nearestWalkable(to:world!.player)
         }
         if let roomVisit=visit,RoomVisit.blocked(roomVisit.player) {visit!.player=Tile(x:4,y:7)}
         if isAtReception && MotelGrounds.officeBlocked(world!.player) {world!.player=OfficeReception.clerk}
         if isAtHome && homeBlocked(world!.player) {world!.player=Tile(x:7,y:12)}
         if isAtShop && ShopLayout.blocked(world!.player) {world!.player=ShopLayout.arrival}
+        for (id,saved) in worldState.pets ?? [:] {
+            var pet=saved
+            if pet.map == "grounds" && MotelGrounds.blocked(pet.tile) {pet.tile=MotelGrounds.nearestWalkable(to:pet.tile)}
+            else if pet.map == "house" && homeBlocked(pet.tile) {pet.tile=id == "chichu" ? OfficeReception.chichu : OfficeReception.chichi}
+            else if pet.map == "office" && RPGMaps.office.blocked(pet.tile) {pet.tile=Tile(x:8,y:id == "chichu" ? 8 : 9)}
+            else if pet.map.hasPrefix("shop-") && ShopLayout.blocked(pet.tile) {pet.tile=Tile(x:id == "chichu" ? 6 : 8,y:12)}
+            world!.pets?[id]=pet
+        }
     }
     mutating func moveActor(dx: Int, dy: Int) {
         guard !caught, abs(dx) <= 1, abs(dy) <= 1, dx != 0 || dy != 0 else { return }

@@ -971,11 +971,12 @@ func coastAndWalkInStoreRules() {
     require(pets.visiblePets.isEmpty && pets.petState("chichu").map=="shop-furniture","A waiting pet stays in its own store rather than appearing in every store")
     var legacy=Motel();legacy.initializeWorld();legacy.world!.place = .grounds
     legacy.world!.player=Tile(x:65,y:45)
-    legacy.world!.pets=["chichu":PetCompanion(following:true,map:"grounds",tile:Tile(x:64,y:45))]
+    legacy.world!.pets=["chichu":PetCompanion(following:true,map:"grounds",tile:Tile(x:64,y:45)),"chichi":PetCompanion(following:false,map:"grounds",tile:Tile(x:66,y:45))]
     let oldPosition=legacy.actorTile
     legacy.reconcileInteriorSpawn();legacy.updateCompanions(from:oldPosition,map:"grounds")
     require(legacy.worldState.place == .grounds && !MotelGrounds.blocked(legacy.actorTile),"An older seaside save loads onto nearby clear ground")
     require(!MotelGrounds.blocked(legacy.petState("chichu").tile),"A following pet is not left inside new water or decoration")
+    require(!MotelGrounds.blocked(legacy.petState("chichi").tile) && !legacy.petState("chichi").following,"A waiting pet also migrates to nearby safe ground without changing its follow setting")
     let safe=legacy.actorTile;legacy.reconcileInteriorSpawn()
     require(legacy.actorTile==safe,"Save migration never relocates an already safe player")
     print("PASS: walk-in shop counters, display collisions, store checkpoints, beach access, water safety, TV/sofa footprints, pet transfers and old-save terrain migration")
