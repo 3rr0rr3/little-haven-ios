@@ -192,8 +192,12 @@ extension Motel {
         if world == nil { world = MotelWorldState() }
         if world!.reception == nil { world!.reception = OfficeReception() }
         if world!.place == .office,world!.player.x == 9,MotelGrounds.officeBlocked(world!.player) { world!.player.x=8 }
-        if isAtReception && MotelGrounds.officeBlocked(world!.player) {world!.player=OfficeReception.clerk}
+
+    }
+    mutating func reconcileInteriorSpawn() {
+        initializeWorld()
         if let roomVisit=visit,RoomVisit.blocked(roomVisit.player) {visit!.player=Tile(x:4,y:7)}
+        if isAtReception && MotelGrounds.officeBlocked(world!.player) {world!.player=OfficeReception.clerk}
         if isAtHome && homeBlocked(world!.player) {world!.player=Tile(x:7,y:12)}
         if isAtShop && ShopLayout.blocked(world!.player) {world!.player=ShopLayout.arrival}
     }

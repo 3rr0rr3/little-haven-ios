@@ -85,7 +85,7 @@ struct MotelView: View {
         .foregroundStyle(cream).background(Color(hex: 0x172A25))
         .transaction { if testingUI { $0.disablesAnimations = true } }
         .task {
-            change { $0.initializeWorld(); if !testingUI || ProcessInfo.processInfo.arguments.contains("--ui-management") { $0.enableManagement() } }
+            change { $0.reconcileInteriorSpawn(); if !testingUI || ProcessInfo.processInfo.arguments.contains("--ui-management") { $0.enableManagement() } }
             if motel.business.police?.arrived == true { showPolice=true }
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--ui-dialogue") { family = .hildarelys }
