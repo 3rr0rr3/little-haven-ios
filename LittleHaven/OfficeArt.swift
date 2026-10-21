@@ -774,7 +774,7 @@ enum MochiArt {
         if facing == 3 {
             // Rear markings and foliage; the face never remains on the back.
             leaf(12,15,-5,-3,0.32);leaf(12,15,5,-3,0.32)
-            berry(3,22,6,step);berry(10,22,6,-step);berry(17,22,5,step)
+            berry(3,20,6,step);berry(10,20,6,-step);berry(17,20,5,step)
         } else {
             let shift=facing == 1 ? -2.0 : facing == 2 ? 2.0 : 0
             let eyes=facing == 1 ? [6.0] : facing == 2 ? [16.0] : [7.0,16.0]
@@ -794,9 +794,9 @@ enum MochiArt {
                 oval(dot.0,dot.1,0.7,0.7,0x9D638E)
             }
             // Three plum-red berry limbs descend diagonally across the front.
-            berry(3,22,6.5,step)
-            berry(9.5,19.5,6.6,-step)
-            berry(16,16.8,6.4,step)
+            berry(3,19.8,6.5,step)
+            berry(9.5,18,6.6,-step)
+            berry(16,15.8,6.4,step)
         }
     }
 }
