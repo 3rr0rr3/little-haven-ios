@@ -1090,9 +1090,9 @@ func touchAndSidewalkRules() {
     require(DragSteering.direction(dx:500,dy:0) == DragSteering.direction(dx:60,dy:0),"Long drags keep normal walking speed")
     require(DragSteering.direction(dx:45,dy:30,diagonals:false) == Tile(x:1,y:0),"Prologue uses its cardinal movement rules")
     require(DragSteering.direction(dx:.infinity,dy:0) == nil,"Invalid touch coordinates cannot move the character")
-    var game=Motel();game.initializeWorld();game.world!.place = .house;game.world!.player=Tile(x:9,y:8)
-    game.moveActor(dx:1,dy:1)
-    require(game.actorTile == Tile(x:9,y:8),"Diagonal steering cannot cut through the sofa corner")
+    var game=Motel();game.initializeWorld();game.world!.place = .house;game.world!.player=Tile(x:9,y:9)
+    game.moveActor(dx:1,dy:-1)
+    require(game.actorTile == Tile(x:9,y:9),"Diagonal steering cannot cut through the sofa corner")
     print("PASS: clear sidewalks, grouped laundry, thumb dead zone, direction changes, diagonal safety and bounded speed")
 }
 touchAndSidewalkRules()
