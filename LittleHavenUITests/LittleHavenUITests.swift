@@ -41,8 +41,10 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.buttons["declineGuest"].waitForExistence(timeout:20))
         app.buttons["declineGuest"].tap()
         XCTAssertTrue(cash(app).contains("260"), "Decline must not charge")
+        let doorFrame = app.buttons["office_door"].frame
         app.buttons["office_save"].tap()
         app.buttons["office_tools"].tap()
+        XCTAssertEqual(app.buttons["office_door"].frame, doorFrame, "Notifications must not shift room touch targets")
         app.buttons["office_door"].tap()
         let world = app.otherElements["motelWorld"]
         XCTAssertTrue(world.waitForExistence(timeout:10))
@@ -218,7 +220,9 @@ final class LittleHavenUITests: XCTestCase {
         for (fixture,action) in [("--ui-chaos-fire","Put out the fire"),("--ui-chaos-pool","Help the guest out"),("--ui-chaos-fight","Break up the fight")] {
             if fixture != "--ui-chaos-fire" { app.terminate(); app.launchArguments = [fixture,"--ui-testing"]; app.launch() }
             XCTAssertTrue(app.buttons["incidentAlarm"].waitForExistence(timeout:10))
-            app.buttons["worldAction"].tap()
+            XCTAssertTrue(app.staticTexts["EMERGENCY"].exists)
+            capture(app,"Emergency alert " + fixture)
+            app.buttons["incidentAlarm"].tap()
             XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
             app.buttons[action].tap()
             XCTAssertFalse(app.buttons["incidentAlarm"].exists)
