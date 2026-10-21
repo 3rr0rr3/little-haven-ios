@@ -411,7 +411,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(world.waitForExistence(timeout:10))
         XCTAssertTrue(app.staticTexts["SUNSET COVE BEACH"].exists)
         let before=world.label
-        app.buttons["Walk west"].press(forDuration:0.5)
+        app.buttons["Walk east"].press(forDuration:0.5)
         XCTAssertNotEqual(world.label,before)
         capture(app,"Sunset Cove palms umbrellas loungers and sea")
     }
