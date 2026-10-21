@@ -11,19 +11,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v4
       - name: Download and verify tested package
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          gh run download 39531969155 --name LittleHaven-iPhone-IPA --dir package
+          gh run download 39586636708 --name LittleHaven-iPhone-IPA --dir package
+          gh run download 39586636708 --name Gameplay-previews --dir previews
           cd package
-          echo 'fc6089c43394475d8b5f7b280836b9b1a9fa9287234000de1e6ac3d58e678874  LittleHaven-unsigned.ipa' | sha256sum --check
+          echo '3ef406feaa84807cb9c473761d6e6b46f25113eaaf5384c160a83a8f0e04698e  LittleHaven-unsigned.ipa' | sha256sum --check
+      - name: Save tested character app icon into source
+        run: |
+          set -euo pipefail
+          cp previews/LittleHaven-app-icon.png LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+          git config user.name 'Codex'
+          git config user.email 'codex@openai.com'
+          git add LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+          if ! git diff --cached --quiet; then
+            git commit -m 'Save tested player character app icon [skip ci]'
+            git push origin HEAD:codex/pokopia-scenery
+          fi
       - name: Provide direct IPA asset
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          gh release create test-17-emergency-alerts package/LittleHaven-unsigned.ipa package/LittleHaven-unsigned.ipa.sha256 --target de6a125217106b9a4ba4fac5cf898da8d234a5b8 --title 'Little Haven 17 - Emergency alerts test build' --prerelease --notes 'Verified test build with emergency notification cards and the corrected home sofa. All 27 simulator tests passed. This download does not update the SideStore feed.'
+          gh release create test-18-office-staff package/LittleHaven-unsigned.ipa package/LittleHaven-unsigned.ipa.sha256 previews/LittleHaven-app-icon.png previews/LittleHaven-office.png previews/LittleHaven-motel.png previews/LittleHaven-staff-posts.png --target "$(git rev-parse HEAD)" --title 'Little Haven 18 - Walking, staff stations and office' --prerelease --notes 'Version 18.0 (22): clearer walking gait; staff hiring unlocks at guest check-in milestones; each hired employee adds a distinct work station; redesigned office frontage and reception layout; original player character on the iPhone app icon. Native tests and all 27 simulator tests passed. This direct test download does not change the SideStore feed.'
