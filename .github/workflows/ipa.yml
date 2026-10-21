@@ -127,18 +127,18 @@ jobs:
           for MODE in beach motel-room; do
             xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
             xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE"
-            sleep 2
+            sleep 4
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
           done
           for MODE in home-store clothes-store pawn-store; do
             xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
             xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-store-inside
-            sleep 2
+            sleep 4
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE-interior.png"
           done
           xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
           xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-family-home
-          sleep 2
+          sleep 4
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-tv-frame1.png
           sleep 1
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-tv-frame2.png

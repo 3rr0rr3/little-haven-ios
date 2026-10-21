@@ -202,7 +202,7 @@ struct HomeInteriorArt:View {
             rect(39,86,15,10,0xEADDC2);rect(44,88,5,5,0xA1B895)
             DecorArt.rug(&context,82,113,66,59,0xB79079)
             CozyScenery.planter(context:&context,x:23,y:197)
-            rect(73,8,28,18,0xA38462);rect(76,11,22,12,0xA3C3B2)
+            rect(25,8,28,18,0xA38462);rect(28,11,22,12,0xA3C3B2)
             if home.level > 0 {CozyScenery.planter(context:&context,x:128,y:40)}
             // Upright TV above a narrow console. The screen is a separate animated scene node.
             rect(158,78,56,10,0x9B7858);rect(161,87,3,5,0x6C5745);rect(207,87,3,5,0x6C5745)
@@ -337,7 +337,7 @@ struct ExpandedOfficeArt: View {
             rect(97,180,46,29,0xA66F5B); rect(100,183,40,23,0xC59377)
             rect(112,208,16,32,0xEAD8AE); text("LEAVE",120,230,4)
             rect(207,35,10,12,0x80644A); rect(202,29,20,12,0x77975C)
-            text("LITTLE HAVEN / RECEPTION",120,20,4)
+            text("LITTLE HAVEN / RECEPTION",120,4.5,4)
         }.frame(width:240,height:240)
     }
 }
@@ -458,11 +458,18 @@ enum BeachArt {
         for row in stride(from:40,to:64,by:2) {for col in stride(from:0,to:39,by:2) {CozyScenery.tree(context:&c,x:Double(col*16),y:Double(row*16+8))}}
         let sand=CGRect(x:640,y:640,width:512,height:384)
         c.fill(Path(sand),with:.linearGradient(Gradient(colors:[Color(hex:0xEBDBB1),Color(hex:0xF3E3BC),Color(hex:0xDDC598)]),startPoint:CGPoint(x:640,y:640),endPoint:CGPoint(x:900,y:1024)))
+        var coast=Path();coast.move(to:CGPoint(x:Double(BeachLayout.shoreline(42)*16),y:672))
+        for row in 42..<MotelGrounds.height {
+            let x=Double(BeachLayout.shoreline(row)*16),next=Double(BeachLayout.shoreline(row+1)*16),y=Double(row*16)
+            coast.addQuadCurve(to:CGPoint(x:(x+next)/2,y:y+16),control:CGPoint(x:x,y:y+8))
+        }
+        var water=coast
+        water.addLine(to:CGPoint(x:1152,y:1024));water.addLine(to:CGPoint(x:1152,y:672));water.closeSubpath()
+        c.fill(water,with:.linearGradient(Gradient(colors:[Color(hex:0xA3DCD5),Color(hex:0x69B4BC),Color(hex:0x508FAD)]),startPoint:CGPoint(x:944,y:672),endPoint:CGPoint(x:1152,y:1024)))
+        c.stroke(coast,with:.color(Color(hex:0xDCEBDD)),style:StrokeStyle(lineWidth:8,lineCap:.round,lineJoin:.round))
+        c.stroke(coast,with:.color(Color(hex:0xFFF3D8)),style:StrokeStyle(lineWidth:2.5,lineCap:.round,lineJoin:.round))
         for row in 42..<MotelGrounds.height {
             let x=Double(BeachLayout.shoreline(row)*16),y=Double(row*16)
-            c.fill(Path(CGRect(x:x,y:y,width:1152-x,height:16)),with:.linearGradient(Gradient(colors:[Color(hex:0x9CD8D3),Color(hex:0x71BBB9),Color(hex:0x508FAD)]),startPoint:CGPoint(x:x,y:y),endPoint:CGPoint(x:1152,y:y)))
-            c.fill(Path(CGRect(x:x-4,y:y,width:7,height:16)),with:.color(Color(hex:0xD6E8D8)))
-            c.fill(Path(roundedRect:CGRect(x:x-5,y:y+3,width:6,height:11),cornerRadius:3),with:.color(Color(hex:0xFFF4DD).opacity(0.8)))
             for i in 0..<3 {
                 var wave=Path();wave.move(to:CGPoint(x:x+20+Double(i*43),y:y+7));wave.addQuadCurve(to:CGPoint(x:x+36+Double(i*43),y:y+7),control:CGPoint(x:x+28+Double(i*43),y:y+9))
                 c.stroke(wave,with:.color(Color.white.opacity(0.45)),style:StrokeStyle(lineWidth:1,lineCap:.round))
@@ -481,8 +488,9 @@ enum BeachArt {
             for sector in 0..<6 {
                 let a=Double(sector)*Double.pi/3,b=a+Double.pi/3
                 var p=Path();p.move(to:center);p.addLine(to:CGPoint(x:center.x+18*cos(a),y:center.y+10*sin(a)));p.addQuadCurve(to:CGPoint(x:center.x+18*cos(b),y:center.y+10*sin(b)),control:CGPoint(x:center.x+21*cos((a+b)/2),y:center.y+13*sin((a+b)/2)));p.closeSubpath()
-                c.fill(p,with:.color(Color(hex:sector%2==0 ? (i%2==0 ? 0xCD958B : 0x82AEB5) : 0xF2E2B4)))
+                c.fill(p,with:.color(Color(hex:sector%2==0 ? (i%2==0 ? 0xCD958B : 0x82AEB5) : 0xFFF3D8)))
             }
+            c.stroke(Path(ellipseIn:CGRect(x:center.x-18,y:center.y-10,width:36,height:20)),with:.color(Color(hex:0xB39B78)),lineWidth:0.6)
         }
         for i in 0..<30 {
             let x=652+Double((i*73)%264),y=670+Double((i*47)%300)

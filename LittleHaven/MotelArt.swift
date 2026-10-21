@@ -73,8 +73,8 @@ enum InteriorArt {
         DecorArt.rug(&c,30,70,51,24,0xAD947C)
         block(94,8,29,17,0xEBDFBE);block(96,10,25,13,0xA5CDD1)
         for x in [91.0,123] {block(x,6,5,22,Motel.themeColors[theme])}
-        block(96,34,25,14,0xA1805D);block(100,31,17,10,0x3C5151);block(102,33,13,6,0x98BFB8)
-        block(102,48,13,8,0x9C8C72)
+        block(80,34,29,14,0xA1805D);block(84,30,19,11,0x3C5151);block(86,32,15,7,0x98BFB8)
+        block(88,48,13,8,0x9C8C72)
         block(91,94,28,17,0x9E805F);block(94,91,22,4,0xE0C79D)
         block(30,96,18,14,0x947756);block(32,99,14,2,0xD5BE94)
         // Compact tiled sink and mirror, with a low divider rather than a house lounge.
@@ -132,7 +132,9 @@ struct MotelRoomCanvas: View, Animatable {
                 for index in RoomVisit.lootTiles.indices {
                     let tile = RoomVisit.lootTiles[index]
                     let px = Double(tile.x * 16), py = Double(tile.y * 16)
-                    if index == 2 {
+                    if index == 0 {
+                        RoomObjectArt.draw(context:&context,index:0,x:px,y:py)
+                    } else if index == 2 {
                         context.fill(Path(ellipseIn: CGRect(x: px + 3, y: py + 4, width: 10, height: 11)), with: .color(Color(hex: 0x7C8E7A)))
                         context.stroke(Path(ellipseIn: CGRect(x: px + 3, y: py + 3, width: 10, height: 4)), with: .color(Color(hex: 0xD0CFAD)), lineWidth: 0.7)
                     } else {
