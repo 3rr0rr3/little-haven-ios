@@ -20,10 +20,14 @@ struct MotelWorldState: Codable {
     var tick = 0
     var reception: OfficeReception?
     var shop: NeighborhoodShop?
+    var beachSeat:Int?
     var barDrink:BarDrink?
     var barOrders:Int?
     var guestPositions: [Int:Tile]?
     var witnessPositions: [Int:Tile]?
+    var neighborPositions:[Int:Tile]?
+    var neighborPrevious:[Int:Tile]?
+    var neighborStops:[Int:Int]?
     var townPositions:[Int:Tile]?
     var townPrevious:[Int:Tile]?
     var townDestinations:[Int:Int]?
@@ -210,6 +214,7 @@ extension Motel {
         if let roomVisit=visit,RoomVisit.blocked(roomVisit.player) {visit!.player=Tile(x:4,y:7)}
         if isAtReception && MotelGrounds.officeBlocked(world!.player) {world!.player=OfficeReception.clerk}
         if isAtHome && homeBlocked(world!.player) {world!.player=Tile(x:7,y:12)}
+        if let seat=world!.beachSeat,(!BeachLayout.lounges.indices.contains(seat) || world!.place != .grounds || actorTile.distance(to:BeachLayout.approach(seat))>1) {world!.beachSeat=nil}
         if isAtShop && shopBlocked(world!.player) {world!.player=ShopLayout.arrival}
         for (id,saved) in worldState.pets ?? [:] {
             var pet=saved
@@ -223,6 +228,7 @@ extension Motel {
     mutating func moveActor(dx: Int, dy: Int) {
         guard !caught, abs(dx) <= 1, abs(dy) <= 1, dx != 0 || dy != 0 else { return }
         initializeWorld()
+        world!.beachSeat=nil
         if visit != nil { move(dx: dx, dy: dy); return }
         var state = worldState
         state.facing = dy > 0 ? 0 : dx < 0 ? 1 : dx > 0 ? 2 : 3
@@ -416,6 +422,22 @@ extension Motel {
             state.travellers[index] = walker
         }
         if operationsState.incident == nil { state.travellers.removeAll { $0.player == $0.destination } }
+        if state.tick%2 == 0 {
+            var neighbors=state.neighborPositions ?? [:]
+            var neighborPrevious=neighbors
+            var stops=state.neighborStops ?? [:]
+            for id in 0..<ResidentialLayout.doors.count {
+                let route=ResidentialLayout.route(id)
+                let current=neighbors[id] ?? route[0]
+                neighborPrevious[id]=current
+                var target=stops[id] ?? 1
+                if current == route[target] {target=(target+1)%route.count}
+                let occupied=Set(neighbors.filter{$0.key != id}.map(\.value)).union(state.place == .grounds ? [state.player] : [])
+                neighbors[id]=MotelGrounds.nextStep(from:current,to:route[target],avoiding:occupied) ?? current
+                stops[id]=target
+            }
+            state.neighborPositions=neighbors;state.neighborPrevious=neighborPrevious;state.neighborStops=stops
+        }
         var townspeople=state.townPositions ?? [:]
         var previous=townspeople
         var destinations=state.townDestinations ?? [:]

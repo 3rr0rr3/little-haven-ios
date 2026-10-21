@@ -31,6 +31,15 @@ struct ContentView: View {
     private static func initialGame() -> Game {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
+        if args.contains("--ui-neighbors") || args.contains("--ui-chair") || args.contains("--ui-facilities") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.cash=900;sample.motel!.waiting=[];sample.motel!.world!.place = .grounds
+            sample.motel!.world!.player=args.contains("--ui-neighbors") ? Tile(x:58,y:9) : args.contains("--ui-chair") ? BeachLayout.approach(0) : HotelService.repair.tile
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            for _ in 0..<12 {sample.motel!.tickWorld()}
+            if args.contains("--ui-chair") {_=sample.motel!.sitOnBeachChair()}
+            sample.save();return sample
+        }
         if args.contains("--ui-bar") || args.contains("--ui-bar-exterior") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.cash=500;sample.motel!.waiting=[]

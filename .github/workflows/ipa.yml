@@ -159,6 +159,16 @@ jobs:
             sleep 3
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
           done
+      - name: Capture residential area and physical facilities
+        if: ${{ success() && env.SIM_DEVICE != '' }}
+        run: |
+          set -euo pipefail
+          for MODE in neighbors chair facilities; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE"
+            sleep 3
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
+          done
       - name: Capture guest interaction
         if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |

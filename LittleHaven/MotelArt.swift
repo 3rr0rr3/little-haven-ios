@@ -235,7 +235,8 @@ struct MotelGroundsCanvas: View, Animatable {
                 for col in 0..<MotelGrounds.width {
                     let px = Double(col * 16), py = Double(row * 16)
                     let road = (35...37).contains(row) || ((40...42).contains(col) && row > 1) || (col > 39 && (18...20).contains(row))
-                    let paved = ((11...38).contains(col) && [8,9,17,18,26,27,33,34].contains(row)) || ((11...12).contains(col) && (8...34).contains(row)) || ((3...10).contains(col) && (9...15).contains(row)) || ((5...7).contains(col) && (23...35).contains(row)) || ((43...70).contains(col) && (29...31).contains(row))
+                    let residentialPath=((43...68).contains(col) && [8,9,16,17].contains(row)) || ((58...59).contains(col) && (8...18).contains(row))
+                    let paved = residentialPath || ((11...38).contains(col) && [8,9,17,18,26,27,33,34].contains(row)) || ((11...12).contains(col) && (8...34).contains(row)) || ((3...10).contains(col) && (9...15).contains(row)) || ((5...7).contains(col) && (23...35).contains(row)) || ((43...70).contains(col) && (29...31).contains(row))
                     CozyScenery.ground(context:&context,x:px,y:py,kind:road ? 2 : paved ? 1 : 0,seed:col*17+row*31)
                     if road && row == 36 && col % 3 != 0 { rect(px+2,py+7,12,2,0xF8E8A0) }
                     if !BeachLayout.contains(Tile(x:col,y:row)) && (col == 0 || col == MotelGrounds.width - 1 || row == 0 || row == MotelGrounds.height - 1) {
@@ -288,28 +289,7 @@ struct MotelGroundsCanvas: View, Animatable {
                     for flower in 0..<6 { rect(Double(col*16+flower*4+2),Double(row*16-2),3,6,flower % 2 == 0 ? 0xE3A7B1 : 0xF0CE79) }
                 }
             }
-            for service in HotelService.allCases {
-                let tx=Double(service.tile.x*16), ty=Double(service.tile.y*16)
-                rect(tx+1,ty+2,14,12,0x55776B)
-                switch service {
-                case .breakfast:
-                    context.fill(Path(ellipseIn:CGRect(x:tx+2,y:ty+8,width:12,height:4)),with:.color(Color(hex:0xE8DEBD)))
-                    rect(tx+5,ty+3,6,6,0xF5EDCF); rect(tx+11,ty+4,2,3,0xD1BA84)
-                    rect(tx+6,ty+1,1,2,0xBCCDC3)
-                case .laundry:
-                    rect(tx+2,ty+9,12,4,0xA78961)
-                    rect(tx+3,ty+6,10,3,0xE8E7D5); rect(tx+4,ty+3,8,3,0x9ABEB9)
-                case .repair:
-                    rect(tx+6,ty+5,3,8,0xBAC9C6)
-                    context.stroke(Path(ellipseIn:CGRect(x:tx+4,y:ty+1,width:7,height:7)),with:.color(Color(hex:0xBAC9C6)),lineWidth:2)
-                case .garden:
-                    rect(tx+4,ty+7,8,6,0x719DB0); rect(tx+11,ty+6,4,2,0x719DB0)
-                    context.stroke(Path(ellipseIn:CGRect(x:tx+1,y:ty+5,width:6,height:6)),with:.color(Color(hex:0x719DB0)),lineWidth:1.4)
-                case .luggage:
-                    RoomObjectArt.draw(context:&context,index:0,x:tx,y:ty)
-                }
-                label(service.rawValue.uppercased(),tx+8,ty-4,3,0x243D32)
-            }
+            FacilitiesArt.draw(context:&context,motel:motel)
             // Small everyday objects keep the grounds lived in, without moving paths.
             for x in [44.0,49,59,69] {CozyScenery.planter(context:&context,x:x*16,y:21*16)}
             for (col,row) in [(43,21),(52,21),(62,21),(69,32)] {
@@ -318,15 +298,11 @@ struct MotelGroundsCanvas: View, Animatable {
                 rect(px+2,py-23,10,7,0xE3D49E)
                 context.fill(Path(ellipseIn:CGRect(x:px+3,y:py-22,width:8,height:4)),with:.color(Color(hex:0xFFF0BA)))
             }
-            for (col,row) in [(45,32),(60,32)] {
+            for (col,row) in [(45,32),(66,32)] {
                 let px=Double(col*16),py=Double(row*16)
                 rect(px+3,py+3,10,12,0x6D9988);rect(px+2,py+1,12,3,0x496F63)
                 label("RECYCLE",px+8,py+8,2,0xF1E4C1)
             }
-            // Supply rack used by personal guest requests.
-            rect(192,239,14,15,0x9E8061)
-            for i in 0..<3 {rect(194+Double(i*4),241,3,8,0xD9E1C8)}
-            label("GUEST SUPPLIES",200,234,2.8,0x344D3C)
             for (col,row) in [(46,38),(58,38),(65,38)] {
                 let px=Double(col*16),py=Double(row*16)
                 rect(px,py+3,22,4,0xAD8B64);rect(px,py+10,22,4,0xAD8B64)
@@ -409,10 +385,7 @@ struct MotelGroundsCanvas: View, Animatable {
             actors.append(Actor(x: x, y: y, color: 0x6AACA3, variant: 7, facing: motel.actorFacing, name: "", isPlayer: true))
             for actor in actors.filter({ _ in !sceneryOnly }).sorted(by: { $0.y < $1.y }) {
                 PaperPerson.draw(context: &context, x: actor.x * 16, y: actor.y * 16, color: actor.color, variant: actor.variant, facing: actor.facing, walk: sin((actor.x + actor.y) * .pi * 2))
-                if !actor.name.isEmpty {
-                    label(actor.name, actor.x * 16 + 8, actor.y * 16 - 10, 3.6, 0x304D3D)
-                    rect(actor.x * 16 + 7, actor.y * 16 - 7, 2, 2, 0xF0C774)
-                }
+
             }
         }
     }

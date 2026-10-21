@@ -1032,7 +1032,36 @@ func barRules() {
     require(game.actorTile==Tile(x:7,y:10),"Cannot cut diagonally through patrons or tables")
     let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(game))
     require(saved.currentShop == .bar && saved.worldState.barDrink == .citrusSoda,"Bar and drink order survive checkpoint")
-    game.world!.player=ShopLayout.exit;require(game.leaveShop() && game.actorTile == Tile(x:47,y:18),"Bar exit returns to its own road")
+    game.world!.player=ShopLayout.exit;require(game.leaveShop() && game.actorTile == Tile(x:NeighborhoodShop.bar.door.x,y:NeighborhoodShop.bar.door.y+1),"Bar exit returns to its own road")
     print("PASS: bar entry, counter service, prices, patrons, furniture, checkpoints and exit")
 }
 barRules()
+
+func neighborhoodAndFacilitiesRules() {
+    require(NeighborhoodShop.bar.door == Tile(x:57,y:35),"Bar is in the retail district")
+    for origin in ResidentialLayout.origins {require(MotelGrounds.blocked(origin),"Neighbor homes have physical walls")}
+    for door in ResidentialLayout.doors {require(MotelGrounds.nextStep(from:FamilyHome.door,to:door,avoiding:[]) != nil,"Neighbor porches connect to the player's home")}
+    for service in HotelService.allCases {require(MotelGrounds.nextStep(from:MotelGrounds.gate,to:service.tile,avoiding:[]) != nil,"Physical facilities remain reachable")}
+    require(MotelGrounds.nextStep(from:MotelGrounds.gate,to:FacilityLayout.supplies,avoiding:[]) != nil,"Guest supply pavilion is reachable")
+    require(GuestFavourKind.toiletries.source == FacilityLayout.supplies,"Guest requests collect supplies at the new pavilion")
+    require(GuestFavourKind.snacks.source == HotelService.breakfast.tile,"Breakfast requests use the new terrace")
+    var game=Motel();game.initializeWorld();game.waiting=[];game.world!.place = .grounds
+    for index in BeachLayout.lounges.indices {
+        require(!MotelGrounds.blocked(BeachLayout.approach(index)),"Every chair has a safe approach")
+        game.world!.player=BeachLayout.approach(index)
+        require(game.sitOnBeachChair() && game.isRelaxing,"Beach loungers are interactive")
+        let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(game))
+        require(saved.isRelaxing && saved.relaxingTile == BeachLayout.lounges[index],"Relaxing persists through saves")
+        game.standFromBeachChair();require(!game.isRelaxing,"Player can stand")
+        _=game.sitOnBeachChair();game.moveActor(dx:0,dy:1);require(!game.isRelaxing,"Moving exits the chair immediately")
+    }
+    game.world!.place = .office
+    require(!game.sitOnBeachChair(),"Chairs cannot be used remotely")
+    game.world!.place = .grounds;game.world!.player=HotelService.repair.tile
+    require(game.serviceAvailable(.repair) && game.performService(.repair) && !game.serviceAvailable(.repair),"Repair clears the pump fault")
+    for _ in 0..<12 {game.tickWorld()}
+    require(game.worldState.neighborPositions?.count == 3,"Residential neighbors live on the map")
+    require(game.worldState.neighborPositions!.values.allSatisfy{!MotelGrounds.blocked($0)},"Neighbors use safe routes")
+    print("PASS: retail relocation, residential access, physical facilities, pump repairs, usable loungers and neighbor routes")
+}
+neighborhoodAndFacilitiesRules()

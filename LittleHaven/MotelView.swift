@@ -225,7 +225,13 @@ struct MotelView: View {
             }
             Text(showHints ? (motel.isAtReception ? "Walk freely. Tap guests, family and office objects to interact." : hint) : "").font(.system(size: 11, weight: .medium)).foregroundStyle(cream.opacity(0.8)).lineLimit(2).frame(maxWidth: .infinity, minHeight: 29, alignment: .leading)
             ZStack {
-                if let car = motel.nearbyCar {
+                if motel.isRelaxing {
+                    Button("Stand up") {stop();change{$0.standFromBeachChair()}}
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("standFromChair")
+                } else if motel.nearbyBeachChair != nil {
+                    Button("Sit and relax") {stop();change{_=$0.sitOnBeachChair()}}
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("sitOnChair")
+                } else if let car = motel.nearbyCar {
                     Button("Wash car / +35 coins") { stop(); change { _ = $0.washNearbyCar() } }
                         .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("washCar")
                         .accessibilityHint("Parking bay \(car.slot+1)")
@@ -449,6 +455,7 @@ struct MotelView: View {
         }, action: performAction).accessibilityIdentifier("worldAction")
     }
     private var hint: String {
+        if motel.isRelaxing {return "Relaxing by the sea. Stand up or move whenever you are ready."}
         switch motel.nearbyAction {
         case .computer: return "RECEPTION PC"
         case .pet: return "CALL PET"

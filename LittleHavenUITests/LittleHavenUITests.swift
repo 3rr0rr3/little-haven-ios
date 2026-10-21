@@ -442,6 +442,17 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching:.any).matching(NSPredicate(format:"label CONTAINS %@", "Jules served: Citrus soda")).firstMatch.exists)
         capture(app,"Bartender serves drink in lively bar")
     }
+    func testBeachChairCanRelaxAndStand() {
+        let app=launch("--ui-chair")
+        XCTAssertTrue(app.buttons["standFromChair"].waitForExistence(timeout:10))
+        app.buttons["standFromChair"].tap()
+        XCTAssertTrue(app.buttons["sitOnChair"].waitForExistence(timeout:3))
+        app.buttons["sitOnChair"].tap()
+        XCTAssertTrue(app.buttons["standFromChair"].waitForExistence(timeout:3))
+        app.buttons["Walk south"].tap()
+        XCTAssertFalse(app.buttons["standFromChair"].exists)
+        capture(app,"Beach lounger sit stand and movement")
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

@@ -6,6 +6,13 @@ extension Motel {
             RPGActor(id:pet.key,tile:pet.value.tile,color:pet.key == "chichu" ? 0x85817C : 0xE9E2D0,variant:0,facing:actorFacing,name:pet.key.capitalized,duration:0.14,animal:pet.key == "chichu" ? 1 : 2,displayScale:0.55)
         }
     }
+    var neighborActors:[RPGActor] {
+        ResidentialLayout.doors.indices.map {id in
+            let tile=worldState.neighborPositions?[id] ?? ResidentialLayout.doors[id]
+            let previous=worldState.neighborPrevious?[id] ?? tile
+            return RPGActor(id:"neighbor-\(id)",tile:tile,color:Motel.themeColors[(id+1)%4],variant:610+id,facing:tile.x<previous.x ? 1 : tile.x>previous.x ? 2 : tile.y<previous.y ? 3 : 0,name:ResidentialLayout.names[id],duration:MotelCadence.travel*2)
+        }
+    }
     var neighborhoodActors:[RPGActor] {
         (worldState.townPositions ?? [:]).sorted{$0.key<$1.key}.map {id,tile in
             let previous=worldState.townPrevious?[id] ?? tile

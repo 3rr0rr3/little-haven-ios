@@ -171,6 +171,10 @@ enum NeighborhoodArt {
         for row in 14..<18 {for col in 54...55 {CozyScenery.ground(context:&context,x:Double(col*16),y:Double(row*16),kind:1,seed:row+col)}}
         CozyScenery.building(context:&context,x:816,y:144,w:112,h:80,doorX:864,name:"HOME",roof:level>1 ? 0x6488B0 : 0xCC7058,paint:0xF0D8A0)
         for x in [820.0,912.0] {CozyScenery.planter(context:&context,x:x,y:224)}
+        for (id,origin) in ResidentialLayout.origins.enumerated() {
+            CozyScenery.building(context:&context,x:Double(origin.x*16),y:Double(origin.y*16),w:112,h:80,doorX:Double(ResidentialLayout.doors[id].x*16),name:"",roof:[UInt32(0x7597A2),0xB69775,0xA5869B][id],paint:0xE8D6AD)
+            for dx in [4.0,93] {CozyScenery.planter(context:&context,x:Double(origin.x*16)+dx,y:Double((origin.y+5)*16))}
+        }
         for shop in NeighborhoodShop.allCases {
             DecorArt.storefront(&context,shop:shop)
         }
@@ -356,7 +360,9 @@ struct ExpandedOfficeArt: View {
 
 enum DecorArt {
     static func storefront(_ c:inout GraphicsContext,shop:NeighborhoodShop) {
-        let x=Double((shop.door.x-3)*16),y=Double((shop.door.y-6)*16)
+        let x=Double((shop.door.x-3)*16),y=Double((shop.door.y-(shop == .bar ? 4 : 6))*16)
+        let original=c
+        if shop == .bar {c.translateBy(x:0,y:y);c.scaleBy(x:1,y:2.0/3.0);c.translateBy(x:0,y:-y)}
         let color=shop.keeperColor
         func block(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ tint:UInt32) {CozyScenery.block(context:&c,x:x+dx,y:y+dy,w:w,h:h,color:tint,depth:0.7)}
         CozyScenery.shadow(context:&c,x:x-2,y:y+90,w:116,h:10)
@@ -388,6 +394,7 @@ enum DecorArt {
                 block(dx,30,5,8,0xF5D387)
             }
         }
+        c=original
     }
 
     static func officeFacade(_ c:inout GraphicsContext,x:Double,y:Double) {
@@ -664,5 +671,44 @@ struct BarInteriorArt:View {
             c.draw(Text("♪ LIVE LOUNGE").font(.system(size:3.5,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF5D591)),at:CGPoint(x:120,y:39))
             block(111,208,18,32,0xE7D1AD)
         }.frame(width:240,height:240)
+    }
+}
+
+enum FacilitiesArt {
+    static func draw(context c:inout GraphicsContext,motel:Motel) {
+        func block(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {CozyScenery.block(context:&c,x:x,y:y,w:w,h:h,color:color,depth:0.7)}
+        func sign(_ value:String,_ x:Double,_ y:Double,_ w:Double) {
+            block(x,y,w,9,0x4B6C60)
+            c.draw(Text(value).font(.system(size:3.2,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF2E2BB)),at:CGPoint(x:x+w/2,y:y+4.5))
+        }
+        // Connected pool pump cabinet, pipework, gauges and a fault indicator.
+        block(160,338,16,30,0x5C7879);block(162,340,12,26,0x8DA9A4)
+        c.stroke(Path(ellipseIn:CGRect(x:164,y:343,width:8,height:8)),with:.color(Color(hex:0xE9DBB8)),lineWidth:1)
+        block(167,346,1,4,0x4A5551);block(155,353,7,3,0x7F9C99);block(154,354,3,13,0x7F9C99)
+        block(163,357,3,3,motel.serviceAvailable(.repair) ? 0xDA795A : 0x94BE82)
+        for y in [361.0,364] {block(168,y,5,0.8,0x4E6865)}
+        // Working laundry cabinet and folded linen cart.
+        block(144,400,30,26,0x8BA69A);block(146,402,26,4,0xDFDDC4)
+        c.fill(Path(ellipseIn:CGRect(x:149,y:409,width:17,height:14)),with:.color(Color(hex:0x537F83)))
+        c.stroke(Path(ellipseIn:CGRect(x:151,y:411,width:13,height:10)),with:.color(Color(hex:0xBBCFC6)),lineWidth:1.2)
+        block(147,403,3,2,0xD6B675);block(163,403,6,2,0x6B837B)
+        // Breakfast terrace south of the pool; all equipment is off the walking lane.
+        block(30,413,51,7,0xA27D53);block(32,420,46,13,0xBE9B70)
+        block(35,404,12,11,0x6C8C81);block(37,406,8,5,0xD8D3AF)
+        for x in [51.0,60,69] {block(x,411,6,4,0xEBD9AC)}
+        sign("BREAKFAST TERRACE",28,393,57)
+        block(32,464,47,12,0xAB855C);block(36,477,3,6,0x705C46);block(72,477,3,6,0x705C46)
+        for x in [40.0,58] {c.fill(Path(ellipseIn:CGRect(x:x,y:467,width:11,height:4)),with:.color(Color(hex:0xF0E3C6)))}
+        block(34,455,39,5,0x7F9D88);block(34,482,39,5,0x7F9D88)
+        // Dedicated guest supply pavilion by the southern entrance.
+        block(127,496,49,44,0xA99370);block(126,493,51,6,0x6A8D80)
+        block(131,506,40,29,0x6F6552)
+        for y in [507.0,518,529] {
+            block(132,y+7,38,2,0xC7AB7C)
+            for i in 0..<4 {block(134+Double(i*9),y,7,7,i%2 == 0 ? 0xE6E0C7 : 0x9DBFAF)}
+        }
+        sign("GUEST SUPPLIES",127,497,49)
+        block(49,269,12,5,0x9FB8A2);CozyScenery.planter(context:&c,x:47,y:270)
+        RoomObjectArt.draw(context:&c,index:0,x:128,y:176)
     }
 }

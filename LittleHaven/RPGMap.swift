@@ -45,8 +45,8 @@ struct RPGMapDefinition: Codable {
     }
 }
 enum RPGMaps {
-    static let landscapeTrees = [Tile(x:2,y:2),Tile(x:12,y:2),Tile(x:21,y:2),Tile(x:29,y:2),Tile(x:37,y:2),Tile(x:2,y:16),Tile(x:2,y:24),Tile(x:2,y:30),Tile(x:9,y:30),Tile(x:3,y:33),Tile(x:10,y:33),Tile(x:37,y:10),Tile(x:37,y:19),Tile(x:37,y:28)]
-    static let landscapeBenches = [Tile(x:3,y:16),Tile(x:8,y:16),Tile(x:3,y:25),Tile(x:8,y:25)]
+    static let landscapeTrees = [Tile(x:2,y:2),Tile(x:12,y:2),Tile(x:21,y:2),Tile(x:29,y:2),Tile(x:37,y:2),Tile(x:2,y:16),Tile(x:2,y:24),Tile(x:3,y:33),Tile(x:37,y:10),Tile(x:37,y:19),Tile(x:37,y:28)]
+    static let landscapeBenches = [Tile(x:8,y:16),Tile(x:3,y:25),Tile(x:8,y:25)]
     static let town = RPGMapDefinition(id: "town", width: 20, height: 23,
         walkable: RPGRegion(x: 1, y: 1, width: 18, height: 21),
         obstacles: [RPGRegion(x: 2,y: 3,width: 4,height: 4), RPGRegion(x: 13,y: 3,width: 5,height: 4), RPGRegion(x: 2,y: 11,width: 4,height: 3), RPGRegion(x: 14,y: 13,width: 4,height: 3)],
@@ -91,7 +91,12 @@ enum RPGMaps {
         for tile in BeachLayout.lounges {obstacles.append(RPGRegion(x:tile.x,y:tile.y,width:1,height:2))}
         for x in [17,25,33] { obstacles.append(RPGRegion(x: x,y: 30,width: 3,height: 2)) }
         obstacles.append(RPGRegion(x:51,y:9,width:7,height:5))
-        for shop in NeighborhoodShop.allCases {obstacles.append(RPGRegion(x:shop.door.x-3,y:shop.door.y-6,width:7,height:6))}
+        for shop in NeighborhoodShop.allCases {
+            let height=shop == .bar ? 4 : 6
+            obstacles.append(RPGRegion(x:shop.door.x-3,y:shop.door.y-height,width:7,height:height))
+        }
+        for origin in ResidentialLayout.origins {obstacles.append(RPGRegion(x:origin.x,y:origin.y,width:7,height:5))}
+        obstacles.append(contentsOf:FacilityLayout.obstacles)
         return RPGMapDefinition(id: "grounds",width: MotelGrounds.width,height: MotelGrounds.height,walkable: RPGRegion(x: 1,y: 1,width: MotelGrounds.width-2,height: MotelGrounds.height-2),obstacles: obstacles,events: events)
     }()
 }

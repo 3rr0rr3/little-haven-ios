@@ -4,7 +4,7 @@ enum NeighborhoodShop:String,Codable,CaseIterable,Identifiable {
     case furniture, clothing, pawn, bar
     var id:String {rawValue}
     var title:String {switch self {case .furniture:return "Willow Home";case .clothing:return "Thread & Co.";case .pawn:return "Second Chance Pawn";case .bar:return "The Lantern Bar"}}
-    var door:Tile {switch self {case .furniture:return Tile(x:47,y:29);case .clothing:return Tile(x:57,y:29);case .pawn:return Tile(x:67,y:29);case .bar:return Tile(x:47,y:17)}}
+    var door:Tile {switch self {case .furniture:return Tile(x:47,y:29);case .clothing:return Tile(x:57,y:29);case .pawn:return Tile(x:67,y:29);case .bar:return Tile(x:57,y:35)}}
     var keeperName:String {switch self {case .furniture:return "Otis";case .clothing:return "Mira";case .pawn:return "Sal";case .bar:return "Jules"}}
     var keeperColor:UInt32 {switch self {case .furniture:return 0x748A67;case .clothing:return 0xAF7695;case .pawn:return 0x57718E;case .bar:return 0x8B5860}}
     var uniform:Int {switch self {case .furniture:return 1;case .clothing:return 2;case .pawn:return 3;case .bar:return 4}}
@@ -568,10 +568,10 @@ enum HotelService: String, CaseIterable {
     case .luggage: return "Deliver luggage"
     } }
     var tile: Tile { switch self {
-    case .breakfast: return Tile(x:10,y:15)
-    case .laundry: return Tile(x:10,y:25)
-    case .repair: return Tile(x:10,y:22)
-    case .garden: return Tile(x:3,y:28)
+    case .breakfast: return Tile(x:5,y:27)
+    case .laundry: return Tile(x:11,y:25)
+    case .repair: return Tile(x:11,y:22)
+    case .garden: return Tile(x:3,y:17)
     case .luggage: return Tile(x:8,y:11)
     } }
     var symbol: String { switch self {
@@ -1307,8 +1307,8 @@ enum GuestFavourKind:String,Codable,CaseIterable {
     static func forGuest(_ id:Int)->Self { allCases[abs(id % allCases.count)] }
     var title:String { switch self { case .towels:return "fresh towels";case .snacks:return "a snack";case .toiletries:return "toiletries" } }
     var stockKey:String { rawValue }
-    var source:Tile { switch self { case .towels:return HotelService.laundry.tile;case .snacks:return HotelService.breakfast.tile;case .toiletries:return Tile(x:12,y:15) } }
-    var sourceName:String { switch self {case .towels:return "the laundry station";case .snacks:return "the breakfast station";case .toiletries:return "the supplies shelf beside reception"} }
+    var source:Tile { switch self { case .towels:return HotelService.laundry.tile;case .snacks:return HotelService.breakfast.tile;case .toiletries:return FacilityLayout.supplies } }
+    var sourceName:String { switch self {case .towels:return "the laundry station";case .snacks:return "the breakfast station";case .toiletries:return "the guest supply pavilion near the south entrance"} }
 }
 struct GuestFavour:Codable {
     enum Status:String,Codable {case pending,fulfilled,declined,expired,apologized}
@@ -1428,6 +1428,7 @@ enum ShopLayout {
     static func blocked(_ tile:Tile)->Bool {tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || obstacles.contains{$0.contains(tile)} || tile == keeper}
 }
 enum BeachLayout {
+    static func approach(_ index:Int)->Tile {Tile(x:lounges[index].x+1,y:lounges[index].y+1)}
     static let palms=[Tile(x:44,y:43),Tile(x:55,y:42),Tile(x:43,y:52),Tile(x:56,y:55),Tile(x:49,y:60)]
     static let lounges=[Tile(x:47,y:47),Tile(x:53,y:49),Tile(x:47,y:55),Tile(x:53,y:58)]
     static func contains(_ tile:Tile)->Bool {tile.x>=40 && tile.y>=40}
@@ -1439,4 +1440,41 @@ enum BarLayout {
     static let seats=[Tile(x:2,y:9),Tile(x:6,y:9),Tile(x:8,y:9),Tile(x:12,y:9),Tile(x:2,y:12),Tile(x:5,y:12)]
     static let tables=[RPGRegion(x:3,y:9,width:3,height:2),RPGRegion(x:9,y:9,width:3,height:2),RPGRegion(x:3,y:12,width:2,height:1)]
     static func blocked(_ tile:Tile)->Bool {ShopLayout.blocked(tile) || seats.contains(tile) || tables.contains{$0.contains(tile)}}
+}
+
+enum ResidentialLayout {
+    static let origins=[Tile(x:44,y:3),Tile(x:61,y:3),Tile(x:61,y:11)]
+    static let doors=[Tile(x:47,y:8),Tile(x:64,y:8),Tile(x:64,y:16)]
+    static let names=["Nora","Ben","Elena"]
+    static func route(_ id:Int)->[Tile] {
+        let door=doors[id]
+        return [door,Tile(x:door.x,y:door.y+1),Tile(x:door.x-3,y:door.y+1),Tile(x:door.x-2,y:door.y+2)]
+    }
+}
+enum FacilityLayout {
+    static let supplies=Tile(x:11,y:32)
+    static let obstacles=[
+        RPGRegion(x:10,y:21,width:1,height:2),
+        RPGRegion(x:9,y:25,width:2,height:2),
+        RPGRegion(x:2,y:26,width:3,height:1),
+        RPGRegion(x:2,y:29,width:3,height:1),
+        RPGRegion(x:8,y:31,width:3,height:3)]
+}
+extension Motel {
+    var nearbyBeachChair:Int? {
+        guard !caught,visit == nil,worldState.place == .grounds else{return nil}
+        return BeachLayout.lounges.indices.first {actorTile.distance(to:BeachLayout.approach($0))<=1}
+    }
+    var isRelaxing:Bool {worldState.beachSeat != nil && visit == nil && worldState.place == .grounds}
+    var relaxingTile:Tile? {
+        guard isRelaxing,let index=worldState.beachSeat,BeachLayout.lounges.indices.contains(index) else{return nil}
+        return BeachLayout.lounges[index]
+    }
+    @discardableResult mutating func sitOnBeachChair()->Bool {
+        guard !isRelaxing,let chair=nearbyBeachChair else{return false}
+        initializeWorld();world!.player=BeachLayout.approach(chair);world!.beachSeat=chair
+        lastEvent="You settle into the beach lounger. Enjoy the sea breeze. Move or stand up when ready."
+        return true
+    }
+    mutating func standFromBeachChair() {world?.beachSeat=nil}
 }
