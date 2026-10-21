@@ -959,6 +959,16 @@ func coastAndWalkInStoreRules() {
     }}
     motel.world!.place = .house;motel.world!.player=Tile(x:7,y:12)
     require(motel.homeBlocked(Tile(x:2,y:3)) && !motel.homeBlocked(Tile(x:7,y:8)),"Home decoration leaves the living-room aisle clear")
-    print("PASS: walk-in shop counters, display collisions, store checkpoints, beach access, water safety and furnished-home paths")
+    require(motel.homeBlocked(Tile(x:11,y:3)) && motel.homeBlocked(Tile(x:11,y:10)),"TV console and sofa have solid footprints")
+    var pets=Motel();pets.initializeWorld();pets.world!.place = .grounds;pets.world!.player=NeighborhoodShop.furniture.door
+    pets.world!.pets=["chichu":PetCompanion(following:true,map:"grounds",tile:Tile(x:46,y:29))]
+    let before=pets.actorTile
+    require(pets.enterShop(.furniture),"Follower test enters furniture shop")
+    pets.updateCompanions(from:before,map:"grounds")
+    require(pets.petState("chichu").map=="shop-furniture" && !ShopLayout.blocked(pets.petState("chichu").tile),"Pet follows onto a safe store arrival tile")
+    pets.togglePet("chichu");pets.world!.player=ShopLayout.exit;_=pets.leaveShop()
+    pets.world!.player=NeighborhoodShop.clothing.door;_=pets.enterShop(.clothing)
+    require(pets.visiblePets.isEmpty && pets.petState("chichu").map=="shop-furniture","A waiting pet stays in its own store rather than appearing in every store")
+    print("PASS: walk-in shop counters, display collisions, store checkpoints, beach access, water safety, TV/sofa footprints and pet store transfers")
 }
 coastAndWalkInStoreRules()
