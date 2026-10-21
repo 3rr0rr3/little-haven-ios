@@ -157,7 +157,7 @@ final class RPGScene: SKScene {
             let name = "actor:" + actor.id
             let existing = world.childNode(withName: name) as? SKSpriteNode
             let node = existing ?? SKSpriteNode()
-            let footOffset = actor.animal > 0 ? 11 * (1 - actor.displayScale) : 0
+            let footOffset = actor.resting ? 10 : actor.animal > 0 ? 11 * (1 - actor.displayScale) : 0
             let target = CGPoint(x: CGFloat(actor.tile.x * 16 + 8), y: -CGFloat(actor.tile.y * 16 + 5) - CGFloat(footOffset))
             let moving = existing != nil && node.userData?["targetX"] as? Int != actor.tile.x || existing != nil && node.userData?["targetY"] as? Int != actor.tile.y
             let diagonal = existing != nil && node.userData?["targetX"] as? Int != actor.tile.x && node.userData?["targetY"] as? Int != actor.tile.y
