@@ -196,6 +196,13 @@ extension Motel {
     }
     mutating func reconcileInteriorSpawn() {
         initializeWorld()
+        if visit == nil && world!.place == .grounds && MotelGrounds.blocked(world!.player) {
+            let before=world!.player
+            world!.player=MotelGrounds.walkableTiles.min {a,b in
+                let da=a.distance(to:before),db=b.distance(to:before)
+                return da != db ? da<db : a.y != b.y ? a.y<b.y : a.x<b.x
+            } ?? MotelGrounds.gate
+        }
         if let roomVisit=visit,RoomVisit.blocked(roomVisit.player) {visit!.player=Tile(x:4,y:7)}
         if isAtReception && MotelGrounds.officeBlocked(world!.player) {world!.player=OfficeReception.clerk}
         if isAtHome && homeBlocked(world!.player) {world!.player=Tile(x:7,y:12)}

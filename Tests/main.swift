@@ -969,6 +969,15 @@ func coastAndWalkInStoreRules() {
     pets.togglePet("chichu");pets.world!.player=ShopLayout.exit;_=pets.leaveShop()
     pets.world!.player=NeighborhoodShop.clothing.door;_=pets.enterShop(.clothing)
     require(pets.visiblePets.isEmpty && pets.petState("chichu").map=="shop-furniture","A waiting pet stays in its own store rather than appearing in every store")
-    print("PASS: walk-in shop counters, display collisions, store checkpoints, beach access, water safety, TV/sofa footprints and pet store transfers")
+    var legacy=Motel();legacy.initializeWorld();legacy.world!.place = .grounds
+    legacy.world!.player=Tile(x:65,y:45)
+    legacy.world!.pets=["chichu":PetCompanion(following:true,map:"grounds",tile:Tile(x:64,y:45))]
+    let oldPosition=legacy.actorTile
+    legacy.reconcileInteriorSpawn();legacy.updateCompanions(from:oldPosition,map:"grounds")
+    require(legacy.worldState.place == .grounds && !MotelGrounds.blocked(legacy.actorTile),"An older seaside save loads onto nearby clear ground")
+    require(!MotelGrounds.blocked(legacy.petState("chichu").tile),"A following pet is not left inside new water or decoration")
+    let safe=legacy.actorTile;legacy.reconcileInteriorSpawn()
+    require(legacy.actorTile==safe,"Save migration never relocates an already safe player")
+    print("PASS: walk-in shop counters, display collisions, store checkpoints, beach access, water safety, TV/sofa footprints, pet transfers and old-save terrain migration")
 }
 coastAndWalkInStoreRules()
