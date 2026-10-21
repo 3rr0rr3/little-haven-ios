@@ -438,8 +438,8 @@ final class LittleHavenUITests: XCTestCase {
         let drink=app.buttons["orderDrink_citrusSoda"]
         XCTAssertTrue(drink.waitForExistence(timeout:5))
         drink.tap()
-        XCTAssertTrue(cash(app).contains("492"))
-        XCTAssertTrue(app.staticTexts["Jules served: Citrus soda"].exists)
+        XCTAssertTrue(app.staticTexts["492 COINS"].exists)
+        XCTAssertTrue(app.descendants(matching:.any).matching(NSPredicate(format:"label CONTAINS %@", "Jules served: Citrus soda")).firstMatch.exists)
         capture(app,"Bartender serves drink in lively bar")
     }
     private func launch(_ fixture: String) -> XCUIApplication {
