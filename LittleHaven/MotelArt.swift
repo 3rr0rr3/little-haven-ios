@@ -248,6 +248,7 @@ struct MotelGroundsCanvas: View, Animatable {
             NeighborhoodArt.draw(context:&context,level:motel.household.level)
             // Employee facilities appear only after that employee is hired.
             for role in motel.staffStations {
+                if role == .cleaner {continue} // Housekeeping equipment lives inside the laundry pavilion.
                 let spot = role == .clerk ? Tile(x:8,y:11) : role.home
                 let px=Double(spot.x*16),py=Double(spot.y*16)
                 rect(px-6,py-4,28,23,0xC1B58E)

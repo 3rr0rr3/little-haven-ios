@@ -1076,6 +1076,7 @@ func touchAndSidewalkRules() {
         require(!MotelGrounds.blocked(tile),"Removed objects leave no invisible collisions")
     }
     require(MotelGrounds.blocked(Tile(x:66,y:32)),"Relocated bin has matching collision")
+    require(StaffRole.cleaner.home == FacilityLayout.laundry,"Hired housekeeper works in the laundry pavilion")
     require(HotelService.laundry.tile == FacilityLayout.laundry,"Laundry service shares the physical pavilion")
     require(GuestFavourKind.toiletries.source == FacilityLayout.supplies,"Guest supplies use the laundry area")
     require(FacilityLayout.supplies.distance(to:FacilityLayout.laundry)<=2,"Laundry and supplies are together")

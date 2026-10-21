@@ -140,7 +140,7 @@ enum StaffRole: String, Codable, CaseIterable, Identifiable {
     var hireCost: Int { switch self { case .cleaner: return 100; case .maintenance: return 140; case .security: return 160; case .valet: return 120; case .clerk: return 130 } }
     var wage: Int { switch self { case .cleaner: return 15; case .maintenance: return 20; case .security: return 25; case .valet: return 18; case .clerk: return 22 } }
     var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office."; case .valet: return "Walks to parked guest cars, scrubs and rinses them. Each car earns 35 coins once per day."; case .clerk: return "Handles daytime arrivals, assigns suitable rooms and collects payments while you work outside." } }
-    var home: Tile { switch self { case .clerk:return Tile(x:6,y:10);case .cleaner:return Tile(x:11,y:25);case .maintenance:return Tile(x:11,y:22);case .security:return Tile(x:11,y:12);case .valet:return Tile(x:15,y:32) } }
+    var home: Tile { switch self { case .clerk:return Tile(x:6,y:10);case .cleaner:return FacilityLayout.laundry;case .maintenance:return Tile(x:11,y:22);case .security:return Tile(x:11,y:12);case .valet:return Tile(x:15,y:32) } }
     var station: String { switch self {case .clerk:return "RECEPTION";case .cleaner:return "HOUSEKEEPING";case .maintenance:return "MAINTENANCE";case .security:return "SECURITY";case .valet:return "CAR WASH"} }
     var color: UInt32 { switch self { case .cleaner: return 0xB4A1C5; case .maintenance: return 0xD8AC66; case .security: return 0x718DA9; case .valet: return 0x5DA6B0; case .clerk: return 0xD0B777 } }
 }

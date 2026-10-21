@@ -711,6 +711,11 @@ enum FacilitiesArt {
             block(162,y,5,5,0xE6E0C7);block(168,y,5,5,0x9DBFAF)
         }
         block(114,530,58,10,0xA99370)
+        if motel.staffStations.contains(.cleaner) {
+            block(116,528,12,12,0x748F87)
+            for y in [528.0,532,536] {block(117,y,10,3,0xF1E4C5)}
+            sign("HOUSEKEEPING",118,543,48)
+        }
         sign("LAUNDRY / GUEST SUPPLIES",110,466,67)
         block(49,269,12,5,0x9FB8A2);CozyScenery.planter(context:&c,x:47,y:270)
         RoomObjectArt.draw(context:&c,index:0,x:128,y:176)
