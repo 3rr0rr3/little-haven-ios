@@ -18,10 +18,10 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          gh run download 39586636708 --name LittleHaven-iPhone-IPA --dir package
-          gh run download 39586636708 --name Gameplay-previews --dir previews
+          gh run download 39594409124 --name LittleHaven-iPhone-IPA --dir package
+          gh run download 39594409124 --name Gameplay-previews --dir previews
           cd package
-          echo '3ef406feaa84807cb9c473761d6e6b46f25113eaaf5384c160a83a8f0e04698e  LittleHaven-unsigned.ipa' | sha256sum --check
+          echo 'f12ef2abd9c343cd47193b594c60bf1e4eee2cf6879db39d79567034001c5fde  LittleHaven-unsigned.ipa' | sha256sum --check
       - name: Save tested character app icon into source
         run: |
           set -euo pipefail
@@ -30,7 +30,7 @@ jobs:
           git config user.email 'codex@openai.com'
           git add LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png
           if ! git diff --cached --quiet; then
-            git commit -m 'Save tested player character app icon [skip ci]'
+            git commit -m 'Save tested character app icon [skip ci]'
             git push origin HEAD:codex/pokopia-scenery
           fi
       - name: Provide direct IPA asset
@@ -39,4 +39,4 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          gh release create test-18-office-staff package/LittleHaven-unsigned.ipa package/LittleHaven-unsigned.ipa.sha256 previews/LittleHaven-app-icon.png previews/LittleHaven-office.png previews/LittleHaven-motel.png previews/LittleHaven-staff-posts.png --target "$(git rev-parse HEAD)" --title 'Little Haven 18 - Walking, staff stations and office' --prerelease --notes 'Version 18.0 (22): clearer walking gait; staff hiring unlocks at guest check-in milestones; each hired employee adds a distinct work station; redesigned office frontage and reception layout; original player character on the iPhone app icon. Native tests and all 27 simulator tests passed. This direct test download does not change the SideStore feed.'
+          gh release create test-19-lantern-bar package/LittleHaven-unsigned.ipa package/LittleHaven-unsigned.ipa.sha256 previews/LittleHaven-bar.png previews/LittleHaven-bar-exterior.png previews/LittleHaven-home-store.png previews/LittleHaven-character-turns.png previews/LittleHaven-staff-posts.png --target "$(git rev-parse HEAD)" --title 'Little Haven 19 - Lantern Bar and storefronts' --prerelease --notes 'Version 19.0 (23): removed the freestanding build sign; commercial storefronts with display windows and awnings; the walk-in Lantern Bar with Jules, drinks, warm decor and six animated, talkative patrons at three tables; directional torso and clothing fixes for the player, family, NPCs and shop uniforms. Native rules and all 28 simulator tests passed. This test download does not change the SideStore feed.'
