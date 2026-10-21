@@ -100,6 +100,7 @@ struct MotelView: View {
             if motel.business.police?.arrived == true { showPolice=true }
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--ui-dialogue") { family = .hildarelys }
+            if ProcessInfo.processInfo.arguments.contains("--ui-creature-portrait") { family = .mochi }
             if ProcessInfo.processInfo.arguments.contains("--ui-guest-dialogue") { talkingRoom=0 }
             if ProcessInfo.processInfo.arguments.contains("--ui-police") { showPolice = true }
             if ProcessInfo.processInfo.arguments.contains("--ui-hiring") { panel = .staff }

@@ -247,6 +247,10 @@ jobs:
           sleep 3
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-creature.png
           xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-creature --ui-creature-portrait --ui-touch
+          sleep 3
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-Tuki-portrait.png
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
           xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-action-theft
           sleep 2
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-small-room-items.png

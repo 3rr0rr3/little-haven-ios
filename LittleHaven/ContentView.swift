@@ -37,7 +37,7 @@ struct ContentView: View {
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch")}
         if args.contains("--ui-creature") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
-            sample.motel!.waiting=[];sample.motel!.world!.place = .house;sample.motel!.world!.player=Tile(x:4,y:9)
+            sample.motel!.waiting=[];sample.motel!.world!.place = .house;sample.motel!.world!.player=Tile(x:5,y:8)
             sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
             sample.save();return sample
         }

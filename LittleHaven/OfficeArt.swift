@@ -720,39 +720,83 @@ enum FacilitiesArt {
 }
 
 
-// A soft, rounded purple companion based on the supplied creature reference.
-// Red reference markup is deliberately excluded from its actual design.
+// Tuki: a square pink woodland creature with a leafy crown and berry limbs.
+// Kept in the same Canvas sprite system so its four facings and walk frames agree.
 enum MochiArt {
     static func draw(context:inout GraphicsContext,facing:Int,walk:Double) {
         var c=context
         func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
-            c.fill(Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:color)))
+            let rect=CGRect(x:x,y:y,width:w,height:h)
+            c.fill(Path(ellipseIn:rect),with:.color(Color(hex:color)))
         }
-        func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32,_ radius:Double) {
-            c.fill(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:radius),with:.color(Color(hex:color)))
+        func leaf(_ x:Double,_ y:Double,_ dx:Double,_ dy:Double,_ width:Double) {
+            let tip=CGPoint(x:x+dx,y:y+dy)
+            var shape=Path()
+            shape.move(to:CGPoint(x:x,y:y))
+            shape.addQuadCurve(to:tip,control:CGPoint(x:x+dx*0.12-dy*width,y:y+dy*0.12+dx*width))
+            shape.addQuadCurve(to:CGPoint(x:x,y:y),control:CGPoint(x:x+dx*0.8+dy*width,y:y+dy*0.8-dx*width))
+            c.fill(shape,with:.linearGradient(Gradient(colors:[Color(hex:0x799D63),Color(hex:0x3D9B88),Color(hex:0x28695C)]),startPoint:tip,endPoint:CGPoint(x:x,y:y)))
+            var vein=Path();vein.move(to:CGPoint(x:x,y:y));vein.addLine(to:CGPoint(x:x+dx*0.78,y:y+dy*0.78))
+            c.stroke(vein,with:.color(Color(hex:0x9CAE75).opacity(0.6)),lineWidth:0.35)
         }
-        oval(2,23,21,4,0x304038)
-        let step=walk*1.2
-        for i in 0..<3 {
-            let x=Double(i)*6+3
-            oval(x,20+(i%2 == 0 ? step : -step),6,7,0x85415F)
-            oval(x+0.7,20.5+(i%2 == 0 ? step : -step),4,3,0xB66783)
+        func berry(_ x:Double,_ y:Double,_ size:Double,_ step:Double) {
+            let rect=CGRect(x:x,y:y+step,width:size,height:size+0.7)
+            c.fill(Path(ellipseIn:rect),with:.radialGradient(Gradient(colors:[Color(hex:0xAB506E),Color(hex:0x82354F),Color(hex:0x4D263E)]),center:CGPoint(x:x+size*0.35,y:y+step+size*0.3),startRadius:0,endRadius:size*0.8))
+            oval(x+size*0.2,y+step+size*0.16,size*0.27,size*0.18,0xB26180)
         }
-        box(2,6,21,18,0x9E6AAF,5)
-        box(3,6,19,9,0xC08EC8,4)
-        oval(3,3,6,7,0xAE7CB9);oval(16,3,6,7,0xAE7CB9)
-        // Dark side markings give the same chunky striped silhouette.
-        box(2,16,5,2,0x80528E,1);box(2,20,4,2,0x80528E,1)
-        box(19,16,4,2,0x80528E,1);box(19,20,4,2,0x80528E,1)
-        if facing != 3 {
-            let shift=facing == 1 ? -2.0 : facing == 2 ? 2.0 : 0
-            oval(5+shift,10,4,4.5,0x282333);oval(14+shift,10,4,4.5,0x282333)
-            oval(6+shift,10.5,1.3,1.4,0xF3E7F0);oval(15+shift,10.5,1.3,1.4,0xF3E7F0)
-            oval(10+shift,15,3.2,1.8,0x57374F)
-            oval(3.5+shift,15,3,1.6,0xD48FAE);oval(18+shift,15,3,1.6,0xD48FAE)
+        oval(1,24,22,3.5,0x304038)
+        // Fern-like edge foliage sits behind a nearly square body.
+        for row in 0..<4 {
+            let y=Double(row)*4+8
+            leaf(4,y,-3.5,-2.5,0.32)
+            leaf(20,y,3.5,-3,0.32)
+        }
+        let body=Path(roundedRect:CGRect(x:3,y:5.5,width:18,height:20),cornerRadius:1.8)
+        c.fill(body,with:.linearGradient(Gradient(colors:[Color(hex:0xD19BC6),Color(hex:0xB27BAC),Color(hex:0x80517F)]),startPoint:CGPoint(x:7,y:6),endPoint:CGPoint(x:19,y:26)))
+        c.stroke(body,with:.color(Color(hex:0x674566)),lineWidth:0.55)
+        // Broad violet zigzags, rather than the old rounded ears and side spots.
+        var stripe=Path()
+        stripe.move(to:CGPoint(x:3,y:16));stripe.addLine(to:CGPoint(x:7,y:17))
+        stripe.addLine(to:CGPoint(x:3,y:19));stripe.addLine(to:CGPoint(x:7,y:20))
+        stripe.addLine(to:CGPoint(x:3,y:23));stripe.addLine(to:CGPoint(x:3,y:16))
+        c.fill(stripe,with:.color(Color(hex:0x84527F)))
+        var sash=Path()
+        sash.move(to:CGPoint(x:3,y:21));sash.addLine(to:CGPoint(x:21,y:14))
+        sash.addLine(to:CGPoint(x:21,y:18));sash.addLine(to:CGPoint(x:3,y:25));sash.closeSubpath()
+        c.fill(sash,with:.color(Color(hex:0x603144)))
+        // A fan of green leaves replaces the previous ear-like bumps.
+        leaf(11.5,6.5,-6.5,-5.5,0.38)
+        leaf(11.5,6.5,-2,-6,0.4)
+        leaf(12,6.5,3,-6.5,0.38)
+        leaf(12,6.5,7,-5.5,0.32)
+        leaf(12,6.5,1,-4.5,0.35)
+        let step=walk*0.85
+        if facing == 3 {
+            // Rear markings and foliage; the face never remains on the back.
+            leaf(12,15,-5,-3,0.32);leaf(12,15,5,-3,0.32)
+            berry(3,22,6,step);berry(10,22,6,-step);berry(17,22,5,step)
         } else {
-            box(7,11,11,2,0xA775B6,1)
-            box(6,16,13,2,0x80528E,1)
+            let shift=facing == 1 ? -2.0 : facing == 2 ? 2.0 : 0
+            let eyes=facing == 1 ? [6.0] : facing == 2 ? [16.0] : [7.0,16.0]
+            for eye in eyes {
+                oval(eye-1.5,9.5,3.2,3.2,0x282033)
+                oval(eye-0.8,9.8,0.8,0.9,0xE8CBDE)
+                // Short turquoise tear tracks from the new reference.
+                var tear=Path()
+                tear.move(to:CGPoint(x:eye+0.7,y:12.1))
+                tear.addQuadCurve(to:CGPoint(x:eye-1.1,y:12.6),control:CGPoint(x:eye-0.2,y:13.2))
+                tear.addLine(to:CGPoint(x:eye-1.1,y:14))
+                c.stroke(tear,with:.color(Color(hex:0x42C8E7)),style:StrokeStyle(lineWidth:1,lineCap:.round,lineJoin:.round))
+            }
+            oval(10.5+shift,12.2,2.4,2.1,0x48344F)
+            oval(10.4+shift,16,3.1,0.9,0x493044)
+            for dot in [(5.0,14.0),(6.2,15.0),(18.3,13.5),(19.1,15.0)] {
+                oval(dot.0,dot.1,0.7,0.7,0x9D638E)
+            }
+            // Three plum-red berry limbs descend diagonally across the front.
+            berry(3,22,6.5,step)
+            berry(9.5,19.5,6.6,-step)
+            berry(16,16.8,6.4,step)
         }
     }
 }
