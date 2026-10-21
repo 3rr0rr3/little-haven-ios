@@ -209,7 +209,7 @@ struct HomeInteriorArt:View {
             rect(163,43,46,29,0x263D3B);rect(166,46,40,22,0x8CBDBB)
             rect(184,72,4,6,0x384945);rect(175,77,22,2,0x384945)
             rect(162,81,13,3,0xD5C3A0);rect(192,81,17,3,0x5B6E64)
-            DecorArt.sofa(&context,161,141,54,0xA592B1)
+            DecorArt.sofa(&context,161,141,54,0xA592B1,facesTV:true)
             rect(163,120,48,13,0xB7916E);rect(168,123,12,6,0xDDD1AA);rect(190,124,7,4,0x93B7A7)
             for x in [157.0,190.0] {rect(x+5,207,15,8,0xBE9A76);rect(x+9,217,6,3,0x82ACA5)}
             rect(30,155,27,17,0x88684B);rect(34,157,18,12,0xF2E2BC);rect(43,158,1,10,0xB89B70)
@@ -353,7 +353,20 @@ enum DecorArt {
             CozyScenery.block(context:&c,x:x+3+Double(i*5),y:y+3+Double(row*10),w:3,h:7,color:[UInt32(0x91B3AD),0xC39183,0xCDBB86,0x9B8DA9][(i+row)%4],depth:0.2)
         }}
     }
-    static func sofa(_ c:inout GraphicsContext,_ x:Double,_ y:Double,_ w:Double,_ color:UInt32) {
+    static func sofa(_ c:inout GraphicsContext,_ x:Double,_ y:Double,_ w:Double,_ color:UInt32,facesTV:Bool = false) {
+        if facesTV {
+            // Rear of the home sofa is nearest the camera; the open seats face the TV above it.
+            CozyScenery.shadow(context:&c,x:x-2,y:y+26,w:w+4,h:8)
+            CozyScenery.block(context:&c,x:x+3,y:y+5,w:w-6,h:24,color:color,depth:2)
+            for i in 0..<2 {CozyScenery.block(context:&c,x:x+6+Double(i)*(w-12)/2,y:y+6,w:(w-14)/2,h:16,color:color,depth:0.6)}
+            CozyScenery.block(context:&c,x:x+9,y:y+9,w:9,h:7,color:0xE3C993,depth:0.5)
+            for dx in [0.0,w-6] {CozyScenery.block(context:&c,x:x+dx,y:y+8,w:6,h:21,color:color,depth:1)}
+            // Tall continuous back, with a padded top edge, hides the front apron from this view.
+            CozyScenery.block(context:&c,x:x+2,y:y+19,w:w-4,h:13,color:color,depth:1.5)
+            CozyScenery.block(context:&c,x:x+2,y:y+18,w:w-4,h:4,color:color,depth:0.4)
+            for dx in [5.0,w-8] {CozyScenery.block(context:&c,x:x+dx,y:y+32,w:3,h:3,color:0x735D4A,depth:0.4)}
+            return
+        }
         CozyScenery.shadow(context:&c,x:x-2,y:y+26,w:w+4,h:8)
         CozyScenery.block(context:&c,x:x+3,y:y+5,w:w-6,h:24,color:color,depth:2)
         for i in 0..<2 {CozyScenery.block(context:&c,x:x+6+Double(i)*(w-12)/2,y:y+6,w:(w-14)/2,h:16,color:color,depth:0.6)}
