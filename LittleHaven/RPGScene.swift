@@ -71,7 +71,7 @@ private struct ActorArtwork: View {
                 ChaosArt.draw(context:&context,kind:actor.effect,stride:stride,color:actor.color,variant:actor.variant,facing:actor.facing)
             } else if actor.animal > 0 { CatArt.draw(context:&context,gray:actor.animal == 1,walk:stride) }
             else { PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:stride,expression:actor.expression) }
-            if actor.shopUniform > 0 {ShopKeeperArt.uniform(context:&context,kind:actor.shopUniform)}
+            if actor.shopUniform > 0 {ShopKeeperArt.uniform(context:&context,kind:actor.shopUniform,facing:actor.facing)}
         }.frame(width: 24, height: 28)
     }
 }
@@ -191,6 +191,21 @@ final class RPGScene: SKScene {
                 }]),withKey:"walkEnd")
                 node.removeAction(forKey: "move")
                 node.run(.move(to: target, duration: stepDuration), withKey: "move")
+            }
+            if actor.id.hasPrefix("bar-patron-") && node.childNode(withName:"social-drink") == nil {
+                let mug=SKShapeNode(rectOf:CGSize(width:3,height:4),cornerRadius:0.6)
+                mug.name="social-drink";mug.fillColor=UIColor(red:0.86,green:0.69,blue:0.4,alpha:1)
+                mug.strokeColor=UIColor(white:0.95,alpha:1);mug.lineWidth=0.35
+                mug.position=CGPoint(x:actor.facing == 1 ? -6 : 6,y:-3);mug.zPosition=2
+                let delay=Double(actor.variant%4)+1.2
+                mug.run(.repeatForever(.sequence([.wait(forDuration:delay),.group([.moveBy(x:0,y:5,duration:0.5),.rotate(byAngle:0.25,duration:0.5)]),.wait(forDuration:0.7),.group([.moveBy(x:0,y:-5,duration:0.5),.rotate(byAngle:-0.25,duration:0.5)])])))
+                node.addChild(mug)
+                let chat=SKLabelNode(fontNamed:"AvenirNext-Bold")
+                chat.text=actor.variant%2 == 0 ? "Cheers!" : "Good company!"
+                chat.fontSize=3;chat.fontColor=UIColor(red:1,green:0.9,blue:0.68,alpha:1)
+                chat.position=CGPoint(x:0,y:19);chat.alpha=0;chat.zPosition=3
+                chat.run(.repeatForever(.sequence([.wait(forDuration:delay+2),.fadeIn(withDuration:0.3),.wait(forDuration:1.5),.fadeOut(withDuration:0.4),.wait(forDuration:4)])))
+                node.addChild(chat)
             }
             if actor.effect > 0 && node.action(forKey:"effect") == nil {
                 node.run(.repeatForever(.animate(with:(0..<8).map { sprite(actor,stride:Double($0)) },timePerFrame:0.1)),withKey:"effect")
@@ -455,7 +470,7 @@ struct MotelRPGView: View {
         let interior = visit != nil || motel.worldState.place == .office
         let mapID = visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue
         let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
-        let worldRevision="office-world-18-" + motel.staffStations.map(\.rawValue).joined(separator:",") + "-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
+        let worldRevision="market-world-19-" + motel.staffStations.map(\.rawValue).joined(separator:",") + "-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
         var actors = [RPGActor(id: "player", tile: motel.actorTile, color: FamilyHome.outfitColors[motel.household.outfit], variant: 7, facing: motel.actorFacing)]
         if !interior {
             actors += motel.neighborhoodActors

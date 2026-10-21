@@ -430,6 +430,18 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(world.waitForExistence(timeout:5))
         XCTAssertTrue(world.label.contains("Column 47"))
     }
+    func testBarBartenderServesDrinks() {
+        let app=launch("--ui-bar")
+        XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
+        XCTAssertTrue(app.buttons["barPatron0"].exists)
+        app.buttons["shopCounter"].tap()
+        let drink=app.buttons["orderDrink_citrusSoda"]
+        XCTAssertTrue(drink.waitForExistence(timeout:5))
+        drink.tap()
+        XCTAssertTrue(cash(app).contains("492"))
+        XCTAssertTrue(app.staticTexts["Jules served: Citrus soda"].exists)
+        capture(app,"Bartender serves drink in lively bar")
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

@@ -971,7 +971,7 @@ func coastAndWalkInStoreRules() {
             let p=queue[cursor];cursor+=1
             for (dx,dy) in [(0,1),(1,0),(-1,0),(0,-1)] {
                 let next=Tile(x:p.x+dx,y:p.y+dy)
-                if !ShopLayout.blocked(next),seen.insert(next).inserted {queue.append(next)}
+                if !motel.shopBlocked(next),seen.insert(next).inserted {queue.append(next)}
             }
         }
         require(seen.contains(ShopLayout.counter) && seen.contains(ShopLayout.exit),"Displays leave a clear route to the counter and door")
@@ -1016,3 +1016,23 @@ func coastAndWalkInStoreRules() {
     print("PASS: walk-in shop counters, display collisions, store checkpoints, beach access, water safety, TV/sofa footprints, pet transfers and old-save terrain migration")
 }
 coastAndWalkInStoreRules()
+
+func barRules() {
+    var game=Motel();game.initializeWorld();game.cash=100;game.world!.place = .grounds
+    require(MotelGrounds.nextStep(from:MotelGrounds.gate,to:NeighborhoodShop.bar.door,avoiding:[]) != nil,"Bar entrance connects to town")
+    require(!game.orderBarDrink(.houseCocktail) && game.cash == 100,"Cannot buy bar drinks from another map")
+    game.world!.player=NeighborhoodShop.bar.door;require(game.enterShop(.bar),"Bar can be entered")
+    require(!game.orderBarDrink(.citrusSoda),"Drinks require reaching the bartender")
+    game.world!.player=ShopLayout.counter
+    require(game.orderBarDrink(.citrusSoda) && game.cash == 92 && game.worldState.barOrders == 1,"Bartender charges once and serves requested drink")
+    require(game.worldState.barDrink == .citrusSoda,"Served drink is recorded")
+    game.cash=0;require(!game.orderBarDrink(.houseCocktail) && game.cash == 0,"Unaffordable drinks do not overdraw")
+    for tile in BarLayout.seats {require(game.shopBlocked(tile),"Seated patrons block their chair tile")}
+    game.world!.player=Tile(x:7,y:10);game.moveActor(dx:-1,dy:-1)
+    require(game.actorTile==Tile(x:7,y:10),"Cannot cut diagonally through patrons or tables")
+    let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(game))
+    require(saved.currentShop == .bar && saved.worldState.barDrink == .citrusSoda,"Bar and drink order survive checkpoint")
+    game.world!.player=ShopLayout.exit;require(game.leaveShop() && game.actorTile == Tile(x:47,y:18),"Bar exit returns to its own road")
+    print("PASS: bar entry, counter service, prices, patrons, furniture, checkpoints and exit")
+}
+barRules()

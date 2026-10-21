@@ -149,6 +149,16 @@ jobs:
           sleep 7
           kill -INT "$TV_RECORD_PID"
           wait "$TV_RECORD_PID" || true
+      - name: Capture bar and storefronts
+        if: ${{ success() && env.SIM_DEVICE != '' }}
+        run: |
+          set -euo pipefail
+          for MODE in bar bar-exterior; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE"
+            sleep 3
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
+          done
       - name: Capture guest interaction
         if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |

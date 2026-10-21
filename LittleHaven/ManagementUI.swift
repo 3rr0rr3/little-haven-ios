@@ -25,6 +25,19 @@ struct NeighborhoodStoreView:View {
                             Button(motel.household.outfit == index ? "Wearing" : motel.household.outfits.contains(index) ? "Wear" : "Buy / 80") {change{_=$0.wearOutfit(index)}}.disabled(motel.household.outfit == index || (!motel.household.outfits.contains(index) && motel.cash<80)).accessibilityIdentifier("outfit_\(index)")
                         }
                     }
+                } else if shop == .bar {
+                    ForEach(BarDrink.allCases) {drink in
+                        HStack {
+                            Label(drink.title,systemImage:"wineglass.fill");Spacer()
+                            Button("Order / \(drink.price)") {change{_=$0.orderBarDrink(drink)}}
+                                .disabled(!motel.canTrade(.bar) || motel.cash<drink.price)
+                                .accessibilityIdentifier("orderDrink_"+drink.rawValue)
+                        }
+                    }
+                    if let drink=motel.worldState.barDrink {
+                        Label("Jules served: "+drink.title,systemImage:"checkmark.circle.fill").foregroundStyle(Color(hex:0xA8D7BA))
+                    }
+                    Text("Music, warm lights and good company. Take a seat and enjoy the evening.").font(.caption)
                 } else {
                     if motel.household.stolen.isEmpty {Text("Your bag is empty. No belongings have been sold automatically.")}
                     ForEach(RoomVisit.lootNames.indices,id:\.self) {item in

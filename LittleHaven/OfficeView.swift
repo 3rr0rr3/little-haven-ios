@@ -94,18 +94,31 @@ struct OfficeReceptionView: View {
 struct ShopInteriorView:View {
     let motel:Motel
     let shop:NeighborhoodShop
+    var chat:(String)->Void = {_ in}
     let trade:()->Void
     let exit:()->Void
     private var actors:[RPGActor] {
         [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You"),
-         RPGActor(id:"shopkeeper-"+shop.rawValue,tile:ShopLayout.keeper,color:shop.keeperColor,variant:460+shop.uniform,name:shop.keeperName,shopUniform:shop.uniform)] + motel.petActors
+         RPGActor(id:"shopkeeper-"+shop.rawValue,tile:ShopLayout.keeper,color:shop.keeperColor,variant:460+shop.uniform,name:shop.keeperName,shopUniform:shop.uniform)] + (shop == .bar ? BarLayout.seats.enumerated().map { index,tile in
+             RPGActor(id:"bar-patron-\(index)",tile:tile,color:[UInt32(0xA58AAB),0x9CB69E,0xD1AD74][index%3],variant:520+index,facing:index%2 == 0 ? 2 : 1,name:["Avery","Rosa","Theo","Mila","Leon","Iris"][index])
+         } : []) + motel.petActors
     }
     var body:some View {
         GeometryReader {proxy in
             let scale=min(proxy.size.width/240,proxy.size.height/240)
             let ox=(proxy.size.width-240*scale)/2,oy=(proxy.size.height-240*scale)/2
             ZStack {
-                RPGSceneView(mapID:"shop-"+shop.rawValue,revision:"store-17",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:false) {AnyView(ShopInteriorArt(shop:shop))}
+                RPGSceneView(mapID:"shop-"+shop.rawValue,revision:"store-19",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:false) {shop == .bar ? AnyView(BarInteriorArt()) : AnyView(ShopInteriorArt(shop:shop))}
+                if shop == .bar {
+                    ForEach(Array(BarLayout.seats.enumerated()),id:\.offset) { index,tile in
+                        Button {
+                            chat(motel.actorTile.distance(to:tile)<=2 ? ["The music is great tonight!","Jules makes the best citrus soda.","I stopped here after a long road trip.","Cheers! This place feels welcoming.","The Lantern is my favorite evening stop.","Have you tried the house cocktail?"][index] : "Walk closer to the table to chat.")
+                        } label:{Color.white.opacity(0.001).contentShape(Rectangle())}
+                        .frame(width:22*scale,height:28*scale)
+                        .position(x:ox+CGFloat(tile.x*16+8)*scale,y:oy+CGFloat(tile.y*16)*scale)
+                        .accessibilityLabel("Talk to bar patron").accessibilityIdentifier("barPatron\(index)")
+                    }
+                }
                 Button(action:trade) {Color.white.opacity(0.001).contentShape(Rectangle())}
                     .frame(width:80*scale,height:35*scale).position(x:ox+120*scale,y:oy+80*scale)
                     .accessibilityLabel("Talk to "+shop.keeperName).accessibilityIdentifier("shopCounter")

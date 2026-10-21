@@ -37,7 +37,7 @@ extension Motel {
             let trailBlocked:Bool
             if visit != nil {trailBlocked=RPGMaps.room.blocked(trail)}
             else if isAtHome {trailBlocked=homeBlocked(trail)}
-            else if isAtShop {trailBlocked=ShopLayout.blocked(trail)}
+            else if isAtShop {trailBlocked=shopBlocked(trail)}
             else if isAtReception {trailBlocked=RPGMaps.office.blocked(trail)}
             else {trailBlocked=MotelGrounds.blocked(trail)}
             if pet.map != petMap || previousMap != petMap || trailBlocked {
@@ -45,7 +45,7 @@ extension Motel {
                 pet.tile=nearby.first { tile in
                     guard !arrivals.contains(tile) else { return false }
                     if visit != nil { return !RPGMaps.room.blocked(tile) }
-                    if isAtShop {return !ShopLayout.blocked(tile) && tile != ShopLayout.exit}
+                    if isAtShop {return !shopBlocked(tile) && tile != ShopLayout.exit}
                     if isAtHome { return !homeBlocked(tile) && tile != FamilyHome.exit }
                     if isAtReception { return !RPGMaps.office.blocked(tile) && tile != OfficeReception.door }
                     return !MotelGrounds.blocked(tile)

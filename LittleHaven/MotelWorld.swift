@@ -20,6 +20,8 @@ struct MotelWorldState: Codable {
     var tick = 0
     var reception: OfficeReception?
     var shop: NeighborhoodShop?
+    var barDrink:BarDrink?
+    var barOrders:Int?
     var guestPositions: [Int:Tile]?
     var witnessPositions: [Int:Tile]?
     var townPositions:[Int:Tile]?
@@ -208,13 +210,13 @@ extension Motel {
         if let roomVisit=visit,RoomVisit.blocked(roomVisit.player) {visit!.player=Tile(x:4,y:7)}
         if isAtReception && MotelGrounds.officeBlocked(world!.player) {world!.player=OfficeReception.clerk}
         if isAtHome && homeBlocked(world!.player) {world!.player=Tile(x:7,y:12)}
-        if isAtShop && ShopLayout.blocked(world!.player) {world!.player=ShopLayout.arrival}
+        if isAtShop && shopBlocked(world!.player) {world!.player=ShopLayout.arrival}
         for (id,saved) in worldState.pets ?? [:] {
             var pet=saved
             if pet.map == "grounds" && MotelGrounds.blocked(pet.tile) {pet.tile=MotelGrounds.nearestWalkable(to:pet.tile)}
             else if pet.map == "house" && homeBlocked(pet.tile) {pet.tile=id == "chichu" ? OfficeReception.chichu : OfficeReception.chichi}
             else if pet.map == "office" && RPGMaps.office.blocked(pet.tile) {pet.tile=Tile(x:8,y:id == "chichu" ? 8 : 9)}
-            else if pet.map.hasPrefix("shop-") && ShopLayout.blocked(pet.tile) {pet.tile=Tile(x:id == "chichu" ? 6 : 8,y:12)}
+            else if pet.map.hasPrefix("shop-") && (pet.map == "shop-bar" ? BarLayout.blocked(pet.tile) : ShopLayout.blocked(pet.tile)) {pet.tile=Tile(x:id == "chichu" ? 6 : 8,y:12)}
             world!.pets?[id]=pet
         }
     }
@@ -226,9 +228,9 @@ extension Motel {
         state.facing = dy > 0 ? 0 : dx < 0 ? 1 : dx > 0 ? 2 : 3
         let next = Tile(x: state.player.x + dx, y: state.player.y + dy)
         if state.place == .shop {
-            guard !ShopLayout.blocked(next) else {world=state;return}
+            guard !shopBlocked(next) else {world=state;return}
             if dx != 0 && dy != 0 {
-                guard !ShopLayout.blocked(Tile(x:state.player.x+dx,y:state.player.y)),!ShopLayout.blocked(Tile(x:state.player.x,y:state.player.y+dy)) else {world=state;return}
+                guard !shopBlocked(Tile(x:state.player.x+dx,y:state.player.y)),!shopBlocked(Tile(x:state.player.x,y:state.player.y+dy)) else {world=state;return}
             }
             state.player=next;world=state
             if next == ShopLayout.exit {_=leaveShop()}

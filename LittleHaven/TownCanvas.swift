@@ -151,6 +151,10 @@ enum PaperPerson {
             context.stroke(path, with: .color(Color(hex: tint)), lineWidth: width)
         }
         oval(1.5, 14, 13, 2.5, 0x638658, false)
+        let bodyContext=context
+        if facing == 1 || facing == 2 {
+            context.translateBy(x:x+8,y:0);context.scaleBy(x:0.72,y:1);context.translateBy(x:-x-8,y:0)
+        }
         box(3.7, 12, 4.1, 3.1 + walk * 0.4, 0x3D4754)
         box(8.2, 12, 4.1, 3.1 - walk * 0.4, 0x3D4754)
         oval(2.8, 14 + walk * 0.4, 5.2, 1.8, 0x302F30)
@@ -162,13 +166,23 @@ enum PaperPerson {
         coat.addQuadCurve(to: CGPoint(x: x + 12, y: y + 5 - bob), control: CGPoint(x: x + 15, y: y + 8 - bob))
         coat.closeSubpath()
         shape(coat, color)
-        if seed % 3 == 0 { box(3, 8, 10, 1.3, 0xEEE3BA) }
-        if seed % 3 == 1 { box(4, 7, 2, 5, 0x445B69) }
-        if seed % 4 == 0 { box(10, 10, 3, 3, 0xBD975F) }
-        line([CGPoint(x: 8, y: 7), CGPoint(x: 8, y: 13.7)], ink)
-        for button in 0..<3 { oval(8.7, 8.2 + Double(button) * 1.7, 0.5, 0.5, ink, false) }
+        if facing == 0 {
+            if seed % 3 == 0 { box(3, 8, 10, 1.3, 0xEEE3BA) }
+            if seed % 3 == 1 { box(4, 7, 2, 5, 0x445B69) }
+            if seed % 4 == 0 { box(10, 10, 3, 3, 0xBD975F) }
+            line([CGPoint(x: 8, y: 7), CGPoint(x: 8, y: 13.7)], ink)
+            for button in 0..<3 { oval(8.7, 8.2 + Double(button) * 1.7, 0.5, 0.5, ink, false) }
+        } else if facing == 3 {
+            line([CGPoint(x:4,y:6),CGPoint(x:8,y:6.7),CGPoint(x:12,y:6)],ink,0.4)
+            line([CGPoint(x:8,y:7),CGPoint(x:8,y:12.5)],ink,0.2)
+            if seed % 3 == 0 {box(3,8,10,1.3,0xEEE3BA)}
+        } else {
+            let seam=facing == 1 ? 5.0 : 11.0
+            line([CGPoint(x:seam,y:7),CGPoint(x:seam,y:13)],ink,0.3)
+        }
         oval(0.6, 9 + walk * 0.7, 3.5, 3.7, skin)
         oval(11.9, 9 - walk * 0.7, 3.5, 3.7, skin)
+        context=bodyContext
         if style == 1 || style == 3 || style == 6 { oval(1, -4.5, 14, 13.5, hair) }
         oval(1.7, -5, 12.6, 12.5, skin)
         if facing == 3 {

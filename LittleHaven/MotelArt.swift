@@ -312,7 +312,7 @@ struct MotelGroundsCanvas: View, Animatable {
             }
             // Small everyday objects keep the grounds lived in, without moving paths.
             for x in [44.0,49,59,69] {CozyScenery.planter(context:&context,x:x*16,y:21*16)}
-            for (col,row) in [(44,16),(52,21),(62,21),(69,32)] {
+            for (col,row) in [(43,21),(52,21),(62,21),(69,32)] {
                 let px=Double(col*16),py=Double(row*16)
                 rect(px+6,py-20,2,34,0x64736A)
                 rect(px+2,py-23,10,7,0xE3D49E)
@@ -390,11 +390,6 @@ struct MotelGroundsCanvas: View, Animatable {
             }
             rect(238,505,16,25,0x436D76); rect(240,508,12,12,0x8FC3CC)
             label("HIRE DIEGO",245,540,3,0xF4D891)
-            let sign = MotelGrounds.sign
-            rect(Double(sign.x * 16 + 6), Double(sign.y * 16), 4, 19, 0x7D6D50)
-            rect(Double(sign.x * 16 - 12), Double(sign.y * 16 - 7), 40, 20, 0x3A594C)
-            label("BUILD", Double(sign.x * 16 + 8), Double(sign.y * 16 - 1), 4, 0xF0CC7F)
-            label("\(motel.expansionCost)", Double(sign.x * 16 + 8), Double(sign.y * 16 + 6), 4, 0xF0CC7F)
             rect(15, 505, 62, 25, 0x3E5E50)
             label("LITTLE HAVEN", 46, 514, 4); label("MOTOR INN", 46, 522, 4)
             struct Actor {

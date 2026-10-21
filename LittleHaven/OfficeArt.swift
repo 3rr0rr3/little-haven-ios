@@ -172,10 +172,7 @@ enum NeighborhoodArt {
         CozyScenery.building(context:&context,x:816,y:144,w:112,h:80,doorX:864,name:"HOME",roof:level>1 ? 0x6488B0 : 0xCC7058,paint:0xF0D8A0)
         for x in [820.0,912.0] {CozyScenery.planter(context:&context,x:x,y:224)}
         for shop in NeighborhoodShop.allCases {
-            let x=Double((shop.door.x-3)*16)
-            let roof:UInt32=shop == .furniture ? 0xCE9560 : shop == .clothing ? 0xA480B8 : 0x679EA8
-            CozyScenery.building(context:&context,x:x,y:368,w:112,h:96,doorX:Double(shop.door.x*16),name:"",roof:roof,paint:0xEFDBAF)
-            DecorArt.shopSign(&context,shop:shop,x:x+15,y:405)
+            DecorArt.storefront(&context,shop:shop)
         }
     }
 }
@@ -240,16 +237,27 @@ enum PersonalArt {
         func box(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ color:UInt32) { shape(Path(roundedRect:CGRect(x:x+dx,y:y+dy-bob,width:w,height:h),cornerRadius:0.5),color) }
         oval(2,14,12,2,0x5C7351)
         if woman || child { oval(1,-5,14,17,hair) }
+        let bodyContext=context
+        if facing == 1 || facing == 2 {
+            context.translateBy(x:x+8,y:0);context.scaleBy(x:0.72,y:1);context.translateBy(x:-x-8,y:0)
+        }
         box(4,11,3.5,4+step*0.4,0x41414A); box(8.5,11,3.5,4-step*0.4,0x41414A)
         oval(3,14+step*0.4,5,1.8,ink); oval(8,14-step*0.4,5,1.8,ink)
         box(2.5,5,11,9,child ? 0xD88BAA : woman ? 0x292A2C : shirt)
         oval(0.8,8+step*0.4,3.5,4,skin); oval(11.7,8-step*0.4,3.5,4,skin)
-        if woman {
+        if woman && facing != 3 {
             for i in 0..<5 { oval(3+Double(i*2),8+Double(i%2)*3,2,1.6,0xE8E2CF) }
-        } else if !child {
+        } else if !child && !woman && facing == 0 {
             box(6,5,4,2,0xE8E6E0)
             for i in 0..<3 { oval(8,8+Double(i)*1.7,0.45,0.45,ink) }
         }
+        if facing == 3 {
+            box(5,5.5,6,0.7,woman ? 0x4B3B35 : child ? 0xAF6E89 : 0x89969B)
+            box(7.7,7,0.35,5.8,woman ? 0x4B3B35 : child ? 0xAF6E89 : 0x89969B)
+        } else if facing == 1 || facing == 2 {
+            box(facing == 1 ? 4.0 : 11.0,7,0.4,6,0x6C7477)
+        }
+        context=bodyContext
         oval(1.7,-5,12.6,12.5,skin)
         if facing == 3 { oval(1.7,-5,12.6,11,hair) }
         else {
@@ -347,6 +355,41 @@ struct ExpandedOfficeArt: View {
 }
 
 enum DecorArt {
+    static func storefront(_ c:inout GraphicsContext,shop:NeighborhoodShop) {
+        let x=Double((shop.door.x-3)*16),y=Double((shop.door.y-6)*16)
+        let color=shop.keeperColor
+        func block(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ tint:UInt32) {CozyScenery.block(context:&c,x:x+dx,y:y+dy,w:w,h:h,color:tint,depth:0.7)}
+        CozyScenery.shadow(context:&c,x:x-2,y:y+90,w:116,h:10)
+        block(0,6,112,88,shop == .bar ? 0x79604D : 0xDEDAC5)
+        block(-2,0,116,10,shop == .bar ? 0x493A3F : 0x55716A)
+        block(3,10,106,23,color)
+        shopSign(&c,shop:shop,x:x+15,y:y+12)
+        // Broad display glazing and a flat striped awning read as shops, not houses.
+        block(4,43,36,42,0x45635F);block(6,45,32,37,shop == .bar ? 0xD7B274 : 0xADCDC6)
+        block(76,43,32,42,0x45635F);block(78,45,28,37,shop == .bar ? 0xD7B274 : 0xADCDC6)
+        if shop == .furniture {
+            block(10,65,23,12,0x8D9F84);block(12,60,19,9,0xAABC9C);block(84,58,3,20,0x91724E);block(80,55,12,5,0xEAD1A1)
+        } else if shop == .clothing {
+            for dx in [10.0,23,81,94] {block(dx,55,9,16,0xB789A3);block(dx+2,53,5,4,0xE8D6B3)}
+        } else if shop == .pawn {
+            for dx in [10.0,24,82,96] {block(dx,64,8,9,0xD2B26C);block(dx+2,61,4,4,0xEAD8AA)}
+        } else {
+            for dx in [10.0,24,82,96] {block(dx,57,6,15,0x677B59);block(dx+2,53,2,5,0xD7C295)}
+            block(9,75,27,4,0x654735);block(80,75,24,4,0x654735)
+        }
+        block(46,47,23,47,0x385954);block(49,50,17,34,shop == .bar ? 0xB59165 : 0xA5C7BF)
+        block(62,70,2,10,0xE9CF8C);block(42,91,31,5,0xDCD0B1)
+        for i in 0..<14 {block(-1+Double(i*8),33,8,10,i%2 == 0 ? color : 0xEFE1BD)}
+        block(-2,42,116,3,color)
+        if shop == .bar {
+            for dx in [5.0,101] {
+                block(dx,23,5,17,0x483F3D)
+                c.fill(Path(ellipseIn:CGRect(x:x+dx-4,y:y+28,width:13,height:17)),with:.radialGradient(Gradient(colors:[Color(hex:0xFFDDA0).opacity(0.8),.clear]),center:CGPoint(x:x+dx+2,y:y+36),startRadius:0,endRadius:10))
+                block(dx,30,5,8,0xF5D387)
+            }
+        }
+    }
+
     static func officeFacade(_ c:inout GraphicsContext,x:Double,y:Double) {
         // Low commercial frontage within the original eight-by-six-tile footprint.
         CozyScenery.shadow(context:&c,x:x-3,y:y+89,w:134,h:12)
@@ -414,7 +457,7 @@ enum DecorArt {
         for dx in [0.0,5] {c.fill(Path(ellipseIn:CGRect(x:x+dx,y:y-18,width:4,height:4)),with:.color(Color(hex:0xAA8962)))}
     }
     static func shopSign(_ c:inout GraphicsContext,shop:NeighborhoodShop,x:Double,y:Double) {
-        let color:UInt32=shop == .furniture ? 0x647F63 : shop == .clothing ? 0xA77597 : 0x56758A
+        let color:UInt32=shop == .furniture ? 0x647F63 : shop == .clothing ? 0xA77597 : shop == .bar ? 0x7D4553 : 0x56758A
         CozyScenery.block(context:&c,x:x,y:y,w:82,h:17,color:color,depth:1)
         let icon=Path(roundedRect:CGRect(x:x+3,y:y+3,width:12,height:11),cornerRadius:2)
         c.fill(icon,with:.color(Color(hex:0xEFE0B7)))
@@ -424,12 +467,16 @@ enum DecorArt {
         } else if shop == .clothing {
             var p=Path();p.move(to:CGPoint(x:x+6,y:y+11));p.addLine(to:CGPoint(x:x+12,y:y+5));p.move(to:CGPoint(x:x+6,y:y+5));p.addLine(to:CGPoint(x:x+12,y:y+11))
             c.stroke(p,with:.color(Color(hex:color)),style:StrokeStyle(lineWidth:1.2,lineCap:.round))
+        } else if shop == .bar {
+            c.stroke(Path(ellipseIn:CGRect(x:x+6,y:y+4,width:6,height:5)),with:.color(Color(hex:color)),lineWidth:1)
+            c.fill(Path(CGRect(x:x+8.5,y:y+8,width:1,height:4)),with:.color(Color(hex:color)))
+            c.fill(Path(CGRect(x:x+6.5,y:y+12,width:5,height:1)),with:.color(Color(hex:color)))
         } else {
             c.stroke(Path(ellipseIn:CGRect(x:x+5,y:y+5,width:4,height:4)),with:.color(Color(hex:color)),lineWidth:1)
             c.fill(Path(CGRect(x:x+8,y:y+8,width:5,height:1.5)),with:.color(Color(hex:color)))
         }
         c.draw(Text(shop.title.uppercased()).font(.system(size:4.2,weight:.heavy,design:.rounded)).foregroundColor(Color(hex:0xFFF1D5)),at:CGPoint(x:x+48,y:y+6))
-        c.draw(Text(shop == .furniture ? "FURNITURE & DECOR" : shop == .clothing ? "CLOTHING & TAILOR" : "PAWN & CURIOS").font(.system(size:2.8,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF4DCAB)),at:CGPoint(x:x+48,y:y+12))
+        c.draw(Text(shop == .furniture ? "FURNITURE & DECOR" : shop == .clothing ? "CLOTHING & TAILOR" : shop == .bar ? "DRINKS • MUSIC • GOOD COMPANY" : "PAWN & CURIOS").font(.system(size:2.8,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF4DCAB)),at:CGPoint(x:x+48,y:y+12))
     }
 }
 struct ShopInteriorArt:View {
@@ -477,9 +524,20 @@ struct ShopInteriorArt:View {
     }
 }
 enum ShopKeeperArt {
-    static func uniform(context:inout GraphicsContext,kind:Int) {
+    static func uniform(context:inout GraphicsContext,kind:Int,facing:Int = 0) {
         func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {context.fill(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:0.5),with:.color(Color(hex:color)))}
-        if kind == 1 {
+        if facing == 3 {
+            box(8,14,9,9,kind == 1 ? 0x748A67 : kind == 2 ? 0xAF7695 : kind == 3 ? 0x425770 : 0x70424D)
+            if kind == 1 || kind == 4 {box(8,19,9,0.8,0xD4BA93)}
+            return
+        }
+        if facing == 1 || facing == 2 {
+            context.translateBy(x:12,y:0);context.scaleBy(x:0.72,y:1);context.translateBy(x:-12,y:0)
+        }
+        if kind == 4 {
+            box(8,15,9,8,0x70424D);box(9,14,3,2,0x2E3737);box(13,14,3,2,0x2E3737)
+            box(10,19,5,2,0xD1B778)
+        } else if kind == 1 {
             box(8,14,1.5,8,0xCBA36F);box(16,14,1.5,8,0xCBA36F);box(8,18,10,6,0xCBA36F)
             box(10,20,5,2,0x8B694A);box(15,18,1,4,0x7B8983)
         } else if kind == 2 {
@@ -562,5 +620,49 @@ extension DecorArt {
         for row in 0..<3 {block(65,52+Double(row*2),18,0.7,0x7A9088)}
         block(-2,62,100,4,0xC6B796);block(31,63,19,3,0xEADCC2)
         c.draw(Text(status).font(.system(size:3,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0x465D50)),at:CGPoint(x:x+75,y:y+20))
+    }
+}
+
+struct BarInteriorArt:View {
+    var body:some View {
+        Canvas {c,_ in
+            func block(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {CozyScenery.block(context:&c,x:x,y:y,w:w,h:h,color:color,depth:0.7)}
+            CozyScenery.interior(context:&c,width:240,height:240,floor:0x947259,wall:0x75505A)
+            DecorArt.shopSign(&c,shop:.bar,x:79,y:7)
+            for y in stride(from:38.0,to:207,by:14) {c.stroke(Path(CGRect(x:16,y:y,width:208,height:0.3)),with:.color(Color(hex:0x684E40)),lineWidth:0.3)}
+            // Back bar, taps, glassware and warm bottle shelves.
+            for x in [20.0,181] {
+                block(x,42,39,76,0x5B463B)
+                for row in 0..<3 {
+                    let y=46+Double(row*23)
+                    block(x+2,y+17,35,3,0xC6A278)
+                    for i in 0..<4 {
+                        let xx=x+5+Double(i*8)
+                        block(xx,y+5,5,12,[UInt32(0x728B5C),0xB78457,0x729C94,0xAA6B71][(i+row)%4])
+                        block(xx+1,y+1,3,6,0xD6BE83);block(xx+1,y+10,3,4,0xE5D7B2)
+                    }
+                }
+            }
+            block(79,65,82,24,0x704D3C);block(77,63,86,7,0xD0A875)
+            for x in [89.0,108,130] {block(x,56,6,9,0xDDE2CF);block(x+1,57,4,5,0xCEAD75)}
+            block(141,52,10,10,0x537875);block(142,53,8,5,0xABD0BB)
+            for x in [92.0,143] {block(x,94,8,10,0xB5896C);block(x-1,92,10,4,0x794954)}
+            for table in BarLayout.tables {
+                let x=Double(table.x*16),y=Double(table.y*16)
+                DecorArt.rug(&c,x-9,y-5,Double(table.width*16+18),Double(table.height*16+10),0x81535B)
+                block(x+5,y+10,Double(table.width*16-10),14,0x5B4436)
+                block(x,y+3,Double(table.width*16),14,0xC09669)
+                for dx in [7.0,Double(table.width*16-12)] {block(x+dx,y+4,4,7,0xDDE0C6);block(x+dx+1,y+5,2,4,0xB88C56)}
+                block(x+Double(table.width*8-2),y+4,4,8,0xD6BF88)
+            }
+            for tile in BarLayout.seats {block(Double(tile.x*16+1),Double(tile.y*16+6),14,11,0x76505A)}
+            for x in [46.0,190] {
+                block(x,20,1,13,0x49413B);block(x-7,30,15,5,0xDEB66F)
+                c.fill(Path(ellipseIn:CGRect(x:x-20,y:34,width:41,height:28)),with:.radialGradient(Gradient(colors:[Color(hex:0xFFE3A7).opacity(0.22),.clear]),center:CGPoint(x:x,y:41),startRadius:0,endRadius:25))
+            }
+            block(20,133,18,18,0x5D6C65);block(23,135,12,6,0xD2B877)
+            c.draw(Text("♪ LIVE LOUNGE").font(.system(size:3.5,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF5D591)),at:CGPoint(x:120,y:39))
+            block(111,208,18,32,0xE7D1AD)
+        }.frame(width:240,height:240)
     }
 }

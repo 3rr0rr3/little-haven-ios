@@ -1,16 +1,23 @@
 import Foundation
 
 enum NeighborhoodShop:String,Codable,CaseIterable,Identifiable {
-    case furniture, clothing, pawn
+    case furniture, clothing, pawn, bar
     var id:String {rawValue}
-    var title:String {self == .furniture ? "Willow Home" : self == .clothing ? "Thread & Co." : "Second Chance Pawn"}
-    var door:Tile {Tile(x:self == .furniture ? 47 : self == .clothing ? 57 : 67,y:29)}
-    var keeperName:String {self == .furniture ? "Otis" : self == .clothing ? "Mira" : "Sal"}
-    var keeperColor:UInt32 {self == .furniture ? 0x748A67 : self == .clothing ? 0xAF7695 : 0x57718E}
-    var uniform:Int {self == .furniture ? 1 : self == .clothing ? 2 : 3}
-    var symbol:String {self == .furniture ? "sofa" : self == .clothing ? "scissors" : "key"}
-    var detail:String {self == .furniture ? "Buy furniture here, then place it at your family home." : self == .clothing ? "Buy and wear new outfits." : "Sell carried belongings here. Taking an item never pays cash automatically."}
+    var title:String {switch self {case .furniture:return "Willow Home";case .clothing:return "Thread & Co.";case .pawn:return "Second Chance Pawn";case .bar:return "The Lantern Bar"}}
+    var door:Tile {switch self {case .furniture:return Tile(x:47,y:29);case .clothing:return Tile(x:57,y:29);case .pawn:return Tile(x:67,y:29);case .bar:return Tile(x:47,y:17)}}
+    var keeperName:String {switch self {case .furniture:return "Otis";case .clothing:return "Mira";case .pawn:return "Sal";case .bar:return "Jules"}}
+    var keeperColor:UInt32 {switch self {case .furniture:return 0x748A67;case .clothing:return 0xAF7695;case .pawn:return 0x57718E;case .bar:return 0x8B5860}}
+    var uniform:Int {switch self {case .furniture:return 1;case .clothing:return 2;case .pawn:return 3;case .bar:return 4}}
+    var symbol:String {switch self {case .furniture:return "sofa";case .clothing:return "scissors";case .pawn:return "key";case .bar:return "wineglass"}}
+    var detail:String {switch self {case .furniture:return "Buy furniture here, then place it at your family home.";case .clothing:return "Buy and wear new outfits.";case .pawn:return "Sell carried belongings here.";case .bar:return "Walk to Jules at the counter to order a freshly served drink."}}
 }
+enum BarDrink:String,Codable,CaseIterable,Identifiable {
+    case sparklingWater,citrusSoda,houseCocktail
+    var id:String {rawValue}
+    var title:String {switch self {case .sparklingWater:return "Sparkling water";case .citrusSoda:return "Citrus soda";case .houseCocktail:return "Lantern house cocktail"}}
+    var price:Int {switch self {case .sparklingWater:return 5;case .citrusSoda:return 8;case .houseCocktail:return 15}}
+}
+
 enum HomeObject:String,Codable,CaseIterable,Identifiable {
     case plant, rug, lamp, bookshelf, table, armchair
     var id:String {rawValue}
@@ -45,6 +52,15 @@ extension Motel {
     var isAtHome:Bool {visit == nil && worldState.place == .house}
     var isAtShop:Bool {visit == nil && worldState.place == .shop}
     var currentShop:NeighborhoodShop? {isAtShop ? worldState.shop : nil}
+    func shopBlocked(_ tile:Tile)->Bool {currentShop == .bar ? BarLayout.blocked(tile) : ShopLayout.blocked(tile)}
+    @discardableResult mutating func orderBarDrink(_ drink:BarDrink)->Bool {
+        guard canTrade(.bar),cash>=drink.price else{return false}
+        initializeWorld();cash -= drink.price
+        world!.barDrink=drink;world!.barOrders=(world!.barOrders ?? 0)+1
+        logMoney(-drink.price,category:"Bar drinks",note:drink.title)
+        lastEvent="Jules serves your "+drink.title.lowercased()+". Enjoy the Lantern Bar!"
+        return true
+    }
     func canTrade(_ shop:NeighborhoodShop)->Bool {
         !caught && currentShop == shop && actorTile.distance(to:ShopLayout.counter)<=1
     }
@@ -1417,4 +1433,10 @@ enum BeachLayout {
     static func contains(_ tile:Tile)->Bool {tile.x>=40 && tile.y>=40}
     static func shoreline(_ row:Int)->Int {[61,60,60,59,59,60,61,61][abs(row)%8]}
     static func water(_ tile:Tile)->Bool {tile.y>=42 && tile.x>=shoreline(tile.y)}
+}
+
+enum BarLayout {
+    static let seats=[Tile(x:2,y:9),Tile(x:6,y:9),Tile(x:8,y:9),Tile(x:12,y:9),Tile(x:2,y:12),Tile(x:5,y:12)]
+    static let tables=[RPGRegion(x:3,y:9,width:3,height:2),RPGRegion(x:9,y:9,width:3,height:2),RPGRegion(x:3,y:12,width:2,height:1)]
+    static func blocked(_ tile:Tile)->Bool {ShopLayout.blocked(tile) || seats.contains(tile) || tables.contains{$0.contains(tile)}}
 }

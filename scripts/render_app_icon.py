@@ -5,13 +5,16 @@ import subprocess,tempfile,platform
 root=Path(__file__).resolve().parents[1]
 source=(root/"LittleHaven/OfficeArt.swift").read_text()
 personal=source[source.index("enum PersonalArt {"):source.index("\nenum CatArt {")]
+people=(root/"LittleHaven/TownCanvas.swift").read_text()
+people=people[people.index("enum PaperPerson {"):]
+uniform=source[source.index("enum ShopKeeperArt {"):source.index("\nenum BeachArt {")]
 swift=r'''
 import SwiftUI
 import AppKit
 extension Color {
     init(hex:UInt32) {self.init(red:Double((hex>>16)&255)/255,green:Double((hex>>8)&255)/255,blue:Double(hex&255)/255)}
 }
-''' + personal + r'''
+''' + personal + people + uniform + r'''
 struct CharacterIcon:View {
     var body:some View {
         Canvas {context,size in
@@ -28,6 +31,19 @@ struct CharacterIcon:View {
         }.frame(width:1024,height:1024)
     }
 }
+struct TurnPreview:View {
+    var body:some View {
+        Canvas {c,_ in
+            c.fill(Path(CGRect(x:0,y:0,width:1024,height:810)),with:.color(Color(hex:0xB7CBB8)))
+            for row in 0..<3 {for facing in 0..<4 {
+                c.draw(Text(["FRONT","LEFT","RIGHT","BACK"][facing]).font(.system(size:18,weight:.bold)).foregroundColor(Color(hex:0x243E35)),at:CGPoint(x:Double(facing*256+128),y:Double(row*270+25)))
+                var actor=c;actor.translateBy(x:Double(facing*256+32),y:Double(row*270+50));actor.scaleBy(x:8,y:8)
+                PaperPerson.draw(context:&actor,x:4,y:9,color:row == 0 ? 0xC7D0D4 : row == 1 ? 0x629FB4 : 0x8B5860,variant:row == 0 ? 7 : row == 1 ? 102 : 464,facing:facing,walk:0)
+                if row == 2 {ShopKeeperArt.uniform(context:&actor,kind:4,facing:facing)}
+            }}
+        }.frame(width:1024,height:810)
+    }
+}
 @main struct RenderIcon {
     @MainActor static func main() throws {
         let renderer=ImageRenderer(content:CharacterIcon())
@@ -40,6 +56,10 @@ struct CharacterIcon:View {
         let bitmap=NSBitmapImageRep(cgImage:rgb.makeImage()!)
         let png=bitmap.representation(using:.png,properties:[:])!
         try png.write(to:URL(fileURLWithPath:CommandLine.arguments[1]))
+        let turns=ImageRenderer(content:TurnPreview());turns.scale=1
+        guard let preview=turns.cgImage else {fatalError("Turn preview failed")}
+        let turnPNG=NSBitmapImageRep(cgImage:preview).representation(using:.png,properties:[:])!
+        try turnPNG.write(to:URL(fileURLWithPath:CommandLine.arguments[2]))
     }
 }
 '''
@@ -48,6 +68,6 @@ with tempfile.TemporaryDirectory() as folder:
     binary=Path(folder)/"render-icon"
     subprocess.run(["swiftc","-target",platform.machine()+"-apple-macosx13.0","-parse-as-library",str(program),"-o",str(binary)],check=True)
     target=root/"LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
-    subprocess.run([str(binary),str(target)],check=True)
+    subprocess.run([str(binary),str(target),str(root/"LittleHaven-character-turns.png")],check=True)
     (root/"LittleHaven-app-icon.png").write_bytes(target.read_bytes())
     print("Rendered original player character into opaque 1024px app icon")

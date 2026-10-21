@@ -389,7 +389,7 @@ struct MotelView: View {
                 .accessibilityValue("\(room.dirty ? "Cleaning \(room.cleanedTasks?.count ?? 0)/3" : "Ready for guests"). Theme \(room.theme). Furnishings \(room.furniture).")
                 .accessibilityIdentifier("motelWorld")
         } else if let shop=motel.currentShop {
-            ShopInteriorView(motel:motel,shop:shop,trade:{if motel.canTrade(shop) {performAction()} else {toast="Walk to "+shop.keeperName+"'s counter first."}},exit:{stop();var left=false;change{left=$0.leaveShop()};if !left {toast="Walk to the lower shop door first."}})
+            ShopInteriorView(motel:motel,shop:shop,chat:{toast=$0},trade:{if motel.canTrade(shop) {performAction()} else {toast="Walk to "+shop.keeperName+"'s counter first."}},exit:{stop();var left=false;change{left=$0.leaveShop()};if !left {toast="Walk to the lower shop door first."}})
         } else if motel.isAtHome {
             FamilyHouseView(motel:motel,tap:officeTap).id(mapIdentity)
         } else if motel.isAtReception {
@@ -410,7 +410,7 @@ struct MotelView: View {
         case .pet: return "CALL PET"
         case .home: return "HOME"
         case .homeDecor: return "WORKBENCH"
-        case .shop: return motel.isAtShop ? "BROWSE" : "ENTER SHOP"
+        case .shop: return motel.isAtShop ? (motel.currentShop == .bar ? "ORDER DRINK" : "BROWSE") : "ENTER SHOP"
         case .incident: return "HELP"
         case .office, .room: return "ENTER"
         case .guest: return "TALK"
