@@ -1063,10 +1063,44 @@ func neighborhoodAndFacilitiesRules() {
     require(game.worldState.neighborPositions?.count == 3,"Residential neighbors live on the map")
     require(game.worldState.neighborPositions!.values.allSatisfy{!MotelGrounds.blocked($0)},"Neighbors use safe routes")
     game.world!.townPositions=[0:Tile(x:57,y:33)]
-    game.world!.travellers=[MotelWalker(id:99,name:"Visitor",color:0x91B7A1,roomID:0,player:Tile(x:9,y:32),previous:Tile(x:9,y:32),destination:MotelGrounds.roomDoor(0))]
+    game.world!.travellers=[MotelWalker(id:99,name:"Visitor",color:0x91B7A1,roomID:0,player:Tile(x:8,y:31),previous:Tile(x:8,y:31),destination:MotelGrounds.roomDoor(0))]
     game.reconcileInteriorSpawn()
     require(!MotelGrounds.blocked(game.worldState.townPositions![0]!),"Saved townspeople relocate out of the moved bar")
     require(!MotelGrounds.blocked(game.worldState.travellers[0].player),"Saved guests relocate out of new facilities")
     print("PASS: retail relocation, residential access, physical facilities, pump repairs, usable loungers and neighbor routes")
 }
 neighborhoodAndFacilitiesRules()
+
+func touchAndSidewalkRules() {
+    for tile in [Tile(x:12,y:15),Tile(x:12,y:26),Tile(x:60,y:32),Tile(x:9,y:25),Tile(x:10,y:25)] {
+        require(!MotelGrounds.blocked(tile),"Removed objects leave no invisible collisions")
+    }
+    require(MotelGrounds.blocked(Tile(x:66,y:32)),"Relocated bin has matching collision")
+    require(HotelService.laundry.tile == FacilityLayout.laundry,"Laundry service shares the physical pavilion")
+    require(GuestFavourKind.toiletries.source == FacilityLayout.supplies,"Guest supplies use the laundry area")
+    require(FacilityLayout.supplies.distance(to:FacilityLayout.laundry)<=2,"Laundry and supplies are together")
+    var game=Motel();game.initializeWorld();game.waiting=[];game.world!.place = .grounds;game.world!.player=MotelGrounds.gate
+    for target in [FacilityLayout.laundry,FacilityLayout.supplies,Tile(x:12,y:15),BeachLayout.approach(0)] {
+        let route=game.touchRoute(to:target)!
+        var previous=game.actorTile
+        for tile in route {
+            require(!game.touchBlocked(tile) && previous.distance(to:tile)==1,"Tap route uses safe neighboring tiles")
+            previous=tile
+        }
+        require(previous == target,"Tap route reaches destination")
+    }
+    let wall=Tile(x:3,y:18)
+    let approach=game.touchRoute(to:wall)!
+    require((approach.last ?? game.actorTile).distance(to:wall)<=1,"Tapping an object approaches its edge")
+    require(game.touchRoute(to:Tile(x:999,y:999)) == nil,"Off-map taps cannot start a route")
+    let sealed=TouchPath.route(from:Tile(x:1,y:1),to:Tile(x:3,y:3),width:5,height:5,blocked:{$0 != Tile(x:1,y:1)})
+    require(sealed == nil,"Unreachable destinations do not teleport")
+    for place in [MotelPlace.office,.house,.shop] {
+        game.world!.place=place;game.world!.shop=place == .shop ? .furniture : nil
+        game.world!.player=place == .house ? Tile(x:7,y:12) : place == .shop ? ShopLayout.arrival : OfficeReception.clerk
+        let target=place == .house ? FamilyHome.workbench : place == .shop ? ShopLayout.counter : Tile(x:1,y:7)
+        require(game.touchRoute(to:target,adjacent:true) != nil,"Tap paths work across interior layouts")
+    }
+    print("PASS: cleared sidewalk collisions, grouped laundry facilities and safe touch navigation")
+}
+touchAndSidewalkRules()

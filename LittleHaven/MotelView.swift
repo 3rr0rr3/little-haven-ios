@@ -41,6 +41,10 @@ private enum MotelPanel: Equatable { case guest(Int), paint(Int?), desk, constru
 struct MotelView: View {
     @Binding var game: Game
     @Environment(\.returnToTitle) private var returnToTitle
+    @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
+    @State private var touchRouteID=UUID()
+    @State private var touchSteps:[Tile]=[]
+    @State private var touchCompletion:(()->Void)?
     @AppStorage("littlehaven.hints") private var showHints = true
     @AppStorage("littlehaven.haptics") private var haptics = true
     @State private var neighborhood: NeighborhoodShop?
@@ -80,6 +84,7 @@ struct MotelView: View {
     var body: some View {
         Group {
             if motel.caught { gameOver }
+            else if fullscreenTouch { fullscreenWorld }
             else { worldScreen }
         }
         .foregroundStyle(cream).background(Color(hex: 0x172A25))
@@ -103,6 +108,24 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains(where:{$0.hasPrefix("--ui-management-") && $0 != "--ui-management-night"}) {showManagement=true}
             #endif
         }
+        .task(id:touchRouteID) {
+            guard fullscreenTouch,!paused else{return}
+            let map=mapIdentity
+            let steps=touchSteps
+            let completion=touchCompletion
+            touchCompletion=nil
+            for tile in steps {
+                guard !Task.isCancelled,!paused,scenePhase == .active,mapIdentity == map else{return}
+                let start=motel.actorTile
+                guard !motel.touchBlocked(tile) else{return}
+                change {$0.moveActor(dx:tile.x-start.x,dy:tile.y-start.y)}
+                guard motel.actorTile != start else{return}
+                do {try await Task.sleep(for:.seconds(0.14))} catch {return}
+            }
+            guard !Task.isCancelled,!paused,scenePhase == .active,mapIdentity == map else{return}
+            completion?()
+        }
+        .onChange(of:fullscreenTouch) {_,_ in stop()}
         .task(id: movement) {
             guard let direction = movement else { return }
             let clock=ContinuousClock()
@@ -174,6 +197,81 @@ struct MotelView: View {
 
     }
 
+
+    private var nearbyTouchActions:some View {
+        ZStack {
+                if motel.isRelaxing {
+                    Button("Stand up") {stop();change{$0.standFromBeachChair()}}
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("standFromChair")
+                } else if motel.nearbyBeachChair != nil {
+                    Button("Sit and relax") {stop();change{_=$0.sitOnBeachChair()}}
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("sitOnChair")
+                } else if let car = motel.nearbyCar {
+                    Button("Wash car / +35 coins") { stop(); change { _ = $0.washNearbyCar() } }
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("washCar")
+                        .accessibilityHint("Parking bay \(car.slot+1)")
+                } else if motel.canCollectGuestFavour {
+                    Button("Collect guest supplies") { stop();change { _ = $0.collectGuestFavour() } }
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("collectGuestSupplies")
+                } else if let room=motel.nearbyHospitalityRoom {
+                    Button("Talk to "+(room.guest?.name ?? "guest")) { stop();talkingRoom=room.id }
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("talkToGuest")
+                } else if let service = motel.nearbyService {
+                    Button(service.title + " / +\(service.reward) coins") {
+                        stop(); change { _ = $0.performService(service) }
+                    }.buttonStyle(MotelButtonStyle()).disabled(!motel.serviceAvailable(service))
+
+                } else if motel.isAtReception {
+                    HStack(spacing:10) {
+                        Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
+                        Button(motel.hiringUnlocked(.cleaner) ? "Hire employees" : "Staff unlocks • \(motel.guestsServed)/3 guests") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")
+                    }
+                } else if !motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}).isEmpty {
+                    HStack {
+                        ForEach(motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}), id: \.key) { pet in
+                            Button(pet.key.capitalized) { stop(); family=OfficeTap(rawValue:pet.key) }.buttonStyle(MotelButtonStyle(subdued:true))
+                        }
+                    }
+                } else { Color.clear }
+            }
+    }
+    private var fullscreenWorld:some View {
+        ZStack {
+            scene.ignoresSafeArea().environment(\.worldTouch,walkToTouch)
+            VStack(spacing:8) {
+                HStack {
+                    VStack(alignment:.leading) {
+                        Text(motel.mapName).font(.headline)
+                        Text("DAY \(motel.day) / \(motel.cash) coins").font(.caption.monospaced())
+                    }
+                    Spacer()
+                    Button {stop();showMap=true} label:{Image(systemName:"map.fill").padding(12)}.accessibilityLabel("Airb&b map")
+                    Button {stop();showPause=true} label:{Image(systemName:"pause.fill").padding(12)}.accessibilityLabel("Pause game")
+                }.padding(8).background(Color(hex:0x172A25).opacity(0.9),in:RoundedRectangle(cornerRadius:16))
+                priorityAlerts
+                Spacer()
+                if working {ProgressView(value:workProgress).tint(gold)}
+                nearbyTouchActions.fixedSize(horizontal:false,vertical:true)
+                if motel.nearbyAction != .none {
+                    actionButton.frame(width:160,height:82)
+                }
+            }.padding(.horizontal,16).padding(.vertical,8)
+            worldOverlay
+        }.accessibilityIdentifier("fullscreenWorld")
+    }
+    private func walkToTouch(_ target:Tile,_ completion:(()->Void)?) {
+        guard fullscreenTouch,!paused,!motel.caught else{return}
+        stop()
+        let adjacent=completion != nil
+        guard let route=motel.touchRoute(to:target,adjacent:adjacent) else{toast="That spot is out of reach.";return}
+        touchSteps=route
+        let object = motel.touchBlocked(target) || (motel.worldState.place == .grounds && (
+            NeighborhoodShop.allCases.contains{$0.door.distance(to:target)<=1} ||
+            target.distance(to:FamilyHome.door)<=1 ||
+            RPGMaps.grounds.events.contains{$0.tile == target}))
+        touchCompletion=completion ?? (object ? {performAction()} : nil)
+        touchRouteID=UUID()
+    }
     private var worldScreen: some View {
         VStack(spacing: 10) {
             HStack {
@@ -224,41 +322,7 @@ struct MotelView: View {
                 }
             }
             Text(showHints ? (motel.isAtReception ? "Walk freely. Tap guests, family and office objects to interact." : hint) : "").font(.system(size: 11, weight: .medium)).foregroundStyle(cream.opacity(0.8)).lineLimit(2).frame(maxWidth: .infinity, minHeight: 29, alignment: .leading)
-            ZStack {
-                if motel.isRelaxing {
-                    Button("Stand up") {stop();change{$0.standFromBeachChair()}}
-                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("standFromChair")
-                } else if motel.nearbyBeachChair != nil {
-                    Button("Sit and relax") {stop();change{_=$0.sitOnBeachChair()}}
-                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("sitOnChair")
-                } else if let car = motel.nearbyCar {
-                    Button("Wash car / +35 coins") { stop(); change { _ = $0.washNearbyCar() } }
-                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("washCar")
-                        .accessibilityHint("Parking bay \(car.slot+1)")
-                } else if motel.canCollectGuestFavour {
-                    Button("Collect guest supplies") { stop();change { _ = $0.collectGuestFavour() } }
-                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("collectGuestSupplies")
-                } else if let room=motel.nearbyHospitalityRoom {
-                    Button("Talk to "+(room.guest?.name ?? "guest")) { stop();talkingRoom=room.id }
-                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("talkToGuest")
-                } else if let service = motel.nearbyService {
-                    Button(service.title + " / +\(service.reward) coins") {
-                        stop(); change { _ = $0.performService(service) }
-                    }.buttonStyle(MotelButtonStyle()).disabled(!motel.serviceAvailable(service))
-
-                } else if motel.isAtReception {
-                    HStack(spacing:10) {
-                        Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
-                        Button(motel.hiringUnlocked(.cleaner) ? "Hire employees" : "Staff unlocks • \(motel.guestsServed)/3 guests") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")
-                    }
-                } else if !motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}).isEmpty {
-                    HStack {
-                        ForEach(motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}), id: \.key) { pet in
-                            Button(pet.key.capitalized) { stop(); family=OfficeTap(rawValue:pet.key) }.buttonStyle(MotelButtonStyle(subdued:true))
-                        }
-                    }
-                } else { Color.clear }
-            }.frame(height:44).clipped()
+            nearbyTouchActions.frame(height:44).clipped()
             HStack(spacing: 16) {
                 MotelJoystick(direction: { direction in
                     if let direction, !paused && !motel.caught {
@@ -725,7 +789,7 @@ struct MotelView: View {
         guard motel.atSavePoint else { return }
         stop(); game.save(); panel = nil; toast = "Checkpoint saved."
     }
-    private func stop() { movement = nil; working = false; workProgress = 0 }
+    private func stop() { movement = nil; working = false; workProgress = 0; touchSteps=[]; touchCompletion=nil; touchRouteID=UUID() }
     private func change(_ action: (inout Motel) -> Void) {
         guard var current = game.motel else { return }
         let before = current.lastEvent

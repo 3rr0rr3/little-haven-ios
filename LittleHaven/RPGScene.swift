@@ -22,7 +22,17 @@ struct RPGActor {
     var resting = false
 }
 
+private struct WorldTouchKey: EnvironmentKey {
+    static let defaultValue: ((Tile, (() -> Void)?) -> Void)? = nil
+}
+extension EnvironmentValues {
+    var worldTouch: ((Tile, (() -> Void)?) -> Void)? {
+        get {self[WorldTouchKey.self]}
+        set {self[WorldTouchKey.self]=newValue}
+    }
+}
 struct RPGSceneView: UIViewRepresentable {
+    @Environment(\.worldTouch) private var worldTouch
     let mapID: String
     let revision: String
     let mapSize: CGSize
@@ -53,6 +63,7 @@ struct RPGSceneView: UIViewRepresentable {
     }
     func updateUIView(_ view: SKView, context: Context) {
         guard let scene = view.scene as? RPGScene else { return }
+        scene.tileTap = worldTouch.map { handler in {tile in handler(tile,nil)} }
         scene.configure(mapID: mapID, revision: revision, mapSize: mapSize,
                         columns: columns, interior: interior, actors: actors,
                         working: working, workKind: workKind, visual: visual,
@@ -79,6 +90,14 @@ private struct ActorArtwork: View {
 }
 
 final class RPGScene: SKScene {
+    var tileTap: ((Tile)->Void)?
+    override func touchesEnded(_ touches:Set<UITouch>,with event:UIEvent?) {
+        guard let touch=touches.first else{return}
+        let point=touch.location(in:world)
+        guard point.x>=0,point.y<=0,point.x<dimensions.width,-point.y<dimensions.height else{return}
+        tileTap?(Tile(x:Int(point.x/16),y:Int(-point.y/16)))
+    }
+
     private var worldID = ""
     private var revision = ""
     private var dimensions = CGSize.zero
@@ -488,7 +507,7 @@ struct MotelRPGView: View {
         let interior = visit != nil || motel.worldState.place == .office
         let mapID = visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue
         let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
-        let worldRevision="facilities-world-20-\(motel.serviceAvailable(.repair))-" + motel.staffStations.map(\.rawValue).joined(separator:",") + "-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
+        let worldRevision="facilities-world-21-\(motel.serviceAvailable(.repair))-" + motel.staffStations.map(\.rawValue).joined(separator:",") + "-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
         var actors = [RPGActor(id: "player", tile: motel.relaxingTile ?? motel.actorTile, color: FamilyHome.outfitColors[motel.household.outfit], variant: 7, facing: motel.isRelaxing ? 0 : motel.actorFacing, resting:motel.isRelaxing)]
         if !interior {
             actors += motel.neighborhoodActors + motel.neighborActors

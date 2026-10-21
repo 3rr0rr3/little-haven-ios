@@ -466,3 +466,18 @@ extension Motel {
         world = state
     }
 }
+
+extension Motel {
+    func touchBlocked(_ tile:Tile)->Bool {
+        if visit != nil {return RoomVisit.blocked(tile)}
+        if isAtHome {return tile != FamilyHome.exit && homeBlocked(tile)}
+        if isAtShop {return shopBlocked(tile)}
+        if isAtReception {return MotelGrounds.officeBlocked(tile)}
+        return MotelGrounds.blocked(tile) || waiting.contains{waitingTile($0.id)==tile} || worldState.travellers.contains{$0.player==tile}
+    }
+    func touchRoute(to target:Tile,adjacent:Bool=false)->[Tile]? {
+        let interior=visit != nil || isAtHome || isAtShop || isAtReception
+        let size=visit != nil ? 9 : 15
+        return TouchPath.route(from:actorTile,to:target,width:interior ? size : MotelGrounds.width,height:interior ? size : MotelGrounds.height,adjacent:adjacent || touchBlocked(target),blocked:touchBlocked)
+    }
+}

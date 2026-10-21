@@ -24,6 +24,7 @@ extension Motel {
 
 enum OfficeTap: String { case computer, workbench, player, guest, door, chichu, chichi, samhil, hildarelys, tools, paint, bed, save }
 struct FamilyHouseView:View {
+    @Environment(\.worldTouch) private var worldTouch
     let motel:Motel
     let tap:(OfficeTap)->Void
     private var actors:[RPGActor] {[
@@ -50,10 +51,11 @@ struct FamilyHouseView:View {
             .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
     }
     private func target(_ item:OfficeTap,_ label:String,_ tile:Tile,_ scale:CGFloat,_ origin:CGPoint)->some View {
-        Button {tap(item)} label:{Color.white.opacity(0.001).contentShape(Rectangle())}.buttonStyle(.plain).frame(width:max(44,24*scale),height:max(44,26*scale)).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+CGFloat(tile.y*16+5)*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
+        Button {if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).contentShape(Rectangle())}.buttonStyle(.plain).frame(width:max(44,24*scale),height:max(44,26*scale)).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+CGFloat(tile.y*16+5)*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
     }
 }
 struct OfficeReceptionView: View {
+    @Environment(\.worldTouch) private var worldTouch
     let motel: Motel
     let tap: (OfficeTap) -> Void
     private var visitor: OfficeVisitor? { motel.reception.visitor }
@@ -90,7 +92,7 @@ struct OfficeReceptionView: View {
             .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
     }
     private func target(_ item:OfficeTap,_ label:String,_ tile:Tile,_ scale:CGFloat,_ origin:CGPoint) -> some View {
-        Button { tap(item) } label: { Color.white.opacity(0.001).contentShape(Rectangle()) }
+        Button { if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)} } label: { Color.white.opacity(0.001).contentShape(Rectangle()) }
             .buttonStyle(.plain).frame(width:max(item == .hildarelys ? 52 : 44,24*scale),height:max(44,(item == .door ? 36 : 26)*scale))
             .position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+(item == .door ? 224 : CGFloat(tile.y*16+5))*scale)
             .accessibilityElement(children: .ignore).accessibilityAddTraits(.isButton)
@@ -99,6 +101,7 @@ struct OfficeReceptionView: View {
 }
 
 struct ShopInteriorView:View {
+    @Environment(\.worldTouch) private var worldTouch
     let motel:Motel
     let shop:NeighborhoodShop
     var chat:(String)->Void = {_ in}
@@ -126,10 +129,10 @@ struct ShopInteriorView:View {
                         .accessibilityLabel("Talk to bar patron").accessibilityIdentifier("barPatron\(index)")
                     }
                 }
-                Button(action:trade) {Color.white.opacity(0.001).contentShape(Rectangle())}
+                Button(action:{if let worldTouch {worldTouch(ShopLayout.counter,trade)} else {trade()}}) {Color.white.opacity(0.001).contentShape(Rectangle())}
                     .frame(width:80*scale,height:35*scale).position(x:ox+120*scale,y:oy+80*scale)
                     .accessibilityLabel("Talk to "+shop.keeperName).accessibilityIdentifier("shopCounter")
-                Button(action:exit) {Color.white.opacity(0.001).contentShape(Rectangle())}
+                Button(action:{if let worldTouch {worldTouch(ShopLayout.exit,exit)} else {exit()}}) {Color.white.opacity(0.001).contentShape(Rectangle())}
                     .frame(width:30*scale,height:30*scale).position(x:ox+120*scale,y:oy+222*scale)
                     .accessibilityLabel("Leave store")
             }

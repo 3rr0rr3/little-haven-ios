@@ -569,7 +569,7 @@ enum HotelService: String, CaseIterable {
     } }
     var tile: Tile { switch self {
     case .breakfast: return Tile(x:5,y:27)
-    case .laundry: return Tile(x:11,y:25)
+    case .laundry: return FacilityLayout.laundry
     case .repair: return Tile(x:11,y:22)
     case .garden: return Tile(x:3,y:17)
     case .luggage: return Tile(x:8,y:11)
@@ -1452,13 +1452,15 @@ enum ResidentialLayout {
     }
 }
 enum FacilityLayout {
-    static let supplies=Tile(x:11,y:32)
+    static let laundry=Tile(x:9,y:32)
+    static let supplies=Tile(x:10,y:32)
     static let obstacles=[
         RPGRegion(x:10,y:21,width:1,height:2),
-        RPGRegion(x:9,y:25,width:2,height:2),
         RPGRegion(x:2,y:26,width:3,height:1),
         RPGRegion(x:2,y:29,width:3,height:1),
-        RPGRegion(x:8,y:31,width:3,height:3)]
+        RPGRegion(x:7,y:30,width:2,height:2),
+        RPGRegion(x:10,y:30,width:1,height:2),
+        RPGRegion(x:7,y:33,width:4,height:1)]
 }
 extension Motel {
     var nearbyBeachChair:Int? {

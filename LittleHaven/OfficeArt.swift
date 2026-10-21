@@ -687,11 +687,6 @@ enum FacilitiesArt {
         block(167,346,1,4,0x4A5551);block(155,353,7,3,0x7F9C99);block(154,354,3,13,0x7F9C99)
         block(163,357,3,3,motel.serviceAvailable(.repair) ? 0xDA795A : 0x94BE82)
         for y in [361.0,364] {block(168,y,5,0.8,0x4E6865)}
-        // Working laundry cabinet and folded linen cart.
-        block(144,400,30,26,0x8BA69A);block(146,402,26,4,0xDFDDC4)
-        c.fill(Path(ellipseIn:CGRect(x:149,y:409,width:17,height:14)),with:.color(Color(hex:0x537F83)))
-        c.stroke(Path(ellipseIn:CGRect(x:151,y:411,width:13,height:10)),with:.color(Color(hex:0xBBCFC6)),lineWidth:1.2)
-        block(147,403,3,2,0xD6B675);block(163,403,6,2,0x6B837B)
         // Breakfast terrace south of the pool; all equipment is off the walking lane.
         block(30,413,51,7,0xA27D53);block(32,420,46,13,0xBE9B70)
         block(35,404,12,11,0x6C8C81);block(37,406,8,5,0xD8D3AF)
@@ -700,14 +695,23 @@ enum FacilitiesArt {
         block(32,464,47,12,0xAB855C);block(36,477,3,6,0x705C46);block(72,477,3,6,0x705C46)
         for x in [40.0,58] {c.fill(Path(ellipseIn:CGRect(x:x,y:467,width:11,height:4)),with:.color(Color(hex:0xF0E3C6)))}
         block(34,455,39,5,0x7F9D88);block(34,482,39,5,0x7F9D88)
-        // Dedicated guest supply pavilion by the southern entrance.
-        block(127,496,49,44,0xA99370);block(126,493,51,6,0x6A8D80)
-        block(131,506,40,29,0x6F6552)
-        for y in [507.0,518,529] {
-            block(132,y+7,38,2,0xC7AB7C)
-            for i in 0..<4 {block(134+Double(i*9),y,7,7,i%2 == 0 ? 0xE6E0C7 : 0x9DBFAF)}
+        // Open-front laundry pavilion: clear central aisle, washer and supply shelves.
+        block(110,478,67,66,0xCAB995)
+        block(110,475,67,5,0x6A8D80)
+        block(110,480,2,64,0x6A8D80);block(175,480,2,64,0x6A8D80)
+        // Working laundry cabinet and folded linen cart.
+        block(112,480,30,26,0x8BA69A);block(114,482,26,4,0xDFDDC4)
+        c.fill(Path(ellipseIn:CGRect(x:117,y:489,width:17,height:14)),with:.color(Color(hex:0x537F83)))
+        c.stroke(Path(ellipseIn:CGRect(x:119,y:491,width:13,height:10)),with:.color(Color(hex:0xBBCFC6)),lineWidth:1.2)
+        block(115,483,3,2,0xD6B675);block(131,483,6,2,0x6B837B)
+
+        block(160,480,14,29,0x6F6552)
+        for y in [483.0,493,503] {
+            block(161,y+5,12,2,0xC7AB7C)
+            block(162,y,5,5,0xE6E0C7);block(168,y,5,5,0x9DBFAF)
         }
-        sign("GUEST SUPPLIES",127,497,49)
+        block(114,530,58,10,0xA99370)
+        sign("LAUNDRY / GUEST SUPPLIES",110,466,67)
         block(49,269,12,5,0x9FB8A2);CozyScenery.planter(context:&c,x:47,y:270)
         RoomObjectArt.draw(context:&c,index:0,x:128,y:176)
     }

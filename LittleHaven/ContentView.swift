@@ -9,6 +9,9 @@ struct ContentView: View {
     @State private var game = ContentView.initialGame()
     @State private var playing = ContentView.bypassTitle
     @State private var sessionID = UUID()
+    @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
+    @State private var townRouteID=UUID()
+    @State private var townRoute:[Tile]=[]
     @AppStorage("littlehaven.hints") private var showHints = true
     private static var bypassTitle: Bool {
         #if DEBUG
@@ -31,6 +34,7 @@ struct ContentView: View {
     private static func initialGame() -> Game {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
+        if args.contains("--ui-testing") {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch")}
         if args.contains("--ui-neighbors") || args.contains("--ui-chair") || args.contains("--ui-facilities") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.cash=900;sample.motel!.waiting=[];sample.motel!.world!.place = .grounds
@@ -266,7 +270,46 @@ struct ContentView: View {
         }
     }
 
+
+    private var touchTown:some View {
+        ZStack {
+            TownRPGView(game:game).ignoresSafeArea()
+                .environment(\.worldTouch,{tile,_ in
+                    guard conversation == nil,message == nil,!showHouse,!showJournal else{return}
+                    let map=game.inside ? RPGMaps.cottage : RPGMaps.town
+                    townRoute=TouchPath.route(from:game.player,to:tile,width:map.width,height:map.height,adjacent:map.blocked(tile),blocked:{map.blocked($0)}) ?? []
+                    townRouteID=UUID()
+                })
+            VStack {
+                HStack {
+                    Text("LITTLE HAVEN").font(.headline)
+                    Spacer()
+                    Button {townRoute=[];showJournal=true} label:{Image(systemName:"book.closed.fill").padding(12)}.accessibilityLabel("Open journal")
+                }.padding(10).background(Color(hex:0x172A25).opacity(0.9),in:RoundedRectangle(cornerRadius:16))
+                Spacer()
+                Button(game.atHouse ? "Cottage" : "Talk",action:interact).buttonStyle(MotelButtonStyle()).accessibilityIdentifier("interact")
+            }.padding(16)
+        }
+        .foregroundStyle(cream).background(Color(hex:0x172A25))
+        .task(id:townRouteID) {
+            let inside=game.inside
+            for tile in townRoute {
+                guard !Task.isCancelled,scenePhase == .active,conversation == nil,message == nil,!showHouse,!showJournal,game.inside == inside else{break}
+                let before=game.player
+                game.move(dx:tile.x-before.x,dy:tile.y-before.y)
+                if game.player == before {break}
+                do {try await Task.sleep(for:.seconds(0.14))} catch {break}
+            }
+        }
+        .onChange(of:scenePhase) {_,phase in if phase != .active {townRoute=[];townRouteID=UUID()}}
+        .onDisappear {townRoute=[];townRouteID=UUID()}
+    }
     private var townBody: some View {
+        Group {
+            if fullscreenTouch { touchTown } else { classicTown }
+        }
+    }
+    private var classicTown: some View {
         GeometryReader { geometry in
             VStack(spacing: 12) {
                 HStack(alignment: .center) {
@@ -464,6 +507,7 @@ struct ContentView: View {
 }
 
 struct HoldDirection: View {
+    @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
     @AppStorage("littlehaven.largeControls") private var largeControls = false
     let symbol: String
     let label: String
@@ -543,15 +587,17 @@ struct GameOptionsView: View {
                     Text("Gameplay").font(.title2.monospaced().bold())
                     Toggle("Show gameplay hints", isOn: $hints).accessibilityIdentifier("optionHints")
                     Toggle("Action haptics", isOn: $haptics)
-                    Toggle("Larger D-pad buttons", isOn: $largeControls).accessibilityIdentifier("optionLargeControls")
+                    Toggle("Full screen / touch to walk", isOn: $fullscreenTouch).accessibilityIdentifier("optionFullscreenTouch")
+                    Text("Fill the screen with the world. Tap the ground to walk, and tap objects or use the nearby action to interact. No D-pad or joystick.").font(.caption)
+                    if !fullscreenTouch { Toggle("Larger D-pad buttons", isOn: $largeControls).accessibilityIdentifier("optionLargeControls") }
                     Divider().overlay(Color(hex:0xEFC977))
                     Text("Controls").font(.title2.monospaced().bold())
-                    Text("Hold an arrow to walk. Release or slide off the button to stop. Nearby tasks never move your character; press their action button when you want to work.")
+                    Text(fullscreenTouch ? "Tap a clear spot to walk there. Tap again to choose a new destination. Open Pause to change controls." : "Hold an arrow to walk. Release or slide off the button to stop. Nearby tasks never move your character; press their action button when you want to work.")
                     Text("Inside the office, walk freely and tap guests, the desk, tools, family, or the door to interact.")
                     Divider().overlay(Color(hex:0xEFC977))
                     Text("Saved game").font(.title2.monospaced().bold())
                     Text("Continue loads your last checkpoint. New Game starts from zero after confirmation. Save at the office before leaving. Quit closes the game session; use the Home gesture to leave the app.")
-                    Button("Restore default options") { hints = true; haptics = true; largeControls = false }
+                    Button("Restore default options") { hints = true; haptics = true; largeControls = false; fullscreenTouch = false }
                         .buttonStyle(MotelButtonStyle(subdued:true))
                 }.font(.subheadline).padding(22)
                     .background(Color(hex:0x29483D),in:RoundedRectangle(cornerRadius:16))

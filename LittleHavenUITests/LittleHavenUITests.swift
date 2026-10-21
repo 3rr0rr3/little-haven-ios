@@ -453,6 +453,23 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertFalse(app.buttons["standFromChair"].exists)
         capture(app,"Beach lounger sit stand and movement")
     }
+    func testFullscreenTouchWalkingAndPause() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-world","--ui-touch","--ui-testing"]
+        app.launch()
+        let scene=app.otherElements["officeScene"]
+        XCTAssertTrue(scene.waitForExistence(timeout:15))
+        XCTAssertFalse(app.buttons["Walk north"].exists)
+        let before=scene.value as? String
+        scene.coordinate(withNormalizedOffset:CGVector(dx:0.55,dy:0.53)).tap()
+        Thread.sleep(forTimeInterval:2)
+        XCTAssertNotEqual(scene.value as? String,before,"Touching the floor walks through the office")
+        app.buttons["Pause game"].tap()
+        let stopped=scene.value as? String
+        Thread.sleep(forTimeInterval:0.4)
+        XCTAssertEqual(scene.value as? String,stopped,"Pause cancels touch movement")
+        capture(app,"Full screen touch controls and pause")
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

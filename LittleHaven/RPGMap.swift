@@ -70,11 +70,11 @@ enum RPGMaps {
         obstacles: [RPGRegion(x: 2,y: 2,width: 2,height: 2),RPGRegion(x: 5,y: 2,width: 3,height: 1),RPGRegion(x: 2,y: 3,width: 1,height: 1),RPGRegion(x: 6,y: 6,width: 1,height: 1),RPGRegion(x: 2,y: 6,width: 1,height: 1)],
         passages: [Tile(x: 4,y: 8)], events: [RPGMapEvent(id: "exit",tile: Tile(x: 4,y: 8),trigger: .playerTouch,destination: "grounds")])
     static let grounds: RPGMapDefinition = {
-        var obstacles = [RPGRegion(x: 3,y: 3,width: 8,height: 6),RPGRegion(x: 3,y: 18,width: 7,height: 5),RPGRegion(x: 12,y: 26,width: 1,height: 1)]
+        var obstacles = [RPGRegion(x: 3,y: 3,width: 8,height: 6),RPGRegion(x: 3,y: 18,width: 7,height: 5)]
         for tile in landscapeTrees + landscapeBenches {
             obstacles.append(RPGRegion(x:tile.x,y:tile.y,width:1,height:1))
         }
-        for (x,y,w) in [(44,21,1),(49,21,1),(59,21,1),(69,21,1),(45,32,1),(60,32,1),(46,38,2),(58,38,2),(65,38,2),(48,38,1),(60,38,1),(67,38,1),(12,15,1)] {
+        for (x,y,w) in [(44,21,1),(49,21,1),(59,21,1),(69,21,1),(45,32,1),(66,32,1),(46,38,2),(58,38,2),(65,38,2),(48,38,1),(60,38,1),(67,38,1)] {
             obstacles.append(RPGRegion(x:x,y:y,width:w,height:1))
         }
         var events = [RPGMapEvent(id: "office",tile: Tile(x: 6,y: 9),trigger: .action,destination: "office",arrival: Tile(x: 4,y: 7)),RPGMapEvent(id: "construction",tile: Tile(x: 12,y: 26),trigger: .action)]
@@ -99,4 +99,30 @@ enum RPGMaps {
         obstacles.append(contentsOf:FacilityLayout.obstacles)
         return RPGMapDefinition(id: "grounds",width: MotelGrounds.width,height: MotelGrounds.height,walkable: RPGRegion(x: 1,y: 1,width: MotelGrounds.width-2,height: MotelGrounds.height-2),obstacles: obstacles,events: events)
     }()
+}
+
+ 
+// One breadth-first search per tap; movement follows the route at walking cadence.
+enum TouchPath {
+    static func route(from start:Tile,to target:Tile,width:Int,height:Int,adjacent:Bool=false,blocked:(Tile)->Bool)->[Tile]? {
+        guard target.x>=0,target.y>=0,target.x<width,target.y<height else{return nil}
+        func arrived(_ tile:Tile)->Bool {adjacent ? tile.distance(to:target)<=1 : tile == target}
+        if arrived(start) {return []}
+        var queue=[start],seen:Set<Tile>=[start],parents:[Tile:Tile]=[:],cursor=0
+        while cursor<queue.count {
+            let tile=queue[cursor];cursor+=1
+            for (dx,dy) in [(0,1),(1,0),(-1,0),(0,-1)] {
+                let next=Tile(x:tile.x+dx,y:tile.y+dy)
+                guard next.x>=0,next.y>=0,next.x<width,next.y<height,!blocked(next),seen.insert(next).inserted else{continue}
+                parents[next]=tile
+                if arrived(next) {
+                    var path=[next],current=next
+                    while let parent=parents[current],parent != start {path.append(parent);current=parent}
+                    return path.reversed()
+                }
+                queue.append(next)
+            }
+        }
+        return nil
+    }
 }
