@@ -208,6 +208,15 @@ extension Motel {
     }
     mutating func reconcileInteriorSpawn() {
         initializeWorld()
+        // Relocated buildings must not strand people from an older checkpoint.
+        if var people=world!.townPositions {
+            for (id,tile) in people where MotelGrounds.blocked(tile) {people[id]=MotelGrounds.nearestWalkable(to:tile)}
+            world!.townPositions=people;world!.townPrevious=people
+        }
+        for index in world!.travellers.indices where MotelGrounds.blocked(world!.travellers[index].player) {
+            let safe=MotelGrounds.nearestWalkable(to:world!.travellers[index].player)
+            world!.travellers[index].player=safe;world!.travellers[index].previous=safe
+        }
         if visit == nil && world!.place == .grounds && MotelGrounds.blocked(world!.player) {
             world!.player=MotelGrounds.nearestWalkable(to:world!.player)
         }

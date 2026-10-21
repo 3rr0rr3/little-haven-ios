@@ -1062,6 +1062,11 @@ func neighborhoodAndFacilitiesRules() {
     for _ in 0..<12 {game.tickWorld()}
     require(game.worldState.neighborPositions?.count == 3,"Residential neighbors live on the map")
     require(game.worldState.neighborPositions!.values.allSatisfy{!MotelGrounds.blocked($0)},"Neighbors use safe routes")
+    game.world!.townPositions=[0:Tile(x:57,y:33)]
+    game.world!.travellers=[MotelWalker(id:99,name:"Visitor",color:0x91B7A1,roomID:0,player:Tile(x:9,y:32),previous:Tile(x:9,y:32),destination:MotelGrounds.roomDoor(0))]
+    game.reconcileInteriorSpawn()
+    require(!MotelGrounds.blocked(game.worldState.townPositions![0]!),"Saved townspeople relocate out of the moved bar")
+    require(!MotelGrounds.blocked(game.worldState.travellers[0].player),"Saved guests relocate out of new facilities")
     print("PASS: retail relocation, residential access, physical facilities, pump repairs, usable loungers and neighbor routes")
 }
 neighborhoodAndFacilitiesRules()
