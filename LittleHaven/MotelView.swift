@@ -83,6 +83,14 @@ struct MotelView: View {
             else { worldScreen }
         }
         .foregroundStyle(cream).background(Color(hex: 0x172A25))
+        .overlay(alignment: .bottom) {
+            Group {
+                if let toast, !paused {
+                    HotelNoticeCard(title: noticeTitle(toast), message: toast, symbol: noticeSymbol(toast), tint: noticeColor(toast))
+                        .padding(.horizontal, 24).padding(.bottom, 180)
+                }
+            }.allowsHitTesting(false)
+        }
         .transaction { if testingUI { $0.disablesAnimations = true } }
         .task {
             change { $0.reconcileInteriorSpawn(); if !testingUI || ProcessInfo.processInfo.arguments.contains("--ui-management") { $0.enableManagement() } }
@@ -368,9 +376,6 @@ struct MotelView: View {
                     GameDialogue(speaker:"Load checkpoint?",text:"Progress since your last save will be lost.",portrait:AnyView(PaperPortrait(color:0xC7D0D4,variant:7)),choices:[DialogueChoice(title:"Load last save",action:{ stop(); panel = nil; game = Game.load(); confirmRestore = false })]) { confirmRestore = false }.padding(12)
                 } else if let panel {
                     interactionPanel(panel).modifier(RPGFrame()).padding(12)
-                } else if let toast {
-                    HotelNoticeCard(title: noticeTitle(toast), message: toast, symbol: noticeSymbol(toast), tint: noticeColor(toast))
-                        .padding(10).allowsHitTesting(false)
                 }
     }
 
