@@ -65,7 +65,7 @@ struct MotelView: View {
     @State private var showIncident = false
     @State private var talkingRoom: Int?
     private var motel: Motel { game.motel ?? Motel() }
-    private var mapIdentity: String { motel.visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue }
+    private var mapIdentity: String {motel.petMap}
     private let cream = Color(hex: 0xF5E7C8)
     private let gold = Color(hex: 0xEFC977)
     private var testingUI: Bool {
@@ -318,6 +318,8 @@ struct MotelView: View {
                 .accessibilityLabel("\(motel.mapName). Column \(tile.x), row \(tile.y).")
                 .accessibilityValue("\(room.dirty ? "Cleaning \(room.cleanedTasks?.count ?? 0)/3" : "Ready for guests"). Theme \(room.theme). Furnishings \(room.furniture).")
                 .accessibilityIdentifier("motelWorld")
+        } else if let shop=motel.currentShop {
+            ShopInteriorView(motel:motel,shop:shop,trade:{if motel.canTrade(shop) {performAction()} else {toast="Walk to "+shop.keeperName+"'s counter first."}},exit:{stop();var left=false;change{left=$0.leaveShop()};if !left {toast="Walk to the lower shop door first."}})
         } else if motel.isAtHome {
             FamilyHouseView(motel:motel,tap:officeTap).id(mapIdentity)
         } else if motel.isAtReception {
@@ -338,7 +340,7 @@ struct MotelView: View {
         case .pet: return "CALL PET"
         case .home: return "HOME"
         case .homeDecor: return "WORKBENCH"
-        case .shop: return "SHOP"
+        case .shop: return motel.isAtShop ? "BROWSE" : "ENTER SHOP"
         case .incident: return "HELP"
         case .office, .room: return "ENTER"
         case .guest: return "TALK"
@@ -402,6 +404,9 @@ struct MotelView: View {
         case .construction: return "Build room \(101 + motel.rooms.count) here for \(motel.expansionCost) coins."
         case .loot(let item): return "\(RoomVisit.lootNames[item]): +\(RoomVisit.lootValues[item]) value, +\(RoomVisit.lootNoise[item]) suspicion. Sell it at the pawn shop after escaping."
         case .none:
+            if let shop=motel.currentShop {return "Browse the displays. Walk to "+shop.keeperName+"'s counter to buy or sell, and use the lower door to leave."}
+            if motel.isAtHome {return "Relax with your family and the animated TV. Use the workbench to arrange your furniture."}
+            if motel.worldState.place == .grounds && BeachLayout.contains(motel.actorTile) {return "Sunset Cove: palms, umbrellas and beach chairs. Follow the sand; deep water is out of bounds."}
             if motel.visit?.sneaking == true { return "Avoid the guest. Take belongings and return to the door before suspicion reaches 100%." }
             if motel.visit != nil { return "Walk to the bed, trash or spill to clean. Paint cabinet is in the upper right." }
             return motel.worldState.place == .office ? "Move with the stick or hold an arrow. Desk, tools, paint, bed and logbook are physical objects." : "Explore the grounds. Guests wait outside the office. Room entrances lead inside."
@@ -433,7 +438,8 @@ struct MotelView: View {
         case .computer: showManagement=true
         case .pet(let id): family=OfficeTap(rawValue:id)
         case .homeDecor: showHome=true
-        case .shop(let shop): neighborhood=shop
+        case .shop(let shop):
+            if motel.isAtShop {neighborhood=shop} else {change {_=$0.enterShop(shop)}}
         case .incident: showIncident = true
         case .office, .exit: change { _ = $0.useEntrance() }
         case .room(let id):

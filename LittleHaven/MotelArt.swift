@@ -14,6 +14,7 @@ struct RoomIllustration: View {
 }
 enum InteriorArt {
     static func draw(context: inout GraphicsContext, theme: Int, level: Int, office: Bool) {
+        if !office {motelRoom(context:&context,theme:theme,level:level);return}
         func rect(_ x: Double, _ y: Double, _ w: Double, _ h: Double, _ color: UInt32) {
             CozyScenery.block(context:&context,x:x,y:y,w:w,h:h,color:color,depth:0.6)
         }
@@ -60,6 +61,31 @@ enum InteriorArt {
             }
         }
     }
+    static func motelRoom(context c:inout GraphicsContext,theme:Int,level:Int) {
+        func block(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32){CozyScenery.block(context:&c,x:x,y:y,w:w,h:h,color:color,depth:0.6)}
+        CozyScenery.interior(context:&c,width:144,height:144,floor:0xD0B99A,wall:Motel.themeColors[theme])
+        // A motel sleeping zone, nightstand, luggage rack, work desk and wash nook.
+        block(29,30,38,36,0x896B50);block(32,33,32,30,0xF2E9D1)
+        block(33,43,30,19,Motel.themeColors[theme]);block(34,45,28,2,0xE7D9B7)
+        for x in [34.0,49] {block(x,34,12,8,0xFFF2D9)}
+        block(17,36,12,14,0xA0825F);block(22,30,4,7,0xDCC384);block(19,27,10,5,0xF0DDA1)
+        block(27,28,42,4,0x88684B)
+        DecorArt.rug(&c,30,70,51,24,0xAD947C)
+        block(94,8,29,17,0xEBDFBE);block(96,10,25,13,0xA5CDD1)
+        for x in [91.0,123] {block(x,6,5,22,Motel.themeColors[theme])}
+        block(96,34,25,14,0xA1805D);block(100,31,17,10,0x3C5151);block(102,33,13,6,0x98BFB8)
+        block(102,48,13,8,0x9C8C72)
+        block(91,94,28,17,0x9E805F);block(94,91,22,4,0xE0C79D)
+        block(30,96,18,14,0x947756);block(32,99,14,2,0xD5BE94)
+        // Compact tiled sink and mirror, with a low divider rather than a house lounge.
+        block(16,113,34,14,0xC5CDBB);block(19,115,15,9,0xEBE8D4)
+        c.stroke(Path(ellipseIn:CGRect(x:22,y:117,width:9,height:5)),with:.color(Color(hex:0x8BA6A0)),lineWidth:0.8)
+        block(37,114,9,11,0xE2DDCA);block(37,111,9,4,0xD1D8C8)
+        block(16,109,33,3,0xA89475)
+        c.draw(Text("MOTEL / PRIVATE ROOM").font(.system(size:4,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF9EAC9)),at:CGPoint(x:64,y:18))
+        if level>0 {CozyScenery.planter(context:&c,x:113,y:113)}
+    }
+
 }
 struct MotelRoomCanvas: View, Animatable {
     let room: MotelRoom
@@ -81,8 +107,8 @@ struct MotelRoomCanvas: View, Animatable {
             context.scaleBy(x: scale, y: scale)
             InteriorArt.draw(context: &context, theme: room.theme, level: room.furniture, office: false)
             if room.health.kind == .deluxe || room.health.kind == .suite {
-                context.fill(Path(roundedRect:CGRect(x:80,y:38,width:34,height:16),cornerRadius:3),with:.color(Color(hex:0x997887)))
-                context.fill(Path(CGRect(x:83,y:41,width:28,height:7)),with:.color(Color(hex:0xC0A3AD)))
+                context.fill(Path(roundedRect:CGRect(x:84,y:70,width:22,height:16),cornerRadius:3),with:.color(Color(hex:0x997887)))
+                context.fill(Path(CGRect(x:87,y:73,width:16,height:7)),with:.color(Color(hex:0xC0A3AD)))
             }
             if room.health.upgrades.contains(.fridge) {
                 context.fill(Path(roundedRect:CGRect(x:109,y:72,width:15,height:21),cornerRadius:2),with:.color(Color(hex:0xD9DDCD)))
@@ -210,11 +236,12 @@ struct MotelGroundsCanvas: View, Animatable {
                     let paved = ((11...38).contains(col) && [8,9,17,18,26,27,33,34].contains(row)) || ((11...12).contains(col) && (8...34).contains(row)) || ((3...10).contains(col) && (9...15).contains(row)) || ((5...7).contains(col) && (23...35).contains(row)) || ((43...70).contains(col) && (29...31).contains(row))
                     CozyScenery.ground(context:&context,x:px,y:py,kind:road ? 2 : paved ? 1 : 0,seed:col*17+row*31)
                     if road && row == 36 && col % 3 != 0 { rect(px+2,py+7,12,2,0xF8E8A0) }
-                    if col == 0 || col == MotelGrounds.width - 1 || row == 0 || row == MotelGrounds.height - 1 {
+                    if !BeachLayout.contains(Tile(x:col,y:row)) && (col == 0 || col == MotelGrounds.width - 1 || row == 0 || row == MotelGrounds.height - 1) {
                         CozyScenery.tree(context:&context,x:px,y:py)
                     }
                 }
             }
+            BeachArt.draw(context:&context)
             NeighborhoodArt.draw(context:&context,level:motel.household.level)
             // Individual work posts, not a shared break area.
             for role in StaffRole.allCases where role != .clerk {
@@ -449,6 +476,7 @@ struct MotelPocketMap: View {
                     }
                 }.frame(maxWidth: .infinity)
             }
+            Text("SUNSET COVE: south of town, beyond the boardwalk. Palms, loungers and a sandy shoreline; deep water stays out of bounds.").font(.caption)
             Text("PARKING / ROAD").font(.caption.monospaced().bold()).frame(maxWidth: .infinity).padding().background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
             Text("EAST > NEIGHBORHOOD").font(.headline)
             Text("Family home: column 54, row 14, north of the town road. Enter to visit your family, save, upgrade and decorate.").font(.caption)

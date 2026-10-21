@@ -7,7 +7,7 @@ struct PetCompanion: Codable {
 }
 
 extension Motel {
-    var petMap: String { visit.map { "room-\($0.roomID)" } ?? worldState.place.rawValue }
+    var petMap: String { visit.map { "room-\($0.roomID)" } ?? (currentShop.map {"shop-"+$0.rawValue} ?? worldState.place.rawValue) }
     func petState(_ id: String) -> PetCompanion {
         worldState.pets?[id] ?? PetCompanion(tile: id == "chichu" ? OfficeReception.chichu : OfficeReception.chichi)
     }
@@ -39,6 +39,7 @@ extension Motel {
                 pet.tile=nearby.first { tile in
                     guard !arrivals.contains(tile) else { return false }
                     if visit != nil { return !RPGMaps.room.blocked(tile) }
+                    if isAtShop {return !ShopLayout.blocked(tile) && tile != ShopLayout.exit}
                     if isAtHome { return !homeBlocked(tile) && tile != FamilyHome.exit }
                     if isAtReception { return !RPGMaps.office.blocked(tile) && tile != OfficeReception.door }
                     return !MotelGrounds.blocked(tile)
@@ -73,7 +74,7 @@ struct OfficeReception: Codable {
     static let samhil = Tile(x:11,y:9)
     static let chichu = Tile(x:10,y:12)
     static let chichi = Tile(x:12,y:12)
-    static let hildarelysRoute = [Tile(x: 10,y: 3),Tile(x: 11,y: 3),Tile(x: 12,y: 3),Tile(x: 12,y: 4),Tile(x: 11,y: 4),Tile(x: 10,y: 4)]
+    static let hildarelysRoute = [Tile(x: 6,y: 3),Tile(x: 7,y: 3),Tile(x: 8,y: 3),Tile(x: 8,y: 4),Tile(x: 7,y: 4),Tile(x: 6,y: 4)]
     var hildarelys: Tile { Self.hildarelysRoute[(tick / 2) % Self.hildarelysRoute.count] }
 }
 extension Motel {

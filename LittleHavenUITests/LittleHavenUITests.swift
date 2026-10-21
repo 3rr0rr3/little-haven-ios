@@ -82,6 +82,9 @@ final class LittleHavenUITests: XCTestCase {
         let app=launch("--ui-home-store")
         XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
         app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
+        step("north",6,app)
+        app.buttons["worldAction"].tap()
         XCTAssertTrue(app.buttons["buy_home_plant"].waitForExistence(timeout:5))
         app.buttons["buy_home_plant"].tap()
         capture(app,"Furniture shop purchases paid from motel profits")
@@ -117,6 +120,9 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
         XCTAssertTrue(cash(app).contains("2500"))
         app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
+        step("north",6,app)
+        app.buttons["worldAction"].tap()
         XCTAssertTrue(app.buttons["pawn_sell_1"].waitForExistence(timeout:5))
         app.buttons["pawn_sell_1"].tap()
         XCTAssertFalse(app.buttons["pawn_sell_1"].exists)
@@ -127,6 +133,9 @@ final class LittleHavenUITests: XCTestCase {
     func testClothingShopBuysAndEquips() {
         let app=launch("--ui-clothes-store")
         XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
+        step("north",6,app)
         app.buttons["worldAction"].tap()
         XCTAssertTrue(app.buttons["outfit_2"].waitForExistence(timeout:5))
         app.buttons["outfit_2"].tap()
@@ -145,7 +154,7 @@ final class LittleHavenUITests: XCTestCase {
         step("south", 2, app)
         app.buttons["worldAction"].press(forDuration: 1.8)
         XCTAssertTrue((world.value as? String ?? "").contains("Cleaning 2/3"))
-        step("west", 1, app)
+        step("west", 2, app)
         step("south", 1, app)
         app.buttons["worldAction"].press(forDuration: 1.8)
         XCTAssertTrue((world.value as? String ?? "").contains("Ready for guests"))
@@ -159,9 +168,8 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["worldAction"].tap()
         app.buttons["paint2"].tap()
         XCTAssertTrue((world.value as? String ?? "").contains("Theme 2"))
-        step("west", 1, app)
-        step("south", 1, app)
-        step("west", 2, app)
+        step("west", 3, app)
+        step("north", 1, app)
         app.buttons["worldAction"].tap()
         XCTAssertTrue((world.value as? String ?? "").contains("Furnishings 1"))
         capture(app, "Physical furniture and paint interaction")
@@ -396,6 +404,27 @@ final class LittleHavenUITests: XCTestCase {
         promise.tap()
         XCTAssertFalse(promise.exists)
         XCTAssertTrue(app.buttons["Walk east"].exists)
+    }
+    func testBeachIsReachableAndDecorated() {
+        let app=launch("--ui-beach")
+        let world=app.otherElements["motelWorld"]
+        XCTAssertTrue(world.waitForExistence(timeout:10))
+        XCTAssertTrue(app.staticTexts["SUNSET COVE BEACH"].exists)
+        let before=world.label
+        app.buttons["Walk west"].press(forDuration:0.5)
+        XCTAssertNotEqual(world.label,before)
+        capture(app,"Sunset Cove palms umbrellas loungers and sea")
+    }
+    func testShopInteriorExitReturnsToItsOwnDoor() {
+        let app=launch("--ui-home-store")
+        XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
+        XCTAssertTrue(app.buttons["shopCounter"].exists)
+        app.buttons["Walk south"].tap()
+        let world=app.otherElements["motelWorld"]
+        XCTAssertTrue(world.waitForExistence(timeout:5))
+        XCTAssertTrue(world.label.contains("Column 47"))
     }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()

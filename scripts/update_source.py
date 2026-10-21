@@ -21,7 +21,7 @@ entry = {
     "version": version,
     "buildVersion": build,
     "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-    "localizedDescription": "Explore the hotel and neighborhood in a soft diorama world with rounded foliage, warm roofs, shaded furniture, smooth paths and gentle lighting. The original characters remain unchanged. The home has continuous walkable flooring. Manage from the reception PC, use the home workbench, take Chichu and Chichi along, and handle hotel-only emergencies with responsive police.",
+    "localizedDescription": "Explore Sunset Cove beach with palms and loungers. Enter decorated shops with distinct shopkeepers, clothing racks, furniture displays and pawn cases. Enjoy a furnished home and office, an animated TV, corrected sofa, and motel-style guest rooms. Original characters, smooth walking, pet companions and guest-request consequences are preserved.",
     "downloadURL": f"{asset_base}/LittleHaven-unsigned.ipa",
     "size": pathlib.Path("LittleHaven-unsigned.ipa").stat().st_size,
     "minOSVersion": info["MinimumOSVersion"],

@@ -29,7 +29,7 @@ struct FamilyHouseView:View {
             let scale=min(proxy.size.width/240,proxy.size.height/240)
             let origin=CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-house",revision:"workbench-\(motel.household.level)-\(motel.household.wallpaper)-\(motel.household.floor)-\(motel.household.placed.map{"\($0.id):\($0.tile.x):\($0.tile.y)"}.joined())",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeInteriorArt(home:motel.household))}
+                RPGSceneView(mapID:"family-house",revision:"decorated-home-17-\(motel.household.level)-\(motel.household.wallpaper)-\(motel.household.floor)-\(motel.household.placed.map{"\($0.id):\($0.tile.x):\($0.tile.y)"}.joined())",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeInteriorArt(home:motel.household))}
                 target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin)
                 target(.samhil,"Talk to Samhil",OfficeReception.samhil,scale,origin)
                 ForEach(motel.visiblePets, id: \.key) { pet in
@@ -66,7 +66,7 @@ struct OfficeReceptionView: View {
             let scale = min(proxy.size.width / 240, proxy.size.height / 240)
             let origin = CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-office",revision:"reception-proportions-16-\(motel.officeTheme)",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme)) }
+                RPGSceneView(mapID:"family-office",revision:"decorated-office-17-\(motel.officeTheme)",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme)) }
                 target(.player,"Front desk",OfficeReception.clerk,scale,origin)
                 target(.computer,"Reception computer",OfficeReception.computer,scale,origin)
                 ForEach(motel.visiblePets, id: \.key) { pet in
@@ -88,5 +88,32 @@ struct OfficeReceptionView: View {
             .position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+(item == .door ? 224 : CGFloat(tile.y*16+5))*scale)
             .accessibilityElement(children: .ignore).accessibilityAddTraits(.isButton)
             .accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
+    }
+}
+
+struct ShopInteriorView:View {
+    let motel:Motel
+    let shop:NeighborhoodShop
+    let trade:()->Void
+    let exit:()->Void
+    private var actors:[RPGActor] {
+        [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You"),
+         RPGActor(id:"shopkeeper-"+shop.rawValue,tile:ShopLayout.keeper,color:shop.keeperColor,variant:460+shop.uniform,name:shop.keeperName,shopUniform:shop.uniform)] + motel.petActors
+    }
+    var body:some View {
+        GeometryReader {proxy in
+            let scale=min(proxy.size.width/240,proxy.size.height/240)
+            let ox=(proxy.size.width-240*scale)/2,oy=(proxy.size.height-240*scale)/2
+            ZStack {
+                RPGSceneView(mapID:"shop-"+shop.rawValue,revision:"store-17",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:false) {AnyView(ShopInteriorArt(shop:shop))}
+                Button(action:trade) {Color.white.opacity(0.001).contentShape(Rectangle())}
+                    .frame(width:80*scale,height:35*scale).position(x:ox+120*scale,y:oy+80*scale)
+                    .accessibilityLabel("Talk to "+shop.keeperName).accessibilityIdentifier("shopCounter")
+                Button(action:exit) {Color.white.opacity(0.001).contentShape(Rectangle())}
+                    .frame(width:30*scale,height:30*scale).position(x:ox+120*scale,y:oy+222*scale)
+                    .accessibilityLabel("Leave store")
+            }
+        }.accessibilityElement(children:.contain).accessibilityIdentifier("shopInterior")
+            .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
     }
 }

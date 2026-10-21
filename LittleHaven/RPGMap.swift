@@ -57,7 +57,7 @@ enum RPGMaps {
         passages: [Tile(x: 4,y: 8)], events: [RPGMapEvent(id: "exit",tile: Tile(x: 4,y: 8),trigger: .playerTouch,destination: "town",arrival: Tile(x: 15,y: 7))])
     static let office = RPGMapDefinition(id: "office", width: 15,height: 15,
         walkable: RPGRegion(x: 1,y: 2,width: 13,height: 12),
-        obstacles: [RPGRegion(x: 2,y: 4,width: 5,height: 2)],
+        obstacles: [RPGRegion(x: 2,y: 4,width: 5,height: 2),RPGRegion(x:10,y:7,width:3,height:2),RPGRegion(x:11,y:2,width:2,height:3),RPGRegion(x:2,y:11,width:2,height:2),RPGRegion(x:13,y:10,width:1,height:1)],
         passages: [Tile(x: 7,y: 14)], events: [
             RPGMapEvent(id: "exit",tile: Tile(x: 7,y: 13),trigger: .action,destination: "grounds",arrival: Tile(x: 6,y: 10)),
             RPGMapEvent(id: "desk",tile: Tile(x: 4,y: 3),trigger: .action),
@@ -67,7 +67,7 @@ enum RPGMaps {
             RPGMapEvent(id: "rest",tile: Tile(x: 1,y: 2),trigger: .action)])
     static let room = RPGMapDefinition(id: "room",width: 9,height: 9,
         walkable: RPGRegion(x: 1,y: 2,width: 7,height: 6),
-        obstacles: [RPGRegion(x: 2,y: 2,width: 2,height: 1),RPGRegion(x: 7,y: 2,width: 1,height: 1),RPGRegion(x: 2,y: 3,width: 1,height: 1),RPGRegion(x: 6,y: 6,width: 1,height: 1),RPGRegion(x: 2,y: 6,width: 1,height: 1)],
+        obstacles: [RPGRegion(x: 2,y: 2,width: 2,height: 2),RPGRegion(x: 6,y: 2,width: 2,height: 1),RPGRegion(x: 2,y: 3,width: 1,height: 1),RPGRegion(x: 6,y: 6,width: 1,height: 1),RPGRegion(x: 2,y: 6,width: 1,height: 1)],
         passages: [Tile(x: 4,y: 8)], events: [RPGMapEvent(id: "exit",tile: Tile(x: 4,y: 8),trigger: .playerTouch,destination: "grounds")])
     static let grounds: RPGMapDefinition = {
         var obstacles = [RPGRegion(x: 3,y: 3,width: 8,height: 6),RPGRegion(x: 3,y: 18,width: 7,height: 5),RPGRegion(x: 12,y: 26,width: 1,height: 1)]
@@ -83,6 +83,12 @@ enum RPGMaps {
             obstacles.append(RPGRegion(x: x,y: y,width: 6,height: 4))
             events.append(RPGMapEvent(id: "room-\(id)",tile: Tile(x: x+2,y: y+4),trigger: .action,destination: "room-\(id)",arrival: Tile(x: 4,y: 7)))
         }
+        obstacles.append(RPGRegion(x:1,y:40,width:38,height:MotelGrounds.height-40))
+        for row in 42..<MotelGrounds.height {
+            obstacles.append(RPGRegion(x:BeachLayout.shoreline(row),y:row,width:MotelGrounds.width-BeachLayout.shoreline(row),height:1))
+        }
+        for tile in BeachLayout.palms {obstacles.append(RPGRegion(x:tile.x,y:tile.y,width:1,height:1))}
+        for tile in BeachLayout.lounges {obstacles.append(RPGRegion(x:tile.x,y:tile.y,width:1,height:2))}
         for x in [17,25,33] { obstacles.append(RPGRegion(x: x,y: 30,width: 3,height: 2)) }
         obstacles.append(RPGRegion(x:51,y:9,width:7,height:5))
         for shop in NeighborhoodShop.allCases {obstacles.append(RPGRegion(x:shop.door.x-3,y:23,width:7,height:6))}

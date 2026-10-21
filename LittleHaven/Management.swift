@@ -5,6 +5,10 @@ enum NeighborhoodShop:String,Codable,CaseIterable,Identifiable {
     var id:String {rawValue}
     var title:String {self == .furniture ? "Willow Home" : self == .clothing ? "Thread & Co." : "Second Chance Pawn"}
     var door:Tile {Tile(x:self == .furniture ? 47 : self == .clothing ? 57 : 67,y:29)}
+    var keeperName:String {self == .furniture ? "Otis" : self == .clothing ? "Mira" : "Sal"}
+    var keeperColor:UInt32 {self == .furniture ? 0x748A67 : self == .clothing ? 0xAF7695 : 0x57718E}
+    var uniform:Int {self == .furniture ? 1 : self == .clothing ? 2 : 3}
+    var symbol:String {self == .furniture ? "sofa" : self == .clothing ? "scissors" : "key"}
     var detail:String {self == .furniture ? "Buy furniture here, then place it at your family home." : self == .clothing ? "Buy and wear new outfits." : "Sell carried belongings here. Taking an item never pays cash automatically."}
 }
 enum HomeObject:String,Codable,CaseIterable,Identifiable {
@@ -39,11 +43,29 @@ struct FamilyHome:Codable {
 extension Motel {
     static let chaosLocations=[Tile(x:11,y:13),Tile(x:20,y:17),Tile(x:29,y:27),Tile(x:16,y:28),Tile(x:34,y:10)]
     var isAtHome:Bool {visit == nil && worldState.place == .house}
+    var isAtShop:Bool {visit == nil && worldState.place == .shop}
+    var currentShop:NeighborhoodShop? {isAtShop ? worldState.shop : nil}
+    func canTrade(_ shop:NeighborhoodShop)->Bool {
+        !caught && currentShop == shop && actorTile.distance(to:ShopLayout.counter)<=1
+    }
+    @discardableResult mutating func enterShop(_ shop:NeighborhoodShop)->Bool {
+        guard !caught,visit == nil,worldState.place == .grounds,actorTile.distance(to:shop.door)<=1 else{return false}
+        initializeWorld();world!.place = .shop;world!.shop=shop;world!.player=ShopLayout.arrival
+        lastEvent="Welcome to "+shop.title+". Walk to "+shop.keeperName+"'s counter to browse."
+        return true
+    }
+    @discardableResult mutating func leaveShop()->Bool {
+        guard isAtShop,let shop=currentShop,actorTile.distance(to:ShopLayout.exit)<=1 else{return false}
+        world!.place = .grounds;world!.player=Tile(x:shop.door.x,y:shop.door.y+1);world!.shop=nil
+        return true
+    }
+    static let homeDecorObstacles=[RPGRegion(x:1,y:2,width:3,height:2),RPGRegion(x:2,y:5,width:2,height:2),RPGRegion(x:1,y:12,width:2,height:1)]
+
     func homeBlocked(_ tile:Tile)->Bool {
-        tile == FamilyHome.workbench || tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || (10...12).contains(tile.x) && (5...6).contains(tile.y) || (11...13).contains(tile.x) && (10...11).contains(tile.y) || household.placed.contains{$0.tile == tile && $0.kind != .rug}
+        tile == FamilyHome.workbench || tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || (10...12).contains(tile.x) && (5...6).contains(tile.y) || (10...13).contains(tile.x) && (9...10).contains(tile.y) || Self.homeDecorObstacles.contains{$0.contains(tile)} || household.placed.contains{$0.tile == tile && $0.kind != .rug}
     }
     @discardableResult mutating func buyHomeObject(_ kind:HomeObject)->Bool {
-        guard worldState.place == .grounds,actorTile.distance(to:NeighborhoodShop.furniture.door)<=1,cash>=kind.price else{return false}
+        guard canTrade(.furniture),cash>=kind.price else{return false}
         var state=household;state.storage.append(kind);home=state;cash-=kind.price
         logMoney(-kind.price,category:"Home furniture",note:kind.title);lastEvent=kind.title+" delivered to home storage.";return true
     }
@@ -76,13 +98,13 @@ extension Motel {
         var state=household;state.storage.append(state.placed.remove(at:index).kind);home=state;return true
     }
     @discardableResult mutating func wearOutfit(_ index:Int)->Bool {
-        guard worldState.place == .grounds,actorTile.distance(to:NeighborhoodShop.clothing.door)<=1,FamilyHome.outfitNames.indices.contains(index) else{return false}
+        guard canTrade(.clothing),FamilyHome.outfitNames.indices.contains(index) else{return false}
         var state=household
         if !state.outfits.contains(index) {guard cash>=80 else{return false};cash-=80;state.outfits.append(index);logMoney(-80,category:"Clothing",note:FamilyHome.outfitNames[index])}
         state.outfit=index;home=state;return true
     }
     @discardableResult mutating func sellBelonging(_ item:Int)->Bool {
-        guard worldState.place == .grounds,actorTile.distance(to:NeighborhoodShop.pawn.door)<=1,RoomVisit.lootValues.indices.contains(item),let index=household.stolen.firstIndex(of:item) else{return false}
+        guard canTrade(.pawn),RoomVisit.lootValues.indices.contains(item),let index=household.stolen.firstIndex(of:item) else{return false}
         var state=household;state.stolen.remove(at:index);home=state;let value=RoomVisit.lootValues[item];cash+=value
         logMoney(value,category:"Pawn shop",note:RoomVisit.lootNames[item]);lastEvent="Sold \(RoomVisit.lootNames[item]) for \(value) coins.";return true
     }
@@ -1366,4 +1388,20 @@ extension Motel {
         lastEvent="Refunded 20 coins to "+f.guestName+". Trust recovered a little; the missed promise remains in their review."
         return true
     }
+}
+
+enum ShopLayout {
+    static let arrival=Tile(x:7,y:12)
+    static let exit=Tile(x:7,y:13)
+    static let counter=Tile(x:7,y:6)
+    static let keeper=Tile(x:7,y:3)
+    static let obstacles=[RPGRegion(x:5,y:4,width:5,height:2),RPGRegion(x:1,y:3,width:3,height:5),RPGRegion(x:11,y:3,width:3,height:5),RPGRegion(x:4,y:9,width:2,height:2),RPGRegion(x:9,y:9,width:2,height:2)]
+    static func blocked(_ tile:Tile)->Bool {tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || obstacles.contains{$0.contains(tile)} || tile == keeper}
+}
+enum BeachLayout {
+    static let palms=[Tile(x:44,y:43),Tile(x:55,y:42),Tile(x:43,y:52),Tile(x:56,y:55),Tile(x:49,y:60)]
+    static let lounges=[Tile(x:47,y:47),Tile(x:53,y:49),Tile(x:47,y:55),Tile(x:53,y:58)]
+    static func contains(_ tile:Tile)->Bool {tile.x>=40 && tile.y>=40}
+    static func shoreline(_ row:Int)->Int {[61,60,60,59,59,60,61,61][abs(row)%8]}
+    static func water(_ tile:Tile)->Bool {tile.y>=42 && tile.x>=shoreline(tile.y)}
 }

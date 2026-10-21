@@ -18,6 +18,7 @@ struct RPGActor {
     var effect = 0
     var action = ""
     var expression = ""
+    var shopUniform = 0
 }
 
 struct RPGSceneView: UIViewRepresentable {
@@ -70,6 +71,7 @@ private struct ActorArtwork: View {
                 ChaosArt.draw(context:&context,kind:actor.effect,stride:stride,color:actor.color,variant:actor.variant,facing:actor.facing)
             } else if actor.animal > 0 { CatArt.draw(context:&context,gray:actor.animal == 1,walk:stride) }
             else { PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:stride,expression:actor.expression) }
+            if actor.shopUniform > 0 {ShopKeeperArt.uniform(context:&context,kind:actor.shopUniform)}
         }.frame(width: 24, height: 28)
     }
 }
@@ -136,6 +138,7 @@ final class RPGScene: SKScene {
             worldID = mapID
             revision = newRevision
         }
+        configureHomeTV(mapID:mapID)
         configureAmbient(night:night && !interior,nightVision:nightVision,powerOut:powerOut)
         configureWeather(interior ? .sunny : weather)
         if !interior { configureCars(cars,day:day) }
@@ -250,13 +253,38 @@ final class RPGScene: SKScene {
         layoutCamera(jump: changedMap)
     }
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
-        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.effect)-\(actor.expression)"
+        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
         renderer.scale = 3
         let texture = renderer.uiImage.map { SKTexture(image: $0) } ?? SKTexture()
         textures[key] = texture
         return texture
+    }
+
+
+    // Native scene animation: no SwiftUI timer, map rerender or per-frame textures.
+    private func configureHomeTV(mapID:String) {
+        guard mapID == "family-house",world.childNode(withName:"home-tv") == nil else{return}
+        let screen=SKCropNode();screen.name="home-tv";screen.position=CGPoint(x:186,y:-57);screen.zPosition = -9999
+        let mask=SKShapeNode(rectOf:CGSize(width:38,height:20),cornerRadius:2);mask.fillColor = .white;mask.strokeColor = .clear;screen.maskNode=mask
+        let sky=SKSpriteNode(color:UIColor(red:0.64,green:0.82,blue:0.86,alpha:1),size:CGSize(width:40,height:22));screen.addChild(sky)
+        let sea=SKSpriteNode(color:UIColor(red:0.32,green:0.65,blue:0.7,alpha:1),size:CGSize(width:40,height:9));sea.position.y = -6;screen.addChild(sea)
+        let sun=SKShapeNode(circleOfRadius:2.6);sun.fillColor=UIColor(red:1,green:0.89,blue:0.6,alpha:1);sun.strokeColor = .clear;sun.position=CGPoint(x:11,y:5);screen.addChild(sun)
+        for index in 0..<2 {
+            let cloud=SKShapeNode(ellipseOf:CGSize(width:9,height:3));cloud.fillColor = .white;cloud.strokeColor = .clear
+            cloud.position=CGPoint(x:CGFloat(index*16-16),y:CGFloat(4+index*3))
+            cloud.run(.repeatForever(.sequence([.moveBy(x:34,y:0,duration:Double(7+index*3)),.moveBy(x:-34,y:0,duration:0)])))
+            screen.addChild(cloud)
+        }
+        let travel=SKNode();travel.position=CGPoint(x:-24,y:-3)
+        let boat=SKNode();travel.addChild(boat)
+        let hull=SKShapeNode(rectOf:CGSize(width:8,height:2),cornerRadius:1);hull.fillColor=UIColor(red:0.76,green:0.46,blue:0.34,alpha:1);hull.strokeColor = .clear;boat.addChild(hull)
+        let sailPath=CGMutablePath();sailPath.move(to:CGPoint(x:0,y:1));sailPath.addLine(to:CGPoint(x:0,y:7));sailPath.addLine(to:CGPoint(x:5,y:1));sailPath.closeSubpath()
+        let sail=SKShapeNode(path:sailPath);sail.fillColor=UIColor(red:1,green:0.95,blue:0.78,alpha:1);sail.strokeColor = .clear;boat.addChild(sail)
+        travel.run(.repeatForever(.sequence([.moveTo(x:25,duration:6),.moveTo(x:-24,duration:0)])))
+        boat.run(.repeatForever(.sequence([.moveBy(x:0,y:0.7,duration:0.4),.moveBy(x:0,y:-0.7,duration:0.4)])))
+        screen.addChild(travel);world.addChild(screen)
     }
 
     @MainActor private func activityFrames(_ kind:String) -> [SKTexture] {
@@ -427,7 +455,7 @@ struct MotelRPGView: View {
         let interior = visit != nil || motel.worldState.place == .office
         let mapID = visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue
         let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
-        let worldRevision="cozy-world-16-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
+        let worldRevision="coastal-world-17-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
         var actors = [RPGActor(id: "player", tile: motel.actorTile, color: FamilyHome.outfitColors[motel.household.outfit], variant: 7, facing: motel.actorFacing)]
         if !interior {
             actors += motel.neighborhoodActors

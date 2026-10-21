@@ -40,6 +40,20 @@ struct ContentView: View {
             sample.motel!.operations!.nextIncidentTick=10000
             sample.save();return sample
         }
+        if args.contains("--ui-beach") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.cash=2500;sample.motel!.waiting=[]
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:53,y:47)
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            for _ in 0..<20 {sample.motel!.tickWorld()}
+            sample.save();return sample
+        }
+        if args.contains("--ui-motel-room") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.waiting=[];sample.motel!.rooms[0].guest=nil
+            _=sample.motel!.enter(0);sample.motel!.visit!.player=Tile(x:4,y:6)
+            sample.save();return sample
+        }
         if args.contains("--ui-staff-posts") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.cash=5000
             sample.motel!.waiting=[];sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:12,y:23)
@@ -85,7 +99,7 @@ struct ContentView: View {
             }
             if args.contains("--ui-action-theft") {
                 _ = sample.motel!.checkIn(guestID:10,roomID:0)
-                _ = sample.motel!.enter(0); sample.motel!.visit!.player=Tile(x:3,y:3)
+                _ = sample.motel!.enter(0); sample.motel!.visit!.player=Tile(x:2,y:4)
                 _ = sample.motel!.steal()
             }
             if args.contains("--ui-action-wash") { _ = sample.motel!.washNearbyCar() }
@@ -133,6 +147,10 @@ struct ContentView: View {
             if args.contains("--ui-home-store") {sample.motel!.world!.player=NeighborhoodShop.furniture.door}
             if args.contains("--ui-clothes-store") {sample.motel!.world!.player=NeighborhoodShop.clothing.door}
             if args.contains("--ui-pawn-store") {sample.motel!.world!.player=NeighborhoodShop.pawn.door;sample.motel!.home=FamilyHome();sample.motel!.home!.stolen=[0,1,2]}
+            if args.contains("--ui-store-inside") {
+                let shop:NeighborhoodShop=args.contains("--ui-clothes-store") ? .clothing : args.contains("--ui-pawn-store") ? .pawn : .furniture
+                _=sample.motel!.enterShop(shop);sample.motel!.world!.player=ShopLayout.counter
+            }
             sample.motel!.home = sample.motel!.home ?? FamilyHome();sample.motel!.home!.storage=[.plant,.rug]
             for _ in 0..<12 {sample.motel!.tickWorld()}
             sample.save();return sample
@@ -167,7 +185,7 @@ struct ContentView: View {
                     fresh.motel!.rooms[0].dirty = args.contains("--ui-world-clean")
                     fresh.save()
                     _ = fresh.motel!.enter(0)
-                    fresh.motel!.visit!.player = args.contains("--ui-world-clean") ? Tile(x: 3, y: 3) : Tile(x: 6, y: 2)
+                    fresh.motel!.visit!.player = args.contains("--ui-world-clean") ? Tile(x: 4, y: 3) : Tile(x: 7, y: 3)
                     return fresh
                 }
                 if args.contains("--ui-world-build") {

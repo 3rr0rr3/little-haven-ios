@@ -11,12 +11,12 @@ struct NeighborhoodStoreView:View {
             VStack(alignment:.leading,spacing:18) {
                 HStack {Text(shop.title).font(.largeTitle.bold());Spacer();Button("Close"){dismiss()}}
                 Text("\(motel.cash) COINS").font(.headline.monospaced()).foregroundStyle(Color(hex:0xEFC977))
-                Text(shop.detail)
+                Text(shop.keeperName+" / "+shop.detail)
                 if shop == .furniture {
                     ForEach(HomeObject.allCases) {kind in
                         HStack {HomeItemIcon(kind:kind).frame(width:46,height:46);Text(kind.title);Spacer();Button("Buy / \(kind.price)"){change{_=$0.buyHomeObject(kind)}}.disabled(motel.cash<kind.price).accessibilityIdentifier("buy_home_"+kind.rawValue)}
                     }
-                    Text("Walk north to your house, enter and choose DECORATE to place purchases.").font(.caption)
+                    Text("Take your purchases home and use the workbench to place them.").font(.caption)
                 } else if shop == .clothing {
                     ForEach(FamilyHome.outfitNames.indices,id:\.self) {index in
                         HStack {

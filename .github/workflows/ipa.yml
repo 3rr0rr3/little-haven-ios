@@ -18,7 +18,7 @@ permissions:
 jobs:
   build:
     runs-on: macos-15
-    timeout-minutes: 25
+    timeout-minutes: 35
     permissions:
       contents: write
     steps:
@@ -120,6 +120,33 @@ jobs:
             sleep 3
             xcrun simctl io "$DEVICE" screenshot "LittleHaven-$MODE.png"
           done
+      - name: Capture beach shops and animated television
+        if: ${{ success() && env.SIM_DEVICE != '' }}
+        run: |
+          set -euo pipefail
+          for MODE in beach motel-room; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE"
+            sleep 2
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
+          done
+          for MODE in home-store clothes-store pawn-store; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-store-inside
+            sleep 2
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE-interior.png"
+          done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-family-home
+          sleep 2
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-tv-frame1.png
+          sleep 1
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-tv-frame2.png
+          xcrun simctl io "$SIM_DEVICE" recordVideo --codec=h264 --force LittleHaven-animated-tv.mp4 &
+          TV_RECORD_PID=$!
+          sleep 7
+          kill -INT "$TV_RECORD_PID"
+          wait "$TV_RECORD_PID" || true
       - name: Capture guest interaction
         if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |
@@ -173,8 +200,8 @@ jobs:
         run: |
           set -euo pipefail
           TAG="sideload-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
-          printf '%s\n' 'Little Haven 16.0: Soft, dimensional scenery with rounded foliage, warm roofs, gentle lighting, and continuous home flooring. Original characters, reception PC, home workbench and pet companions are preserved. iOS 17+.' 'Wake up and walk around your motel grounds, office and rooms. Meet guests, collect payment, carry cleaning tools, make beds, collect trash, mop spills and expand your motel.' 'Explore occupied rooms, steal belongings and escape before suspicion reaches 100%. Getting caught returns you to your last saved checkpoint.' 'Save at the desk or end the day. Existing cottage saves migrate to the wake-up scene.' 'Unsigned arm64 iPhoneOS build. Sign through your sideloading tool before installing. Physical-device installation has not been verified.' > release-notes.txt
-          gh release create "$TAG" LittleHaven-home-exterior.png LittleHaven-family-home.png LittleHaven-neighborhood.png LittleHaven-home-store.png LittleHaven-clothes-store.png LittleHaven-pawn-store.png LittleHaven-staff-posts.png LittleHaven-pool-responder.png LittleHaven-pool-responder.mp4 LittleHaven-fight-responder.png LittleHaven-fight-responder.mp4 LittleHaven-title.png LittleHaven-options.png LittleHaven-quit.png LittleHaven-management-board.png LittleHaven-management-events.png LittleHaven-management-cameras.png LittleHaven-management-night.png LittleHaven-pool.mp4 LittleHaven-fight.mp4 LittleHaven-fire.mp4 LittleHaven-pool.png LittleHaven-fight.png LittleHaven-parking-staff.png LittleHaven-weather-storm.png LittleHaven-weather-snow.png LittleHaven-weather-wind.png LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png LittleHaven-wake.png LittleHaven-motel.png LittleHaven-stealth.png LittleHaven-cleaning.png LittleHaven-office.png LittleHaven-dialogue.png LittleHaven-chaos.png LittleHaven-police.png LittleHaven-hiring.png --target "$GITHUB_SHA" --title "Little Haven 16.0 - Soft diorama scenery" --prerelease --notes-file release-notes.txt
+          printf '%s\n' 'Little Haven 17.0: Decorated home and reception, upright animated TV and sofa, walk-in stores with distinctive shopkeepers and merchandise, individual store signs, a decorated Sunset Cove beach, and motel-style guest rooms. Original characters, smooth walking, reception PC, workbench, companions and guest-request consequences are preserved. iOS 17+.' 'Wake up and walk around your motel grounds, office and rooms. Meet guests, collect payment, carry cleaning tools, make beds, collect trash, mop spills and expand your motel.' 'Explore occupied rooms, steal belongings and escape before suspicion reaches 100%. Getting caught returns you to your last saved checkpoint.' 'Save at the desk or end the day. Existing cottage saves migrate to the wake-up scene.' 'Unsigned arm64 iPhoneOS build. Sign through your sideloading tool before installing. Physical-device installation has not been verified.' > release-notes.txt
+          gh release create "$TAG" LittleHaven-beach.png LittleHaven-motel-room.png LittleHaven-home-store-interior.png LittleHaven-clothes-store-interior.png LittleHaven-pawn-store-interior.png LittleHaven-tv-frame1.png LittleHaven-animated-tv.mp4 LittleHaven-guest-conversation.png LittleHaven-home-exterior.png LittleHaven-family-home.png LittleHaven-neighborhood.png LittleHaven-home-store.png LittleHaven-clothes-store.png LittleHaven-pawn-store.png LittleHaven-staff-posts.png LittleHaven-pool-responder.png LittleHaven-pool-responder.mp4 LittleHaven-fight-responder.png LittleHaven-fight-responder.mp4 LittleHaven-title.png LittleHaven-options.png LittleHaven-quit.png LittleHaven-management-board.png LittleHaven-management-events.png LittleHaven-management-cameras.png LittleHaven-management-night.png LittleHaven-pool.mp4 LittleHaven-fight.mp4 LittleHaven-fire.mp4 LittleHaven-pool.png LittleHaven-fight.png LittleHaven-parking-staff.png LittleHaven-weather-storm.png LittleHaven-weather-snow.png LittleHaven-weather-wind.png LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png LittleHaven-wake.png LittleHaven-motel.png LittleHaven-stealth.png LittleHaven-cleaning.png LittleHaven-office.png LittleHaven-dialogue.png LittleHaven-chaos.png LittleHaven-police.png LittleHaven-hiring.png --target "$GITHUB_SHA" --title "Little Haven 17.0 - Sunset Cove and walk-in shops" --prerelease --notes-file release-notes.txt
           gh api "repos/$GH_REPO/contents/sideStore.json" > live-source-response.json
           python3 scripts/update_source.py "$TAG"
           gh api --method PUT "repos/$GH_REPO/contents/sideStore.json" --input source-update.json

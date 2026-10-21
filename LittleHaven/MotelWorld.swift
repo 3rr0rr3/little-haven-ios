@@ -1,6 +1,6 @@
 import Foundation
 
-enum MotelPlace: String, Codable { case office, grounds, house }
+enum MotelPlace: String, Codable { case office, grounds, house, shop }
 struct MotelWalker: Codable, Identifiable {
     let id: Int
     let name: String
@@ -19,6 +19,7 @@ struct MotelWorldState: Codable {
     var travellers: [MotelWalker] = []
     var tick = 0
     var reception: OfficeReception?
+    var shop: NeighborhoodShop?
     var guestPositions: [Int:Tile]?
     var witnessPositions: [Int:Tile]?
     var townPositions:[Int:Tile]?
@@ -37,7 +38,7 @@ enum MotelAction: Hashable {
 }
 enum MotelGrounds {
     static let width = 72
-    static let height = 48
+    static let height = 64
     static let officeDoor = Tile(x: 6, y: 9)
     static let sign = Tile(x: 12, y: 26)
     static let gate = Tile(x: 6, y: 35)
@@ -118,7 +119,7 @@ enum MotelGrounds {
     static func officeBlocked(_ tile: Tile) -> Bool {
         RPGMaps.office.blocked(tile)
     }
-    static let cleaningTiles = [Tile(x: 3, y: 2), Tile(x: 2, y: 6), Tile(x: 5, y: 5)]
+    static let cleaningTiles = [Tile(x: 3, y: 3), Tile(x: 2, y: 6), Tile(x: 5, y: 5)]
     static let cleaningNames = ["Make bed", "Collect trash", "Mop spill"]
     static let roomPaint = Tile(x: 7, y: 2)
 }
@@ -130,7 +131,9 @@ extension Motel {
     var actorFacing: Int { visit?.facing ?? worldState.facing }
     var mapName: String {
         if let visit, let room = rooms.first(where: { $0.id == visit.roomID }) { return "ROOM \(room.number)" }
+        if let shop=currentShop {return shop.title.uppercased()}
         if isAtHome { return "FAMILY HOME" }
+        if worldState.place == .grounds && BeachLayout.contains(actorTile) {return "SUNSET COVE BEACH"}
         return worldState.place == .office ? "YOUR OFFICE" : "Airb&b GROUNDS"
     }
     var cleaningTarget: Int? {
@@ -153,6 +156,11 @@ extension Motel {
             if let target = cleaningTarget { return .clean(target) }
             if player.distance(to: MotelGrounds.roomPaint) <= 1 { return .paint(visit.roomID) }
             if player.distance(to: Tile(x: 3, y: 2)) <= 1 { return .furniture(visit.roomID) }
+            return petAction
+        }
+        if let shop=currentShop {
+            if player.distance(to:ShopLayout.exit)<=1 {return .exit}
+            if player.distance(to:ShopLayout.counter)<=1 {return .shop(shop)}
             return petAction
         }
         if isAtHome {
@@ -184,6 +192,10 @@ extension Motel {
         if world == nil { world = MotelWorldState() }
         if world!.reception == nil { world!.reception = OfficeReception() }
         if world!.place == .office,world!.player.x == 9,MotelGrounds.officeBlocked(world!.player) { world!.player.x=8 }
+        if isAtReception && MotelGrounds.officeBlocked(world!.player) {world!.player=OfficeReception.clerk}
+        if let roomVisit=visit,RoomVisit.blocked(roomVisit.player) {visit!.player=Tile(x:4,y:7)}
+        if isAtHome && homeBlocked(world!.player) {world!.player=Tile(x:7,y:12)}
+        if isAtShop && ShopLayout.blocked(world!.player) {world!.player=ShopLayout.arrival}
     }
     mutating func moveActor(dx: Int, dy: Int) {
         guard !caught, abs(dx) <= 1, abs(dy) <= 1, dx != 0 || dy != 0 else { return }
@@ -192,6 +204,15 @@ extension Motel {
         var state = worldState
         state.facing = dy > 0 ? 0 : dx < 0 ? 1 : dx > 0 ? 2 : 3
         let next = Tile(x: state.player.x + dx, y: state.player.y + dy)
+        if state.place == .shop {
+            guard !ShopLayout.blocked(next) else {world=state;return}
+            if dx != 0 && dy != 0 {
+                guard !ShopLayout.blocked(Tile(x:state.player.x+dx,y:state.player.y)),!ShopLayout.blocked(Tile(x:state.player.x,y:state.player.y+dy)) else {world=state;return}
+            }
+            state.player=next;world=state
+            if next == ShopLayout.exit {_=leaveShop()}
+            return
+        }
         if state.place == .house {
             if next == FamilyHome.exit { state.place = .grounds; state.player=Tile(x:FamilyHome.door.x,y:FamilyHome.door.y+1) }
             else if !homeBlocked(next) {state.player=next}
@@ -231,8 +252,10 @@ extension Motel {
             world!.place = .house; world!.player=Tile(x:7,y:12);return true
         case .office:
             world!.place = .office; world!.player = OfficeReception.clerk; return true
+        case .shop(let shop): return enterShop(shop)
         case .room(let id): return enter(id)
         case .exit:
+            if isAtShop {return leaveShop()}
             if visit != nil { leave() }
             else { let atHome=isAtHome; world!.place = .grounds; world!.player = atHome ? Tile(x:FamilyHome.door.x,y:FamilyHome.door.y+1) : Tile(x:6,y:10) }
             return true
@@ -373,7 +396,7 @@ extension Motel {
         var townspeople=state.townPositions ?? [:]
         var previous=townspeople
         var destinations=state.townDestinations ?? [:]
-        let stops=[Tile(x:43,y:16),Tile(x:54,y:16),Tile(x:65,y:17),Tile(x:68,y:32),Tile(x:51,y:33),Tile(x:38,y:33),Tile(x:38,y:16)]
+        let stops=[Tile(x:43,y:16),Tile(x:54,y:16),Tile(x:65,y:17),Tile(x:68,y:32),Tile(x:51,y:33),Tile(x:38,y:33),Tile(x:38,y:16),Tile(x:48,y:42),Tile(x:52,y:54)]
         for id in 0..<7 {
             let current=townspeople[id] ?? stops[id]
             previous[id]=current

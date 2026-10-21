@@ -237,7 +237,7 @@ func worldRules() {
     service.world!.place = .grounds
     service.world!.player = Tile(x: 16, y: 9)
     require(service.useEntrance() && service.visit?.roomID == 0, "Walk through a room's own entrance")
-    service.visit!.player = Tile(x: 3, y: 3)
+    service.visit!.player = Tile(x: 4, y: 3)
     require(service.cleaningTarget == 0 && !service.cleanNearbyTask(), "Cleaning requires supplies")
     service.world!.hasCleaningKit = true
     require(service.cleanNearbyTask() && service.rooms[0].dirty, "Making the bed does not remotely clean the whole room")
@@ -247,11 +247,12 @@ func worldRules() {
     service.moveActor(dx: 0, dy: 1)
     require(service.cleaningTarget == 2 && service.cleanNearbyTask(), "Walk to the actual spill to mop it")
     service.moveActor(dx: -1, dy: 0)
+    service.moveActor(dx: -1, dy: 0)
     service.moveActor(dx: 0, dy: 1)
     require(service.cleaningTarget == 1 && service.cleanNearbyTask(), "Walk to the trash to collect it")
     require(!service.rooms[0].dirty && service.rooms[0].cleanedTasks?.count == 3, "Only all three physical tasks make a room rentable")
     require(!service.paintNearby(2), "Cannot repaint from across the room")
-    service.visit!.player = Tile(x: 6, y: 2)
+    service.visit!.player = Tile(x: 7, y: 3)
     require(service.paintNearby(2) && service.rooms[0].theme == 2 && service.cash == 155, "Paint cabinet changes the room for its stated cost")
     require(!service.paintNearby(2), "No duplicate paint charges")
     service.visit!.player = Tile(x: 3, y: 3)
@@ -523,10 +524,10 @@ func parkingAndAnimationRules() {
     require(legacy.operationsState.cars == nil && legacy.operationsState.visual == nil,"Old saves need no car or animation fields")
     var cleaner=Motel(); cleaner.initializeWorld(); cleaner.rooms[0].dirty=true
     cleaner.world!.hasCleaningKit=true; _ = cleaner.enter(0)
-    cleaner.visit!.player=Tile(x:3,y:3)
+    cleaner.visit!.player=Tile(x:4,y:3)
     require(cleaner.cleanNearbyTask() && cleaner.operationsState.visual?.kind == "bed","Bed cleaning uses a sheet animation")
     var thief=Motel(); thief.initializeWorld(); _ = thief.checkIn(guestID:10,roomID:0); _ = thief.enter(0)
-    thief.visit!.player=Tile(x:3,y:3)
+    thief.visit!.player=Tile(x:2,y:4)
     require(thief.steal() && thief.operationsState.visual?.kind == "steal-0","Stolen suitcase records its source and destination")
     for kind in ChaosKind.allCases {
         var rescue=Motel(); rescue.initializeWorld(); rescue.world!.place = .grounds
@@ -763,9 +764,12 @@ func familyHomeAndNeighborhoodRules() {
     motel.world!.player=NeighborhoodShop.furniture.door
     require(motel.nearbyAction == .shop(.furniture),"Furniture shop has a physical interaction")
     let initial=motel.cash
+    require(!motel.buyHomeObject(.plant),"Shopping requires entering and reaching the counter")
+    require(motel.enterShop(.furniture),"Furniture store is a walk-in interior")
+    motel.world!.player=ShopLayout.counter
     require(motel.buyHomeObject(.plant) && motel.cash == initial-30 && motel.household.storage == [.plant],"Furniture is paid from business profits and delivered to storage")
     motel.cash=0;require(!motel.buyHomeObject(.table),"Cannot buy furniture without money");motel.cash=initial-30
-    motel.world!.player=FamilyHome.door
+    motel.world!.player=ShopLayout.exit;_=motel.leaveShop();motel.world!.player=FamilyHome.door
     require(motel.useEntrance() && motel.isAtHome,"Enter the separate family house")
     let hildarelys=motel.reception.hildarelys
     for _ in 0..<2 {motel.tickReception()}
@@ -774,18 +778,20 @@ func familyHomeAndNeighborhoodRules() {
     require(motel.placeHomeObject(.plant,at:Tile(x:6,y:8)),"Purchased furniture can be placed on an open home tile")
     require(motel.homeBlocked(Tile(x:6,y:8)),"Placed furniture affects movement")
     require(motel.storeHomeObject(motel.household.placed[0].id) && motel.placeHomeObject(.plant,at:Tile(x:8,y:8)),"Furniture can be stored and moved")
-    require(!motel.homeBlocked(Tile(x:2,y:3)),"The continuous west-room floor is walkable before renovating")
+    require(!motel.homeBlocked(Tile(x:2,y:4)),"The continuous west-room floor is walkable before renovating")
     let beforeUpgrade=motel.cash
-    require(motel.upgradeHome() && motel.cash == beforeUpgrade-250 && !motel.homeBlocked(Tile(x:2,y:3)) && motel.household.capacity == 10,"Home upgrade charges profits, improves the home and increases furnishing space")
+    require(motel.upgradeHome() && motel.cash == beforeUpgrade-250 && !motel.homeBlocked(Tile(x:2,y:4)) && motel.household.capacity == 10,"Home upgrade charges profits, improves the home and increases furnishing space")
     require(motel.finishHome(wall:true,color:2) && motel.finishHome(wall:false,color:3),"Wall and floor customization")
     motel.world!.place = .grounds;motel.world!.player=NeighborhoodShop.clothing.door
+    require(motel.enterShop(.clothing),"Clothing store can be entered");motel.world!.player=ShopLayout.counter
     let beforeOutfit=motel.cash
     require(motel.wearOutfit(2) && motel.cash == beforeOutfit-80 && motel.household.outfit == 2,"Clothing purchases equip a persistent outfit")
     require(motel.wearOutfit(0) && motel.wearOutfit(2) && motel.cash == beforeOutfit-80,"Owned outfits are free to wear again")
     var state=motel.household;state.stolen=[1,2];motel.home=state
     let beforeSale=motel.cash
     require(!motel.sellBelonging(1),"Belongings cannot be sold away from the pawn shop")
-    motel.world!.player=NeighborhoodShop.pawn.door
+    motel.world!.player=ShopLayout.exit;_=motel.leaveShop();motel.world!.player=NeighborhoodShop.pawn.door
+    require(motel.enterShop(.pawn),"Pawn store can be entered");motel.world!.player=ShopLayout.counter
     require(motel.sellBelonging(1) && motel.cash == beforeSale+70 && motel.household.stolen == [2],"Explicit pawn sale pays only for the chosen carried item")
     require(!motel.sellBelonging(1) && motel.cash == beforeSale+70,"Cannot sell an item twice")
     let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(motel))
@@ -909,3 +915,40 @@ func fluidMovementAndGuestFavourRules() {
     print("PASS: cached terrain, daily guest conversations, supply delivery, saved requests, stock checks, tips, deadlines, refunds and checkout consequences")
 }
 fluidMovementAndGuestFavourRules()
+
+func coastAndWalkInStoreRules() {
+    var motel=Motel();motel.initializeWorld();motel.cash=1000;motel.world!.place = .grounds
+    for shop in NeighborhoodShop.allCases {
+        motel.world!.player=shop.door
+        require(motel.enterShop(shop) && motel.currentShop==shop,"Each store has its own interior")
+        require(!motel.canTrade(shop),"Entrance does not remotely open the checkout")
+        var seen:Set<Tile>=[ShopLayout.arrival],queue=[ShopLayout.arrival],cursor=0
+        while cursor<queue.count {
+            let p=queue[cursor];cursor+=1
+            for (dx,dy) in [(0,1),(1,0),(-1,0),(0,-1)] {
+                let next=Tile(x:p.x+dx,y:p.y+dy)
+                if !ShopLayout.blocked(next),seen.insert(next).inserted {queue.append(next)}
+            }
+        }
+        require(seen.contains(ShopLayout.counter) && seen.contains(ShopLayout.exit),"Displays leave a clear route to the counter and door")
+        motel.world!.player=ShopLayout.counter
+        require(motel.canTrade(shop) && motel.nearbyAction == .shop(shop),"Counter enables the correct store inventory")
+        let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(motel))
+        require(restored.currentShop==shop && restored.actorTile==ShopLayout.counter,"Checkpoint retains the active store")
+        motel.world!.player=ShopLayout.exit
+        require(motel.leaveShop() && motel.actorTile==Tile(x:shop.door.x,y:shop.door.y+1),"Leaving returns to this store's exterior")
+    }
+    for target in [Tile(x:48,y:42),Tile(x:52,y:54),Tile(x:55,y:60)] {
+        require(MotelGrounds.nextStep(from:NeighborhoodShop.clothing.door,to:target,avoiding:[]) != nil,"Town connects to beach walking areas")
+    }
+    require(MotelGrounds.blocked(Tile(x:65,y:52)),"Deep sea cannot be walked into")
+    require(!MotelGrounds.blocked(Tile(x:52,y:54)),"Beach promenade is walkable")
+    for tile in BeachLayout.palms+BeachLayout.lounges {require(MotelGrounds.blocked(tile),"Beach furniture and trunks are solid")}
+    for y in 0..<MotelGrounds.height {for x in 0..<MotelGrounds.width {
+        let tile=Tile(x:x,y:y);require(MotelGrounds.blocked(tile)==RPGMaps.grounds.blocked(tile),"Expanded beach terrain matches cached collision data")
+    }}
+    motel.world!.place = .house;motel.world!.player=Tile(x:7,y:12)
+    require(motel.homeBlocked(Tile(x:2,y:3)) && !motel.homeBlocked(Tile(x:7,y:8)),"Home decoration leaves the living-room aisle clear")
+    print("PASS: walk-in shop counters, display collisions, store checkpoints, beach access, water safety and furnished-home paths")
+}
+coastAndWalkInStoreRules()
