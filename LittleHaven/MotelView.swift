@@ -243,7 +243,8 @@ struct MotelView: View {
                     VStack(alignment:.leading) {
                         Text(motel.mapName).font(.headline)
                         Text("DAY \(motel.day) / \(motel.cash) coins").font(.caption.monospaced())
-                    }
+                    }.accessibilityElement(children:.ignore).accessibilityLabel(motel.mapName)
+                        .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).").accessibilityIdentifier("touchPosition")
                     Spacer()
                     Button {stop();showMap=true} label:{Image(systemName:"map.fill").padding(12)}.accessibilityLabel("Airb&b map")
                     Button {stop();showPause=true} label:{Image(systemName:"pause.fill").padding(12)}.accessibilityLabel("Pause game")
@@ -257,7 +258,7 @@ struct MotelView: View {
                 }
             }.padding(.horizontal,16).padding(.vertical,8)
             worldOverlay
-        }.accessibilityIdentifier("fullscreenWorld")
+        }
     }
     private func walkToTouch(_ target:Tile,_ completion:(()->Void)?) {
         guard fullscreenTouch,!paused,!motel.caught else{return}

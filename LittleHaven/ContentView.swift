@@ -506,11 +506,13 @@ struct ContentView: View {
                 }
                 Section {
                     Text("Progress saves automatically on this device. All coins are fictional game currency.").font(.footnote)
-                    Button("Options") {showTownOptions=true}
                     Button("Save & return to title") { stopMoving(); showJournal = false; playing = false }
                     Button("Start a new adventure", role: .destructive) { reset = true }
                 }
-            }.navigationTitle("Your journal").toolbar { Button("Done") { showJournal = false } }
+            }.navigationTitle("Your journal").toolbar {
+                ToolbarItem(placement:.topBarLeading) {Button("Options") {showTownOptions=true}}
+                ToolbarItem(placement:.topBarTrailing) {Button("Done") {showJournal=false}}
+            }
                 .confirmationDialog("Erase your saved adventure?", isPresented: $reset, titleVisibility: .visible) {
                     Button("Start over", role: .destructive) { game = Game(); game.save(); showJournal = false }
                 }
@@ -519,7 +521,6 @@ struct ContentView: View {
 }
 
 struct HoldDirection: View {
-    @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
     @AppStorage("littlehaven.largeControls") private var largeControls = false
     let symbol: String
     let label: String

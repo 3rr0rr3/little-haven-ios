@@ -457,11 +457,11 @@ final class LittleHavenUITests: XCTestCase {
         let app=XCUIApplication()
         app.launchArguments=["--ui-world","--ui-touch","--ui-testing"]
         app.launch()
-        let scene=app.otherElements["officeScene"]
-        XCTAssertTrue(scene.waitForExistence(timeout:15))
+        let scene=app.descendants(matching:.any)["touchPosition"].firstMatch
+        XCTAssertTrue(scene.waitForExistence(timeout:15),app.debugDescription)
         XCTAssertFalse(app.buttons["Walk north"].exists)
         let before=scene.value as? String
-        scene.coordinate(withNormalizedOffset:CGVector(dx:0.55,dy:0.53)).tap()
+        app.coordinate(withNormalizedOffset:CGVector(dx:0.55,dy:0.53)).tap()
         Thread.sleep(forTimeInterval:2)
         XCTAssertNotEqual(scene.value as? String,before,"Touching the floor walks through the office")
         app.buttons["Pause game"].tap()
@@ -477,7 +477,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Open journal"].waitForExistence(timeout:15))
         XCTAssertFalse(app.buttons["Walk north"].exists)
         app.buttons["Open journal"].tap()
-        XCTAssertTrue(app.buttons["Options"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["Options"].waitForExistence(timeout:5),app.debugDescription)
         app.buttons["Options"].tap()
         XCTAssertTrue(app.switches["optionFullscreenTouch"].waitForExistence(timeout:5))
         capture(app,"Full screen setting and prologue menu")

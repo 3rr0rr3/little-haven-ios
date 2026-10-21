@@ -230,7 +230,7 @@ jobs:
           kill -KILL "$PUMP_VIDEO_PID" 2>/dev/null || true
           wait "$PUMP_VIDEO_PID" || true
       - name: Capture full screen touch mode and laundry
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ always() && env.SIM_DEVICE != '' }}
         run: |
           set -euo pipefail
           xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
