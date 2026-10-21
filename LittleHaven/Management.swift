@@ -1452,19 +1452,17 @@ enum ResidentialLayout {
     }
 }
 enum FacilityLayout {
-    // Grass service wing beside the eastern room row; public paths stay outside.
-    static let laundryFootprint=RPGRegion(x:36,y:10,width:4,height:6)
-    static let laundry=Tile(x:38,y:13)
-    static let supplies=Tile(x:39,y:13)
+    // Narrow service alcove between reception and room 101; opens onto row 8.
+    static let laundryFootprint=RPGRegion(x:11,y:3,width:3,height:5)
+    static let laundry=Tile(x:12,y:6)
+    static let supplies=Tile(x:13,y:6)
     static let obstacles=[
         RPGRegion(x:10,y:21,width:1,height:2),
         RPGRegion(x:2,y:26,width:3,height:1),
         RPGRegion(x:2,y:29,width:3,height:1),
-        RPGRegion(x:36,y:10,width:4,height:1), // rear wall and sign
-        RPGRegion(x:36,y:11,width:1,height:5), // western wall
-        RPGRegion(x:36,y:11,width:2,height:2), // washer
-        RPGRegion(x:39,y:11,width:1,height:2), // guest supplies
-        RPGRegion(x:36,y:14,width:2,height:2)  // folding counter; entrance aisle stays open
+        RPGRegion(x:11,y:3,width:3,height:1), // back wall
+        RPGRegion(x:11,y:4,width:1,height:4), // folding counter and washer
+        RPGRegion(x:12,y:4,width:2,height:2)  // supplies; southern aisle stays clear
     ]
 }
 extension Motel {

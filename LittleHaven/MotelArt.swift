@@ -133,7 +133,7 @@ struct MotelRoomCanvas: View, Animatable {
                     let tile = RoomVisit.lootTiles[index]
                     let px = Double(tile.x * 16), py = Double(tile.y * 16)
                     if index == 0 {
-                        RoomObjectArt.draw(context:&context,index:0,x:px,y:py)
+                        RoomObjectArt.draw(context:&context,index:0,x:px+3,y:py+4,scale:0.6)
                     } else if index == 2 {
                         context.fill(Path(ellipseIn: CGRect(x: px + 3, y: py + 4, width: 10, height: 11)), with: .color(Color(hex: 0x7C8E7A)))
                         context.stroke(Path(ellipseIn: CGRect(x: px + 3, y: py + 3, width: 10, height: 4)), with: .color(Color(hex: 0xD0CFAD)), lineWidth: 0.7)
@@ -163,7 +163,7 @@ struct MotelRoomCanvas: View, Animatable {
             }
             for index in RoomVisit.lootTiles.indices where visit.sneaking {
                 let tile = RoomVisit.lootTiles[index]
-                let itemRect = CGRect(x: Double(tile.x * 16 + 2), y: Double(tile.y * 16 + 3), width: 12, height: 10)
+                let itemRect = CGRect(x: Double(tile.x * 16 + 3), y: Double(tile.y * 16 + 4), width: 10, height: 10)
                 let taken = room.stolen.contains(index) || visit.loot.contains(index)
                 if index > 0 {
                     let px=Double(tile.x*16), py=Double(tile.y*16)
@@ -172,7 +172,7 @@ struct MotelRoomCanvas: View, Animatable {
                     context.fill(Path(CGRect(x:px+6,y:py+14,width:4,height:1)),with:.color(Color(hex:0xE6C88A)))
                 }
                 if !taken {
-                    RoomObjectArt.draw(context:&context,index:index,x:Double(tile.x*16),y:Double(tile.y*16))
+                    RoomObjectArt.draw(context:&context,index:index,x:Double(tile.x*16+3),y:Double(tile.y*16+4),scale:0.6)
                     context.stroke(Path(roundedRect:itemRect.insetBy(dx:-2,dy:-2),cornerRadius:3),with:.color(Color(hex:0xF3D185)),lineWidth:0.6)
                 } else {
                     context.stroke(Path(roundedRect:itemRect,cornerRadius:2),with:.color(Color(hex:0x8A826C)),lineWidth:0.4)

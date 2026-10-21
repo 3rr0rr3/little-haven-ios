@@ -695,30 +695,72 @@ enum FacilitiesArt {
         block(32,464,47,12,0xAB855C);block(36,477,3,6,0x705C46);block(72,477,3,6,0x705C46)
         for x in [40.0,58] {c.fill(Path(ellipseIn:CGRect(x:x,y:467,width:11,height:4)),with:.color(Color(hex:0xF0E3C6)))}
         block(34,455,39,5,0x7F9D88);block(34,482,39,5,0x7F9D88)
-        // Compact service wing on grass beside the motel rooms.
-        // Every piece stays inside the footprint, including signs and staff props.
+        // Three-tile alcove between the office and room 101.
         let x=Double(FacilityLayout.laundryFootprint.x*16),y=Double(FacilityLayout.laundryFootprint.y*16)
-        block(x,y+16,64,80,0xCAB995)
-        block(x,y+12,64,6,0x6A8D80)
-        block(x,y+16,2,80,0x6A8D80)
-        block(x+62,y+16,2,32,0x6A8D80)
-        sign("LAUNDRY / GUEST SUPPLIES",x,y,64)
-        block(x+2,y+18,28,28,0x8BA69A);block(x+4,y+20,24,4,0xDFDDC4)
-        c.fill(Path(ellipseIn:CGRect(x:x+6,y:y+27,width:18,height:15)),with:.color(Color(hex:0x537F83)))
-        c.stroke(Path(ellipseIn:CGRect(x:x+8,y:y+29,width:14,height:11)),with:.color(Color(hex:0xBBCFC6)),lineWidth:1.2)
-        block(x+5,y+21,3,2,0xD6B675);block(x+20,y+21,6,2,0x6B837B)
-        block(x+49,y+18,13,28,0x6F6552)
-        for offset in [20.0,29,38] {
-            block(x+50,y+offset+6,11,2,0xC7AB7C)
-            block(x+50,y+offset,5,5,0xE6E0C7);block(x+56,y+offset,5,5,0x9DBFAF)
+        block(x,y+12,48,68,0xCAB995)
+        block(x,y+12,48,5,0x6A8D80)
+        block(x,y+16,2,64,0x6A8D80)
+        sign("LAUNDRY",x,y,48)
+        block(x+2,y+18,15,28,0x8BA69A);block(x+3,y+20,13,4,0xDFDDC4)
+        c.fill(Path(ellipseIn:CGRect(x:x+4,y:y+28,width:11,height:13)),with:.color(Color(hex:0x537F83)))
+        c.stroke(Path(ellipseIn:CGRect(x:x+5,y:y+29,width:9,height:11)),with:.color(Color(hex:0xBBCFC6)),lineWidth:1)
+        block(x+4,y+21,3,2,0xD6B675)
+        block(x+19,y+18,27,28,0x6F6552)
+        for offset in [21.0,29,37] {
+            block(x+20,y+offset+5,25,2,0xC7AB7C)
+            block(x+21,y+offset,10,4,0xE6E0C7);block(x+33,y+offset,10,4,0x9DBFAF)
         }
-        block(x+3,y+65,28,28,0xA99370);block(x+3,y+65,28,4,0xD5C29B)
+        block(x+2,y+51,13,26,0xA99370);block(x+2,y+51,13,4,0xD5C29B)
         if motel.staffStations.contains(.cleaner) {
-            block(x+5,y+70,12,12,0x748F87)
-            for offset in [70.0,74,78] {block(x+6,y+offset,10,3,0xF1E4C5)}
-            sign("HOUSEKEEPING",x+1,y+83,30)
+            for offset in [57.0,62,67] {block(x+3,y+offset,10,4,0xF1E4C5)}
         }
         block(49,269,12,5,0x9FB8A2);CozyScenery.planter(context:&c,x:47,y:270)
         RoomObjectArt.draw(context:&c,index:0,x:128,y:176)
+    }
+}
+
+
+// A soft, rounded purple companion based on the supplied creature reference.
+// Red reference markup is deliberately excluded from its actual design.
+enum MochiArt {
+    static func draw(context:inout GraphicsContext,facing:Int,walk:Double) {
+        var c=context
+        func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
+            c.fill(Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:color)))
+        }
+        func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32,_ radius:Double) {
+            c.fill(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:radius),with:.color(Color(hex:color)))
+        }
+        oval(2,23,21,4,0x304038)
+        let step=walk*1.2
+        for i in 0..<3 {
+            let x=Double(i)*6+3
+            oval(x,20+(i%2 == 0 ? step : -step),6,7,0x85415F)
+            oval(x+0.7,20.5+(i%2 == 0 ? step : -step),4,3,0xB66783)
+        }
+        box(2,6,21,18,0x9E6AAF,5)
+        box(3,6,19,9,0xC08EC8,4)
+        oval(3,3,6,7,0xAE7CB9);oval(16,3,6,7,0xAE7CB9)
+        // Dark side markings give the same chunky striped silhouette.
+        box(2,16,5,2,0x80528E,1);box(2,20,4,2,0x80528E,1)
+        box(19,16,4,2,0x80528E,1);box(19,20,4,2,0x80528E,1)
+        if facing != 3 {
+            let shift=facing == 1 ? -2.0 : facing == 2 ? 2.0 : 0
+            oval(5+shift,10,4,4.5,0x282333);oval(14+shift,10,4,4.5,0x282333)
+            oval(6+shift,10.5,1.3,1.4,0xF3E7F0);oval(15+shift,10.5,1.3,1.4,0xF3E7F0)
+            oval(10+shift,15,3.2,1.8,0x57374F)
+            oval(3.5+shift,15,3,1.6,0xD48FAE);oval(18+shift,15,3,1.6,0xD48FAE)
+        } else {
+            box(7,11,11,2,0xA775B6,1)
+            box(6,16,13,2,0x80528E,1)
+        }
+    }
+}
+struct MochiPortrait:View {
+    var body:some View {
+        Canvas {context,_ in
+            context.scaleBy(x:3,y:3)
+            MochiArt.draw(context:&context,facing:0,walk:0)
+        }.frame(width:78,height:84)
     }
 }

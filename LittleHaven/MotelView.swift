@@ -42,7 +42,7 @@ struct MotelView: View {
     @Binding var game: Game
     @Environment(\.returnToTitle) private var returnToTitle
     @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
-    @State private var dragDirection:Tile?
+    @State private var joystickDirection:Tile?
     @AppStorage("littlehaven.hints") private var showHints = true
     @AppStorage("littlehaven.haptics") private var haptics = true
     @State private var neighborhood: NeighborhoodShop?
@@ -106,10 +106,10 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains(where:{$0.hasPrefix("--ui-management-") && $0 != "--ui-management-night"}) {showManagement=true}
             #endif
         }
-        .task(id:dragDirection != nil) {
-            guard fullscreenTouch,dragDirection != nil else{return}
+        .task(id:joystickDirection != nil) {
+            guard fullscreenTouch,joystickDirection != nil else{return}
             let clock=ContinuousClock()
-            while !Task.isCancelled,let direction=dragDirection,!paused,!motel.caught,scenePhase == .active {
+            while !Task.isCancelled,let direction=joystickDirection,!paused,!motel.caught,scenePhase == .active {
                 change {$0.moveActor(dx:direction.x,dy:direction.y)}
                 let interval=Duration.seconds(direction.x != 0 && direction.y != 0 ? 0.19 : 0.14)
                 do {try await clock.sleep(for:interval)} catch {return}
@@ -228,7 +228,6 @@ struct MotelView: View {
     private var fullscreenWorld:some View {
         ZStack {
             scene.ignoresSafeArea()
-                .environment(\.worldSteer,paused ? nil : steer)
                 .environment(\.worldTouch,interactAtTouch)
             VStack(spacing:8) {
                 HStack {
@@ -245,17 +244,19 @@ struct MotelView: View {
                 Spacer()
                 if working {ProgressView(value:workProgress).tint(gold)}
                 nearbyTouchActions.fixedSize(horizontal:false,vertical:true)
-                if motel.nearbyAction != .none {
-                    actionButton.frame(width:160,height:82)
+                HStack(alignment:.bottom) {
+                    FullscreenJoystick(diagonals:true,direction:steer).disabled(paused || motel.caught)
+                    Spacer()
+                    if motel.nearbyAction != .none {actionButton.frame(width:160,height:82)}
                 }
             }.padding(.horizontal,16).padding(.vertical,8)
             worldOverlay
         }
     }
     private func steer(_ direction:Tile?) {
-        guard !paused,!motel.caught,scenePhase == .active else{dragDirection=nil;return}
+        guard !paused,!motel.caught,scenePhase == .active else{joystickDirection=nil;return}
         if direction != nil {movement=nil;working=false;workProgress=0}
-        dragDirection=direction
+        joystickDirection=direction
     }
     private func interactAtTouch(_ target:Tile,_ completion:(()->Void)?) {
         guard fullscreenTouch,!paused,!motel.caught else{return}
@@ -712,10 +713,14 @@ struct MotelView: View {
         }.padding(30).frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(hex: 0x2C292A))
     }
     private func familyPortrait(_ person: OfficeTap) -> AnyView {
+        if person == .mochi {return AnyView(MochiPortrait())}
         if person == .chichu || person == .chichi { return AnyView(CatPortrait(gray:person == .chichu)) }
         return AnyView(PaperPortrait(color:person == .samhil ? 0xD88BAA : 0x292A2C,variant:person == .samhil ? 9 : 8))
     }
     private func familyChoices(_ person: OfficeTap) -> [DialogueChoice] {
+        if person == .mochi {
+            return [DialogueChoice(title:motel.petState("mochi").following ? "Stay here" : "Follow me",action:{change{$0.togglePet("mochi")};family=nil}),DialogueChoice(title:"Play",action:{toast="Mochi wiggles its little feet and chirps happily.";family=nil})]
+        }
         if person == .chichu || person == .chichi {
             return [DialogueChoice(title:motel.petState(person.rawValue).following ? "Stay here" : "Follow me",action:{
                         change { $0.togglePet(person.rawValue) }; family=nil
@@ -755,13 +760,14 @@ struct MotelView: View {
         case .guest:
             if let guest = motel.receptionGuest { openReceptionGuest(guest.id) }
             else { toast = "The client is walking to the desk." }
-        case .chichu, .chichi, .samhil, .hildarelys: family = item
+        case .chichu, .chichi, .mochi, .samhil, .hildarelys: family = item
         }
     }
     private var familyTitle: String {
         switch family {
         case .chichu: return "Chichu"
         case .chichi: return "Chichi"
+        case .mochi: return "Mochi"
         case .samhil: return "Samhil"
         case .hildarelys: return "Hildarelys"
         default: return "Family"
@@ -770,6 +776,7 @@ struct MotelView: View {
     private var familyMessage: String {
         switch family {
         case .chichu: return "Your gray tabby looks up with green eyes and gives a soft meow."
+        case .mochi: return "Your little purple friend rocks on its berry-colored feet and gives a cheerful chirp. Want some company on your walk?"
         case .chichi: return "Chichi flicks her calico tail and waits for some attention."
         case .samhil: return "This cartoon is so funny! Can we watch another episode when you finish helping the guests?"
         case .hildarelys: return "I love our new home. Samhil and the cats are happy here. Come visit whenever you can."
@@ -780,7 +787,7 @@ struct MotelView: View {
         guard motel.atSavePoint else { return }
         stop(); game.save(); panel = nil; toast = "Checkpoint saved."
     }
-    private func stop() { movement = nil; working = false; workProgress = 0; dragDirection=nil }
+    private func stop() { movement = nil; working = false; workProgress = 0; joystickDirection=nil }
     private func change(_ action: (inout Motel) -> Void) {
         guard var current = game.motel else { return }
         let before = current.lastEvent

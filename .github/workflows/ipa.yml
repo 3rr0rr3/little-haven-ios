@@ -242,6 +242,14 @@ jobs:
           xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-family-home --ui-touch
           sleep 4
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-touch-home.png
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-creature --ui-touch
+          sleep 3
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-creature.png
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-action-theft
+          sleep 2
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-small-room-items.png
       - name: Capture guest interaction
         if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |

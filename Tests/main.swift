@@ -1063,7 +1063,7 @@ func neighborhoodAndFacilitiesRules() {
     require(game.worldState.neighborPositions?.count == 3,"Residential neighbors live on the map")
     require(game.worldState.neighborPositions!.values.allSatisfy{!MotelGrounds.blocked($0)},"Neighbors use safe routes")
     game.world!.townPositions=[0:Tile(x:57,y:33)]
-    game.world!.travellers=[MotelWalker(id:99,name:"Visitor",color:0x91B7A1,roomID:0,player:Tile(x:36,y:11),previous:Tile(x:36,y:11),destination:MotelGrounds.roomDoor(0))]
+    game.world!.travellers=[MotelWalker(id:99,name:"Visitor",color:0x91B7A1,roomID:0,player:Tile(x:11,y:4),previous:Tile(x:11,y:4),destination:MotelGrounds.roomDoor(0))]
     game.reconcileInteriorSpawn()
     require(!MotelGrounds.blocked(game.worldState.townPositions![0]!),"Saved townspeople relocate out of the moved bar")
     require(!MotelGrounds.blocked(game.worldState.travellers[0].player),"Saved guests relocate out of new facilities")
@@ -1090,22 +1090,44 @@ func touchAndSidewalkRules() {
     for y in 30...33 {for x in 7...10 {
         require(!MotelGrounds.blocked(Tile(x:x,y:y)),"Old laundry site leaves no invisible furniture collisions")
     }}
-    require(!MotelGrounds.blocked(Tile(x:38,y:16)),"Laundry has a clear entrance facing the room walkway")
+    require(!MotelGrounds.blocked(Tile(x:12,y:8)),"Laundry opens between reception and room 101 without occupying row 8")
     require(MotelGrounds.nextStep(from:MotelGrounds.roomDoor(5),to:FacilityLayout.laundry,avoiding:[]) != nil,"Laundry is reachable from the motel room row")
     require(MotelGrounds.nextStep(from:FacilityLayout.laundry,to:FacilityLayout.supplies,avoiding:[]) != nil,"Supplies share the laundry aisle")
-    require(DragSteering.direction(dx:0,dy:0) == nil,"A tap never requests movement")
-    require(DragSteering.direction(dx:8,dy:6) == nil,"Thumb jitter inside the dead zone stays still")
-    require(DragSteering.direction(dx:60,dy:0) == Tile(x:1,y:0),"Drag right steers east")
-    require(DragSteering.direction(dx:-60,dy:0) == Tile(x:-1,y:0),"Drag left reverses direction")
-    require(DragSteering.direction(dx:0,dy:-60) == Tile(x:0,y:-1),"Screen-up drags walk north")
-    require(DragSteering.direction(dx:0,dy:60) == Tile(x:0,y:1),"Screen-down drags walk south")
-    require(DragSteering.direction(dx:45,dy:-45) == Tile(x:1,y:-1),"Diagonal thumb steering is supported")
-    require(DragSteering.direction(dx:500,dy:0) == DragSteering.direction(dx:60,dy:0),"Long drags keep normal walking speed")
-    require(DragSteering.direction(dx:45,dy:30,diagonals:false) == Tile(x:1,y:0),"Prologue uses its cardinal movement rules")
-    require(DragSteering.direction(dx:.infinity,dy:0) == nil,"Invalid touch coordinates cannot move the character")
+    require(ThumbstickInput.direction(dx:0,dy:0) == nil,"A tap never requests movement")
+    require(ThumbstickInput.direction(dx:8,dy:6) == nil,"Thumb jitter inside the dead zone stays still")
+    require(ThumbstickInput.direction(dx:60,dy:0) == Tile(x:1,y:0),"Drag right steers east")
+    require(ThumbstickInput.direction(dx:-60,dy:0) == Tile(x:-1,y:0),"Drag left reverses direction")
+    require(ThumbstickInput.direction(dx:0,dy:-60) == Tile(x:0,y:-1),"Screen-up drags walk north")
+    require(ThumbstickInput.direction(dx:0,dy:60) == Tile(x:0,y:1),"Screen-down drags walk south")
+    require(ThumbstickInput.direction(dx:45,dy:-45) == Tile(x:1,y:-1),"Diagonal thumb steering is supported")
+    require(ThumbstickInput.direction(dx:500,dy:0) == ThumbstickInput.direction(dx:60,dy:0),"Long drags keep normal walking speed")
+    require(ThumbstickInput.direction(dx:45,dy:30,diagonals:false) == Tile(x:1,y:0),"Prologue uses its cardinal movement rules")
+    require(ThumbstickInput.direction(dx:.infinity,dy:0) == nil,"Invalid touch coordinates cannot move the character")
     var game=Motel();game.initializeWorld();game.world!.place = .house;game.world!.player=Tile(x:9,y:9)
     game.moveActor(dx:1,dy:-1)
     require(game.actorTile == Tile(x:9,y:9),"Diagonal steering cannot cut through the sofa corner")
     print("PASS: clear sidewalks, grouped laundry, thumb dead zone, direction changes, diagonal safety and bounded speed")
 }
 touchAndSidewalkRules()
+
+func referenceCompanionRules() {
+    var game=Motel();game.initializeWorld();game.world!.place = .house;game.world!.player=Tile(x:4,y:9)
+    require(game.visiblePets.contains{$0.key == "mochi"},"Creature is visible at home in existing saves")
+    require(!game.homeBlocked(game.petState("mochi").tile),"Creature starts on an open tile")
+    game.togglePet("mochi")
+    require(game.petState("mochi").following,"Creature can follow")
+    let previous=game.actorTile, map=game.petMap
+    game.world!.place = .grounds;game.world!.player=Tile(x:12,y:8)
+    game.updateCompanions(from:previous,map:map)
+    require(game.petState("mochi").map == "grounds","Creature follows between maps")
+    require(!MotelGrounds.blocked(game.petState("mochi").tile),"Creature arrives on a safe tile")
+    game.togglePet("mochi")
+    let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(game))
+    require(!saved.petState("mochi").following && saved.petState("mochi").map == "grounds","Creature stay position persists")
+    for y in 10...15 {for x in 36...39 {
+        require(!FacilityLayout.obstacles.contains{$0.contains(Tile(x:x,y:y))},"Previous eastern laundry fixtures are removed")
+    }}
+    require(FacilityLayout.laundryFootprint.x == 11 && FacilityLayout.laundryFootprint.x+FacilityLayout.laundryFootprint.width == 14,"Laundry fits in the office-room gap")
+    print("PASS: reference creature follow, transfer, waiting save and compact reception laundry")
+}
+referenceCompanionRules()

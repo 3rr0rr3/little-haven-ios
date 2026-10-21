@@ -453,7 +453,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertFalse(app.buttons["standFromChair"].exists)
         capture(app,"Beach lounger sit stand and movement")
     }
-    func testFullscreenDragSteeringReleaseAndPause() {
+    func testFullscreenJoystickReleaseAndPause() {
         let app=XCUIApplication()
         app.launchArguments=["--ui-world","--ui-touch","--ui-testing"]
         app.launch()
@@ -466,18 +466,24 @@ final class LittleHavenUITests: XCTestCase {
         start.tap()
         Thread.sleep(forTimeInterval:0.5)
         XCTAssertEqual(position.value as? String,before,"Ground taps do not start destination walking")
-        start.press(forDuration:0.05,thenDragTo:east,withVelocity:.slow,thenHoldForDuration:0.7)
-        XCTAssertNotEqual(position.value as? String,before,"Dragging and holding steers continuously")
+        start.press(forDuration:0.05,thenDragTo:east,withVelocity:.slow,thenHoldForDuration:0.4)
+        XCTAssertEqual(position.value as? String,before,"Map dragging no longer moves the character")
+        let stick=app.descendants(matching:.any)["fullscreenJoystick"].firstMatch
+        XCTAssertTrue(stick.exists)
+        let center=stick.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5))
+        let right=stick.coordinate(withNormalizedOffset:CGVector(dx:0.9,dy:0.5))
+        center.press(forDuration:0.05,thenDragTo:right,withVelocity:.slow,thenHoldForDuration:0.5)
+        XCTAssertNotEqual(position.value as? String,before,"The visible joystick steers continuously")
         let released=position.value as? String
         Thread.sleep(forTimeInterval:0.5)
         XCTAssertEqual(position.value as? String,released,"Releasing the finger stops without walking to its destination")
-        start.press(forDuration:0.05,thenDragTo:app.coordinate(withNormalizedOffset:CGVector(dx:0.35,dy:0.53)),withVelocity:.slow,thenHoldForDuration:0.4)
+        center.press(forDuration:0.05,thenDragTo:stick.coordinate(withNormalizedOffset:CGVector(dx:0.1,dy:0.5)),withVelocity:.slow,thenHoldForDuration:0.4)
         XCTAssertNotEqual(position.value as? String,released,"A fresh drag can reverse direction")
         app.buttons["Pause game"].tap()
         let stopped=position.value as? String
         Thread.sleep(forTimeInterval:0.4)
         XCTAssertEqual(position.value as? String,stopped,"Pause cancels movement")
-        capture(app,"Full screen thumb steering and release")
+        capture(app,"Full screen visible joystick and release")
     }
     func testFullscreenPrologueJournalAndOptions() {
         let app=XCUIApplication()
@@ -490,6 +496,20 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["Options"].tap()
         XCTAssertTrue(app.switches["optionFullscreenTouch"].waitForExistence(timeout:5))
         capture(app,"Full screen setting and prologue menu")
+    }
+    func testCreatureCanFollowAndStay() {
+        let app=launch("--ui-creature")
+        let creature=app.buttons["office_mochi"]
+        XCTAssertTrue(creature.waitForExistence(timeout:10))
+        creature.tap()
+        XCTAssertTrue(app.buttons["Follow me"].waitForExistence(timeout:3))
+        app.buttons["Follow me"].tap()
+        creature.tap()
+        XCTAssertTrue(app.buttons["Stay here"].waitForExistence(timeout:3))
+        capture(app,"Reference creature companion")
+        app.buttons["Stay here"].tap()
+        creature.tap()
+        XCTAssertTrue(app.buttons["Follow me"].waitForExistence(timeout:3))
     }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()

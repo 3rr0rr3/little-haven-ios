@@ -82,3 +82,34 @@ struct WorkActionButton: View {
         }
     }
 }
+
+
+// The touch surface is confined to this visible stick. Map gestures never steer.
+struct FullscreenJoystick: View {
+    let diagonals:Bool
+    let direction:(Tile?)->Void
+    @GestureState private var offset=CGSize.zero
+    private var vector:Tile? {
+        ThumbstickInput.direction(dx:Double(offset.width),dy:Double(offset.height),diagonals:diagonals)
+    }
+    var body:some View {
+        ZStack {
+            Circle().fill(Color(hex:0x203D32).opacity(0.88))
+            Circle().stroke(Color(hex:0xF5E7C8).opacity(0.45),lineWidth:2).padding(6)
+            Circle().fill(Color(hex:0x9ABD9E)).frame(width:48,height:48)
+                .shadow(color:.black.opacity(0.25),radius:3,y:3)
+                .offset(offset).allowsHitTesting(false)
+        }.frame(width:128,height:128).contentShape(Circle())
+            .gesture(DragGesture(minimumDistance:0).updating($offset) {value,state,_ in
+                let distance=hypot(value.translation.width,value.translation.height)
+                let ratio=distance>38 ? 38/distance : 1
+                state=CGSize(width:value.translation.width*ratio,height:value.translation.height*ratio)
+            })
+            .onChange(of:vector) {_,value in direction(value)}
+            .onDisappear {direction(nil)}
+            .accessibilityElement(children:.ignore)
+            .accessibilityLabel("Movement joystick")
+            .accessibilityHint("Move the stick to walk. Release to stop.")
+            .accessibilityIdentifier("fullscreenJoystick")
+    }
+}

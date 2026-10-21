@@ -9,13 +9,13 @@ struct PetCompanion: Codable {
 extension Motel {
     var petMap: String { visit.map { "room-\($0.roomID)" } ?? (currentShop.map {"shop-"+$0.rawValue} ?? worldState.place.rawValue) }
     func petState(_ id: String) -> PetCompanion {
-        worldState.pets?[id] ?? PetCompanion(tile: id == "chichu" ? OfficeReception.chichu : OfficeReception.chichi)
+        worldState.pets?[id] ?? PetCompanion(tile: id == "mochi" ? Tile(x:4,y:8) : id == "chichu" ? OfficeReception.chichu : OfficeReception.chichi)
     }
     var visiblePets: [(key: String, value: PetCompanion)] {
-        ["chichu", "chichi"].map { (key:$0,value:petState($0)) }.filter { $0.value.map == petMap }
+        ["chichu", "chichi", "mochi"].map { (key:$0,value:petState($0)) }.filter { $0.value.map == petMap }
     }
     mutating func togglePet(_ id: String) {
-        guard ["chichu", "chichi"].contains(id), petState(id).map == petMap else { return }
+        guard ["chichu", "chichi", "mochi"].contains(id), petState(id).map == petMap else { return }
         initializeWorld()
         var pet=petState(id)
         pet.following.toggle()
@@ -30,7 +30,7 @@ extension Motel {
         initializeWorld()
         var trail=previous
         var arrivals: Set<Tile> = []
-        for id in ["chichu", "chichi"] {
+        for id in ["chichu", "chichi", "mochi"] {
             var pet=petState(id)
             guard pet.following else { continue }
             let old=pet.tile

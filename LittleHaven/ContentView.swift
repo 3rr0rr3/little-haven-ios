@@ -35,10 +35,16 @@ struct ContentView: View {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch")}
+        if args.contains("--ui-creature") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.waiting=[];sample.motel!.world!.place = .house;sample.motel!.world!.player=Tile(x:4,y:9)
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            sample.save();return sample
+        }
         if args.contains("--ui-neighbors") || args.contains("--ui-chair") || args.contains("--ui-facilities") || args.contains("--ui-laundry") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.cash=900;sample.motel!.waiting=[];sample.motel!.world!.place = .grounds
-            sample.motel!.world!.player=args.contains("--ui-neighbors") ? Tile(x:58,y:9) : args.contains("--ui-chair") ? BeachLayout.approach(0) : args.contains("--ui-laundry") ? Tile(x:38,y:16) : HotelService.repair.tile
+            sample.motel!.world!.player=args.contains("--ui-neighbors") ? Tile(x:58,y:9) : args.contains("--ui-chair") ? BeachLayout.approach(0) : args.contains("--ui-laundry") ? Tile(x:12,y:8) : HotelService.repair.tile
             sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
             for _ in 0..<12 {sample.motel!.tickWorld()}
             if args.contains("--ui-chair") {_=sample.motel!.sitOnBeachChair()}
@@ -276,7 +282,6 @@ struct ContentView: View {
     private var touchTown:some View {
         ZStack {
             TownRPGView(game:game).ignoresSafeArea()
-                .environment(\.worldSteer,conversation != nil || message != nil || showHouse || showJournal ? nil : {townDirection=$0})
             VStack {
                 HStack {
                     Text("LITTLE HAVEN").font(.headline)
@@ -284,7 +289,12 @@ struct ContentView: View {
                     Button {townDirection=nil;showJournal=true} label:{Image(systemName:"book.closed.fill").padding(12)}.accessibilityLabel("Open journal")
                 }.padding(10).background(Color(hex:0x172A25).opacity(0.9),in:RoundedRectangle(cornerRadius:16))
                 Spacer()
-                Button(game.atHouse ? "Cottage" : "Talk",action:interact).buttonStyle(MotelButtonStyle()).accessibilityIdentifier("interact")
+                HStack(alignment:.bottom) {
+                    FullscreenJoystick(diagonals:false) {townDirection=$0}
+                        .disabled(conversation != nil || message != nil || showHouse || showJournal)
+                    Spacer()
+                    Button(game.atHouse ? "Cottage" : "Talk",action:interact).buttonStyle(MotelButtonStyle()).frame(width:160).accessibilityIdentifier("interact")
+                }
             }.padding(16)
         }
         .foregroundStyle(cream).background(Color(hex:0x172A25))
@@ -592,12 +602,12 @@ struct GameOptionsView: View {
                     Text("Gameplay").font(.title2.monospaced().bold())
                     Toggle("Show gameplay hints", isOn: $hints).accessibilityIdentifier("optionHints")
                     Toggle("Action haptics", isOn: $haptics)
-                    Toggle("Full screen / drag to move", isOn: $fullscreenTouch).accessibilityIdentifier("optionFullscreenTouch")
-                    Text("Fill the screen with the world. Hold and drag anywhere on the map to steer. Release to stop. Tap nearby objects or use the action button. No visible D-pad or joystick.").font(.caption)
+                    Toggle("Full screen / joystick controls", isOn: $fullscreenTouch).accessibilityIdentifier("optionFullscreenTouch")
+                    Text("Fill the screen with the world. Move the visible joystick to walk and release it to stop. Tap nearby objects or use the action button.").font(.caption)
                     if !fullscreenTouch { Toggle("Larger D-pad buttons", isOn: $largeControls).accessibilityIdentifier("optionLargeControls") }
                     Divider().overlay(Color(hex:0xEFC977))
                     Text("Controls").font(.title2.monospaced().bold())
-                    Text(fullscreenTouch ? "Touch the map and drag in the direction you want to walk. Keep holding to move, change direction with your thumb, and release to stop. A stationary tap never moves you. Open Pause to change controls." : "Hold an arrow to walk. Release or slide off the button to stop. Nearby tasks never move your character; press their action button when you want to work.")
+                    Text(fullscreenTouch ? "Move the joystick at the bottom left in the direction you want to walk. Release to stop. Map touches do not move your character. Use the action button at the bottom right to interact. Open Pause to change controls." : "Hold an arrow to walk. Release or slide off the button to stop. Nearby tasks never move your character; press their action button when you want to work.")
                     Text("Inside the office, walk freely and tap guests, the desk, tools, family, or the door to interact.")
                     Divider().overlay(Color(hex:0xEFC977))
                     Text("Saved game").font(.title2.monospaced().bold())

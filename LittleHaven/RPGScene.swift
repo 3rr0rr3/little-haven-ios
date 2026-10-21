@@ -13,6 +13,7 @@ struct RPGActor {
     var marker = ""
     var duration = 0.14
     var danger = false
+    var creature = false
     var animal = 0
     var displayScale = 1.0
     var effect = 0
@@ -25,21 +26,13 @@ struct RPGActor {
 private struct WorldTouchKey: EnvironmentKey {
     static let defaultValue: ((Tile, (() -> Void)?) -> Void)? = nil
 }
-private struct WorldSteerKey: EnvironmentKey {
-    static let defaultValue: ((Tile?)->Void)? = nil
-}
 extension EnvironmentValues {
-    var worldSteer: ((Tile?)->Void)? {
-        get {self[WorldSteerKey.self]}
-        set {self[WorldSteerKey.self]=newValue}
-    }
     var worldTouch: ((Tile, (() -> Void)?) -> Void)? {
         get {self[WorldTouchKey.self]}
         set {self[WorldTouchKey.self]=newValue}
     }
 }
 struct RPGSceneView: UIViewRepresentable {
-    @Environment(\.worldSteer) private var worldSteer
     let mapID: String
     let revision: String
     let mapSize: CGSize
@@ -71,14 +64,12 @@ struct RPGSceneView: UIViewRepresentable {
     }
     func updateUIView(_ view: SKView, context: Context) {
         guard let scene = view.scene as? RPGScene else { return }
-        scene.setSteering(worldSteer)
         scene.configure(mapID: mapID, revision: revision, mapSize: mapSize,
                         columns: columns, interior: interior, actors: actors,
                         working: working, workKind: workKind, visual: visual,
                         weather:weather,cars:cars,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,scenery: scenery)
     }
     static func dismantleUIView(_ view: SKView, coordinator: ()) {
-        (view.scene as? RPGScene)?.cancelSteering(notify:false)
         view.scene?.removeAllActions()
         view.presentScene(nil)
     }
@@ -91,7 +82,8 @@ private struct ActorArtwork: View {
         Canvas { context, _ in
             if actor.effect > 0 {
                 ChaosArt.draw(context:&context,kind:actor.effect,stride:stride,color:actor.color,variant:actor.variant,facing:actor.facing)
-            } else if actor.animal > 0 { CatArt.draw(context:&context,gray:actor.animal == 1,walk:stride) }
+            } else if actor.creature {MochiArt.draw(context:&context,facing:actor.facing,walk:stride)}
+            else if actor.animal > 0 { CatArt.draw(context:&context,gray:actor.animal == 1,walk:stride) }
             else { PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:stride,expression:actor.expression) }
             if actor.shopUniform > 0 {ShopKeeperArt.uniform(context:&context,kind:actor.shopUniform,facing:actor.facing)}
         }.frame(width: 24, height: 28)
@@ -99,36 +91,6 @@ private struct ActorArtwork: View {
 }
 
 final class RPGScene: SKScene {
-    private var steering:((Tile?)->Void)?
-    private var movementTouch:UITouch?
-    private var touchOrigin=CGPoint.zero
-    private var dragDirection:Tile?
-    func setSteering(_ handler:((Tile?)->Void)?) {
-        guard let handler else {cancelSteering(notify:false);steering=nil;return}
-        steering=handler
-    }
-    func cancelSteering(notify:Bool=true) {
-        let wasActive=movementTouch != nil || dragDirection != nil
-        movementTouch=nil;dragDirection=nil
-        if notify && wasActive {steering?(nil)}
-    }
-    override func touchesBegan(_ touches:Set<UITouch>,with event:UIEvent?) {
-        guard steering != nil,movementTouch == nil,let view,let touch=touches.first else{return}
-        movementTouch=touch;touchOrigin=touch.location(in:view)
-    }
-    override func touchesMoved(_ touches:Set<UITouch>,with event:UIEvent?) {
-        guard let touch=movementTouch,touches.contains(touch),let view else{return}
-        let point=touch.location(in:view)
-        let direction=DragSteering.direction(dx:Double(point.x-touchOrigin.x),dy:Double(point.y-touchOrigin.y),diagonals:worldID != "town" && worldID != "cottage")
-        if direction != dragDirection {dragDirection=direction;steering?(direction)}
-    }
-    override func touchesEnded(_ touches:Set<UITouch>,with event:UIEvent?) {
-        if let touch=movementTouch,touches.contains(touch) {cancelSteering()}
-    }
-    override func touchesCancelled(_ touches:Set<UITouch>,with event:UIEvent?) {
-        if let touch=movementTouch,touches.contains(touch) {cancelSteering()}
-    }
-
     private var worldID = ""
     private var revision = ""
     private var dimensions = CGSize.zero
@@ -168,7 +130,6 @@ final class RPGScene: SKScene {
                              visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,pumpFault:Bool,
                              scenery: () -> AnyView) {
         let changedMap = worldID != mapID
-        if changedMap {cancelSteering(notify:false)}
         dimensions = mapSize
         visibleColumns = columns
         indoors = interior
@@ -208,7 +169,7 @@ final class RPGScene: SKScene {
             let name = "actor:" + actor.id
             let existing = world.childNode(withName: name) as? SKSpriteNode
             let node = existing ?? SKSpriteNode()
-            let footOffset = actor.resting ? 10 : actor.animal > 0 ? 11 * (1 - actor.displayScale) : 0
+            let footOffset = actor.resting ? 10 : (actor.animal > 0 || actor.creature) ? 11 * (1 - actor.displayScale) : 0
             let target = CGPoint(x: CGFloat(actor.tile.x * 16 + 8), y: -CGFloat(actor.tile.y * 16 + 5) - CGFloat(footOffset))
             let moving = existing != nil && node.userData?["targetX"] as? Int != actor.tile.x || existing != nil && node.userData?["targetY"] as? Int != actor.tile.y
             let diagonal = existing != nil && node.userData?["targetX"] as? Int != actor.tile.x && node.userData?["targetY"] as? Int != actor.tile.y
@@ -323,7 +284,7 @@ final class RPGScene: SKScene {
         layoutCamera(jump: changedMap)
     }
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
-        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)"
+        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
         renderer.scale = 3
@@ -539,7 +500,7 @@ struct MotelRPGView: View {
         let interior = visit != nil || motel.worldState.place == .office
         let mapID = visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue
         let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
-        let worldRevision="facilities-world-23-\(motel.serviceAvailable(.repair))-" + motel.staffStations.map(\.rawValue).joined(separator:",") + "-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
+        let worldRevision="facilities-world-24-\(motel.serviceAvailable(.repair))-" + motel.staffStations.map(\.rawValue).joined(separator:",") + "-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
         var actors = [RPGActor(id: "player", tile: motel.relaxingTile ?? motel.actorTile, color: FamilyHome.outfitColors[motel.household.outfit], variant: 7, facing: motel.isRelaxing ? 0 : motel.actorFacing, resting:motel.isRelaxing)]
         if !interior {
             actors += motel.neighborhoodActors + motel.neighborActors

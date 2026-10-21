@@ -109,7 +109,7 @@ enum RPGMaps {
 }
 
 // Finger displacement uses screen points, independent of camera zoom or movement.
-enum DragSteering {
+enum ThumbstickInput {
     static func direction(dx:Double,dy:Double,diagonals:Bool=true)->Tile? {
         guard dx.isFinite,dy.isFinite,hypot(dx,dy)>=12 else{return nil}
         if !diagonals {
