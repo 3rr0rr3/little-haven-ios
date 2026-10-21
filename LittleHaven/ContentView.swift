@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var townRouteID=UUID()
     @State private var townRoute:[Tile]=[]
     @State private var townInteraction=false
+    @State private var showTownOptions=false
     @AppStorage("littlehaven.hints") private var showHints = true
     private static var bypassTitle: Bool {
         #if DEBUG
@@ -252,6 +253,8 @@ struct ContentView: View {
         }.environment(\.returnToTitle, {
             heldDirection = nil; game.save(); playing = false
         }).onChange(of:scenePhase) { _, phase in if phase != .active { heldDirection = nil } }
+        .statusBarHidden(fullscreenTouch && playing)
+        .persistentSystemOverlays(fullscreenTouch && playing ? .hidden : .automatic)
         .onAppear { if ProcessInfo.processInfo.arguments.contains("--ui-title") { playing = false } }
     }
     private var gameplay: some View {
@@ -296,6 +299,7 @@ struct ContentView: View {
         }
         .foregroundStyle(cream).background(Color(hex:0x172A25))
         .task(id:townRouteID) {
+            defer {game.save()}
             let inside=game.inside
             let shouldInteract=townInteraction
             for tile in townRoute {
@@ -308,12 +312,32 @@ struct ContentView: View {
             if !Task.isCancelled,game.inside == inside,shouldInteract,conversation == nil,message == nil,!showHouse,!showJournal {interact()}
         }
         .onChange(of:scenePhase) {_,phase in if phase != .active {townRoute=[];townRouteID=UUID()}}
-        .onDisappear {townRoute=[];townRouteID=UUID()}
+        .onDisappear {townRoute=[];townRouteID=UUID();game.save()}
     }
     private var townBody: some View {
         Group {
             if fullscreenTouch { touchTown } else { classicTown }
         }
+        .sheet(item: $conversation) { person in
+            dialogue(person)
+                .presentationDetents([.height(340)]).presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showJournal) { journal.sheet(isPresented:$showTownOptions) {GameOptionsView()} }
+        .alert("The Willow Cottage", isPresented: $showHouse) {
+            if game.ownsHouse {
+                Button("Go inside") { game.enterHouse(); game.save() }
+            } else if game.coins >= Game.housePrice {
+                Button("Buy for 500 coins") {
+                    if game.buyHouse() { game.save(); message = "The key is yours! Your neighbors helped you find a home. Walk up to the cottage and tap ENTER to step inside." }
+                }
+            }
+            Button("Keep exploring", role: .cancel) { }
+        } message: {
+            Text(game.ownsHouse ? "Your own little corner of Little Haven. Welcome home." : game.coins >= 500 ? "A sunny room, a warm bed, and a fresh start. Ready to make it yours?" : "FOR SALE / 500 coins\nYou need \(500 - game.coins) more. Ask the townspeople if they can help with your cottage fund.")
+        }
+        .alert("Little Haven", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
+            Button("Continue") { message = nil }
+        } message: { Text(message ?? "") }
     }
     private var classicTown: some View {
         GeometryReader { geometry in
@@ -400,26 +424,7 @@ struct ContentView: View {
             if phase != .active { stopMoving() }
         }
         .onDisappear { stopMoving() }
-        .sheet(item: $conversation) { person in
-            dialogue(person)
-                .presentationDetents([.height(340)]).presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showJournal) { journal }
-        .alert("The Willow Cottage", isPresented: $showHouse) {
-            if game.ownsHouse {
-                Button("Go inside") { game.enterHouse(); game.save() }
-            } else if game.coins >= Game.housePrice {
-                Button("Buy for 500 coins") {
-                    if game.buyHouse() { game.save(); message = "The key is yours! Your neighbors helped you find a home. Walk up to the cottage and tap ENTER to step inside." }
-                }
-            }
-            Button("Keep exploring", role: .cancel) { }
-        } message: {
-            Text(game.ownsHouse ? "Your own little corner of Little Haven. Welcome home." : game.coins >= 500 ? "A sunny room, a warm bed, and a fresh start. Ready to make it yours?" : "FOR SALE / 500 coins\nYou need \(500 - game.coins) more. Ask the townspeople if they can help with your cottage fund.")
-        }
-        .alert("Little Haven", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
-            Button("Continue") { message = nil }
-        } message: { Text(message ?? "") }
+
     }
 
     private var hint: String {
@@ -501,6 +506,7 @@ struct ContentView: View {
                 }
                 Section {
                     Text("Progress saves automatically on this device. All coins are fictional game currency.").font(.footnote)
+                    Button("Options") {showTownOptions=true}
                     Button("Save & return to title") { stopMoving(); showJournal = false; playing = false }
                     Button("Start a new adventure", role: .destructive) { reset = true }
                 }
