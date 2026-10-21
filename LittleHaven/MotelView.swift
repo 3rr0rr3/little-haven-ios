@@ -195,12 +195,12 @@ struct MotelView: View {
                         .font(.system(size:11,weight:.heavy)).frame(maxWidth:.infinity).padding(9).background(Color(hex:0x6A3D3D))
                 }.accessibilityIdentifier("policeAlarm")
             }
-            ZStack(alignment: .bottom) {
-                scene
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(cream.opacity(0.18), lineWidth: 1))
-                worldOverlay
-            }.frame(maxHeight: .infinity)
+            scene
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .overlay(RoundedRectangle(cornerRadius: 20).stroke(cream.opacity(0.18), lineWidth: 1))
+                // Notifications must not participate in the map's layout or move its touch targets.
+                .overlay(alignment: .bottom) { worldOverlay }
+                .frame(maxHeight: .infinity)
             if let visit = motel.visit, visit.sneaking {
                 HStack {
                     Text("SUSPICION").font(.system(size: 9, weight: .black, design: .monospaced))
