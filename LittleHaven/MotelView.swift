@@ -185,10 +185,9 @@ struct MotelView: View {
                 if !motel.operationsState.workers.isEmpty {
                     Button("TEAM \(motel.operationsState.workers.count)") { stop(); panel = .staff }.accessibilityIdentifier("openStaff")
                 }
-                if let incident = motel.operationsState.incident {
-                    Button("! \(incident.kind.rawValue.uppercased()) / \(incident.remaining)s") { stop(); showIncident = true }.foregroundStyle(Color(hex:0xEE9E78)).accessibilityIdentifier("incidentAlarm")
-                }
+
             }.font(.system(size:10,weight:.bold,design:.monospaced)).foregroundStyle(gold)
+            priorityAlerts
             if motel.managementEnabled {Text(motel.guestFavourSummary ?? motel.simulation.news).font(.system(size:10)).foregroundStyle(gold).lineLimit(1)}
             if let police = motel.business.police {
                 Button { stop(); showPolice = true } label: {
@@ -267,6 +266,72 @@ struct MotelView: View {
         }.padding(.horizontal, 16).padding(.vertical, 10)
     }
 
+
+    // Persistent safety alerts remain visible until the actual incident is resolved.
+    // They do not present a modal or stop movement until the player taps Respond.
+    @ViewBuilder private var priorityAlerts: some View {
+        if let incident = motel.operationsState.incident {
+            let symbol = incident.kind == .fire ? "flame.fill" : incident.kind == .pool ? "figure.pool.swim" : "exclamationmark.shield.fill"
+            let location = incident.kind == .fire ? "Hotel courtyard" : incident.kind == .pool ? "South pool" : "Hotel grounds"
+            Button { stop(); showIncident = true } label: {
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: symbol).font(.system(size: 24, weight: .bold)).frame(width: 38, height: 38)
+                            .background(.white.opacity(0.14), in: RoundedRectangle(cornerRadius: 10))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("EMERGENCY").font(.system(size: 10, weight: .black, design: .rounded)).tracking(1.5)
+                            Text(incident.kind.title).font(.system(size: 15, weight: .heavy, design: .rounded))
+                            Text(location + " • Guests need help now").font(.system(size: 11))
+                        }
+                        Spacer(minLength: 0)
+                        Text("\(incident.remaining)s").font(.system(size: 18, weight: .black, design: .monospaced))
+                    }
+                    ProgressView(value: Double(incident.remaining), total: Double(incident.limit)).tint(.white)
+                        .accessibilityLabel("Time remaining").accessibilityValue("\(incident.remaining) seconds")
+                    HStack {
+                        Text(incident.remaining <= 20 ? "CRITICAL • A guest could die" : "Respond before someone is hurt")
+                            .font(.system(size: 10, weight: .bold))
+                        Spacer(minLength: 2)
+                        Label("RESPOND", systemImage: "arrow.right.circle.fill").font(.system(size: 11, weight: .black))
+                    }
+                }
+                .padding(12).foregroundStyle(.white).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(hex: incident.remaining <= 20 ? 0xA51F30 : 0x9A3D2F), in: RoundedRectangle(cornerRadius: 15))
+                .overlay(RoundedRectangle(cornerRadius: 15).stroke(Color(hex:0xFFBA9D),lineWidth:2))
+            }.buttonStyle(.plain).accessibilityIdentifier("incidentAlarm")
+        } else if motel.managementEnabled, let issue = motel.simulation.issues.first {
+            Button { stop(); showManagement = true } label: {
+                HotelNoticeCard(title: "NEEDS ATTENTION • Room \(motel.rooms.first(where:{$0.id == issue.roomID})?.number ?? issue.roomID)",
+                    message: issue.kind.title + " • Open management to respond",
+                    symbol: issue.kind == .outage ? "bolt.slash.fill" : issue.kind == .leak ? "drop.triangle.fill" : "exclamationmark.bubble.fill",
+                    tint: Color(hex:0xEFC977))
+            }.buttonStyle(.plain).accessibilityIdentifier("issueNotification")
+        } else if motel.managementEnabled && (motel.simulation.powerOut || motel.simulation.waterOut) {
+            Button { stop(); showManagement = true } label: {
+                HotelNoticeCard(title: "SERVICE OUTAGE", message: "Restore power / water in management.",
+                    symbol: "bolt.slash.fill", tint: Color(hex:0xEFC977))
+            }.buttonStyle(.plain).accessibilityIdentifier("utilityNotification")
+        }
+    }
+    private func noticeTitle(_ message:String)->String {
+        let text=message.lowercased()
+        if text.contains("saved") || text.contains("restored") {return "CHECKPOINT"}
+        if text.contains("handled") || text.contains("completed") || text.contains("delivered") || text.contains("thanks you") {return "SUCCESS"}
+        if text.contains("need") || text.contains("out of") || text.contains("cannot") || text.contains("fell") || text.contains("broken promise") {return "ATTENTION"}
+        return "HOTEL UPDATE"
+    }
+    private func noticeSymbol(_ message:String)->String {
+        switch noticeTitle(message) {
+        case "CHECKPOINT":return "externaldrive.fill.badge.checkmark"
+        case "SUCCESS":return "checkmark.circle.fill"
+        case "ATTENTION":return "exclamationmark.triangle.fill"
+        default:return "bell.badge.fill"
+        }
+    }
+    private func noticeColor(_ message:String)->Color {
+        noticeTitle(message) == "ATTENTION" ? Color(hex:0xEFC977) : Color(hex:0xA8D7BA)
+    }
+
     private func policeDialogue(_ police: PoliceCase) -> some View {
         var choices: [DialogueChoice] = []
         if police.arrived {
@@ -304,8 +369,8 @@ struct MotelView: View {
                 } else if let panel {
                     interactionPanel(panel).modifier(RPGFrame()).padding(12)
                 } else if let toast {
-                    Text(toast).font(.system(size: 12, weight: .semibold)).multilineTextAlignment(.center)
-                        .padding(12).frame(maxWidth: .infinity).background(Color(hex: 0x20392E).opacity(0.94), in: RoundedRectangle(cornerRadius: 13)).padding(10).allowsHitTesting(false)
+                    HotelNoticeCard(title: noticeTitle(toast), message: toast, symbol: noticeSymbol(toast), tint: noticeColor(toast))
+                        .padding(10).allowsHitTesting(false)
                 }
     }
 
@@ -673,5 +738,26 @@ struct MotelView: View {
         }
         game.motel = current
         if current.lastEvent != before { toast = current.lastEvent }
+    }
+}
+
+private struct HotelNoticeCard:View {
+    let title:String
+    let message:String
+    let symbol:String
+    let tint:Color
+    var body:some View {
+        HStack(alignment:.top,spacing:10) {
+            Image(systemName:symbol).font(.system(size:21,weight:.bold)).foregroundStyle(tint).frame(width:30)
+            VStack(alignment:.leading,spacing:4) {
+                Text(title).font(.system(size:10,weight:.black,design:.rounded)).tracking(0.8).foregroundStyle(tint)
+                Text(message).font(.system(size:12,weight:.semibold)).foregroundStyle(Color(hex:0xF5E7C8))
+                    .fixedSize(horizontal:false,vertical:true)
+            }
+            Spacer(minLength:0)
+        }.padding(12).frame(maxWidth:.infinity,alignment:.leading)
+            .background(Color(hex:0x20392E).opacity(0.98),in:RoundedRectangle(cornerRadius:13))
+            .overlay(RoundedRectangle(cornerRadius:13).stroke(tint.opacity(0.65),lineWidth:1))
+            .accessibilityElement(children:.combine)
     }
 }
