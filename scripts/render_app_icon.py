@@ -14,7 +14,7 @@ import AppKit
 extension Color {
     init(hex:UInt32) {self.init(red:Double((hex>>16)&255)/255,green:Double((hex>>8)&255)/255,blue:Double(hex&255)/255)}
 }
-''' + personal + people + uniform + r'''
+''' + personal + '\n' + people + '\n' + uniform + r'''
 struct CharacterIcon:View {
     var body:some View {
         Canvas {context,size in
