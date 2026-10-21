@@ -1,0 +1,29 @@
+name: Deliver verified IPA download
+on:
+  push:
+    branches: ['codex/pokopia-scenery']
+    paths: ['.github/workflows/deliver-verified-ipa.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download and verify tested package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh run download 39531969155 --name LittleHaven-iPhone-IPA --dir package
+          cd package
+          echo 'fc6089c43394475d8b5f7b280836b9b1a9fa9287234000de1e6ac3d58e678874  LittleHaven-unsigned.ipa' | sha256sum --check
+      - name: Provide direct IPA asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh release create test-17-emergency-alerts package/LittleHaven-unsigned.ipa package/LittleHaven-unsigned.ipa.sha256 --target de6a125217106b9a4ba4fac5cf898da8d234a5b8 --title 'Little Haven 17 - Emergency alerts test build' --prerelease --notes 'Verified test build with emergency notification cards and the corrected home sofa. All 27 simulator tests passed. This download does not update the SideStore feed.'
