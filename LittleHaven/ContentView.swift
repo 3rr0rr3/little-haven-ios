@@ -587,6 +587,7 @@ extension EnvironmentValues {
 }
 
 struct GameOptionsView: View {
+    @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
     @Environment(\.dismiss) private var dismiss
     @AppStorage("littlehaven.hints") private var hints = true
     @AppStorage("littlehaven.haptics") private var haptics = true
