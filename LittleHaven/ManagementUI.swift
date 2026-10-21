@@ -130,7 +130,7 @@ struct StaffPanel: View {
     var body: some View {
         ScrollView { VStack(alignment:.leading,spacing:14) {
             Text("HIRE EMPLOYEES").font(.headline).foregroundStyle(Color(hex:0xEFC977))
-            Text("First shift included. Wages are paid each morning. Unpaid staff rest until the next paid shift.").font(.caption)
+            Text("Unlock employees by checking in guests. Each hire adds their own work station. First shift included; wages are paid each morning.").font(.caption)
             ForEach(StaffRole.allCases) { role in
                 let worker = motel.operationsState.workers.first { $0.role == role }
                 HStack(alignment:.top,spacing:10) {
@@ -140,7 +140,7 @@ struct StaffPanel: View {
                         Text(role.duty).font(.caption)
                         Text("\(role.wage) coins/day").font(.caption.monospaced()).foregroundStyle(Color(hex:0xEFC977))
                         if let worker { Text(worker.active ? (worker.status ?? "On duty") : "Off duty: unpaid shift").font(.caption.bold()) }
-                        else { Button("Hire \(role.name) / \(role.hireCost)") { hire(role) }.buttonStyle(MotelButtonStyle()).disabled(motel.cash < role.hireCost).accessibilityIdentifier("hire_"+role.rawValue) }
+                        else { Text(motel.hiringProgress(role)).font(.caption).foregroundStyle(Color(hex:0xEFC977)); Button("Hire \(role.name) / \(role.hireCost)") { hire(role) }.buttonStyle(MotelButtonStyle()).disabled(!motel.hiringUnlocked(role) || motel.cash < role.hireCost).accessibilityIdentifier("hire_"+role.rawValue) }
                     }
                 }
             }
@@ -645,7 +645,8 @@ struct ManagementHub:View {
                             Button("Dismiss") {change{$0.dismissStaff(role)}}
                         }.font(.caption).buttonStyle(.bordered)
                     } else {
-                        Button("Hire \(role.name) / \(role.hireCost)") {_=perform{$0.hire(role)}}.buttonStyle(.bordered).disabled(motel.cash<role.hireCost).accessibilityIdentifier("manageHire_"+role.rawValue)
+                        Text(motel.hiringProgress(role)).font(.caption).foregroundStyle(gold)
+                        Button("Hire \(role.name) / \(role.hireCost)") {_=perform{$0.hire(role)}}.buttonStyle(.bordered).disabled(!motel.hiringUnlocked(role) || motel.cash<role.hireCost).accessibilityIdentifier("manageHire_"+role.rawValue)
                     }
                 }
             }

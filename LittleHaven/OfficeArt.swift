@@ -230,7 +230,8 @@ enum PersonalArt {
         let ink: UInt32 = 0x302D2D
         let skin: UInt32 = woman ? 0xD79F77 : 0xE3B38E
         let hair: UInt32 = woman ? 0x342820 : 0x292725
-        let bob = abs(walk)*0.35
+        let step = walk * (variant == 7 ? 3.2 : 1)
+        let bob = abs(walk) * (variant == 7 ? 0.7 : 0.35)
         func shape(_ path: Path,_ color: UInt32) {
             context.fill(path,with:.color(Color(hex:color)))
             context.stroke(path,with:.color(Color(hex:ink)),lineWidth:0.28)
@@ -239,10 +240,10 @@ enum PersonalArt {
         func box(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ color:UInt32) { shape(Path(roundedRect:CGRect(x:x+dx,y:y+dy-bob,width:w,height:h),cornerRadius:0.5),color) }
         oval(2,14,12,2,0x5C7351)
         if woman || child { oval(1,-5,14,17,hair) }
-        box(4,11,3.5,4+walk*0.4,0x41414A); box(8.5,11,3.5,4-walk*0.4,0x41414A)
-        oval(3,14+walk*0.4,5,1.8,ink); oval(8,14-walk*0.4,5,1.8,ink)
+        box(4,11,3.5,4+step*0.4,0x41414A); box(8.5,11,3.5,4-step*0.4,0x41414A)
+        oval(3,14+step*0.4,5,1.8,ink); oval(8,14-step*0.4,5,1.8,ink)
         box(2.5,5,11,9,child ? 0xD88BAA : woman ? 0x292A2C : shirt)
-        oval(0.8,8,3.5,4,skin); oval(11.7,8,3.5,4,skin)
+        oval(0.8,8+step*0.4,3.5,4,skin); oval(11.7,8-step*0.4,3.5,4,skin)
         if woman {
             for i in 0..<5 { oval(3+Double(i*2),8+Double(i%2)*3,2,1.6,0xE8E2CF) }
         } else if !child {
@@ -302,6 +303,7 @@ enum CatArt {
 }
 struct ExpandedOfficeArt: View {
     let theme: Int
+    var clerkHired = false
     var body: some View {
         Canvas { context,_ in
             func rect(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) { CozyScenery.block(context:&context,x:x,y:y,w:w,h:h,color:color,depth:0.8) }
@@ -322,27 +324,52 @@ struct ExpandedOfficeArt: View {
             text("TOOLS",27,109,3)
             rect(20,146,14,15,0x7A624B);for i in 0..<4 {rect(21+Double(i*3),149,2,5,Motel.themeColors[i])}; text("PAINT",27,141,3)
             // Waiting lounge, coffee, local notices and office supplies.
-            DecorArt.sofa(&context,160,111,48,0x91ABA2)
-            rect(165,150,37,13,0xB49670);rect(174,151,14,7,0xE3D8B9)
-            rect(176,35,25,39,0x64786D);rect(179,38,19,20,0xA9C7C0)
-            for i in 0..<3 {rect(181+Double(i*5),42,3,12,[UInt32(0xD9AC7C),0xBD8582,0xE2CE91][i])}
-            rect(180,61,14,4,0x3F5148);text("DRINKS",188,31,3)
+            DecorArt.sofa(&context,160,91,48,0x91ABA2)
+            rect(165,130,37,13,0xB49670);rect(174,131,14,7,0xE3D8B9)
+            rect(181,165,25,39,0x64786D);rect(184,168,19,20,0xA9C7C0)
+            for i in 0..<3 {rect(186+Double(i*5),172,3,12,[UInt32(0xD9AC7C),0xBD8582,0xE2CE91][i])}
+            rect(185,191,14,4,0x3F5148);text("DRINKS",194,160,3)
             rect(122,7,51,20,0xA78B64);rect(125,10,45,14,0xD4C39E)
             for x in [128.0,143,156] {rect(x,12,9,9,0xF2E8CD)}
             DecorArt.shelf(&context,34,176,32)
-            CozyScenery.planter(context:&context,x:207,y:163)
-            rect(156,82,28,17,0x977A5A);rect(159,78,10,9,0x4A5C51);rect(160,79,8,5,0xBDD2B6)
-            rect(173,82,5,4,0xF2E6CA)
+            CozyScenery.planter(context:&context,x:207,y:207)
+            rect(180,52,28,17,0x977A5A);rect(183,48,10,9,0x4A5C51);rect(184,49,8,5,0xBDD2B6)
+            rect(197,52,5,4,0xF2E6CA)
             // Entry rug.
             rect(97,180,46,29,0xA66F5B); rect(100,183,40,23,0xC59377)
             rect(112,208,16,32,0xEAD8AE); text("LEAVE",120,230,4)
             rect(207,35,10,12,0x80644A); rect(202,29,20,12,0x77975C)
+            text("COFFEE",194,74,3)
+            if clerkHired {rect(80,66,18,4,0x547A6B);text("NORA",89,68,2.5)}
             text("LITTLE HAVEN / RECEPTION",120,4.5,4)
         }.frame(width:240,height:240)
     }
 }
 
 enum DecorArt {
+    static func officeFacade(_ c:inout GraphicsContext,x:Double,y:Double) {
+        // Low commercial frontage within the original eight-by-six-tile footprint.
+        CozyScenery.shadow(context:&c,x:x-3,y:y+89,w:134,h:12)
+        CozyScenery.block(context:&c,x:x,y:y+12,w:128,h:81,color:0xD6D2BB,depth:2)
+        CozyScenery.block(context:&c,x:x-3,y:y+5,w:134,h:13,color:0x5A7977,depth:1)
+        CozyScenery.block(context:&c,x:x+2,y:y+2,w:124,h:5,color:0x91AAA0,depth:0.7)
+        CozyScenery.block(context:&c,x:x+6,y:y+23,w:116,h:17,color:0x344F4E,depth:0.8)
+        c.draw(Text("LITTLE HAVEN • OFFICE").font(.system(size:5.4,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E5BC)),at:CGPoint(x:x+64,y:y+31))
+        // Reception glazing, service counter visible behind the large windows.
+        for dx in [8.0,84] {
+            CozyScenery.block(context:&c,x:x+dx,y:y+47,w:34,h:33,color:0x648C8D,depth:0.6)
+            CozyScenery.block(context:&c,x:x+dx+2,y:y+49,w:30,h:28,color:0xA9C9C4,depth:0)
+            CozyScenery.block(context:&c,x:x+dx+16,y:y+48,w:1.5,h:31,color:0xECE7D1,depth:0)
+            CozyScenery.block(context:&c,x:x+dx+3,y:y+69,w:28,h:5,color:0x8E9E8B,depth:0)
+        }
+        CozyScenery.block(context:&c,x:x+46,y:y+53,w:31,h:40,color:0x416463,depth:0.7)
+        CozyScenery.block(context:&c,x:x+49,y:y+56,w:25,h:32,color:0xA9C9C4,depth:0)
+        CozyScenery.block(context:&c,x:x+60,y:y+73,w:2,h:9,color:0xEBD7A4,depth:0)
+        CozyScenery.block(context:&c,x:x+39,y:y+41,w:46,h:7,color:0x71958B,depth:0.8)
+        CozyScenery.block(context:&c,x:x+42,y:y+91,w:39,h:5,color:0xE8DEC4,depth:0.3)
+        c.draw(Text("RECEPTION").font(.system(size:3.1,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0x365950)),at:CGPoint(x:x+62,y:y+62))
+    }
+
     static func rug(_ c:inout GraphicsContext,_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
         CozyScenery.block(context:&c,x:x,y:y,w:w,h:h,color:color,depth:0)
         c.stroke(Path(roundedRect:CGRect(x:x+2,y:y+2,width:w-4,height:h-4),cornerRadius:2),with:.color(Color(hex:0xEBDDC1)),lineWidth:0.6)

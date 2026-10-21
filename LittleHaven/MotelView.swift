@@ -243,7 +243,7 @@ struct MotelView: View {
                 } else if motel.isAtReception {
                     HStack(spacing:10) {
                         Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
-                        Button("Hire employees") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")
+                        Button(motel.hiringUnlocked(.cleaner) ? "Hire employees" : "Staff unlocks • \(motel.guestsServed)/3 guests") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")
                     }
                 } else if !motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}).isEmpty {
                     HStack {

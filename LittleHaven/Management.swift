@@ -226,7 +226,20 @@ extension Motel {
         if occupancy == 1 && state.incidentsStarted == 0 { state.nextIncidentTick = state.tick + 25 }
         operations = state
     }
+    var staffStations:[StaffRole] {
+        StaffRole.allCases.filter { role in operationsState.workers.contains { $0.role == role } }
+    }
+    func hiringMilestone(_ role:StaffRole)->Int {
+        switch role {case .cleaner:return 3;case .maintenance:return 5;case .security:return 7;case .valet:return 9;case .clerk:return 12}
+    }
+    func hiringUnlocked(_ role:StaffRole)->Bool {
+        guestsServed >= hiringMilestone(role) || operationsState.workers.contains { $0.role == role }
+    }
+    func hiringProgress(_ role:StaffRole)->String {
+        hiringUnlocked(role) ? "Unlocked • Staff station included" : "Check in \(hiringMilestone(role)) guests to unlock • \(min(guestsServed,hiringMilestone(role)))/\(hiringMilestone(role))"
+    }
     @discardableResult mutating func hire(_ role: StaffRole) -> Bool {
+        guard hiringUnlocked(role) else {lastEvent=hiringProgress(role);return false}
         guard canSave, cash >= role.hireCost, !operationsState.workers.contains(where: { $0.role == role }) else { return false }
         var state = operationsState
         cash -= role.hireCost

@@ -57,6 +57,7 @@ struct ContentView: View {
         if args.contains("--ui-staff-posts") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.cash=5000
             sample.motel!.waiting=[];sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:12,y:23)
+            sample.motel!.guestsServed=12
             for role in StaffRole.allCases {_=sample.motel!.hire(role)}
             sample.motel!.operations!.nextIncidentTick=10000
             sample.save();return sample
@@ -89,6 +90,7 @@ struct ContentView: View {
             for _ in 0..<8 { sample.motel!.tickManagement() }
             sample.motel!.operations!.nextIncidentTick=10000
             if args.contains("--ui-parking-staff") {
+                sample.motel!.guestsServed=12
                 _ = sample.motel!.hire(.valet)
                 sample.motel!.operations!.workers[0].tile=HotelCar.approach(0)
                 sample.motel!.operations!.workers[0].progress=3
@@ -109,6 +111,7 @@ struct ContentView: View {
             var sample = Game()
             sample.coins = 545; sample.wakeUp(); sample.motel!.initializeWorld()
             sample.motel!.waiting = []; sample.motel!.cash = 900
+            if args.contains("--ui-hiring") || args.contains("--ui-operations") {sample.motel!.guestsServed=12}
             sample.motel!.operations = MotelOperations()
             if args.contains("--ui-operations") {
                 sample.motel!.operations!.reviews = [GuestReview(id:"good",guest:"Robin",day:2,room:101,stars:5,text:"Lovely room and a peaceful stay!"),GuestReview(id:"bad",guest:"Sasha",day:2,room:102,stars:1,text:"The trouble outside spoiled my stay.")]
@@ -123,6 +126,7 @@ struct ContentView: View {
                 sample.motel!.waiting=Array(guests.dropFirst(2))
                 sample.motel!.operations!.incident = MotelIncident(kind:kind,guest:guests[0],otherGuest:guests[1])
                 if args.contains("--ui-responder") {
+                    sample.motel!.guestsServed=12
                     _=sample.motel!.hire(kind.responder)
                     sample.motel!.operations!.workers[0].tile=kind.approach
                     sample.motel!.world!.player=Tile(x:kind.approach.x+1,y:kind.approach.y)

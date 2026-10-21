@@ -28,6 +28,8 @@ jobs:
           set -euo pipefail
           swiftc LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
           /tmp/little-haven-tests
+      - name: Render character app icon
+        run: python3 scripts/render_app_icon.py
       - name: Build iPhone app
         run: |
           set -euo pipefail

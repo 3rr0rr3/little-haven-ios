@@ -245,12 +245,33 @@ struct MotelGroundsCanvas: View, Animatable {
             }
             BeachArt.draw(context:&context)
             NeighborhoodArt.draw(context:&context,level:motel.household.level)
-            // Individual work posts, not a shared break area.
-            for role in StaffRole.allCases where role != .clerk {
-                let px=Double(role.home.x*16),py=Double(role.home.y*16)
+            // Employee facilities appear only after that employee is hired.
+            for role in motel.staffStations {
+                let spot = role == .clerk ? Tile(x:8,y:11) : role.home
+                let px=Double(spot.x*16),py=Double(spot.y*16)
                 rect(px-6,py-4,28,23,0xC1B58E)
                 rect(px-6,py-4,28,1,role.color);rect(px-6,py+18,28,1,role.color)
-                rect(px+17,py-7,8,13,0x72583E);rect(px+18,py-6,6,4,role.color)
+                // Props sit beside the worker's standing tile, preserving all walking lanes.
+                switch role {
+                case .cleaner:
+                    rect(px+17,py-7,12,20,0x748F87)
+                    for i in 0..<3 {rect(px+18,py-5+Double(i)*5,10,3,i == 1 ? 0xA5C9BE : 0xF1E4C5)}
+                    rect(px-7,py+4,5,10,0xB49366)
+                case .maintenance:
+                    rect(px+17,py-7,13,18,0x8F7356)
+                    rect(px+18,py-6,11,5,0xD2B777)
+                    rect(px+21,py,2,9,0xC4CECA);rect(px+18,py+2,8,2,0xC4CECA)
+                case .security:
+                    rect(px+17,py-7,14,18,0x5C7481)
+                    rect(px+19,py-5,10,7,0xA2C2BC);rect(px+22,py+3,3,7,0x2F4446)
+                    rect(px-6,py-8,2,19,0x5B7069);rect(px-7,py-10,5,4,0xD6BA78)
+                case .valet:
+                    rect(px+17,py-7,12,20,0x659CA1);rect(px+19,py-5,8,8,0xC4DFD7)
+                    rect(px+20,py+6,7,5,0xC5AC72);rect(px-7,py+5,6,8,0x99C3BD)
+                case .clerk:
+                    rect(px+17,py-7,14,18,0x8E7859);rect(px+19,py-5,10,4,0xF2E6C4)
+                    rect(px+19,py+1,10,4,0xADC6B3);rect(px+19,py+7,10,3,0xD5B873)
+                }
                 label(role.station,px+8,py-11,2.7,0x344D3C)
             }
             for tile in RPGMaps.landscapeTrees {
@@ -316,7 +337,7 @@ struct MotelGroundsCanvas: View, Animatable {
             func building(_ origin: Tile, _ width: Int, _ height: Int, _ door: Tile, _ name: String, _ roof: UInt32, _ paint: UInt32) {
                 CozyScenery.building(context:&context,x:Double(origin.x*16),y:Double(origin.y*16),w:Double(width*16),h:Double(height*16),doorX:Double(door.x*16),name:name,roof:roof,paint:paint)
             }
-            building(Tile(x: 3, y: 3), 8, 6, MotelGrounds.officeDoor, "OFFICE / RECEPTION", 0x739998, 0xE2CEA4)
+            DecorArt.officeFacade(&context,x:48,y:48)
             for index in 0..<9 {
                 let o = MotelGrounds.roomOrigin(index)
                 let actual=index+motel.viewingFloor*9

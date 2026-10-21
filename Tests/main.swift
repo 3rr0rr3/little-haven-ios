@@ -1,5 +1,38 @@
 import Foundation
 
+extension Motel {
+    // Older economy/dispatch scenarios begin with an established business.
+    mutating func hireEstablishedStaff(_ role:StaffRole)->Bool {
+        guestsServed=max(guestsServed,12)
+        return hire(role)
+    }
+}
+func hiringMilestoneRules() {
+    var business=Motel();business.initializeWorld();business.cash=5000
+    require(business.staffStations.isEmpty,"No employee stations before hiring")
+    let before=business.cash
+    for role in StaffRole.allCases {
+        require(!business.hiringUnlocked(role) && !business.hire(role),"Fresh business cannot hire with money alone")
+    }
+    require(business.cash == before,"Locked hiring never charges")
+    for role in StaffRole.allCases {
+        business.guestsServed=business.hiringMilestone(role)-1
+        require(!business.hiringUnlocked(role),"Role stays locked until its guest milestone")
+        business.guestsServed += 1
+        require(business.hiringUnlocked(role) && business.hire(role),"Role unlocks and can be hired at its milestone")
+        require(business.staffStations.contains(role),"Hiring adds only that worker's station")
+    }
+    let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(business))
+    require(saved.staffStations.count == 5 && saved.hiringUnlocked(.clerk),"Milestones and stations survive saves")
+    business.guestsServed=0
+    require(business.hiringUnlocked(.clerk),"Existing employees are preserved in older saves")
+    business.dismissStaff(.cleaner)
+    require(!business.staffStations.contains(.cleaner),"Dismissal removes the employee station")
+    print("PASS: unlockable hiring, no-charge locked actions, stations and saved employees")
+}
+hiringMilestoneRules()
+
+
 func require(_ condition: Bool, _ message: String) {
     if !condition { fatalError(message) }
 }
@@ -386,8 +419,8 @@ func managementRules() {
     require(theft.operationsState.reviews.first?.stars == 1, "Stolen belongings lead to a one star review")
     var staff = Motel()
     staff.initializeWorld(); staff.cash = 1000
-    for role in StaffRole.allCases { require(staff.hire(role), "Each staff role can be hired") }
-    require(staff.cash == 350 && !staff.hire(.cleaner), "Hiring charges once and prevents duplicate employees")
+    for role in StaffRole.allCases { require(staff.hireEstablishedStaff(role), "Each staff role can be hired") }
+    require(staff.cash == 350 && !staff.hireEstablishedStaff(.cleaner), "Hiring charges once and prevents duplicate employees")
     staff.rooms[0].dirty = true
     for _ in 0..<80 { staff.tickManagement() }
     require(!staff.rooms[0].dirty && staff.rooms[0].cleanedTasks?.count == 3, "Housekeeper walks to and cleans a vacant room")
@@ -486,7 +519,7 @@ func policeRules() {
     colors.rooms[1].theme = 0; colors.initializeWorld()
     require(colors.rooms[1].theme == 0, "Player repainting survives migration")
     _ = colors.leaveReception(); colors.cash = 500
-    require(colors.hire(.cleaner), "Hiring is available outside the office")
+    require(colors.hireEstablishedStaff(.cleaner), "Hiring is available outside the office")
     print("PASS: fatalities, police arrival, fine debt, accepted and rejected bribes, booking penalties, persisted consequences, room colors and accessible hiring")
 }
 policeRules()
@@ -509,7 +542,7 @@ func parkingAndAnimationRules() {
     let copy=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(hotel))
     require(copy.operationsState.cars?.first?.washedDay == hotel.day,"Clean cars survive save and reload")
     var worker=Motel(); worker.initializeWorld(); worker.cash=1000
-    require(worker.hire(.valet),"Car wash attendant can be hired")
+    require(worker.hireEstablishedStaff(.valet),"Car wash attendant can be hired")
     for _ in 0..<80 { worker.tickManagement() }
     require(worker.operationsState.washIncome == 105,"Attendant walks to and washes all three cars")
     let earned=worker.cash
@@ -608,14 +641,14 @@ func expandedManagementRules() {
     require(bills.emergencyLoan() && bills.cash==200 && bills.simulation.loanDebt==240,"Emergency credit has an explicit repayment cost")
     require(bills.repayBills() && bills.cash==0,"Debt repayment spends available cash")
     var staff=make()
-    require(staff.hire(.clerk),"Front-desk clerk can be hired")
+    require(staff.hireEstablishedStaff(.clerk),"Front-desk clerk can be hired")
     for _ in 0..<12 {staff.tickManagement()}
     require(staff.occupancy>=1 && staff.guestsServed>=1,"Clerk really assigns rooms and takes payment")
     staff.scheduleNight(.clerk)
     require(staff.scheduledWage(.clerk)==33,"Night coverage costs fifty percent more")
     let speed=staff.simulation.profiles[StaffRole.clerk.rawValue]!.speed
     require(staff.trainStaff(.clerk) && staff.simulation.profiles[StaffRole.clerk.rawValue]!.speed>speed,"Training improves employee stats")
-    var quitting=make();_=quitting.hire(.cleaner);quitting.cash=0;_=quitting.nextDay();_=quitting.nextDay()
+    var quitting=make();_=quitting.hireEstablishedStaff(.cleaner);quitting.cash=0;_=quitting.nextDay();_=quitting.nextDay()
     require(!quitting.operationsState.workers.contains{$0.role == .cleaner},"Staff can quit after two unpaid shifts")
     var events=make();_=events.checkIn(guestID:10,roomID:0)
     for kind in HotelIssueKind.allCases {
@@ -677,7 +710,7 @@ expandedManagementRules()
 
 func reactiveGuestsAndStaffPosts() {
     var motel=Motel(); motel.initializeWorld(); motel.cash=5000; motel.waiting=[]
-    for role in StaffRole.allCases { require(motel.hire(role),"Hire staff for lounge test") }
+    for role in StaffRole.allCases { require(motel.hireEstablishedStaff(role),"Hire staff for lounge test") }
     for _ in 0..<90 { motel.tickManagement() }
     require(motel.operationsState.workers.allSatisfy { $0.tile == $0.role.home },"Idle employees return to their own work posts")
     let cleaner=motel.operationsState.workers.firstIndex { $0.role == .cleaner }!
@@ -729,10 +762,10 @@ func continuousStaffAndFamilyRoomRules() {
     require(!MotelGrounds.officeBlocked(Tile(x:9,y:4)) && !MotelGrounds.officeBlocked(Tile(x:9,y:7)),"Office is restored without family partitions")
     var blocked=Motel();blocked.initializeWorld();blocked.cash=1000;blocked.waiting=[]
     blocked.world!.place = .grounds;blocked.world!.player=MotelGrounds.roomDoor(0)
-    blocked.rooms[0].dirty=true;_=blocked.hire(.cleaner)
+    blocked.rooms[0].dirty=true;_=blocked.hireEstablishedStaff(.cleaner)
     for frame in 0..<360 {blocked.tickManagement(advanceClock:frame%MotelCadence.businessSteps==0)}
     require(!blocked.rooms[0].dirty,"Cleaner can work when the player occupies the room doorway")
-    var fast=Motel();fast.initializeWorld();fast.cash=1000;fast.waiting=[];_=fast.hire(.security)
+    var fast=Motel();fast.initializeWorld();fast.cash=1000;fast.waiting=[];_=fast.hireEstablishedStaff(.security)
     fast.operations!.workers[0].tile=Tile(x:20,y:34)
     fast.operations!.incident=MotelIncident(kind:.fight)
     let oldClock=fast.operationsState.tick
@@ -750,13 +783,13 @@ func continuousStaffAndFamilyRoomRules() {
     var health=business.rooms[1].health;health.faults=[.pipe];business.rooms[1].hospitality=health
     business.injectIssue(.noise,roomID:2)
     business.operations!.nextIncidentTick=10000
-    for role in [StaffRole.cleaner,.maintenance,.security,.valet] {require(business.hire(role),"Hire workers for real job dispatch")}
+    for role in [StaffRole.cleaner,.maintenance,.security,.valet] {require(business.hireEstablishedStaff(role),"Hire workers for real job dispatch")}
     for frame in 0..<360 {business.tickManagement(advanceClock:frame%MotelCadence.businessSteps==0)}
     require(!business.rooms[0].dirty,"Housekeeping completes actual room work")
     require(business.rooms[1].health.faults.isEmpty,"Maintenance reaches and repairs the actual room")
     require(!business.simulation.issues.contains{$0.kind == .noise},"Security reaches and handles complaints")
     require((business.operationsState.washIncome ?? 0)>=35,"Valet reaches cars and earns wash income")
-    var tired=Motel();tired.initializeWorld();tired.enableManagement();tired.cash=5000;_=tired.hire(.clerk)
+    var tired=Motel();tired.initializeWorld();tired.enableManagement();tired.cash=5000;_=tired.hireEstablishedStaff(.clerk)
     var profile=tired.simulation;profile.profiles[StaffRole.clerk.rawValue]!.fatigue=90;tired.simulation=profile
     for _ in 0..<24 {tired.tickManagement()}
     require(tired.guestsServed>0,"A tired clerk slows down without becoming permanently unable to work")
