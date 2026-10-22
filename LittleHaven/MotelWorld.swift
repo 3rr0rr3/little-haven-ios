@@ -343,7 +343,8 @@ extension Motel {
         guard checkIn(guestID: guestID, roomID: roomID) else { return false }
         initializeWorld()
         let start = waitingTile(guest.id)
-        world!.travellers.append(MotelWalker(id: guest.id, name: guest.name, color: guest.color, roomID: roomID, player: start, previous: start, destination: groundRoomDoor(roomID)))
+        let destination=groundRoomDoor(roomID)
+        world!.travellers.append(MotelWalker(id: guest.id, name: guest.name, color: guest.color, roomID: roomID, player: start, previous: start, destination: destination))
         return true
     }
     @discardableResult mutating func collectTools() -> Bool {

@@ -325,7 +325,6 @@ extension Motel {
         // Migrate an active city fight from older checkpoints into the courtyard.
         if let incident=state.incident, incident.kind == .fight,
            !Self.chaosLocations.contains(incident.tile) { state.incident!.location=Self.chaosLocations[0] }
-        var completedRepairs:[Int]=[]
         var completedIssues:[Int]=[]
         if advanceClock {
         state.tick += 1
@@ -482,7 +481,6 @@ extension Motel {
             state.consequences!.police = police
         }
         operations = state
-        for roomID in completedRepairs {_=repairRoom(roomID)}
         for issueID in completedIssues {_=respondToIssue(issueID,choice:0)}
         if advanceClock && operationsState.simulation != nil { tickSimulation() }
     }
@@ -1302,7 +1300,8 @@ extension Motel {
         if world != nil {
             if reception.visitor?.guest.id==id {world?.reception?.visitor=nil}
             let start=groundTile(Tile(x:6,y:10))
-            world?.travellers.append(MotelWalker(id:id,name:guest.name,color:guest.color,roomID:roomID,player:start,previous:start,destination:groundRoomDoor(roomID)))
+            let destination=groundRoomDoor(roomID)
+            world?.travellers.append(MotelWalker(id:id,name:guest.name,color:guest.color,roomID:roomID,player:start,previous:start,destination:destination))
         }
         return true
     }
