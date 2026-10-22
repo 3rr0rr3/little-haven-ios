@@ -296,9 +296,16 @@ extension Motel {
         return nil
     }
     func groundEscapeStep(from start:Tile,danger:Tile,avoiding:Set<Tile>)->Tile? {
+        if (worldState.structureOffsets ?? [:]).isEmpty {return MotelGrounds.escapeStep(from:start,danger:danger,avoiding:avoiding)}
         let map=relocatedGrounds
         let safe=[Tile(x:2,y:12),Tile(x:11,y:32),Tile(x:36,y:27),Tile(x:12,y:3)].filter{!map.blocked($0)}.max{$0.distance(to:danger)<$1.distance(to:danger)} ?? groundNearestWalkable(to:MotelGrounds.gate)
-        return groundNextStep(from:start,to:safe,avoiding:avoiding)
+        var unsafe=avoiding
+        let clearance=min(12,start.distance(to:danger))
+        for y in 1..<map.height-1 {for x in 1..<map.width-1 {
+            let tile=Tile(x:x,y:y)
+            if tile.distance(to:danger)<clearance {unsafe.insert(tile)}
+        }}
+        return groundNextStep(from:start,to:safe,avoiding:unsafe)
     }
     @discardableResult mutating func relocateStructure(_ id:String,to origin:Tile)->Bool {
         guard let object=creativeStructures.first(where:{$0.id==id}) else{return false}
