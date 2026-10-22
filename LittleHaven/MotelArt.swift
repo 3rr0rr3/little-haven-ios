@@ -241,7 +241,8 @@ struct MotelGroundsCanvas: View, Animatable {
                     let px = Double(col * 16), py = Double(row * 16)
                     let road = (35...37).contains(row) || ((40...42).contains(col) && row > 1) || (col > 39 && (18...20).contains(row))
                     let residentialPath=((43...68).contains(col) && [8,9,16,17].contains(row)) || ((58...59).contains(col) && (8...18).contains(row))
-                    let paved = residentialPath || RPGMaps.hotelSidewalk(Tile(x:col,y:row)) || ((43...70).contains(col) && (29...31).contains(row))
+                    let homePath=(54...55).contains(col) && (14...17).contains(row)
+                    let paved = residentialPath || homePath || RPGMaps.hotelSidewalk(Tile(x:col,y:row)) || ((43...70).contains(col) && (29...31).contains(row))
                     CozyScenery.ground(context:&context,x:px,y:py,kind:road ? 2 : paved ? 1 : 0,seed:col*17+row*31)
                     if road && row == 36 && col % 3 != 0 { rect(px+2,py+7,12,2,0xF8E8A0) }
                     if !BeachLayout.contains(Tile(x:col,y:row)) && (col == 0 || col == MotelGrounds.width - 1 || row == 0 || row == MotelGrounds.height - 1) {
@@ -249,6 +250,8 @@ struct MotelGroundsCanvas: View, Animatable {
                     }
                 }
             }
+            // Terrain stays behind every relocatable building and furnishing.
+            rect(240,472,365,80,0x747E78)
             BeachArt.draw(context:&context,motel:motel)
             NeighborhoodArt.draw(context:&context,level:motel.household.level,motel:motel)
             // Employee facilities appear only after that employee is hired.
@@ -387,7 +390,6 @@ struct MotelGroundsCanvas: View, Animatable {
             let savedgardentable = beginObject("garden-table")
             rect(64, 252, 40, 5, 0x9F7854); rect(68, 257, 3, 6, 0x6B634D); rect(97, 257, 3, 6, 0x6B634D)
             context=savedgardentable
-            rect(240,472,365,80,0x747E78)
             label("BIKE PARKING / BIKE CARE",416,466,5,0x2F4E3D)
             for col in [17,25,33] {
                 let px=Double(col*16)

@@ -168,7 +168,6 @@ enum CozyScenery {
 enum NeighborhoodArt {
     static func draw(context:inout GraphicsContext,level:Int,motel:Motel?=nil) {
         // Same seven-by-five footprint as the hotel buildings; no differently colored lawn rectangle.
-        for row in 14..<18 {for col in 54...55 {CozyScenery.ground(context:&context,x:Double(col*16),y:Double(row*16),kind:1,seed:row+col)}}
         let homeContext=context,homeOffset=motel?.creativeOffset("home") ?? Tile(x:0,y:0)
         context.translateBy(x:Double(homeOffset.x*16),y:Double(homeOffset.y*16))
         CozyScenery.building(context:&context,x:816,y:144,w:112,h:80,doorX:864,name:"HOME",roof:level>1 ? 0x6488B0 : 0xCC7058,paint:0xF0D8A0)
