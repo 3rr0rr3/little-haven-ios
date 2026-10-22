@@ -847,8 +847,10 @@ func familyHomeAndNeighborhoodRules() {
         var incident=MotelIncident(kind:.fight);incident.location=tile
         require(incident.tile == tile && incident.approach == Tile(x:tile.x,y:tile.y+1),"Emergency actors and staff share the incident location")
     }
-    var pool=MotelIncident(kind:.pool);pool.location=Tile(x:55,y:30)
-    require(pool.tile == ChaosKind.pool.tile && pool.approach == ChaosKind.pool.approach,"Only pool incidents remain fixed")
+    var pool=MotelIncident(kind:.pool)
+    require(pool.tile == ChaosKind.pool.tile && pool.approach == ChaosKind.pool.approach,"Default pool incidents use the pool")
+    pool.location=Tile(x:55,y:30)
+    require(pool.tile == Tile(x:55,y:30) && pool.approach == Tile(x:55,y:32),"Pool emergencies follow a relocated pool")
     for _ in 0..<3 {motel.tickWorld()}
     let pedestrians=motel.worldState.townPositions
     for _ in 0..<8 {motel.tickWorld()}

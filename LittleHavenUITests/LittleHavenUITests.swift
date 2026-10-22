@@ -560,7 +560,8 @@ final class LittleHavenUITests: XCTestCase {
         let washer=app.descendants(matching:.any)["creative-washer"].firstMatch
         XCTAssertTrue(washer.waitForExistence(timeout:5))
         let origin=washer.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5))
-        origin.press(forDuration:0.6,thenDragTo:origin.withOffset(CGVector(dx:45,dy:130)))
+        origin.press(forDuration:0.6,thenDragTo:origin.withOffset(CGVector(dx:0,dy:192)))
+        XCTAssertTrue(app.staticTexts["Washing machine placed."].waitForExistence(timeout:5),app.debugDescription)
         capture(app,"Creative mode physical object relocation")
         app.buttons["closeCreative"].tap()
         XCTAssertTrue(app.descendants(matching:.any)["fullscreenJoystick"].firstMatch.waitForExistence(timeout:5))
