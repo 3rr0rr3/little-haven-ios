@@ -31,6 +31,10 @@ struct MotelWorldState: Codable {
     var townPositions:[Int:Tile]?
     var townPrevious:[Int:Tile]?
     var townDestinations:[Int:Int]?
+    var fishMeal:FishMeal?
+    var claimedBikes:[HotelCar]?
+    var ridingBike:Int?
+    var bikeParking:[Int:Tile]?
     var corrals:[Int:CorralCare]?
     var pets: [String: PetCompanion]?
     var guestFavour: GuestFavour?
@@ -237,6 +241,7 @@ extension Motel {
         }
         if let roomVisit=visit,RoomVisit.blocked(roomVisit.player) {visit!.player=Tile(x:4,y:7)}
         if isAtReception && MotelGrounds.officeBlocked(world!.player) {world!.player=OfficeReception.clerk}
+        if world!.ridingBike != nil && (visit != nil || world!.place != .grounds) {world!.ridingBike=nil}
         if isAtBasement && BasementLayout.blocked(world!.player) {world!.player=BasementLayout.arrival}
         if isAtHome && homeBlocked(world!.player) {world!.player=Tile(x:7,y:12)}
         if let seat=world!.beachSeat,(!BeachLayout.lounges.indices.contains(seat) || world!.place != .grounds || actorTile.distance(to:BeachLayout.approach(seat))>1) {world!.beachSeat=nil}
@@ -247,7 +252,7 @@ extension Motel {
             else if pet.map == "grounds" && MotelGrounds.blocked(pet.tile) {pet.tile=MotelGrounds.nearestWalkable(to:pet.tile)}
             else if pet.map == "house" && homeBlocked(pet.tile) {pet.tile=id == "chichu" ? OfficeReception.chichu : OfficeReception.chichi}
             else if pet.map == "office" && RPGMaps.office.blocked(pet.tile) {pet.tile=Tile(x:8,y:id == "chichu" ? 8 : 9)}
-            else if pet.map.hasPrefix("shop-") && (pet.map == "shop-bar" ? BarLayout.blocked(pet.tile) : ShopLayout.blocked(pet.tile)) {pet.tile=Tile(x:id == "chichu" ? 6 : 8,y:12)}
+            else if pet.map.hasPrefix("shop-") && ((pet.map == "shop-bar" || pet.map == "shop-fish") ? BarLayout.blocked(pet.tile) : ShopLayout.blocked(pet.tile)) {pet.tile=Tile(x:id == "chichu" ? 6 : 8,y:12)}
             world!.pets?[id]=pet
         }
     }
@@ -296,21 +301,23 @@ extension Motel {
             return
         }
         let occupied = Set(waiting.map { waitingTile($0.id) } + state.travellers.map(\.player))
-        guard !MotelGrounds.blocked(next), !occupied.contains(next) else { world = state; return }
+        guard !MotelGrounds.blocked(next), !bikeBlocks(next), !occupied.contains(next) else { world = state; return }
         if dx != 0 && dy != 0 {
             for tile in [Tile(x: state.player.x + dx, y: state.player.y), Tile(x: state.player.x, y: state.player.y + dy)] {
-                guard !MotelGrounds.blocked(tile), !occupied.contains(tile) else { world = state; return }
+                guard !MotelGrounds.blocked(tile), !bikeBlocks(tile), !occupied.contains(tile) else { world = state; return }
             }
         }
+        if isRidingBike && next == MotelGrounds.officeDoor {world=state;return}
         if next == MotelGrounds.officeDoor && dy < 0 {
             state.place = .office; state.player = OfficeReception.clerk
             world = state; return
         }
         state.player = next
         world = state
-        if dy < 0, let room = rooms.first(where: { $0.id / 9 == viewingFloor && MotelGrounds.roomDoor($0.id) == next && $0.guest == nil }) { _ = enter(room.id) }
+        if !isRidingBike,dy < 0, let room = rooms.first(where: { $0.id / 9 == viewingFloor && MotelGrounds.roomDoor($0.id) == next && $0.guest == nil }) { _ = enter(room.id) }
     }
     @discardableResult mutating func useEntrance() -> Bool {
+        guard !isRidingBike else{lastEvent="Dismount your bike before entering.";return false}
         initializeWorld()
         switch nearbyAction {
         case .basement:return enterBasement()

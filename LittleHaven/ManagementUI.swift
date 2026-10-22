@@ -25,6 +25,17 @@ struct NeighborhoodStoreView:View {
                             Button(motel.household.outfit == index ? "Wearing" : motel.household.outfits.contains(index) ? "Wear" : "Buy / 80") {change{_=$0.wearOutfit(index)}}.disabled(motel.household.outfit == index || (!motel.household.outfits.contains(index) && motel.cash<80)).accessibilityIdentifier("outfit_\(index)")
                         }
                     }
+                } else if shop == .fish {
+                    ForEach(FishMeal.allCases) {meal in
+                        HStack {
+                            Label(meal.title,systemImage:"fish.fill");Spacer()
+                            Button("Order / \(meal.price)") {change{_=$0.orderFishMeal(meal)}}
+                                .disabled(!motel.canTrade(.fish) || motel.cash<meal.price)
+                                .accessibilityIdentifier("orderMeal_"+meal.rawValue)
+                        }
+                    }
+                    if let meal=motel.worldState.fishMeal {Label("Marina served: "+meal.title,systemImage:"checkmark.circle.fill")}
+                    Text("Fresh fish from the coast, shared tables and warm conversation.").font(.caption)
                 } else if shop == .bar {
                     ForEach(BarDrink.allCases) {drink in
                         HStack {
@@ -337,7 +348,13 @@ struct HotelActionArtwork: View {
                     oval(x+k*2,y+travel*2,1.5,3,0xAEE2E9)
                 }
             }
-            if kind.hasPrefix("steal-") {
+            if kind == "checkin" {
+                box(18,25,22,18,0xEFE0B8)
+                for i in 0..<3 {box(21,29+Double(i*4),12,1,0x9E947D)}
+                oval(42,25+swing*2,6,6,0xE2C069)
+                line(CGPoint(x:44,y:30+swing*2),CGPoint(x:48,y:39+swing*2),0xE2C069,2)
+                box(46,36+swing*2,5,2,0xE2C069)
+            } else if kind.hasPrefix("steal-") {
                 RoomObjectArt.draw(context:&context,index:Int(kind.suffix(1)) ?? 0,x:22,y:22,scale:1.4)
             } else if kind == "carwash" || kind == "extinguish" {
                 box(8,35,9,10,0xD17451); box(10,33,5,3,0xC9DFD7)
@@ -424,43 +441,46 @@ struct HotelActionArtwork: View {
 struct HotelCarArtwork: View {
     let color:UInt32
     let dirty:Bool
-    var model = 0
-    var body: some View {
-        Canvas { context,_ in
-            func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ tint:UInt32,_ radius:Double = 2) {
-                context.fill(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:radius),with:.color(Color(hex:tint)))
-            }
-            let suv = model % 3 == 1
-            let pickup = model % 3 == 2
-            box(5,8,38,18,0x303D42,5)
-            box(2,7,8,6,0x293137); box(38,7,8,6,0x293137)
-            box(2,24,8,6,0x293137); box(38,24,8,6,0x293137)
-            box(3,5,42,22,color,5); box(12,8,22,14,0x344F64,4)
-            box(14,9,18,4,0x9FC8CE); box(14,18,18,3,0x83A8B5)
-            box(34,7,7,18,color); box(4,8,5,3,0xFFF1BE); box(4,21,5,3,0xFFF1BE)
-            box(40,8,3,3,0xD77364); box(40,21,3,3,0xD77364)
-            box(10,15,2,4,0xD5D9C5); box(35,15,2,4,0xD5D9C5)
-            // Recognizable sedan, SUV and pickup silhouettes with glass, panels and hardware.
-            box(12,7,suv ? 24 : 19,17,0x344F64,3)
-            box(14,8,suv ? 20 : 15,6,0xA8D1D5,2)
-            box(14,17,suv ? 20 : 15,5,0x7AA6B8,2)
-            box(13,14,suv ? 22 : 17,2,color)
-            box(22,7,1,17,0x263F4A,0)
-            box(9,4,5,2,color); box(9,26,5,2,color)
-            box(3,13,2,8,0x3A4547,1)
-            for slat in 0..<4 { box(3,14+Double(slat)*1.7,2,0.6,0xB8C4C2,0) }
-            box(2,16,1,3,0xF1E9CF,0); box(43,15,2,4,0xF1E9CF,0)
-            box(6,6,3,1,0xF1D49A,0); box(6,25,3,1,0xF1D49A,0)
-            box(31,7,2,1,0xD6DBCC,0); box(31,24,2,1,0xD6DBCC,0)
-            if suv { box(13,6,22,1,0xCDD3C9,0); box(13,25,22,1,0xCDD3C9,0) }
-            if pickup {
-                box(30,7,12,18,color,2); box(32,9,8,14,0x4C5756,1)
-                for rib in 0..<4 { box(33+Double(rib)*2,10,0.6,12,0x78807A,0) }
-            }
-            if dirty { for i in 0..<7 { box(6+Double(i*5),12+Double(i%3)*4,4,3,0x927A58) } }
-        }.frame(width:48,height:34)
+    var model=0
+    var body:some View {
+        Canvas {c,_ in BicycleArt.draw(context:&c,color:color,facing:2,pedal:0,dirty:dirty)}
+            .frame(width:24,height:16)
     }
 }
+enum BicycleArt {
+    static func draw(context:inout GraphicsContext,color:UInt32,facing:Int,pedal:Double,dirty:Bool=false) {
+        var c=context
+        func line(_ points:[CGPoint],_ tint:UInt32,_ width:Double=1) {
+            var p=Path();p.addLines(points);c.stroke(p,with:.color(Color(hex:tint)),style:StrokeStyle(lineWidth:width,lineCap:.round,lineJoin:.round))
+        }
+        func wheel(_ x:Double,_ y:Double,_ w:Double,_ h:Double) {
+            let r=CGRect(x:x,y:y,width:w,height:h)
+            c.stroke(Path(ellipseIn:r),with:.color(Color(hex:0x283D40)),lineWidth:1.4)
+            c.stroke(Path(ellipseIn:r.insetBy(dx:1,dy:1)),with:.color(Color(hex:0xC3CCBE)),lineWidth:0.55)
+            line([CGPoint(x:x+w/2,y:y),CGPoint(x:x+w/2,y:y+h)],0xA9B8B1,0.45)
+            line([CGPoint(x:x,y:y+h/2),CGPoint(x:x+w,y:y+h/2)],0xA9B8B1,0.45)
+        }
+        if facing == 0 || facing == 3 {
+            wheel(9,0,6,7);wheel(9,9,6,7)
+            line([CGPoint(x:12,y:4),CGPoint(x:12,y:12)],color,2)
+            line([CGPoint(x:7,y:4),CGPoint(x:17,y:4)],0x3E4F4D,1.4)
+            line([CGPoint(x:9,y:9),CGPoint(x:15,y:9)],0x604D3C,2)
+            line([CGPoint(x:8,y:11+pedal),CGPoint(x:16,y:11-pedal)],0x6D7C77,1)
+        } else {
+            if facing == 1 {c.translateBy(x:24,y:0);c.scaleBy(x:-1,y:1)}
+            wheel(1,6,8,8);wheel(15,6,8,8)
+            line([CGPoint(x:5,y:10),CGPoint(x:10,y:4),CGPoint(x:13,y:11),CGPoint(x:5,y:10)],color,1.2)
+            line([CGPoint(x:10,y:4),CGPoint(x:18,y:4),CGPoint(x:13,y:11),CGPoint(x:10,y:4)],color,1.2)
+            line([CGPoint(x:18,y:3),CGPoint(x:19,y:10)],color,1.3)
+            line([CGPoint(x:16,y:2),CGPoint(x:19,y:2),CGPoint(x:20,y:4)],0x334842,1.3)
+            line([CGPoint(x:8,y:3),CGPoint(x:12,y:3)],0x584D3E,2)
+            line([CGPoint(x:11,y:11),CGPoint(x:15,y:11+pedal)],0x8B9B93,1)
+            line([CGPoint(x:14,y:11+pedal),CGPoint(x:17,y:11+pedal)],0x3B4B46,1)
+        }
+        if dirty {line([CGPoint(x:5,y:13),CGPoint(x:8,y:13)],0x9A825F,1)}
+    }
+}
+
 
 
 enum ManagementTab:String,CaseIterable,Identifiable {

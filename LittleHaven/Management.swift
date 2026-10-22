@@ -1,15 +1,15 @@
 import Foundation
 
 enum NeighborhoodShop:String,Codable,CaseIterable,Identifiable {
-    case furniture, clothing, pawn, bar
+    case furniture, clothing, pawn, bar, fish
     var id:String {rawValue}
-    var title:String {switch self {case .furniture:return "Willow Home";case .clothing:return "Thread & Co.";case .pawn:return "Second Chance Pawn";case .bar:return "The Lantern Bar"}}
-    var door:Tile {switch self {case .furniture:return Tile(x:47,y:29);case .clothing:return Tile(x:57,y:29);case .pawn:return Tile(x:67,y:29);case .bar:return Tile(x:57,y:35)}}
-    var keeperName:String {switch self {case .furniture:return "Otis";case .clothing:return "Mira";case .pawn:return "Sal";case .bar:return "Jules"}}
-    var keeperColor:UInt32 {switch self {case .furniture:return 0x748A67;case .clothing:return 0xAF7695;case .pawn:return 0x57718E;case .bar:return 0x8B5860}}
-    var uniform:Int {switch self {case .furniture:return 1;case .clothing:return 2;case .pawn:return 3;case .bar:return 4}}
-    var symbol:String {switch self {case .furniture:return "sofa";case .clothing:return "scissors";case .pawn:return "key";case .bar:return "wineglass"}}
-    var detail:String {switch self {case .furniture:return "Buy furniture here, then place it at your family home.";case .clothing:return "Buy and wear new outfits.";case .pawn:return "Sell carried belongings here.";case .bar:return "Walk to Jules at the counter to order a freshly served drink."}}
+    var title:String {switch self {case .furniture:return "Willow Home";case .clothing:return "Thread & Co.";case .pawn:return "Second Chance Pawn";case .fish:return "Coral Catch";case .bar:return "The Lantern Bar"}}
+    var door:Tile {switch self {case .furniture:return Tile(x:47,y:29);case .clothing:return Tile(x:57,y:29);case .pawn:return Tile(x:67,y:29);case .fish:return Tile(x:47,y:35);case .bar:return Tile(x:57,y:35)}}
+    var keeperName:String {switch self {case .furniture:return "Otis";case .clothing:return "Mira";case .pawn:return "Sal";case .fish:return "Marina";case .bar:return "Jules"}}
+    var keeperColor:UInt32 {switch self {case .furniture:return 0x748A67;case .clothing:return 0xAF7695;case .pawn:return 0x57718E;case .fish:return 0x669B9E;case .bar:return 0x8B5860}}
+    var uniform:Int {switch self {case .furniture:return 1;case .clothing:return 2;case .pawn:return 3;case .fish:return 5;case .bar:return 4}}
+    var symbol:String {switch self {case .furniture:return "sofa";case .clothing:return "scissors";case .pawn:return "key";case .fish:return "fish";case .bar:return "wineglass"}}
+    var detail:String {switch self {case .furniture:return "Buy furniture here, then place it at your family home.";case .clothing:return "Buy and wear new outfits.";case .pawn:return "Sell carried belongings here.";case .fish:return "Fresh fish, warm meals and friendly company. Order at Marina\'s counter.";case .bar:return "Walk to Jules at the counter to order a freshly served drink."}}
 }
 enum BarDrink:String,Codable,CaseIterable,Identifiable {
     case sparklingWater,citrusSoda,houseCocktail
@@ -52,7 +52,7 @@ extension Motel {
     var isAtHome:Bool {visit == nil && worldState.place == .house}
     var isAtShop:Bool {visit == nil && worldState.place == .shop}
     var currentShop:NeighborhoodShop? {isAtShop ? worldState.shop : nil}
-    func shopBlocked(_ tile:Tile)->Bool {currentShop == .bar ? BarLayout.blocked(tile) : ShopLayout.blocked(tile)}
+    func shopBlocked(_ tile:Tile)->Bool {(currentShop == .bar || currentShop == .fish) ? BarLayout.blocked(tile) : ShopLayout.blocked(tile)}
     @discardableResult mutating func orderBarDrink(_ drink:BarDrink)->Bool {
         guard canTrade(.bar),cash>=drink.price else{return false}
         initializeWorld();cash -= drink.price
@@ -65,7 +65,7 @@ extension Motel {
         !caught && currentShop == shop && actorTile.distance(to:ShopLayout.counter)<=1
     }
     @discardableResult mutating func enterShop(_ shop:NeighborhoodShop)->Bool {
-        guard !caught,visit == nil,worldState.place == .grounds,actorTile.distance(to:shop.door)<=1 else{return false}
+        guard !caught,!isRidingBike,visit == nil,worldState.place == .grounds,actorTile.distance(to:shop.door)<=1 else{return false}
         initializeWorld();world!.place = .shop;world!.shop=shop;world!.player=ShopLayout.arrival
         lastEvent="Welcome to "+shop.title+". Walk to "+shop.keeperName+"'s counter to browse."
         return true
@@ -75,7 +75,7 @@ extension Motel {
         world!.place = .grounds;world!.player=Tile(x:shop.door.x,y:shop.door.y+1);world!.shop=nil
         return true
     }
-    static let homeDecorObstacles=[RPGRegion(x:1,y:2,width:3,height:2),RPGRegion(x:2,y:5,width:2,height:2),RPGRegion(x:1,y:12,width:2,height:1)]
+    static let homeDecorObstacles=[RPGRegion(x:1,y:2,width:3,height:2),RPGRegion(x:2,y:5,width:2,height:2),RPGRegion(x:3,y:12,width:1,height:1)]
 
     func homeBlocked(_ tile:Tile)->Bool {
         tile == FamilyHome.workbench || tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || (10...13).contains(tile.x) && (3...5).contains(tile.y) || (10...13).contains(tile.x) && (9...10).contains(tile.y) || Self.homeDecorObstacles.contains{$0.contains(tile)} || household.placed.contains{$0.tile == tile && $0.kind != .rug}
@@ -135,13 +135,13 @@ enum MotelCadence {
 enum StaffRole: String, Codable, CaseIterable, Identifiable {
     case cleaner, maintenance, security, valet, clerk
     var id: String { rawValue }
-    var title: String { switch self { case .cleaner: return "Housekeeper"; case .maintenance: return "Groundskeeper"; case .security: return "Security guard"; case .valet: return "Car wash attendant"; case .clerk: return "Front-desk clerk" } }
+    var title: String { switch self { case .cleaner: return "Housekeeper"; case .maintenance: return "Groundskeeper"; case .security: return "Security guard"; case .valet: return "Bike attendant"; case .clerk: return "Front-desk clerk" } }
     var name: String { switch self { case .cleaner: return "Luna"; case .maintenance: return "Mateo"; case .security: return "Riley"; case .valet: return "Diego"; case .clerk: return "Nora" } }
     var hireCost: Int { switch self { case .cleaner: return 100; case .maintenance: return 140; case .security: return 160; case .valet: return 120; case .clerk: return 130 } }
     var wage: Int { switch self { case .cleaner: return 15; case .maintenance: return 20; case .security: return 25; case .valet: return 18; case .clerk: return 22 } }
-    var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office."; case .valet: return "Walks to parked guest cars, scrubs and rinses them. Each car earns 35 coins once per day."; case .clerk: return "Handles daytime arrivals, assigns suitable rooms and collects payments while you work outside." } }
+    var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office."; case .valet: return "Walks to parked guest bikes, scrubs and rinses them. Each bike earns 35 coins once per day."; case .clerk: return "Handles daytime arrivals, assigns suitable rooms and collects payments while you work outside." } }
     var home: Tile { switch self { case .clerk:return Tile(x:6,y:10);case .cleaner:return FacilityLayout.laundry;case .maintenance:return Tile(x:11,y:22);case .security:return Tile(x:11,y:12);case .valet:return Tile(x:15,y:32) } }
-    var station: String { switch self {case .clerk:return "RECEPTION";case .cleaner:return "HOUSEKEEPING";case .maintenance:return "MAINTENANCE";case .security:return "SECURITY";case .valet:return "CAR WASH"} }
+    var station: String { switch self {case .clerk:return "RECEPTION";case .cleaner:return "HOUSEKEEPING";case .maintenance:return "MAINTENANCE";case .security:return "SECURITY";case .valet:return "BIKE CARE"} }
     var color: UInt32 { switch self { case .cleaner: return 0xB4A1C5; case .maintenance: return 0xD8AC66; case .security: return 0x718DA9; case .valet: return 0x5DA6B0; case .clerk: return 0xD0B777 } }
 }
 struct MotelWorker: Codable, Identifiable {
@@ -671,7 +671,7 @@ extension Motel {
         state.washIncome = (state.washIncome ?? 0) + 35
         cash += 35; operations = state
         playVisual("carwash",target:HotelCar.tile(car.slot))
-        lastEvent = "Car scrubbed and rinsed. +35 coins."
+        lastEvent = "Bike scrubbed and rinsed. +35 coins."
         return true
     }
 }
@@ -1038,7 +1038,7 @@ extension Motel {
     mutating func tickSimulation() {
         guard managementEnabled,!caught else{return};var s=simulation;s.clockTicks += 1
         let washIncome=operationsState.washIncome ?? 0
-        if washIncome>s.accountedWashIncome {s.serial += 1;s.ledger.insert(LedgerLine(id:s.serial,day:day,hour:s.hour,amount:washIncome-s.accountedWashIncome,category:"Car wash",note:"Guest vehicle service"),at:0);s.accountedWashIncome=washIncome}
+        if washIncome>s.accountedWashIncome {s.serial += 1;s.ledger.insert(LedgerLine(id:s.serial,day:day,hour:s.hour,amount:washIncome-s.accountedWashIncome,category:"Bike care",note:"Guest bike service"),at:0);s.accountedWashIncome=washIncome}
         let advance=s.clockTicks>=20
         if advance {s.clockTicks=0}
         simulation=s
@@ -1482,4 +1482,54 @@ extension Motel {
         return true
     }
     mutating func standFromBeachChair() {world?.beachSeat=nil}
+}
+
+enum FishMeal:String,Codable,CaseIterable,Identifiable {
+    case grilledFish,seafoodSoup,shrimpPlate
+    var id:String {rawValue}
+    var title:String {switch self {case .grilledFish:return "Grilled fish";case .seafoodSoup:return "Seafood soup";case .shrimpPlate:return "Shrimp plate"}}
+    var price:Int {switch self {case .grilledFish:return 18;case .seafoodSoup:return 12;case .shrimpPlate:return 22}}
+}
+extension Motel {
+    @discardableResult mutating func orderFishMeal(_ meal:FishMeal)->Bool {
+        guard canTrade(.fish),cash>=meal.price else{return false}
+        initializeWorld();cash-=meal.price;world!.fishMeal=meal
+        logMoney(-meal.price,category:"Restaurant",note:meal.title)
+        lastEvent="Marina serves your "+meal.title.lowercased()+". Enjoy Coral Catch!"
+        return true
+    }
+    var isRidingBike:Bool {worldState.ridingBike != nil && visit == nil && worldState.place == .grounds}
+    var bicycleColor:UInt32 {(worldState.claimedBikes ?? operationsState.cars ?? []).first{$0.id == worldState.ridingBike}?.color ?? 0x5F9E91}
+    var bikeParking:[Int:Tile] {var p=worldState.bikeParking ?? [:];if p[-800] == nil {p[-800]=Tile(x:15,y:31)};return p}
+    var parkedBikes:[HotelCar] {
+        let personal=HotelCar(id:-800,slot:0,color:0x5F9E91,arrival:8)
+        let claimed=worldState.claimedBikes ?? []
+        let ids=Set(claimed.map(\.id))
+        return ([personal]+(operationsState.cars ?? []).filter{$0.arrival>=8 && !ids.contains($0.id)}+claimed.filter{$0.id != -800}).filter{$0.id != worldState.ridingBike}
+    }
+    var nearbyBike:HotelCar? {
+        guard !caught,visit == nil,worldState.place == .grounds,!isRidingBike else{return nil}
+        return parkedBikes.first{actorTile.distance(to:bikeParking[$0.id] ?? HotelCar.tile($0.slot))<=1}
+    }
+    func bikeBlocks(_ tile:Tile)->Bool {parkedBikes.contains{(bikeParking[$0.id] ?? HotelCar.tile($0.slot)) == tile}}
+    @discardableResult mutating func mountNearbyBike()->Bool {
+        guard let bike=nearbyBike else{return false}
+        initializeWorld()
+        if world!.claimedBikes == nil {world!.claimedBikes=[]}
+        if !world!.claimedBikes!.contains(where:{$0.id == bike.id}) {world!.claimedBikes!.append(bike)}
+        world!.ridingBike=bike.id;world!.beachSeat=nil
+        lastEvent="On your bike. Steer to pedal; dismount before entering a building."
+        return true
+    }
+    @discardableResult mutating func dismountBike()->Bool {
+        guard isRidingBike,let id=worldState.ridingBike else{return false}
+        let candidates=[Tile(x:actorTile.x+1,y:actorTile.y),Tile(x:actorTile.x-1,y:actorTile.y),Tile(x:actorTile.x,y:actorTile.y+1),Tile(x:actorTile.x,y:actorTile.y-1)]
+        guard let parked=candidates.first(where:{tile in
+            !MotelGrounds.blocked(tile) && !bikeBlocks(tile) && tile != MotelGrounds.officeDoor && tile != FamilyHome.door && !NeighborhoodShop.allCases.contains{$0.door == tile} && !(0..<9).contains{MotelGrounds.roomDoor($0)==tile}
+        }) else {lastEvent="Find a little open space to park your bike.";return false}
+        if world!.bikeParking == nil {world!.bikeParking=[:]}
+        world!.bikeParking![id]=parked;world!.ridingBike=nil
+        lastEvent="Bike parked. Walk beside it to ride again."
+        return true
+    }
 }

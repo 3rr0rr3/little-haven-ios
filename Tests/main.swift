@@ -1143,7 +1143,7 @@ func basementSanctuaryRules() {
         }
         require(!BasementLayout.blocked(BasementLayout.gate(id)),"Every gate has a clear visitor approach")
     }
-    var game=Motel();game.initializeWorld();game.world!.place = .house;game.world!.player=Tile(x:7,y:7)
+    var game=Motel();game.initializeWorld();game.world!.place = .house;game.world!.player=Tile(x:2,y:13)
     require(game.nearbyAction == .basement && game.enterBasement(),"Physical home stairs enter the basement")
     require(game.isAtBasement && game.actorTile == BasementLayout.arrival,"Basement arrival is safe")
     for id in 0..<8 {
@@ -1166,3 +1166,30 @@ func basementSanctuaryRules() {
     print("PASS: eight enclosed residents, home stairs, feeding, petting, safe movement and saved care")
 }
 basementSanctuaryRules()
+
+func restaurantAndBikeRules() {
+    require(NeighborhoodShop.fish.door.x<NeighborhoodShop.bar.door.x && NeighborhoodShop.fish.door.y == NeighborhoodShop.bar.door.y,"Fish restaurant is directly left of the bar")
+    require(MotelGrounds.nextStep(from:MotelGrounds.gate,to:NeighborhoodShop.fish.door,avoiding:[]) != nil,"Restaurant entrance reachable")
+    var game=Motel();game.initializeWorld();game.cash=500
+    game.world!.place = .grounds;game.world!.player=NeighborhoodShop.fish.door
+    require(game.enterShop(.fish),"Enter fish restaurant")
+    require(!game.orderFishMeal(.grilledFish),"Cannot order remotely")
+    game.world!.player=ShopLayout.counter
+    require(game.orderFishMeal(.grilledFish) && game.cash == 482 && game.worldState.fishMeal == .grilledFish,"Chef serves a paid meal")
+    game.world!.place = .grounds;game.world!.shop=nil;game.world!.player=Tile(x:15,y:32)
+    require(game.mountNearbyBike() && game.isRidingBike,"Mount a character-sized bicycle")
+    game.moveActor(dx:1,dy:0);require(game.actorTile == Tile(x:16,y:32),"Pedal with ordinary movement controls")
+    require(!game.enter(0) && !game.enterShop(.fish),"Cannot take bicycle indoors")
+    require(game.dismountBike() && !game.isRidingBike && game.nearbyBike != nil,"Dismount and park nearby")
+    let loaded=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(game))
+    require(loaded.bikeParking[-800] == game.bikeParking[-800],"Parked bicycle persists")
+    game.world!.place = .office;game.world!.player=OfficeReception.clerk
+    if let guest=game.waiting.first {
+        require(game.checkIn(guestID:guest.id,roomID:0),"Attend a reception client")
+        require(game.operationsState.visual?.kind == "checkin" && game.operationsState.visual?.target == OfficeReception.computer,"Check-in animation belongs on the desk")
+    }
+    require(BasementLayout.homeStairs == Tile(x:1,y:13),"Small stairs are tucked in the home corner")
+    require(!game.homeBlocked(Tile(x:2,y:13)),"Corner stair approach stays clear")
+    print("PASS: restaurant location and ordering, bicycle mounting/movement/parking/save, desk check-in and corner stairs")
+}
+restaurantAndBikeRules()

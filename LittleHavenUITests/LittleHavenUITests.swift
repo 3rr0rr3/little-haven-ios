@@ -531,6 +531,25 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["Pet"].tap()
         capture(app,"Eight corral sanctuary and animal care")
     }
+    func testRideAndParkBicycle() {
+        let app=launch("--ui-bike")
+        XCTAssertTrue(app.buttons["rideBike"].waitForExistence(timeout:10))
+        app.buttons["rideBike"].tap()
+        XCTAssertTrue(app.buttons["dismountBike"].waitForExistence(timeout:3))
+        app.buttons["Walk east"].tap()
+        capture(app,"Character riding bicycle")
+        app.buttons["dismountBike"].tap()
+        XCTAssertTrue(app.buttons["rideBike"].waitForExistence(timeout:3))
+    }
+    func testFishRestaurantServesMeal() {
+        let app=launch("--ui-fish")
+        XCTAssertTrue(app.buttons["fishDiner0"].waitForExistence(timeout:10))
+        app.buttons["shopCounter"].tap()
+        XCTAssertTrue(app.buttons["orderMeal_grilledFish"].waitForExistence(timeout:3))
+        app.buttons["orderMeal_grilledFish"].tap()
+        XCTAssertTrue(app.staticTexts["482 COINS"].exists)
+        capture(app,"Fish restaurant order and diners")
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

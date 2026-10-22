@@ -13,6 +13,8 @@ struct RPGActor {
     var marker = ""
     var duration = 0.14
     var danger = false
+    var cycling = false
+    var bikeColor:UInt32 = 0x5F9E91
     var corralCreature = 0
     var creature = false
     var animal = 0
@@ -45,6 +47,7 @@ struct RPGSceneView: UIViewRepresentable {
     var visual: HotelVisual?
     var weather: HotelWeather = .sunny
     var cars: [HotelCar] = []
+    var bikePositions:[Int:Tile]=[:]
     var day = 1
     var night = false
     var nightVision = false
@@ -68,7 +71,7 @@ struct RPGSceneView: UIViewRepresentable {
         scene.configure(mapID: mapID, revision: revision, mapSize: mapSize,
                         columns: columns, interior: interior, actors: actors,
                         working: working, workKind: workKind, visual: visual,
-                        weather:weather,cars:cars,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,scenery: scenery)
+                        weather:weather,cars:cars,bikePositions:bikePositions,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,scenery: scenery)
     }
     static func dismantleUIView(_ view: SKView, coordinator: ()) {
         view.scene?.removeAllActions()
@@ -87,6 +90,10 @@ private struct ActorArtwork: View {
             else if actor.creature {MochiArt.draw(context:&context,facing:actor.facing,walk:stride)}
             else if actor.animal > 0 { CatArt.draw(context:&context,gray:actor.animal == 1,walk:stride) }
             else { PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:stride,expression:actor.expression) }
+            if actor.cycling {
+                context.translateBy(x:0,y:12)
+                BicycleArt.draw(context:&context,color:actor.bikeColor,facing:actor.facing,pedal:stride*2)
+            }
             if actor.shopUniform > 0 {ShopKeeperArt.uniform(context:&context,kind:actor.shopUniform,facing:actor.facing)}
         }.frame(width: 24, height: 28)
     }
@@ -129,7 +136,7 @@ final class RPGScene: SKScene {
     @MainActor func configure(mapID: String, revision newRevision: String,
                              mapSize: CGSize, columns: CGFloat, interior: Bool,
                              actors: [RPGActor], working: Bool, workKind:String,
-                             visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,pumpFault:Bool,
+                             visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],bikePositions:[Int:Tile],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,pumpFault:Bool,
                              scenery: () -> AnyView) {
         let changedMap = worldID != mapID
         dimensions = mapSize
@@ -158,7 +165,7 @@ final class RPGScene: SKScene {
         configurePumpFault(active:mapID == "grounds" && pumpFault)
         configureAmbient(night:night && !interior,nightVision:nightVision,powerOut:powerOut)
         configureWeather(interior ? .sunny : weather)
-        if !interior { configureCars(cars,day:day) }
+        if !interior { configureCars(cars,day:day,positions:bikePositions) }
         if let visual, visual.map == mapID, visual.id != visualSeen || visual.map != visualMapSeen {
             visualSeen = visual.id; visualMapSeen = visual.map
             if !changedMap || ProcessInfo.processInfo.arguments.contains(where: { $0.hasPrefix("--ui-action") }) { showVisual(visual) }
@@ -175,7 +182,7 @@ final class RPGScene: SKScene {
             let target = CGPoint(x: CGFloat(actor.tile.x * 16 + 8), y: -CGFloat(actor.tile.y * 16 + 5) - CGFloat(footOffset))
             let moving = existing != nil && node.userData?["targetX"] as? Int != actor.tile.x || existing != nil && node.userData?["targetY"] as? Int != actor.tile.y
             let diagonal = existing != nil && node.userData?["targetX"] as? Int != actor.tile.x && node.userData?["targetY"] as? Int != actor.tile.y
-            let stepDuration = actor.id == "player" && diagonal ? 0.19 : actor.duration
+            let stepDuration = actor.id == "player" && diagonal ? (actor.cycling ? 0.12 : 0.19) : actor.duration
             if existing == nil {
                 node.name = name
                 node.size = CGSize(width: 24 * actor.displayScale, height: 28 * actor.displayScale)
@@ -208,6 +215,13 @@ final class RPGScene: SKScene {
                 }]),withKey:"walkEnd")
                 node.removeAction(forKey: "move")
                 node.run(.move(to: target, duration: stepDuration), withKey: "move")
+            }
+            if actor.id.hasPrefix("fish-diner-") && node.childNode(withName:"dining-fork") == nil {
+                let fork=SKShapeNode(rectOf:CGSize(width:0.7,height:4),cornerRadius:0.2)
+                fork.name="dining-fork";fork.fillColor=UIColor(white:0.85,alpha:1);fork.strokeColor = .clear
+                fork.position=CGPoint(x:6,y:-3);fork.zPosition=2
+                fork.run(.repeatForever(.sequence([.wait(forDuration:1+Double(actor.variant%3)),.moveBy(x:-2,y:5,duration:0.5),.wait(forDuration:0.4),.moveBy(x:2,y:-5,duration:0.5)])))
+                node.addChild(fork)
             }
             if actor.id.hasPrefix("bar-patron-") && node.childNode(withName:"social-drink") == nil {
                 let mug=SKShapeNode(rectOf:CGSize(width:3,height:4),cornerRadius:0.6)
@@ -243,8 +257,8 @@ final class RPGScene: SKScene {
             if !actor.action.isEmpty && node.childNode(withName:"activity") == nil {
                 let frames=activityFrames(actor.action)
                 let prop=SKSpriteNode(texture:frames[0])
-                prop.name="activity"; prop.size=CGSize(width:40,height:40)
-                prop.position = actor.action == "carwash" ? CGPoint(x:0,y:24) : actor.action == "extinguish" ? CGPoint(x:0,y:14) : actor.action == "rescue" ? CGPoint(x:0,y:22) : CGPoint(x:10,y:-1)
+                prop.name="activity"; prop.size=CGSize(width:actor.action == "carwash" ? 24 : 40,height:actor.action == "carwash" ? 24 : 40)
+                prop.position = actor.action == "carwash" ? CGPoint(x:8,y:-8) : actor.action == "extinguish" ? CGPoint(x:0,y:14) : actor.action == "rescue" ? CGPoint(x:0,y:22) : CGPoint(x:10,y:-1)
                 prop.zPosition=5
                 prop.run(.repeatForever(.animate(with:frames,timePerFrame:0.12)))
                 node.addChild(prop)
@@ -286,7 +300,7 @@ final class RPGScene: SKScene {
         layoutCamera(jump: changedMap)
     }
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
-        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)"
+        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.cycling)-\(actor.bikeColor)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
         renderer.scale = 3
@@ -349,7 +363,7 @@ final class RPGScene: SKScene {
     @MainActor private func showVisual(_ visual:HotelVisual) {
         let frames=activityFrames(visual.kind)
         let sprite=SKSpriteNode(texture:frames[0])
-        sprite.size=CGSize(width:48,height:48)
+        sprite.size=CGSize(width:visual.kind == "checkin" ? 22 : 48,height:visual.kind == "checkin" ? 22 : 48)
         sprite.position=CGPoint(x:CGFloat(visual.target.x*16+8),y: -CGFloat(visual.target.y*16+5))
         sprite.zPosition=CGFloat(visual.target.y*16+100)
         world.addChild(sprite)
@@ -364,7 +378,7 @@ final class RPGScene: SKScene {
             sprite.run(.sequence([.repeat(.animate(with:frames,timePerFrame:0.1),count:3),.fadeOut(withDuration:0.25),.removeFromParent()]))
         }
     }
-    @MainActor private func configureCars(_ cars:[HotelCar],day:Int) {
+    @MainActor private func configureCars(_ cars:[HotelCar],day:Int,positions:[Int:Tile]) {
         let ids=Set(cars.map { "car:\($0.id)" })
         for node in world.children where node.name?.hasPrefix("car:") == true && !ids.contains(node.name!) { node.removeFromParent() }
         for car in cars {
@@ -381,18 +395,15 @@ final class RPGScene: SKScene {
                 carTextures[key]=texture
             }
             let node=existing ?? SKSpriteNode(texture:texture)
-            node.texture=texture; node.name=name; node.size=CGSize(width:48,height:34)
-            let bay=HotelCar.tile(car.slot)
-            let fraction=min(1,Double(car.arrival)/4)
-            let x=6+Double(bay.x-6)*fraction
-            let y=34+Double(bay.y-34)*max(0,Double(car.arrival-4))/4
-            let target=CGPoint(x:x*16+8,y: -(y*16+8))
-            if existing == nil { node.position=CGPoint(x:104,y:-552); world.addChild(node) }
-            if node.userData == nil { node.userData=NSMutableDictionary() }
-            if node.userData?["arrival"] as? Int != car.arrival {
-                node.removeAction(forKey:"drive")
-                node.run(.move(to:target,duration:0.95),withKey:"drive")
-                node.userData?["arrival"]=car.arrival
+            node.texture=texture; node.name=name; node.size=CGSize(width:24,height:16)
+            let bay=positions[car.id] ?? HotelCar.tile(car.slot)
+            let target=CGPoint(x:CGFloat(bay.x*16+8),y:-CGFloat(bay.y*16+8))
+            if existing == nil {node.position=target;world.addChild(node)}
+            if node.userData == nil {node.userData=NSMutableDictionary()}
+            let destination="\(bay.x):\(bay.y)"
+            if node.userData?["destination"] as? String != destination {
+                node.run(.move(to:target,duration:0.14),withKey:"drive")
+                node.userData?["destination"]=destination
             }
             node.zPosition=CGFloat(bay.y*16+20)
         }
@@ -502,7 +513,7 @@ struct MotelRPGView: View {
         let interior = visit != nil || motel.worldState.place == .office
         let mapID = visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue
         let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
-        let worldRevision="facilities-world-24-\(motel.serviceAvailable(.repair))-" + motel.staffStations.map(\.rawValue).joined(separator:",") + "-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
+        let worldRevision="facilities-world-28-\(motel.serviceAvailable(.repair))-" + motel.staffStations.map(\.rawValue).joined(separator:",") + "-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
         var actors = [RPGActor(id: "player", tile: motel.relaxingTile ?? motel.actorTile, color: FamilyHome.outfitColors[motel.household.outfit], variant: 7, facing: motel.isRelaxing ? 0 : motel.actorFacing, resting:motel.isRelaxing)]
         if !interior {
             actors += motel.neighborhoodActors + motel.neighborActors
@@ -555,9 +566,14 @@ struct MotelRPGView: View {
             actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.appearanceSeed, danger: true))
         }
         actors += motel.petActors
+        if let index=actors.firstIndex(where:{$0.id == "player"}) {
+            actors[index].cycling=motel.isRidingBike
+            actors[index].bikeColor=motel.bicycleColor
+            if motel.isRidingBike {actors[index].duration=0.09}
+        }
         return RPGSceneView(mapID: mapID, revision: worldRevision, mapSize: CGSize(width: interior ? 144 : MotelGrounds.width*16, height: interior ? 144 : MotelGrounds.height*16), columns: 14, interior: interior, actors: actors, working: workProgress > 0,
                             workKind:motel.cleaningTarget == 0 ? "bed" : motel.cleaningTarget == 1 ? "trash" : "mop",
-                            visual:motel.operationsState.visual,weather:motel.weather,cars:motel.operationsState.cars ?? [],day:motel.day,
+                            visual:motel.operationsState.visual,weather:motel.weather,cars:motel.parkedBikes,bikePositions:motel.bikeParking,day:motel.day,
                             night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair)) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }
             if motel.worldState.place == .office { return AnyView(MotelOfficeCanvas(sceneryOnly: true, motel: motel, x: 0, y: 0)) }

@@ -100,6 +100,7 @@ struct Motel: Codable {
         cash += payment
         repayBusinessDebt()
         guestsServed += 1
+        if isAtReception {playVisual("checkin",target:OfficeReception.computer)}
         registerContract(guest,room:rooms[roomIndex],payment:payment)
         prepareChaosClock()
         lastEvent = "\(guest.name) checked into room \(rooms[roomIndex].number). +\(payment) coins."
@@ -186,6 +187,7 @@ struct Motel: Codable {
         return true
     }
     @discardableResult mutating func enter(_ roomID: Int) -> Bool {
+        guard !isRidingBike else{return false}
         guard canSave, let room = rooms.first(where: { $0.id == roomID }) else { return false }
         visit = RoomVisit(roomID: roomID, sneaking: room.guest != nil)
         return true

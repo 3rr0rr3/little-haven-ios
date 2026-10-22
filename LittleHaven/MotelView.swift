@@ -114,7 +114,7 @@ struct MotelView: View {
             let clock=ContinuousClock()
             while !Task.isCancelled,let direction=joystickDirection,!paused,!motel.caught,scenePhase == .active {
                 change {$0.moveActor(dx:direction.x,dy:direction.y)}
-                let interval=Duration.seconds(direction.x != 0 && direction.y != 0 ? 0.19 : 0.14)
+                let interval=Duration.seconds(motel.isRidingBike ? (direction.x != 0 && direction.y != 0 ? 0.12 : 0.09) : (direction.x != 0 && direction.y != 0 ? 0.19 : 0.14))
                 do {try await clock.sleep(for:interval)} catch {return}
             }
         }
@@ -193,14 +193,18 @@ struct MotelView: View {
 
     private var nearbyTouchActions:some View {
         ZStack {
-                if motel.isRelaxing {
+                if motel.isRidingBike {
+                    Button("Dismount bike") {stop();change{_=$0.dismountBike()}}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("dismountBike")
+                } else if motel.nearbyBike != nil {
+                    Button("Ride bike") {stop();change{_=$0.mountNearbyBike()}}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("rideBike")
+                } else if motel.isRelaxing {
                     Button("Stand up") {stop();change{$0.standFromBeachChair()}}
                         .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("standFromChair")
                 } else if motel.nearbyBeachChair != nil {
                     Button("Sit and relax") {stop();change{_=$0.sitOnBeachChair()}}
                         .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("sitOnChair")
                 } else if let car = motel.nearbyCar {
-                    Button("Wash car / +35 coins") { stop(); change { _ = $0.washNearbyCar() } }
+                    Button("Clean bike / +35 coins") { stop(); change { _ = $0.washNearbyCar() } }
                         .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("washCar")
                         .accessibilityHint("Parking bay \(car.slot+1)")
                 } else if motel.canCollectGuestFavour {
@@ -484,7 +488,7 @@ struct MotelView: View {
         case .pet: return "CALL PET"
         case .home: return "HOME"
         case .homeDecor: return "WORKBENCH"
-        case .shop: return motel.isAtShop ? (motel.currentShop == .bar ? "ORDER DRINK" : "BROWSE") : "ENTER SHOP"
+        case .shop: return motel.isAtShop ? (motel.currentShop == .fish ? "ORDER FOOD" : motel.currentShop == .bar ? "ORDER DRINK" : "BROWSE") : "ENTER SHOP"
         case .incident: return "HELP"
         case .office, .room: return "ENTER"
         case .guest: return "TALK"
@@ -583,6 +587,7 @@ struct MotelView: View {
     }
     private func performAction() {
         guard !paused else { return }
+        guard !motel.isRidingBike else{toast="Dismount your bike before interacting.";return}
         stop()
         if haptics { UIImpactFeedbackGenerator(style:.light).impactOccurred() }
         switch motel.nearbyAction {

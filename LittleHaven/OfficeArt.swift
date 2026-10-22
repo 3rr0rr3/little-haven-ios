@@ -202,7 +202,7 @@ struct HomeInteriorArt:View {
             rect(30,83,34,19,0xAE8964);rect(25,88,5,14,0x8A7158);rect(64,88,5,14,0x8A7158)
             rect(39,86,15,10,0xEADDC2);rect(44,88,5,5,0xA1B895)
             DecorArt.rug(&context,82,113,66,59,0xB79079)
-            CozyScenery.planter(context:&context,x:23,y:197)
+            CozyScenery.planter(context:&context,x:48,y:197)
             rect(25,8,28,18,0xA38462);rect(28,11,22,12,0xA3C3B2)
             if home.level > 0 {CozyScenery.planter(context:&context,x:128,y:40)}
             // Upright TV above a narrow console. The screen is a separate animated scene node.
@@ -215,11 +215,11 @@ struct HomeInteriorArt:View {
             for x in [157.0,190.0] {rect(x+5,207,15,8,0xBE9A76);rect(x+9,217,6,3,0x82ACA5)}
             rect(30,155,27,17,0x88684B);rect(34,157,18,12,0xF2E2BC);rect(43,158,1,10,0xB89B70)
             context.draw(Text("SAVE").font(.system(size:4,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:44,y:176))
-            // Recessed stairwell with timber railing, clear of furniture.
-            rect(104,88,32,22,0x4B514D)
-            for i in 0..<5 {rect(107,90+Double(i*4),26,3,UInt32(0xA58C6D))}
-            rect(102,87,3,24,0x785D44);rect(135,87,3,24,0x785D44)
-            context.draw(Text("BASEMENT").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:120,y:85))
+            // Small stair hatch tucked into the lower-left corner.
+            rect(17,210,14,20,0x4B514D)
+            for i in 0..<5 {rect(19,212+Double(i*3),10,2,0xA58C6D)}
+            rect(15,209,2,22,0x785D44);rect(31,209,2,22,0x785D44)
+            context.draw(Text("DOWN").font(.system(size:2.5,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:24,y:207))
             // Physical workbench: supplies, plans and a hammer, without floating menus.
             rect(64,176,16,12,0x755D44);rect(62,174,20,5,0xAF936A)
             rect(65,175,8,3,0xE4DDC5);rect(76,175,2,7,0x59625E);rect(73,175,7,2,0x83918D)
@@ -365,6 +365,7 @@ struct ExpandedOfficeArt: View {
 
 enum DecorArt {
     static func storefront(_ c:inout GraphicsContext,shop:NeighborhoodShop) {
+        if shop == .fish {fishFacade(&c);return}
         let x=Double((shop.door.x-3)*16),y=Double((shop.door.y-(shop == .bar ? 4 : 6))*16)
         let original=c
         if shop == .bar {c.translateBy(x:0,y:y);c.scaleBy(x:1,y:2.0/3.0);c.translateBy(x:0,y:-y)}
@@ -479,6 +480,10 @@ enum DecorArt {
         } else if shop == .clothing {
             var p=Path();p.move(to:CGPoint(x:x+6,y:y+11));p.addLine(to:CGPoint(x:x+12,y:y+5));p.move(to:CGPoint(x:x+6,y:y+5));p.addLine(to:CGPoint(x:x+12,y:y+11))
             c.stroke(p,with:.color(Color(hex:color)),style:StrokeStyle(lineWidth:1.2,lineCap:.round))
+        } else if shop == .fish {
+            c.fill(Path(ellipseIn:CGRect(x:x+5,y:y+6,width:7,height:4)),with:.color(Color(hex:color)))
+            var tail=Path();tail.move(to:CGPoint(x:x+11,y:y+8));tail.addLine(to:CGPoint(x:x+14,y:y+5));tail.addLine(to:CGPoint(x:x+14,y:y+11));tail.closeSubpath()
+            c.fill(tail,with:.color(Color(hex:color)))
         } else if shop == .bar {
             c.stroke(Path(ellipseIn:CGRect(x:x+6,y:y+4,width:6,height:5)),with:.color(Color(hex:color)),lineWidth:1)
             c.fill(Path(CGRect(x:x+8.5,y:y+8,width:1,height:4)),with:.color(Color(hex:color)))
@@ -488,7 +493,7 @@ enum DecorArt {
             c.fill(Path(CGRect(x:x+8,y:y+8,width:5,height:1.5)),with:.color(Color(hex:color)))
         }
         c.draw(Text(shop.title.uppercased()).font(.system(size:4.2,weight:.heavy,design:.rounded)).foregroundColor(Color(hex:0xFFF1D5)),at:CGPoint(x:x+48,y:y+6))
-        c.draw(Text(shop == .furniture ? "FURNITURE & DECOR" : shop == .clothing ? "CLOTHING & TAILOR" : shop == .bar ? "DRINKS • MUSIC • GOOD COMPANY" : "PAWN & CURIOS").font(.system(size:2.8,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF4DCAB)),at:CGPoint(x:x+48,y:y+12))
+        c.draw(Text(shop == .furniture ? "FURNITURE & DECOR" : shop == .clothing ? "CLOTHING & TAILOR" : shop == .bar ? "DRINKS • MUSIC • GOOD COMPANY" : shop == .fish ? "FRESH FISH • COASTAL KITCHEN" : "PAWN & CURIOS").font(.system(size:2.8,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF4DCAB)),at:CGPoint(x:x+48,y:y+12))
     }
 }
 struct ShopInteriorArt:View {
@@ -546,7 +551,12 @@ enum ShopKeeperArt {
         if facing == 1 || facing == 2 {
             context.translateBy(x:12,y:0);context.scaleBy(x:0.72,y:1);context.translateBy(x:-12,y:0)
         }
-        if kind == 4 {
+        if kind == 5 {
+            box(7,15,11,10,0xEDE5CF);box(10,15,5,9,0xF8F0DA)
+            box(9,18,1,1,0x607B7B);box(14,18,1,1,0x607B7B)
+            box(7,1,12,4,0xF7EBD5)
+            for x in [7.0,11,15] {context.fill(Path(ellipseIn:CGRect(x:x,y:-1,width:5,height:5)),with:.color(Color(hex:0xF7EBD5)))}
+        } else if kind == 4 {
             box(8,15,9,8,0x70424D);box(9,14,3,2,0x2E3737);box(13,14,3,2,0x2E3737)
             box(10,19,5,2,0xD1B778)
         } else if kind == 1 {
@@ -963,5 +973,62 @@ struct CorralCreaturePortrait:View {
     let kind:Int
     var body:some View {
         Canvas {c,_ in c.scaleBy(x:3,y:3);CorralCreatureArt.draw(context:&c,kind:kind,facing:0,walk:0)}.frame(width:72,height:84)
+    }
+}
+
+extension DecorArt {
+    static func fishFacade(_ c:inout GraphicsContext) {
+        let x=Double((NeighborhoodShop.fish.door.x-3)*16),y=Double((NeighborhoodShop.fish.door.y-4)*16)
+        func block(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ color:UInt32) {CozyScenery.block(context:&c,x:x+dx,y:y+dy,w:w,h:h,color:color,depth:0.7)}
+        block(0,7,112,55,0xE4DDC2);block(-2,1,116,9,0x508C91)
+        block(5,12,102,16,0x477D82)
+        c.draw(Text("CORAL CATCH").font(.system(size:6,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF8E8BE)),at:CGPoint(x:x+56,y:y+18))
+        c.draw(Text("FRESH FISH RESTAURANT").font(.system(size:2.6,weight:.bold)).foregroundColor(Color(hex:0xF8E8BE)),at:CGPoint(x:x+56,y:y+24))
+        for offset in [5.0,78] {
+            block(offset,34,30,24,0x6A9FA5);block(offset+2,36,26,19,0xB1D0C6)
+            block(offset+4,49,22,3,0xAD8E66)
+            c.fill(Path(ellipseIn:CGRect(x:x+offset+9,y:y+43,width:12,height:5)),with:.color(Color(hex:0xEDE5C9)))
+        }
+        block(44,33,25,29,0x406E73);block(47,36,19,22,0x9FC3BA);block(62,46,1.5,6,0xEDD2A0)
+        for i in 0..<14 {block(Double(i*8),28,8,6,i%2 == 0 ? 0xEAE1BE : 0x659C9B)}
+        block(41,61,31,3,0xC9B690)
+        c.fill(Path(ellipseIn:CGRect(x:x+8,y:y+14,width:10,height:4)),with:.color(Color(hex:0xF3DDAA)))
+        var tail=Path();tail.move(to:CGPoint(x:x+17,y:y+16));tail.addLine(to:CGPoint(x:x+22,y:y+12));tail.addLine(to:CGPoint(x:x+22,y:y+20));tail.closeSubpath()
+        c.fill(tail,with:.color(Color(hex:0xF3DDAA)))
+    }
+}
+struct FishInteriorArt:View {
+    var body:some View {
+        Canvas {c,_ in
+            func block(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {CozyScenery.block(context:&c,x:x,y:y,w:w,h:h,color:color,depth:0.6)}
+            CozyScenery.interior(context:&c,width:240,height:240,floor:0xC6BDA3,wall:0x70A0A0)
+            DecorArt.shopSign(&c,shop:.fish,x:79,y:7)
+            for x in [20.0,180] {
+                block(x,45,38,70,0x83AFAC);block(x+2,48,34,17,0xBED3C6)
+                for i in 0..<3 {
+                    let y=72+Double(i*12)
+                    c.fill(Path(ellipseIn:CGRect(x:x+7,y:y,width:20,height:5)),with:.color(Color(hex:i%2 == 0 ? 0xC4D2C6 : 0xD0B397)))
+                    block(x+1,y+8,36,2,0xE4D9BD)
+                }
+            }
+            block(78,68,84,25,0x598C8A);block(76,67,88,5,0xE9DDBB)
+            for x in [86.0,109,132] {
+                c.fill(Path(ellipseIn:CGRect(x:x,y:74,width:17,height:9)),with:.color(Color(hex:0xF5E7C8)))
+                c.fill(Path(ellipseIn:CGRect(x:x+3,y:76,width:10,height:4)),with:.color(Color(hex:0xB5C3B8)))
+            }
+            for (index,table) in BarLayout.tables.enumerated() {
+                let x=Double(table.x*16),y=Double(table.y*16)
+                block(x,y,Double(table.width*16),Double(table.height*16)-5,0xAE8B62)
+                block(x+3,y+2,Double(table.width*16)-6,Double(table.height*16)-10,0xE3D8B6)
+                for dx in [7.0,Double(table.width*16)-18] {
+                    c.fill(Path(ellipseIn:CGRect(x:x+dx,y:y+5,width:12,height:8)),with:.color(Color(hex:0xF9EED5)))
+                    c.fill(Path(ellipseIn:CGRect(x:x+dx+2,y:y+7,width:8,height:3)),with:.color(Color(hex:index == 1 ? 0xD5A478 : 0xA5B8B0)))
+                    block(x+dx+13,y+5,1,8,0x8C9F98)
+                }
+            }
+            for x in [22.0,197] {CozyScenery.planter(context:&c,x:x,y:211)}
+            block(110,208,20,32,0xE4D2AA)
+            c.draw(Text("EXIT").font(.system(size:4,weight:.bold)).foregroundColor(Color(hex:0x4A6B63)),at:CGPoint(x:120,y:225))
+        }.frame(width:240,height:240)
     }
 }

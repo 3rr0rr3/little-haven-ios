@@ -268,6 +268,20 @@ jobs:
             sleep 2
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-corral-$ID.png"
           done
+      - name: Capture restaurant bikes and corner stairs
+        if: ${{ always() && env.SIM_DEVICE != '' }}
+        run: |
+          set -euo pipefail
+          for MODE in fish fish-exterior bike bike-riding home-stairs; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-touch
+            sleep 3
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
+          done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-action-checkin --ui-touch
+          sleep 1
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-checkin-desk.png
       - name: Capture guest interaction
         if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |

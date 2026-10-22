@@ -35,10 +35,31 @@ struct ContentView: View {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch")}
+        if args.contains("--ui-bike") || args.contains("--ui-bike-riding") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.waiting=[];sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:15,y:32)
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            if args.contains("--ui-bike-riding") {_=sample.motel!.mountNearbyBike();sample.motel!.world!.player=Tile(x:20,y:34)}
+            sample.save();return sample
+        }
+        if args.contains("--ui-fish") || args.contains("--ui-fish-exterior") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.cash=500;sample.motel!.waiting=[];sample.motel!.world!.place = .grounds
+            sample.motel!.world!.player=NeighborhoodShop.fish.door
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            if args.contains("--ui-fish") {_=sample.motel!.enterShop(.fish);sample.motel!.world!.player=ShopLayout.counter}
+            sample.save();return sample
+        }
+        if args.contains("--ui-action-checkin") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.world!.player=Tile(x:4,y:6)
+            _=sample.motel!.checkIn(guestID:sample.motel!.waiting[0].id,roomID:0)
+            sample.save();return sample
+        }
         if args.contains("--ui-basement") || args.contains("--ui-home-stairs") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.waiting=[];sample.motel!.world!.place = .house
-            sample.motel!.world!.player=Tile(x:7,y:7)
+            sample.motel!.world!.player=Tile(x:2,y:13)
             sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
             if args.contains("--ui-basement") {
                 _=sample.motel!.enterBasement();sample.motel!.world!.player=Tile(x:12,y:23)

@@ -157,7 +157,7 @@ struct CorralCare:Codable {
 }
 enum BasementLayout {
     static let width=25,height=27
-    static let homeStairs=Tile(x:7,y:6)
+    static let homeStairs=Tile(x:1,y:13)
     static let stairs=Tile(x:12,y:25)
     static let arrival=Tile(x:12,y:24)
     static let titles=["Wizard Chichu","Two-tail fox","Blue Chichu","Ogre Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Football Chichu"]
@@ -186,7 +186,7 @@ extension Motel {
     }
     @discardableResult mutating func leaveBasement()->Bool {
         guard isAtBasement,actorTile.distance(to:BasementLayout.stairs)<=1 else{return false}
-        world!.place = .house;world!.player=Tile(x:7,y:7)
+        world!.place = .house;world!.player=Tile(x:2,y:13)
         return true
     }
     @discardableResult mutating func careForCorral(_ id:Int,feed:Bool)->Bool {

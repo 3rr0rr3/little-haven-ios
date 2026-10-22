@@ -60,15 +60,16 @@ struct OfficeReceptionView: View {
     let motel: Motel
     let tap: (OfficeTap) -> Void
     private var visitor: OfficeVisitor? { motel.reception.visitor }
+    private var receptionVisual:HotelVisual? {
+        guard let v=motel.operationsState.visual,v.kind == "checkin",v.map == "office" else{return nil}
+        return HotelVisual(id:v.id,kind:v.kind,origin:v.origin,target:v.target,map:"family-office")
+    }
     private var actors: [RPGActor] {
         var result = [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You")]
         if motel.operationsState.workers.contains(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:$0.role.home) <= 1})  {
             result.append(RPGActor(id:"clerk-nora",tile:Tile(x:6,y:3),color:StaffRole.clerk.color,variant:204,name:"Nora"))
         }
         if let visitor { result.append(RPGActor(id:"reception-guest",tile:visitor.tile,color:visitor.guest.color,variant:visitor.guest.appearanceSeed,facing:visitor.phase == .leaving ? 0 : 3,name:visitor.guest.name,duration:0.3)) }
-        if (motel.operationsState.actionUntil ?? 0) > motel.operationsState.tick {
-            result[0].action = motel.operationsState.visual?.kind ?? ""
-        }
         return result + motel.petActors
     }
     var body: some View {
@@ -76,7 +77,7 @@ struct OfficeReceptionView: View {
             let scale = min(proxy.size.width / 240, proxy.size.height / 240)
             let origin = CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-office",revision:"office-18-\(motel.officeTheme)-\(motel.staffStations.contains(.clerk))",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme,clerkHired:motel.staffStations.contains(.clerk))) }
+                RPGSceneView(mapID:"family-office",revision:"office-28-\(motel.officeTheme)-\(motel.staffStations.contains(.clerk))",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,visual:receptionVisual,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme,clerkHired:motel.staffStations.contains(.clerk))) }
                 target(.player,"Front desk",OfficeReception.clerk,scale,origin)
                 target(.computer,"Reception computer",OfficeReception.computer,scale,origin)
                 ForEach(motel.visiblePets, id: \.key) { pet in
@@ -110,8 +111,8 @@ struct ShopInteriorView:View {
     let exit:()->Void
     private var actors:[RPGActor] {
         [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You"),
-         RPGActor(id:"shopkeeper-"+shop.rawValue,tile:ShopLayout.keeper,color:shop.keeperColor,variant:460+shop.uniform,name:shop.keeperName,shopUniform:shop.uniform)] + (shop == .bar ? BarLayout.seats.enumerated().map { index,tile in
-             RPGActor(id:"bar-patron-\(index)",tile:tile,color:[UInt32(0xA58AAB),0x9CB69E,0xD1AD74][index%3],variant:520+index,facing:index%2 == 0 ? 2 : 1,name:["Avery","Rosa","Theo","Mila","Leon","Iris"][index])
+         RPGActor(id:"shopkeeper-"+shop.rawValue,tile:ShopLayout.keeper,color:shop.keeperColor,variant:460+shop.uniform,name:shop.keeperName,shopUniform:shop.uniform)] + ((shop == .bar || shop == .fish) ? BarLayout.seats.enumerated().map { index,tile in
+             RPGActor(id:(shop == .fish ? "fish-diner-" : "bar-patron-")+"\(index)",tile:tile,color:[UInt32(0xA58AAB),0x9CB69E,0xD1AD74][index%3],variant:520+index,facing:index%2 == 0 ? 2 : 1,name:["Avery","Rosa","Theo","Mila","Leon","Iris"][index])
          } : []) + motel.petActors
     }
     var body:some View {
@@ -119,15 +120,15 @@ struct ShopInteriorView:View {
             let scale=min(proxy.size.width/240,proxy.size.height/240)
             let ox=(proxy.size.width-240*scale)/2,oy=(proxy.size.height-240*scale)/2
             ZStack {
-                RPGSceneView(mapID:"shop-"+shop.rawValue,revision:"store-19",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:false) {shop == .bar ? AnyView(BarInteriorArt()) : AnyView(ShopInteriorArt(shop:shop))}
-                if shop == .bar {
+                RPGSceneView(mapID:"shop-"+shop.rawValue,revision:"store-28",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:false) {shop == .fish ? AnyView(FishInteriorArt()) : shop == .bar ? AnyView(BarInteriorArt()) : AnyView(ShopInteriorArt(shop:shop))}
+                if shop == .bar || shop == .fish {
                     ForEach(Array(BarLayout.seats.enumerated()),id:\.offset) { index,tile in
                         Button {
-                            chat(motel.actorTile.distance(to:tile)<=2 ? ["The music is great tonight!","Jules makes the best citrus soda.","I stopped here after a long road trip.","Cheers! This place feels welcoming.","The Lantern is my favorite evening stop.","Have you tried the house cocktail?"][index] : "Walk closer to the table to chat.")
+                            chat(motel.actorTile.distance(to:tile)<=2 ? (shop == .fish ? ["The fish is delicious!","Marina cooks everything fresh.","The grilled fish is my favorite.","A lovely place for lunch.","Try the seafood soup!","Fresh catch, happy guests."] : ["The music is great tonight!","Jules makes the best citrus soda.","I stopped here after a long road trip.","Cheers! This place feels welcoming.","The Lantern is my favorite evening stop.","Have you tried the house cocktail?"])[index] : "Walk closer to the table to chat.")
                         } label:{Color.white.opacity(0.001).contentShape(Rectangle())}
                         .frame(width:22*scale,height:28*scale)
                         .position(x:ox+CGFloat(tile.x*16+8)*scale,y:oy+CGFloat(tile.y*16)*scale)
-                        .accessibilityLabel("Talk to bar patron").accessibilityIdentifier("barPatron\(index)")
+                        .accessibilityLabel(shop == .fish ? "Talk to restaurant diner" : "Talk to bar patron").accessibilityIdentifier((shop == .fish ? "fishDiner" : "barPatron")+"\(index)")
                     }
                 }
                 Button(action:{if let worldTouch {worldTouch(ShopLayout.counter,trade)} else {trade()}}) {Color.white.opacity(0.001).contentShape(Rectangle())}

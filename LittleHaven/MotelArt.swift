@@ -299,7 +299,7 @@ struct MotelGroundsCanvas: View, Animatable {
                 rect(px+2,py-23,10,7,0xE3D49E)
                 context.fill(Path(ellipseIn:CGRect(x:px+3,y:py-22,width:8,height:4)),with:.color(Color(hex:0xFFF0BA)))
             }
-            for (col,row) in [(45,32),(66,32)] {
+            for (col,row) in [(44,38),(66,32)] {
                 let px=Double(col*16),py=Double(row*16)
                 rect(px+3,py+3,10,12,0x6D9988);rect(px+2,py+1,12,3,0x496F63)
                 label("RECYCLE",px+8,py+8,2,0xF1E4C1)
@@ -358,7 +358,7 @@ struct MotelGroundsCanvas: View, Animatable {
             label("POOL", 105, 278, 4, 0x4A664A)
             rect(64, 252, 40, 5, 0x9F7854); rect(68, 257, 3, 6, 0x6B634D); rect(97, 257, 3, 6, 0x6B634D)
             rect(240,472,365,80,0x747E78)
-            label("GUEST PARKING / CAR WASH",416,466,5,0x2F4E3D)
+            label("BIKE PARKING / BIKE CARE",416,466,5,0x2F4E3D)
             for col in [17,25,33] {
                 let px=Double(col*16)
                 rect(px-5,477,1,40,0xE5D5AD); rect(px+54,477,1,40,0xE5D5AD)
