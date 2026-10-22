@@ -967,11 +967,11 @@ private struct CreativeModeView:View {
         }
     }
     private func objectHandle(_ item:CreativeStructure)->some View {
-        let f=item.footprint,d=motel.creativeOffset(item.id)
+        let f=item.footprint,a=item.art,d=motel.creativeOffset(item.id)
         return Rectangle().fill(selected==item.id ? Color.yellow.opacity(0.12) : Color.white.opacity(0.001))
             .overlay(Rectangle().stroke(selected==item.id ? Color.yellow : Color.white.opacity(0.2),lineWidth:selected==item.id ? 2 : 0.5))
-            .frame(width:CGFloat(f.width*16),height:CGFloat(f.height*16))
-            .offset(x:CGFloat((f.x+d.x)*16),y:CGFloat((f.y+d.y)*16))
+            .frame(width:CGFloat(a.width),height:CGFloat(a.height))
+            .offset(x:CGFloat(a.x+d.x*16),y:CGFloat(a.y+d.y*16))
             .accessibilityElement(children:.ignore).accessibilityAddTraits(.isButton)
             .accessibilityLabel(item.title).accessibilityIdentifier("creative-"+item.id)
             .onTapGesture {selected=item.id;message="Hold and drag "+item.title.lowercased()+" to relocate it."}
