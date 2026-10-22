@@ -37,7 +37,7 @@ struct ContentView: View {
         Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}
         if args.contains("--ui-counter") {
-            var sample=Game();sample.wakeUp();sample.motel!.initializeWorld()
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.world!.place = .office;sample.motel!.world!.player=OfficeReception.clerk
             var visitor=OfficeVisitor(guest:sample.motel!.waiting[0]);visitor.phase = .waiting;visitor.pathIndex=OfficeVisitor.path.count-1
             sample.motel!.world!.reception!.visitor=visitor
@@ -45,7 +45,7 @@ struct ContentView: View {
             sample.save();return sample
         }
         if let kind=ChaosKind.allCases.first(where:{args.contains("--ui-action-response-"+$0.rawValue)}) {
-            var sample=Game();sample.wakeUp();sample.motel!.initializeWorld()
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             for id in 0..<3 {_=sample.motel!.checkIn(guestID:10+id,roomID:id)}
             sample.motel!.world!.place = .grounds;sample.motel!.world!.player=kind.approach
             sample.motel!.operations=MotelOperations()
