@@ -347,10 +347,7 @@ struct MotelGroundsCanvas: View, Animatable {
                     label("FESTIVAL",220,238,5,0x3D5C47)
                 }
                 if motel.simulation.facilities.contains(.parking) {
-                    for col in [17,25,33] {
-                        rect(Double(col*16-5),528,1,32,0xE5D5AD)
-                        rect(Double(col*16+54),528,1,32,0xE5D5AD)
-                    }
+
                 }
             }
             // Pool, courtyard, parking spaces and roadside sign.
@@ -361,9 +358,9 @@ struct MotelGroundsCanvas: View, Animatable {
             label("BIKE PARKING / BIKE CARE",416,466,5,0x2F4E3D)
             for col in [17,25,33] {
                 let px=Double(col*16)
-                rect(px-5,477,1,40,0xE5D5AD); rect(px+54,477,1,40,0xE5D5AD)
-                rect(px-5,477,59,1,0xE5D5AD)
-                label("WASH +35",px+24,527,3,0xF4D891)
+                context.stroke(Path(roundedRect:CGRect(x:px+8,y:481,width:28,height:19),cornerRadius:4),with:.color(Color(hex:0xC3CBC0)),lineWidth:1.5)
+                rect(px+7,499,3,3,0x4A615B);rect(px+34,499,3,3,0x4A615B)
+                label("BIKE CARE +35",px+24,527,3,0xF4D891)
             }
             rect(238,505,16,25,0x436D76); rect(240,508,12,12,0x8FC3CC)
             label("HIRE DIEGO",245,540,3,0xF4D891)

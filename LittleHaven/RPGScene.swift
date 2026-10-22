@@ -84,15 +84,20 @@ private struct ActorArtwork: View {
     let stride: Double
     var body: some View {
         Canvas { context, _ in
+            if actor.cycling {
+                var bicycle=context
+                bicycle.translateBy(x:0,y:12)
+                BicycleArt.draw(context:&bicycle,color:actor.bikeColor,facing:actor.facing,pedal:stride*2)
+            }
             if actor.effect > 0 {
                 ChaosArt.draw(context:&context,kind:actor.effect,stride:stride,color:actor.color,variant:actor.variant,facing:actor.facing)
             } else if actor.corralCreature > 0 {CorralCreatureArt.draw(context:&context,kind:actor.corralCreature,facing:actor.facing,walk:stride)}
             else if actor.creature {MochiArt.draw(context:&context,facing:actor.facing,walk:stride)}
             else if actor.animal > 0 { CatArt.draw(context:&context,gray:actor.animal == 1,walk:stride) }
-            else { PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:stride,expression:actor.expression) }
-            if actor.cycling {
-                context.translateBy(x:0,y:12)
-                BicycleArt.draw(context:&context,color:actor.bikeColor,facing:actor.facing,pedal:stride*2)
+            else { PaperPerson.draw(context:&context,x:4,y:actor.cycling ? 7.5 : 9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:actor.cycling ? stride*0.4 : stride,expression:actor.expression) }
+            if actor.cycling && (actor.facing == 0 || actor.facing == 3) {
+                var handlebar=Path();handlebar.move(to:CGPoint(x:6,y:21));handlebar.addLine(to:CGPoint(x:18,y:21))
+                context.stroke(handlebar,with:.color(Color(hex:0x344D48)),style:StrokeStyle(lineWidth:1.2,lineCap:.round))
             }
             if actor.shopUniform > 0 {ShopKeeperArt.uniform(context:&context,kind:actor.shopUniform,facing:actor.facing)}
         }.frame(width: 24, height: 28)

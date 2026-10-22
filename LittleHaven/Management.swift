@@ -1500,7 +1500,7 @@ extension Motel {
     }
     var isRidingBike:Bool {worldState.ridingBike != nil && visit == nil && worldState.place == .grounds}
     var bicycleColor:UInt32 {(worldState.claimedBikes ?? operationsState.cars ?? []).first{$0.id == worldState.ridingBike}?.color ?? 0x5F9E91}
-    var bikeParking:[Int:Tile] {var p=worldState.bikeParking ?? [:];if p[-800] == nil {p[-800]=Tile(x:15,y:31)};return p}
+    var bikeParking:[Int:Tile] {var p=worldState.bikeParking ?? [:];if p[-800] == nil {p[-800]=Tile(x:16,y:32)};return p}
     var parkedBikes:[HotelCar] {
         let personal=HotelCar(id:-800,slot:0,color:0x5F9E91,arrival:8)
         let claimed=worldState.claimedBikes ?? []
