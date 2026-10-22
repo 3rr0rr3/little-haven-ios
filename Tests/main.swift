@@ -1280,6 +1280,7 @@ func responseAndGuestVariationRules() {
     require(Set(batches.flatMap{$0}.map(\.id)).count==80,"Guest IDs remain unique across days")
     hotel=Motel();hotel.initializeWorld();hotel.world!.place = .grounds
     for id in 0..<3 {_=hotel.checkIn(guestID:10+id,roomID:id)}
+    require(Set(Motel.arrivals(day:3,count:12).map(\.id)).isDisjoint(with:Set(Motel.arrivals(day:4,count:12).map(\.id))),"Busy twelve-guest days cannot overlap guest IDs")
     var victims:[String]=[]
     for _ in 0..<12 {
         hotel.operations!.incident=nil;hotel.operations!.incidentsStarted=1;hotel.operations!.nextIncidentTick=0

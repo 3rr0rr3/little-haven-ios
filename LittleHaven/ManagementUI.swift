@@ -553,7 +553,7 @@ struct ManagementHub:View {
                 if args.contains("--ui-management-growth") {tab = .growth}
             }
             .sheet(item:$mini) { request in
-                HotelMiniGame(repairing:request.repairing) {
+                HotelMiniGame(repairing:request.repairing,outfit:FamilyHome.outfitColors[motel.household.outfit]) {
                     let result=perform { request.repairing ? $0.repairRoom(request.roomID) : $0.managerClean(request.roomID) }
                     if result {mini=nil}
                     return result
@@ -818,6 +818,7 @@ struct ManagementHub:View {
 }
 struct HotelMiniGame:View {
     let repairing:Bool
+    var outfit:UInt32 = 0x6AACA3
     let complete:()->Bool
     @Environment(\.dismiss) private var dismiss
     @State private var started=Date()
@@ -832,7 +833,17 @@ struct HotelMiniGame:View {
                 let elapsed=timeline.date.timeIntervalSince(started)
                 let phase=elapsed.truncatingRemainder(dividingBy:1.6)/1.6
                 VStack {
-                    HotelActionArtwork(kind:repairing ? "repair" : "mop",frame:Int(elapsed*8)%8).frame(width:130,height:100)
+                    ZStack {
+                        Canvas {context,_ in
+                            context.translateBy(x:16,y:5+sin(elapsed*12)*1.5)
+                            context.scaleBy(x:2.7,y:2.7)
+                            PaperPerson.draw(context:&context,x:4,y:9,color:outfit,variant:7,facing:2,walk:0)
+                            let hand=Path(ellipseIn:CGRect(x:20,y:20+sin(elapsed*12),width:3,height:4))
+                            context.fill(hand,with:.color(Color(hex:0xDFB58C)))
+                        }.frame(width:100,height:100)
+                        HotelActionArtwork(kind:repairing ? "repair" : "mop",frame:Int(elapsed*8)%8)
+                            .scaleEffect(0.8).offset(x:28,y:17)
+                    }.frame(width:150,height:100)
                     GeometryReader {geometry in
                         ZStack(alignment:.leading) {
                             Capsule().fill(Color.white.opacity(0.1))

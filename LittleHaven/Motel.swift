@@ -81,10 +81,11 @@ struct Motel: Codable {
         let names = randomize ? Self.guestNames.shuffled() : Self.guestNames
         let stories = ["Passing through on a road trip.", "In town for the weekend market.", "Needs a quiet place to write.", "Visiting an old friend.", "Taking the scenic route home."]
         return (0..<count).map { index in
-            let key = day * 10 + index
+            let key = day == 1 ? 10 + index : day * 100 + index
+            let identity=Self.guestNames.firstIndex(of:names[index % names.count]) ?? index
             return MotelGuest(id: key, name: names[index % names.count],
                               nights: randomize ? Int.random(in:1...3) : (index % 3 == 1 ? 2 : 1),
-                              color: [UInt32(0xD99B7E), 0x82AFC1, 0xAE95B9, 0xD6BD71][randomize ? Int.random(in:0..<4) : index % 4],
+                              color: [UInt32(0xD99B7E), 0x82AFC1, 0xAE95B9, 0xD6BD71][identity % 4],
                               story: stories[randomize ? Int.random(in:0..<stories.count) : (day + index) % stories.count])
         }
     }
