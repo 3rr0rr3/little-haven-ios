@@ -215,6 +215,11 @@ struct HomeInteriorArt:View {
             for x in [157.0,190.0] {rect(x+5,207,15,8,0xBE9A76);rect(x+9,217,6,3,0x82ACA5)}
             rect(30,155,27,17,0x88684B);rect(34,157,18,12,0xF2E2BC);rect(43,158,1,10,0xB89B70)
             context.draw(Text("SAVE").font(.system(size:4,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:44,y:176))
+            // Recessed stairwell with timber railing, clear of furniture.
+            rect(104,88,32,22,0x4B514D)
+            for i in 0..<5 {rect(107,90+Double(i*4),26,3,UInt32(0xA58C6D))}
+            rect(102,87,3,24,0x785D44);rect(135,87,3,24,0x785D44)
+            context.draw(Text("BASEMENT").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:120,y:85))
             // Physical workbench: supplies, plans and a hammer, without floating menus.
             rect(64,176,16,12,0x755D44);rect(62,174,20,5,0xAF936A)
             rect(65,175,8,3,0xE4DDC5);rect(76,175,2,7,0x59625E);rect(73,175,7,2,0x83918D)
@@ -806,5 +811,157 @@ struct MochiPortrait:View {
             context.scaleBy(x:3,y:3)
             MochiArt.draw(context:&context,facing:0,walk:0)
         }.frame(width:78,height:84)
+    }
+}
+
+
+struct BasementArt:View {
+    var body:some View {
+        Canvas {c,_ in
+            func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32,_ r:Double=1) {
+                c.fill(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:r),with:.color(Color(hex:color)))
+            }
+            func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
+                c.fill(Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:color)))
+            }
+            box(0,0,400,432,0x405954)
+            box(16,32,368,384,0xB4A18B)
+            for row in 2..<26 {for col in 1..<24 {
+                let color:UInt32=(col+row)%2 == 0 ? 0xBEAC95 : 0xB7A48E
+                box(Double(col*16+1),Double(row*16+1),14,14,color)
+            }}
+            c.draw(Text("CREATURE SANCTUARY").font(.system(size:9,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF3DEB0)),at:CGPoint(x:200,y:18))
+            for id in 0..<8 {
+                let pen=BasementLayout.pen(id),x=Double(pen.x*16),y=Double(pen.y*16)
+                let colors:[UInt32]=[0x8F887A,0xB9A279,0x819EA4,0x91A071,0x7C9CA7,0x9B9184,0x9B8295,0x91AF95]
+                box(x,y,128,64,colors[id],3)
+                // Eight enclosed habitats: continuous rails, posts, water and bedding.
+                for offset in [0.0,57] {box(x,y+offset,128,4,0x8D6C47)}
+                for offset in [0.0,124] {box(x+offset,y,4,64,0x8D6C47)}
+                for post in stride(from:0,through:120,by:24) {
+                    box(x+Double(post),y-2,4,10,0xC1A075);box(x+Double(post),y+55,4,10,0xC1A075)
+                }
+                box(x+7,y+14,28,26,0x796854,4);box(x+10,y+17,22,19,0xD9C198,4)
+                oval(x+97,y+36,18,8,0xD2CBB1);oval(x+100,y+37,12,4,0x78B5C3)
+                oval(x+98,y+15,15,7,0x9D7B57);oval(x+101,y+16,9,3,0xC0A56B)
+                c.draw(Text("\(id+1)  "+BasementLayout.titles[id].uppercased()).font(.system(size:4,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0xF7E5BE)),at:CGPoint(x:x+64,y:y+5))
+                if id%2 == 0 {box(x+125,y+23,3,20,0xD5B477)} else {box(x,y+23,3,20,0xD5B477)}
+                // A distinct enrichment object for every resident.
+                switch id {
+                case 0:
+                    box(x+8,y+45,24,5,0x724F58);box(x+10,y+42,22,4,0xD2B87F)
+                    oval(x+28,y+38,5,5,0xE8D38C)
+                case 1:oval(x+17,y+43,12,12,0xF0A24A);box(x+21,y+46,4,5,0xF5DFB7)
+                case 2:box(x+17,y+43,4,12,0x775B45);box(x+8,y+42,23,3,0xC6B498)
+                case 3:oval(x+9,y+44,26,9,0x5F876C);CozyScenery.planter(context:&c,x:x+8,y:y+33)
+                case 4:box(x+7,y+44,28,10,0x689BA9,4);oval(x+12,y+46,16,5,0xA0D0D6)
+                case 5:box(x+8,y+49,28,2,0x485650);oval(x+8,y+45,6,10,0x4B5555);oval(x+29,y+45,6,10,0x4B5555)
+                case 6:box(x+8,y+44,26,11,0x71596B);box(x+11,y+46,20,7,0xD4A0A2)
+                default:oval(x+13,y+43,12,12,0xF4EDDA);oval(x+17,y+47,4,4,0x384B4A)
+                }
+            }
+            for y in [40.0,120,200,280,360] {
+                box(192,y,16,8,0xCEB882);oval(195,y+1,10,5,0xF1D494)
+            }
+            box(176,391,48,25,0x4F5A53)
+            for i in 0..<5 {box(180,393+Double(i*4),40,3,0xC6AD86)}
+            c.draw(Text("UPSTAIRS").font(.system(size:5,weight:.black)).foregroundColor(Color(hex:0xF4E3BC)),at:CGPoint(x:200,y:423))
+        }.frame(width:400,height:432)
+    }
+}
+
+enum CorralCreatureArt {
+    static func draw(context:inout GraphicsContext,kind:Int,facing:Int,walk:Double) {
+        var c=context
+        func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
+            c.fill(Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:color)))
+        }
+        func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32,_ r:Double=1) {
+            c.fill(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:r),with:.color(Color(hex:color)))
+        }
+        func polygon(_ points:[CGPoint],_ color:UInt32) {
+            var p=Path();p.addLines(points);p.closeSubpath();c.fill(p,with:.color(Color(hex:color)))
+        }
+        let fur:UInt32=kind == 2 ? 0xE9A13B : kind == 3 ? 0x3469BF : kind == 4 ? 0x96A440 : 0x8C8072
+        let faceY=kind == 1 ? 12.0 : 9.0
+        let step=walk*0.8
+        oval(3,25,19,2.5,0x304139)
+        // Fox tails and shark fins are part of the full silhouette.
+        if kind == 2 {
+            oval(0,13,8,12,0xD89430);oval(16,13,8,12,0xD89430)
+            oval(0,12,7,5,0xF2E8D2);oval(17,12,7,5,0xF2E8D2)
+        }
+        if kind == 5 {
+            polygon([CGPoint(x:5,y:18),CGPoint(x:0,y:24),CGPoint(x:7,y:23)],0x647783)
+            polygon([CGPoint(x:19,y:18),CGPoint(x:24,y:24),CGPoint(x:17,y:23)],0x647783)
+            oval(4,6,16,21,0x667A86);oval(7,18,10,9,0xBEC7C6)
+        } else {
+            oval(kind == 6 ? 4 : 6,17,kind == 6 ? 16 : 12,10,kind == 1 ? 0x3D3540 : kind == 4 ? 0xD1C2A2 : fur)
+        }
+        oval(6,24+step,5,3,fur);oval(14,24-step,5,3,fur)
+        if kind != 5 && kind != 4 {
+            polygon([CGPoint(x:4,y:faceY+3),CGPoint(x:4,y:faceY-5),CGPoint(x:10,y:faceY+1)],fur)
+            polygon([CGPoint(x:14,y:faceY+1),CGPoint(x:20,y:faceY-5),CGPoint(x:20,y:faceY+3)],fur)
+            polygon([CGPoint(x:5,y:faceY),CGPoint(x:5,y:faceY-3),CGPoint(x:8,y:faceY+1)],0xC3A29A)
+            polygon([CGPoint(x:16,y:faceY+1),CGPoint(x:19,y:faceY-3),CGPoint(x:19,y:faceY)],0xC3A29A)
+        }
+        if kind == 4 {
+            box(2,4,3,7,fur);box(19,4,3,7,fur)
+            oval(0,2,6,4,fur);oval(18,2,6,4,fur)
+            oval(1,2.5,3,2,0x596E2D);oval(20,2.5,3,2,0x596E2D)
+            box(5,18,4,7,0x685140);box(15,18,4,7,0x685140);box(7,24,11,1,0x6D5540)
+        }
+        if kind == 6 {
+            oval(0,14,7,9,fur);oval(17,14,7,9,fur)
+            oval(0,8,5,8,fur);oval(19,8,5,8,fur)
+            oval(1,7,5,4,fur);oval(18,7,5,4,fur)
+            for row in 0..<3 {oval(8,18+Double(row)*2.5,3.5,2,0xB1A28F);oval(12,18+Double(row)*2.5,3.5,2,0xB1A28F)}
+        }
+        if kind == 8 {
+            box(5,17,14,9,0xEAE5D7,2)
+            for x in [7.0,13] {box(x,17,3,9,0x79B6D1)}
+            box(5,17,14,1,0x283F48);box(5,24,14,3,0x263C48)
+            if facing != 3 {c.draw(Text("10").font(.system(size:5,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0x172C34)),at:CGPoint(x:12,y:21))}
+        }
+        oval(4,faceY-1,16,11,fur)
+        if kind == 5 {
+            c.stroke(Path(ellipseIn:CGRect(x:3,y:faceY-2,width:18,height:13)),with:.color(Color(hex:0xCDD4D1)),lineWidth:2)
+            for i in 0..<6 {
+                let x=5+Double(i)*2.7
+                polygon([CGPoint(x:x,y:faceY-1),CGPoint(x:x+1.6,y:faceY-1),CGPoint(x:x+0.8,y:faceY+1)],0xF7EBD4)
+            }
+        }
+        if facing != 3 {
+            let shift=facing == 1 ? -1.5 : facing == 2 ? 1.5 : 0
+            for x in [8.0,16] {
+                oval(x-2+shift,faceY+2,4,4,kind == 3 ? 0xBAD4A6 : 0xD5C279)
+                oval(x-0.8+shift,faceY+2.4,1.6,3.2,0x243038)
+                oval(x-0.5+shift,faceY+2.5,0.7,0.8,0xFFF0CF)
+            }
+            oval(9+shift,faceY+6,6,3,kind == 2 ? 0xF1E3C8 : 0xC3B297)
+            oval(10.5+shift,faceY+5.5,3,1.8,0x6A4745)
+            if kind == 7 {
+                oval(8,faceY+7,8,5,0x56303C)
+                polygon([CGPoint(x:9,y:faceY+7),CGPoint(x:11,y:faceY+7),CGPoint(x:10,y:faceY+10)],0xF6E6CA)
+                polygon([CGPoint(x:13,y:faceY+7),CGPoint(x:15,y:faceY+7),CGPoint(x:14,y:faceY+10)],0xF6E6CA)
+            }
+            if kind != 3 && kind != 4 {for x in [5.0,18] {box(x,faceY+6,2,0.6,0x6B625A)}}
+        }
+        if kind == 1 {
+            polygon([CGPoint(x:3,y:10),CGPoint(x:7,y:4),CGPoint(x:9,y:0.8),CGPoint(x:14,y:3),CGPoint(x:17,y:9)],0x75583F)
+            box(1,9,22,3,0x634D39,2);box(6,6,9,1,0x9A7955)
+            box(6,20,12,3,0x8B3D48);box(7,23,4,4,0xB78B42)
+            box(8,20,3,3,0xC99A43);box(14,20,3,3,0xC99A43)
+        }
+        if kind == 2 {
+            polygon([CGPoint(x:8,y:faceY-1),CGPoint(x:13,y:faceY-6),CGPoint(x:18,y:faceY-1)],0xF4B74E)
+            oval(4,21,4,4,0xF1E9D4);oval(16,21,4,4,0xF1E9D4)
+        }
+    }
+}
+struct CorralCreaturePortrait:View {
+    let kind:Int
+    var body:some View {
+        Canvas {c,_ in c.scaleBy(x:3,y:3);CorralCreatureArt.draw(context:&c,kind:kind,facing:0,walk:0)}.frame(width:72,height:84)
     }
 }

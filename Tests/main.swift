@@ -1131,3 +1131,38 @@ func referenceCompanionRules() {
     print("PASS: reference creature follow, transfer, waiting save and compact reception laundry")
 }
 referenceCompanionRules()
+
+func basementSanctuaryRules() {
+    require(BasementLayout.titles.count == 8,"Exactly eight distinct corral residents")
+    for id in 0..<8 {
+        let p=BasementLayout.pen(id)
+        for tick in 0..<40 {
+            let creature=BasementLayout.creature(id,tick:tick)
+            require(p.contains(creature),"Every creature stays inside its assigned corral")
+            require((0..<8).filter{BasementLayout.pen($0).contains(creature)}.count == 1,"Exactly one habitat contains each resident")
+        }
+        require(!BasementLayout.blocked(BasementLayout.gate(id)),"Every gate has a clear visitor approach")
+    }
+    var game=Motel();game.initializeWorld();game.world!.place = .house;game.world!.player=Tile(x:7,y:7)
+    require(game.nearbyAction == .basement && game.enterBasement(),"Physical home stairs enter the basement")
+    require(game.isAtBasement && game.actorTile == BasementLayout.arrival,"Basement arrival is safe")
+    for id in 0..<8 {
+        game.world!.player=BasementLayout.gate(id)
+        require(game.nearbyCorral == id,"Each corral is individually interactive")
+        require(game.careForCorral(id,feed:true),"Feed each resident")
+        require(!game.careForCorral(id,feed:true),"Feeding records the day")
+        require(game.careForCorral(id,feed:false),"Pet each resident")
+        let before=game.actorTile
+        game.moveActor(dx:id%2 == 0 ? -1 : 1,dy:0)
+        require(game.actorTile == before,"Corral fences block entry")
+    }
+    game.world!.player=BasementLayout.arrival
+    require(!game.careForCorral(0,feed:false),"Cannot interact with a distant animal")
+    let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(game))
+    require(saved.isAtBasement && saved.corralCare(7).fedDay == game.day && saved.corralCare(7).visits == 1,"Basement location and animal care persist")
+    game.togglePet("mochi") // Tuki is upstairs, so remote follow stays disabled.
+    require(!game.petState("mochi").following,"Corrals do not alter the home companion")
+    require(game.leaveBasement() && game.isAtHome && !game.homeBlocked(game.actorTile),"Upstairs returns to the family home")
+    print("PASS: eight enclosed residents, home stairs, feeding, petting, safe movement and saved care")
+}
+basementSanctuaryRules()

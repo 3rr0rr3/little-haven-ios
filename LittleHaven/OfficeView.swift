@@ -22,7 +22,7 @@ extension Motel {
     }
 }
 
-enum OfficeTap: String { case computer, workbench, player, guest, door, chichu, chichi, mochi, samhil, hildarelys, tools, paint, bed, save }
+enum OfficeTap: String { case computer, workbench, player, guest, door, basement, chichu, chichi, mochi, samhil, hildarelys, tools, paint, bed, save }
 struct FamilyHouseView:View {
     @Environment(\.worldTouch) private var worldTouch
     let motel:Motel
@@ -37,12 +37,13 @@ struct FamilyHouseView:View {
             let scale=min(proxy.size.width/240,proxy.size.height/240)
             let origin=CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-house",revision:"decorated-home-17-\(motel.household.level)-\(motel.household.wallpaper)-\(motel.household.floor)-\(motel.household.placed.map{"\($0.id):\($0.tile.x):\($0.tile.y)"}.joined())",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeInteriorArt(home:motel.household))}
+                RPGSceneView(mapID:"family-house",revision:"decorated-home-26-\(motel.household.level)-\(motel.household.wallpaper)-\(motel.household.floor)-\(motel.household.placed.map{"\($0.id):\($0.tile.x):\($0.tile.y)"}.joined())",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeInteriorArt(home:motel.household))}
                 target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin)
                 target(.samhil,"Talk to Samhil",OfficeReception.samhil,scale,origin)
                 ForEach(motel.visiblePets, id: \.key) { pet in
                     target(OfficeTap(rawValue:pet.key)!,"Talk to \(motel.companionName(pet.key))",pet.value.tile,scale,origin)
                 }
+                target(.basement,"Enter basement",BasementLayout.homeStairs,scale,origin)
                 target(.door,"Leave home",FamilyHome.exit,scale,origin)
                 target(.player,"Home checkpoint",Tile(x:2,y:10),scale,origin)
                 target(.workbench,"Use workbench",FamilyHome.workbench,scale,origin)
@@ -138,5 +139,36 @@ struct ShopInteriorView:View {
             }
         }.accessibilityElement(children:.contain).accessibilityIdentifier("shopInterior")
             .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
+    }
+}
+
+
+struct BasementView:View {
+    let motel:Motel
+    let corral:(Int)->Void
+    let exit:()->Void
+    private var actors:[RPGActor] {
+        [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing)] +
+        (0..<8).map {id in
+            let tile=BasementLayout.creature(id,tick:motel.worldState.tick)
+            let previous=BasementLayout.creature(id,tick:max(0,motel.worldState.tick-5))
+            return RPGActor(id:"corral-creature-\(id)",tile:tile,color:0x999999,variant:id,facing:tile.x<previous.x ? 1 : tile.x>previous.x ? 2 : tile.y<previous.y ? 3 : 0,duration:MotelCadence.travel*5,corralCreature:id+1,displayScale:0.95)
+        } + motel.petActors
+    }
+    var body:some View {
+        VStack(spacing:4) {
+            RPGSceneView(mapID:"basement",revision:"sanctuary-26",mapSize:CGSize(width:400,height:432),columns:25,interior:true,actors:actors) {AnyView(BasementArt())}
+                .accessibilityIdentifier("basementScene")
+            ScrollView(.horizontal) {
+                HStack {
+                    ForEach(0..<8,id:\.self) {id in
+                        Button(BasementLayout.titles[id]) {corral(id)}
+                            .buttonStyle(MotelButtonStyle(subdued:true))
+                            .accessibilityIdentifier("corral\(id)")
+                    }
+                    Button("Upstairs",action:exit).buttonStyle(MotelButtonStyle()).accessibilityIdentifier("basementUpstairs")
+                }
+            }.frame(height:52)
+        }.accessibilityElement(children:.contain)
     }
 }

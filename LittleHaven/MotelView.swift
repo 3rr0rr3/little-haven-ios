@@ -62,6 +62,7 @@ struct MotelView: View {
     @State private var showSneak = false
     @State private var confirmRestore = false
     @State private var toast: String?
+    @State private var corral:Int?
     @State private var family: OfficeTap?
     @State private var showPolice = false
     @State private var showIncident = false
@@ -77,7 +78,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
@@ -100,6 +101,7 @@ struct MotelView: View {
             if motel.business.police?.arrived == true { showPolice=true }
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--ui-dialogue") { family = .hildarelys }
+            for id in 0..<8 where ProcessInfo.processInfo.arguments.contains("--ui-corral-\(id)") {corral=id}
             if ProcessInfo.processInfo.arguments.contains("--ui-creature-portrait") { family = .mochi }
             if ProcessInfo.processInfo.arguments.contains("--ui-guest-dialogue") { talkingRoom=0 }
             if ProcessInfo.processInfo.arguments.contains("--ui-police") { showPolice = true }
@@ -421,6 +423,11 @@ struct MotelView: View {
                     policeDialogue(police).padding(12)
                 } else if let id=talkingRoom, let room=motel.rooms.first(where:{$0.id==id}), let guest=room.guest {
                     guestDialogue(room:room,guest:guest).padding(12)
+                } else if let id=corral {
+                    GameDialogue(speaker:BasementLayout.titles[id],text:motel.corralCare(id).fedDay == motel.day ? "Fresh food and water are ready. Your friend looks content in its own cozy corral." : "Your friend wanders around its decorated corral and watches you from the fence.",portrait:AnyView(CorralCreaturePortrait(kind:id+1)),choices:[
+                        DialogueChoice(title:motel.corralCare(id).fedDay == motel.day ? "Fed today" : "Feed",action:{change{_=$0.careForCorral(id,feed:true)};corral=nil}),
+                        DialogueChoice(title:"Pet",action:{change{_=$0.careForCorral(id,feed:false)};corral=nil})
+                    ]) {corral=nil}.padding(12)
                 } else if let family {
                     GameDialogue(speaker:familyTitle,text:familyMessage,portrait:familyPortrait(family),choices:familyChoices(family)) { self.family = nil }.padding(12)
                 } else if showIncident, let incident = motel.operationsState.incident {
@@ -453,6 +460,8 @@ struct MotelView: View {
                 .accessibilityIdentifier("motelWorld")
         } else if let shop=motel.currentShop {
             ShopInteriorView(motel:motel,shop:shop,chat:{toast=$0},trade:{if motel.canTrade(shop) {performAction()} else {toast="Walk to "+shop.keeperName+"'s counter first."}},exit:{stop();var left=false;change{left=$0.leaveShop()};if !left {toast="Walk to the lower shop door first."}})
+        } else if motel.isAtBasement {
+            BasementView(motel:motel,corral:openCorral,exit:{stop();change{_=$0.leaveBasement()}}).id(mapIdentity)
         } else if motel.isAtHome {
             FamilyHouseView(motel:motel,tap:officeTap).id(mapIdentity)
         } else if motel.isAtReception {
@@ -469,6 +478,8 @@ struct MotelView: View {
 
     private var actionName: String {
         switch motel.nearbyAction {
+        case .basement:return "BASEMENT"
+        case .corral:return "VISIT CREATURE"
         case .computer: return "RECEPTION PC"
         case .pet: return "CALL PET"
         case .home: return "HOME"
@@ -514,6 +525,8 @@ struct MotelView: View {
     private var hint: String {
         if motel.isRelaxing {return "Relaxing by the sea. Stand up or move whenever you are ready."}
         switch motel.nearbyAction {
+        case .basement:return "Stairs to your basement sanctuary."
+        case .corral(let id):return "Visit "+BasementLayout.titles[id]+" at its corral gate."
         case .computer: return "RECEPTION PC"
         case .pet: return "CALL PET"
         case .home: return "Your family home. Visit, decorate and upgrade with motel profits."
@@ -539,6 +552,7 @@ struct MotelView: View {
         case .loot(let item): return "\(RoomVisit.lootNames[item]): +\(RoomVisit.lootValues[item]) value, +\(RoomVisit.lootNoise[item]) suspicion. Sell it at the pawn shop after escaping."
         case .none:
             if let shop=motel.currentShop {return "Browse the displays. Walk to "+shop.keeperName+"'s counter to buy or sell, and use the lower door to leave."}
+            if motel.isAtBasement {return "Eight private corrals. Walk along the central aisle to visit, feed, and pet each resident. Return upstairs at the south stairs."}
             if motel.isAtHome {return "Relax with your family and the animated TV. Use the workbench to arrange your furniture."}
             if motel.worldState.place == .grounds && BeachLayout.contains(motel.actorTile) {return "Sunset Cove: palms, umbrellas and beach chairs. Follow the sand; deep water is out of bounds."}
             if motel.visit?.sneaking == true { return "Avoid the guest. Take belongings and return to the door before suspicion reaches 100%." }
@@ -563,11 +577,17 @@ struct MotelView: View {
         return GameDialogue(speaker:guest.name,text:motel.guestConversation(room.id),portrait:AnyView(PaperPortrait(color:guest.color,variant:guest.appearanceSeed)),choices:choices) { talkingRoom=nil }
     }
 
+    private func openCorral(_ id:Int) {
+        guard motel.isAtBasement,motel.actorTile.distance(to:BasementLayout.gate(id))<=1 else{toast="Walk to this corral's gate in the central aisle.";return}
+        stop();corral=id
+    }
     private func performAction() {
         guard !paused else { return }
         stop()
         if haptics { UIImpactFeedbackGenerator(style:.light).impactOccurred() }
         switch motel.nearbyAction {
+        case .basement:change{_=$0.enterBasement()}
+        case .corral(let id):openCorral(id)
         case .home: change { _ = $0.useEntrance() }
         case .computer: showManagement=true
         case .pet(let id): family=OfficeTap(rawValue:id)
@@ -746,6 +766,7 @@ struct MotelView: View {
         guard !paused, motel.isAtReception || motel.isAtHome else { return }
         stop()
         switch item {
+        case .basement:change{_=$0.enterBasement()}
         case .door:
             change { value in
                 if value.isAtHome {value.world!.place = .grounds;value.world!.player=Tile(x:FamilyHome.door.x,y:FamilyHome.door.y+1)}

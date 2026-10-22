@@ -254,6 +254,20 @@ jobs:
           xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-action-theft
           sleep 2
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-small-room-items.png
+      - name: Capture basement and all eight residents
+        if: ${{ always() && env.SIM_DEVICE != '' }}
+        run: |
+          set -euo pipefail
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-basement --ui-touch
+          sleep 3
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-basement.png
+          for ID in 0 1 2 3 4 5 6 7; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-basement "--ui-corral-$ID" --ui-touch
+            sleep 2
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-corral-$ID.png"
+          done
       - name: Capture guest interaction
         if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |

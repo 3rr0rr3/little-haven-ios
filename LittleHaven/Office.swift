@@ -37,6 +37,7 @@ extension Motel {
             let old=pet.tile
             let trailBlocked:Bool
             if visit != nil {trailBlocked=RPGMaps.room.blocked(trail)}
+            else if isAtBasement {trailBlocked=BasementLayout.blocked(trail)}
             else if isAtHome {trailBlocked=homeBlocked(trail)}
             else if isAtShop {trailBlocked=shopBlocked(trail)}
             else if isAtReception {trailBlocked=RPGMaps.office.blocked(trail)}
@@ -47,6 +48,7 @@ extension Motel {
                     guard !arrivals.contains(tile) else { return false }
                     if visit != nil { return !RPGMaps.room.blocked(tile) }
                     if isAtShop {return !shopBlocked(tile) && tile != ShopLayout.exit}
+                    if isAtBasement {return !BasementLayout.blocked(tile) && tile != BasementLayout.stairs}
                     if isAtHome { return !homeBlocked(tile) && tile != FamilyHome.exit }
                     if isAtReception { return !RPGMaps.office.blocked(tile) && tile != OfficeReception.door }
                     return !MotelGrounds.blocked(tile)
@@ -144,6 +146,59 @@ extension Motel {
         initializeWorld()
         world!.hasCleaningKit = true
         lastEvent = "Cleaning kit ready: mop, fresh sheets and bin bags."
+        return true
+    }
+}
+
+
+struct CorralCare:Codable {
+    var fedDay = -1
+    var visits = 0
+}
+enum BasementLayout {
+    static let width=25,height=27
+    static let homeStairs=Tile(x:7,y:6)
+    static let stairs=Tile(x:12,y:25)
+    static let arrival=Tile(x:12,y:24)
+    static let titles=["Wizard cat","Two-tail fox","Blue cat","Ogre cat","Shark cat","Mighty cat","Fang cat","Football cat"]
+    static func pen(_ id:Int)->RPGRegion {RPGRegion(x:id%2 == 0 ? 2 : 15,y:3+(id/2)*5,width:8,height:4)}
+    static func gate(_ id:Int)->Tile {let p=pen(id);return Tile(x:id%2 == 0 ? 10 : 14,y:p.y+2)}
+    static func creature(_ id:Int,tick:Int)->Tile {
+        let p=pen(id),route=[Tile(x:p.x+3,y:p.y+2),Tile(x:p.x+4,y:p.y+2),Tile(x:p.x+4,y:p.y+1),Tile(x:p.x+3,y:p.y+1)]
+        return route[(tick/5+id)%route.count]
+    }
+    static func blocked(_ tile:Tile)->Bool {
+        tile.x<1 || tile.x>23 || tile.y<2 || tile.y>25 || (0..<8).contains{pen($0).contains(tile)}
+    }
+}
+extension Motel {
+    var isAtBasement:Bool {visit == nil && worldState.place == .basement}
+    var nearbyCorral:Int? {
+        guard isAtBasement else{return nil}
+        return (0..<8).first{actorTile.distance(to:BasementLayout.gate($0))<=1}
+    }
+    func corralCare(_ id:Int)->CorralCare {worldState.corrals?[id] ?? CorralCare()}
+    @discardableResult mutating func enterBasement()->Bool {
+        guard isAtHome,actorTile.distance(to:BasementLayout.homeStairs)<=1 else{return false}
+        initializeWorld();world!.place = .basement;world!.player=BasementLayout.arrival
+        lastEvent="Welcome to your creature sanctuary. Eight corrals, eight friends."
+        return true
+    }
+    @discardableResult mutating func leaveBasement()->Bool {
+        guard isAtBasement,actorTile.distance(to:BasementLayout.stairs)<=1 else{return false}
+        world!.place = .house;world!.player=Tile(x:7,y:7)
+        return true
+    }
+    @discardableResult mutating func careForCorral(_ id:Int,feed:Bool)->Bool {
+        guard (0..<8).contains(id),isAtBasement,actorTile.distance(to:BasementLayout.gate(id))<=1 else{return false}
+        initializeWorld();var care=corralCare(id)
+        if feed {
+            guard care.fedDay != day else{lastEvent=BasementLayout.titles[id]+" already ate today.";return false}
+            care.fedDay=day
+        } else {care.visits+=1}
+        if world!.corrals == nil {world!.corrals=[:]}
+        world!.corrals![id]=care
+        lastEvent=BasementLayout.titles[id]+(feed ? " enjoys a fresh meal." : " comes to the fence for attention.")
         return true
     }
 }

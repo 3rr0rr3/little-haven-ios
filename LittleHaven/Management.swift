@@ -96,7 +96,7 @@ extension Motel {
         logMoney(-25,category:"Home improvement",note:wall ? "Wallpaper" : "Flooring");return true
     }
     @discardableResult mutating func placeHomeObject(_ kind:HomeObject,at tile:Tile)->Bool {
-        guard isAtHome,let index=household.storage.firstIndex(of:kind),household.placed.count<household.capacity,!homeBlocked(tile),tile.y<12,tile.x>1,
+        guard isAtHome,let index=household.storage.firstIndex(of:kind),household.placed.count<household.capacity,!homeBlocked(tile),tile.distance(to:BasementLayout.homeStairs)>1,tile.y<12,tile.x>1,
               !household.placed.contains(where:{$0.tile == tile}),!Self.familyTiles.contains(tile),!OfficeReception.hildarelysRoute.contains(tile),tile != actorTile else{return false}
         let before=household
         var state=before;state.storage.remove(at:index);state.placed.append(PlacedHomeObject(id:state.nextID,kind:kind,tile:tile));state.nextID+=1;home=state

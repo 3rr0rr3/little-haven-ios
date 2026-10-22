@@ -511,6 +511,26 @@ final class LittleHavenUITests: XCTestCase {
         creature.tap()
         XCTAssertTrue(app.buttons["Follow me"].waitForExistence(timeout:3))
     }
+    func testHomeBasementStairsReturnHome() {
+        let app=launch("--ui-home-stairs")
+        XCTAssertTrue(app.buttons["office_basement"].waitForExistence(timeout:10))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.descendants(matching:.any)["basementScene"].firstMatch.waitForExistence(timeout:5))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.buttons["office_basement"].waitForExistence(timeout:5))
+        capture(app,"Home stairs enter and leave basement")
+    }
+    func testBasementCreatureFeedingAndPetting() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-basement","--ui-corral-0","--ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Feed"].waitForExistence(timeout:10))
+        app.buttons["Feed"].tap()
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.buttons["Fed today"].waitForExistence(timeout:3))
+        app.buttons["Pet"].tap()
+        capture(app,"Eight corral sanctuary and animal care")
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

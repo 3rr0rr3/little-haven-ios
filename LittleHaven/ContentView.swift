@@ -35,6 +35,17 @@ struct ContentView: View {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch")}
+        if args.contains("--ui-basement") || args.contains("--ui-home-stairs") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.waiting=[];sample.motel!.world!.place = .house
+            sample.motel!.world!.player=Tile(x:7,y:7)
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            if args.contains("--ui-basement") {
+                _=sample.motel!.enterBasement();sample.motel!.world!.player=Tile(x:12,y:23)
+                for id in 0..<8 where args.contains("--ui-corral-\(id)") {sample.motel!.world!.player=BasementLayout.gate(id)}
+            }
+            sample.save();return sample
+        }
         if args.contains("--ui-creature") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.waiting=[];sample.motel!.world!.place = .house;sample.motel!.world!.player=Tile(x:5,y:8)

@@ -13,6 +13,7 @@ struct RPGActor {
     var marker = ""
     var duration = 0.14
     var danger = false
+    var corralCreature = 0
     var creature = false
     var animal = 0
     var displayScale = 1.0
@@ -82,7 +83,8 @@ private struct ActorArtwork: View {
         Canvas { context, _ in
             if actor.effect > 0 {
                 ChaosArt.draw(context:&context,kind:actor.effect,stride:stride,color:actor.color,variant:actor.variant,facing:actor.facing)
-            } else if actor.creature {MochiArt.draw(context:&context,facing:actor.facing,walk:stride)}
+            } else if actor.corralCreature > 0 {CorralCreatureArt.draw(context:&context,kind:actor.corralCreature,facing:actor.facing,walk:stride)}
+            else if actor.creature {MochiArt.draw(context:&context,facing:actor.facing,walk:stride)}
             else if actor.animal > 0 { CatArt.draw(context:&context,gray:actor.animal == 1,walk:stride) }
             else { PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:stride,expression:actor.expression) }
             if actor.shopUniform > 0 {ShopKeeperArt.uniform(context:&context,kind:actor.shopUniform,facing:actor.facing)}
@@ -284,7 +286,7 @@ final class RPGScene: SKScene {
         layoutCamera(jump: changedMap)
     }
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
-        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)"
+        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
         renderer.scale = 3
