@@ -119,7 +119,12 @@ struct ShopInteriorView:View {
         [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You"),
          RPGActor(id:"shopkeeper-"+shop.rawValue,tile:ShopLayout.keeper,color:shop.keeperColor,variant:460+shop.uniform,name:shop.keeperName,shopUniform:shop.uniform)] + ((shop == .bar || shop == .fish) ? BarLayout.seats.enumerated().map { index,tile in
              RPGActor(id:(shop == .fish ? "fish-diner-" : "bar-patron-")+"\(index)",tile:tile,color:[UInt32(0xA58AAB),0x9CB69E,0xD1AD74][index%3],variant:520+index,facing:index%2 == 0 ? 2 : 1,name:["Avery","Rosa","Theo","Mila","Leon","Iris"][index])
-         } : []) + motel.petActors + motel.policeActors
+         } : []) + musicActors + motel.petActors + motel.policeActors
+    }
+    private var musicActors:[RPGActor] {
+        guard shop == .bar, motel.lanternShowAvailable || motel.storyBook.performedDay == motel.day else {return []}
+        return [RPGActor(id:"rowan-live",tile:Tile(x:11,y:6),color:GuestStoryID.musician.color,
+            variant:GuestStoryID.musician.appearance,facing:0)]
     }
     var body:some View {
         GeometryReader {proxy in
@@ -127,6 +132,12 @@ struct ShopInteriorView:View {
             let ox=(proxy.size.width-240*scale)/2,oy=(proxy.size.height-240*scale)/2
             ZStack {
                 RPGSceneView(mapID:"shop-"+shop.rawValue,revision:"store-28",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:false) {shop == .fish ? AnyView(FishInteriorArt()) : shop == .bar ? AnyView(BarInteriorArt()) : AnyView(ShopInteriorArt(shop:shop))}
+                if shop == .bar, !musicActors.isEmpty {
+                    LanternMusicProp(playing:motel.storyBook.performedDay == motel.day)
+                        .frame(width:42*scale,height:32*scale)
+                        .position(x:ox+184*scale,y:oy+109*scale)
+                        .allowsHitTesting(false).accessibilityIdentifier("lanternMusicStage")
+                }
                 if shop == .bar || shop == .fish {
                     ForEach(Array(BarLayout.seats.enumerated()),id:\.offset) { index,tile in
                         Button {
@@ -177,5 +188,26 @@ struct BasementView:View {
                 }
             }.frame(height:52)
         }.accessibilityElement(children:.contain)
+    }
+}
+
+private struct LanternMusicProp:View {
+    let playing:Bool
+    var body:some View {
+        TimelineView(.animation(minimumInterval:0.4,paused:!playing)) { timeline in
+            Canvas { context,size in
+                context.scaleBy(x:size.width/42,y:size.height/32)
+                context.fill(Path(roundedRect:CGRect(x:0,y:24,width:42,height:7),cornerRadius:3),with:.color(Color(hex:0x76504A)))
+                context.fill(Path(ellipseIn:CGRect(x:9,y:9,width:13,height:17)),with:.color(Color(hex:0xC28A4E)))
+                context.fill(Path(ellipseIn:CGRect(x:13,y:14,width:5,height:5)),with:.color(Color(hex:0x49392E)))
+                context.fill(Path(CGRect(x:14,y:0,width:3,height:15)),with:.color(Color(hex:0xA87345)))
+                context.fill(Path(CGRect(x:30,y:7,width:2,height:18)),with:.color(Color(hex:0x344746)))
+                context.fill(Path(ellipseIn:CGRect(x:28,y:4,width:6,height:7)),with:.color(Color(hex:0x536963)))
+                if playing {
+                    let bob=sin(timeline.date.timeIntervalSinceReferenceDate*3)*2
+                    context.draw(Text("♪ ♫").font(.system(size:11,weight:.bold)).foregroundColor(Color(hex:0xF1D887)),at:CGPoint(x:29,y:4+bob))
+                }
+            }
+        }
     }
 }

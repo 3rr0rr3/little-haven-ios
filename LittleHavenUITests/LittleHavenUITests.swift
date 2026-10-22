@@ -618,6 +618,36 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Pay fine / 350"].exists)
         XCTAssertTrue(app.buttons["fullscreenPause"].exists)
     }
+    func testGuestStoryChoiceAndSavedMemory() {
+        let app=launch("--ui-story")
+        XCTAssertTrue(app.buttons["office_guest"].waitForExistence(timeout:10))
+        app.buttons["office_guest"].tap()
+        XCTAssertTrue(app.buttons["openGuestStory"].waitForExistence(timeout:5))
+        app.buttons["openGuestStory"].tap()
+        XCTAssertTrue(app.buttons["storyChoice1"].waitForExistence(timeout:5))
+        app.buttons["storyChoice1"].tap()
+        XCTAssertTrue(app.staticTexts["storyResult"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.staticTexts["storyResult"].label.contains("Lantern Bar today"))
+        XCTAssertFalse(app.buttons["storyChoice1"].exists)
+        capture(app,"Guest story choice and remembered promise")
+        app.terminate();app.launchArguments=["--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["office_guest"].waitForExistence(timeout:10))
+        app.buttons["office_guest"].tap();app.buttons["openGuestStory"].tap()
+        XCTAssertFalse(app.buttons["storyChoice1"].exists,"Saved decisions cannot be replayed")
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format:"label CONTAINS %@", "Lantern Bar today")).firstMatch.waitForExistence(timeout:5))
+    }
+    func testLanternGuestStoryShow() {
+        let app=launch("--ui-story-bar")
+        XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
+        app.buttons["shopCounter"].tap()
+        XCTAssertTrue(app.buttons["startLanternShow"].waitForExistence(timeout:5))
+        app.buttons["startLanternShow"].tap()
+        XCTAssertTrue(cash(app).contains("560"))
+        capture(app,"Rowan playing at the Lantern Bar")
+        app.buttons["shopCounter"].tap()
+        XCTAssertFalse(app.buttons["startLanternShow"].exists)
+        XCTAssertTrue(app.staticTexts["Rowan's live set · promise kept"].exists)
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

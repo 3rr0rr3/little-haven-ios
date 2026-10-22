@@ -971,11 +971,14 @@ extension Motel {
     }
     func bookingQuote(_ guest:MotelGuest,room:MotelRoom)->Int {
         let price=rate(for:room)
+        let total: Int
         switch bookingPlan(guest,room:room) {
-        case .nightly:return price*guest.nights
-        case .hourly:return max(20,price/4)*2
-        case .weekly:return price*7*80/100
+        case .nightly:total=price*guest.nights
+        case .hourly:total=max(20,price/4)*2
+        case .weekly:total=price*7*80/100
         }
+        let discount = guest.storyID.map { storyProgress($0).discountGuestID == guest.id ? 30 : 0 } ?? 0
+        return max(0,total-discount)
     }
     func mayCheckIn(_ guest:MotelGuest,room:MotelRoom)->Bool {
         guard managementEnabled else { return true }

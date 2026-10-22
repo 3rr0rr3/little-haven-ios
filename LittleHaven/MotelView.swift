@@ -70,6 +70,8 @@ struct MotelView: View {
     @State private var showPolice = false
     @State private var showIncident = false
     @State private var talkingRoom: Int?
+    @State private var storyGuest: MotelGuest?
+    @State private var showStoryJournal = false
     private var motel: Motel { game.motel ?? Motel() }
     private var mapIdentity: String {motel.petMap}
     private let cream = Color(hex: 0xF5E7C8)
@@ -81,7 +83,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { storyGuest != nil || showStoryJournal || motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
@@ -127,6 +129,7 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains("--ui-creative-preview") {showCreative=true}
             if ProcessInfo.processInfo.arguments.contains("--ui-creature-portrait") { family = .mochi }
             if ProcessInfo.processInfo.arguments.contains("--ui-guest-dialogue") { talkingRoom=0 }
+            if ProcessInfo.processInfo.arguments.contains("--ui-story-preview") { storyGuest=motel.receptionGuest }
             if ProcessInfo.processInfo.arguments.contains("--ui-police") { showPolice = true }
             if ProcessInfo.processInfo.arguments.contains("--ui-hiring") { panel = .staff }
             if ProcessInfo.processInfo.arguments.contains(where:{$0.hasPrefix("--ui-management-") && $0 != "--ui-management-night"}) {showManagement=true}
@@ -217,6 +220,8 @@ struct MotelView: View {
         .onChange(of: paused) { _, value in if value { stop() } }
         .onChange(of: scenePhase) { _, phase in if phase != .active { stop() } }
         .onDisappear { stop() }
+        .sheet(item:$storyGuest) { guest in GuestStoriesView(game:$game,guest:guest) }
+        .sheet(isPresented:$showStoryJournal) { GuestStoriesView(game:$game) }
         .sheet(item:$neighborhood) { shop in NeighborhoodStoreView(game:$game,shop:shop) }
         .sheet(isPresented:$showHome) { HomeDesignView(game:$game) }
         .sheet(isPresented:$showManagement) {
@@ -637,6 +642,9 @@ struct MotelView: View {
 
     private func guestDialogue(room:MotelRoom,guest:MotelGuest)->some View {
         var choices=[DialogueChoice(title:"Ask about their stay",action:{change { _ = $0.greetGuest(room.id) };talkingRoom=nil})]
+        if let id=guest.storyID {
+            choices.insert(DialogueChoice(title:"Talk: "+id.title,action:{talkingRoom=nil;storyGuest=guest}),at:0)
+        }
         let favour=motel.worldState.guestFavour
         if favour?.guestID == guest.id && favour?.status == .pending {
             if favour?.collected == true {
@@ -699,6 +707,10 @@ struct MotelView: View {
                     HStack {
                         PaperPortrait(color: guest.color, variant: guest.appearanceSeed).frame(width: 43, height: 55)
                         Text("Hello! My name is \(guest.name). \(guest.story) Could I stay for \(guest.nights) night\(guest.nights == 1 ? "" : "s")?").font(.caption)
+                    }
+                    if let story=guest.storyID {
+                        Button("Talk: "+story.title) {storyGuest=guest}
+                            .buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("openGuestStory")
                     }
                     if motel.managementEnabled {
                         Text(guest.kind.title+" / "+guest.kind.preference).font(.caption)
@@ -791,6 +803,7 @@ struct MotelView: View {
             Text("Getting caught while stealing means loading your latest checkpoint. Changes since that save will be lost.").font(.subheadline).foregroundStyle(.secondary)
             Button("Back to the Airb&b") { showPause = false }.buttonStyle(MotelButtonStyle())
             Button("Load last save") { showPause = false; confirmRestore = true }.buttonStyle(MotelButtonStyle(subdued: true))
+            Button("Guest stories") { showPause=false;showStoryJournal=true }.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("guestStoriesJournal")
             Button("Options") { showOptions = true }.buttonStyle(MotelButtonStyle(subdued:true))
             Button("Save & return to title") { stop(); game.save(); showPause = false; returnToTitle() }.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("backToTitle")
         }.padding(24).foregroundStyle(cream).presentationBackground(Color(hex: 0x172A25))
@@ -1046,5 +1059,76 @@ private struct CreativeModeView:View {
                 }
                 destination=nil
             }
+    }
+}
+
+struct GuestStoriesView: View {
+    @Binding var game: Game
+    var guest: MotelGuest?
+    @Environment(\.dismiss) private var dismiss
+    @State private var result: String?
+    private var motel: Motel { game.motel ?? Motel() }
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment:.leading,spacing:18) {
+                    if let guest, let id=guest.storyID {
+                        HStack(spacing:14) {
+                            PaperPortrait(color:guest.color,variant:guest.appearanceSeed).frame(width:56,height:70)
+                            VStack(alignment:.leading,spacing:5) {
+                                Text(guest.name).font(.title.bold())
+                                Text(id.title).font(.headline)
+                                Text("Trust: \(motel.storyProgress(id).relationship)").font(.caption)
+                            }
+                        }
+                        if let result { Text(result).font(.body).accessibilityIdentifier("storyResult") }
+                        else if motel.canDiscussStory(guest) {
+                            Text(motel.guestStoryText(id)).accessibilityIdentifier("storyPrompt")
+                            ForEach(motel.guestStoryChoices(id)) { choice in
+                                Button {
+                                    guard var value=game.motel,value.chooseGuestStory(guest,choiceID:choice.id) else {return}
+                                    result=value.lastEvent;game.motel=value;game.save()
+                                } label: {
+                                    VStack(alignment:.leading,spacing:5) {
+                                        Text(choice.title).font(.headline)
+                                        Text(choice.consequence).font(.caption).opacity(0.85)
+                                    }.frame(maxWidth:.infinity,alignment:.leading).padding(12)
+                                }.buttonStyle(.bordered)
+                                    .disabled(!motel.storyChoiceEnabled(guest,choice:choice))
+                                    .accessibilityIdentifier("storyChoice\(choice.id)")
+                            }
+                            Text("Choices are remembered. You can leave and decide later.").font(.caption).foregroundStyle(.secondary)
+                        } else {
+                            Text(motel.storyProgress(id).memories.last ?? "Meet this guest at reception or outside their room to hear their story.")
+                            if motel.storyProgress(id).chapter < 3 { Text("Next chapter: a return visit from day \(motel.storyProgress(id).nextVisitDay).").font(.caption) }
+                        }
+                    } else {
+                        Text("People who remember you").font(.title.bold())
+                        Text("Meet these travelers at reception. Their stories continue over several visits; decisions and promises survive saving.")
+                        if motel.lanternShowAvailable { Label("Rowan's show is promised today. Visit Jules at the Lantern Bar before resting.",systemImage:"music.note").foregroundStyle(Color(hex:0xEFC977)) }
+                        ForEach(GuestStoryID.allCases) { id in
+                            let progress=motel.storyProgress(id)
+                            VStack(alignment:.leading,spacing:8) {
+                                HStack {
+                                    PaperPortrait(color:id.color,variant:id.appearance).frame(width:36,height:45)
+                                    VStack(alignment:.leading) {Text(id.name+" · "+id.title).font(.headline);Text("Trust \(progress.relationship) · \(min(3,progress.chapter))/3 chapters").font(.caption)}
+                                }
+                                if progress.memories.isEmpty {Text("A new face to meet.").font(.caption)}
+                                ForEach(Array(progress.memories.enumerated()),id:\.offset) { _, memory in Text(memory).font(.caption) }
+                                if progress.chapter > 0 && progress.chapter < 3 {Text("Returns from day \(progress.nextVisitDay), when not already staying.").font(.caption)}
+                                if progress.chapter >= 3 {Label("Story complete",systemImage:"checkmark.circle.fill").font(.caption)}
+                            }.padding(14).frame(maxWidth:.infinity,alignment:.leading)
+                                .background(Color.white.opacity(0.06),in:RoundedRectangle(cornerRadius:14))
+                        }
+                        if motel.storyBook.musicPartnership {Label("Lantern music nights · +12 coins/day, +1 arrival",systemImage:"music.note")}
+                        if motel.storyBook.travelFeature {Label("Travel guide feature · +1 arrival/day",systemImage:"newspaper")}
+                        if motel.storyBook.familyReunited {Label("Emilia's family reunited",systemImage:"heart.fill")}
+                    }
+                }.padding(22)
+            }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
+                .navigationTitle(guest?.storyID?.title ?? "Guest stories").navigationBarTitleDisplayMode(.inline)
+                .toolbar {ToolbarItem(placement:.confirmationAction) {Button("Done") {dismiss()}}}
+                .tint(Color(hex:0xEFC977)).accessibilityIdentifier("guestStorySheet")
+        }
     }
 }

@@ -37,6 +37,14 @@ struct NeighborhoodStoreView:View {
                     if let meal=motel.worldState.fishMeal {Label("Marina served: "+meal.title,systemImage:"checkmark.circle.fill")}
                     Text("Fresh fish from the coast, shared tables and warm conversation.").font(.caption)
                 } else if shop == .bar {
+                    if motel.lanternShowAvailable {
+                        Text("Rowan is ready to play today.").font(.headline)
+                        Button("Start Rowan's set / +60 coins") {
+                            change {_=$0.startLanternShow()};game.save();dismiss()
+                        }.disabled(!motel.canTrade(.bar)).accessibilityIdentifier("startLanternShow")
+                    } else if motel.storyBook.performedDay == motel.day {
+                        Label("Rowan's live set · promise kept",systemImage:"music.note")
+                    }
                     ForEach(BarDrink.allCases) {drink in
                         HStack {
                             Label(drink.title,systemImage:"wineglass.fill");Spacer()

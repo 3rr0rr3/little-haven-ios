@@ -1425,3 +1425,77 @@ func navigationMemoRules() {
     print("PASS: navigation memo invalidation and moving obstacle fallback")
 }
 navigationMemoRules()
+
+func guestStoryRules() {
+    func meet(_ id:GuestStoryID, day:Int, hotel:inout Motel)->MotelGuest {
+        hotel.day=day;hotel.initializeWorld()
+        let guest=MotelGuest(id:600000+day*10+(GuestStoryID.allCases.firstIndex(of:id) ?? 0),
+            name:id.name,nights:1,color:id.color,story:id.title,category:.traveler,storyID:id)
+        hotel.waiting=[guest];hotel.world!.place = .office;hotel.world!.player=OfficeReception.clerk
+        var visitor=OfficeVisitor(guest:guest);visitor.phase = .waiting;visitor.pathIndex=OfficeVisitor.path.count-1
+        hotel.world!.reception!.visitor=visitor
+        return guest
+    }
+    var hotel=Motel();hotel.initializeWorld();hotel.cash=500
+    hotel.prepareStoryArrivals()
+    require(hotel.waiting.first?.storyID == .musician,"First story arrival introduces Rowan")
+    let count=hotel.waiting.count;hotel.prepareStoryArrivals()
+    require(hotel.waiting.count==count,"Repeated world initialization cannot duplicate story arrivals")
+    let rowan=meet(.musician,day:1,hotel:&hotel)
+    require(hotel.chooseGuestStory(rowan,choiceID:1),"A guest can offer a show and room discount at the desk")
+    let quote=hotel.bookingQuote(rowan,room:hotel.rooms[0])
+    require(quote==hotel.rate(for:hotel.rooms[0])-30,"Room discount changes actual booking price")
+    require(!hotel.chooseGuestStory(rowan,choiceID:1),"Story decisions cannot be replayed for rewards")
+    require(!hotel.startLanternShow(),"A show cannot be claimed remotely")
+    let before=hotel.cash
+    require(hotel.checkIn(guestID:rowan.id,roomID:0),"Story guest checks into a real room")
+    require(hotel.cash==before+quote,"Discounted amount is collected")
+    hotel.world!.place = .shop;hotel.world!.shop = .bar;hotel.world!.player=ShopLayout.counter
+    let showCash=hotel.cash
+    require(hotel.startLanternShow() && hotel.cash==showCash+60,"Keeping the show promise grants its one-time payout")
+    require(!hotel.startLanternShow(),"Repeated show interaction cannot farm money")
+    let loaded=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(hotel))
+    require(loaded.storyBook.showSucceeded && loaded.storyProgress(.musician).chapter==1,"Story memories and show outcomes survive reload")
+    let nextRowan=meet(.musician,day:4,hotel:&hotel)
+    require(hotel.chooseGuestStory(nextRowan,choiceID:1),"Returning musician remembers and advances a new chapter")
+    let finalRowan=meet(.musician,day:7,hotel:&hotel)
+    require(hotel.chooseGuestStory(finalRowan,choiceID:0) && hotel.storyBook.musicPartnership,"Successful show unlocks lasting music partnership")
+    let income=hotel.cash;hotel.day=8;hotel.settleGuestStoryDay();hotel.settleGuestStoryDay()
+    require(hotel.cash==income+12 && hotel.storyBookingBonus==1,"Recurring music income settles once per day")
+
+    var missed=Motel();missed.initializeWorld();missed.cash=200
+    let promised=meet(.musician,day:1,hotel:&missed)
+    require(missed.chooseGuestStory(promised,choiceID:1),"A show can be promised")
+    missed.day=2;missed.settleGuestStoryDay()
+    require(missed.storyProgress(.musician).relationship == -1 && !missed.lanternShowAvailable,"Missing the show reduces trust and removes the show")
+    missed.settleGuestStoryDay()
+    require(missed.storyProgress(.musician).relationship == -1,"A missed promise is penalized only once")
+    var poor=Motel();poor.initializeWorld();poor.cash=0
+    let traveler=meet(.traveler,day:1,hotel:&poor)
+    require(!poor.chooseGuestStory(traveler,choiceID:0) && poor.storyProgress(.traveler).chapter==0,"Unaffordable choices do not consume the chapter")
+    require(poor.chooseGuestStory(traveler,choiceID:1),"A meaningful free choice remains available")
+    poor.world!.place = .grounds;poor.world!.player=Tile(x:38,y:32)
+    require(!poor.canDiscussStory(traveler),"Story choices require physically meeting the guest")
+    for id in [GuestStoryID.reviewer,.traveler] {
+        var story=Motel();story.initializeWorld();story.cash=500
+        for chapter in 0..<3 {
+            let guest=meet(id,day:1+chapter*3,hotel:&story)
+            require(story.chooseGuestStory(guest,choiceID:0),"All three chapters can be completed for "+id.name)
+        }
+        require(story.storyProgress(id).chapter==3 && !story.storyProgress(id).ending.isEmpty,"Completed stories retain their ending")
+        require(id == .reviewer ? story.storyBook.travelFeature : story.storyBook.familyReunited,"Choices unlock a lasting story outcome")
+    }
+    var damaged=Motel();damaged.initializeWorld();damaged.cash=500
+    let reviewer=meet(.reviewer,day:1,hotel:&damaged);_=damaged.chooseGuestStory(reviewer,choiceID:0)
+    damaged.rooms[0].guest=reviewer;damaged.rooms[0].dirty=true
+    let returnReviewer=meet(.reviewer,day:4,hotel:&damaged);_=damaged.chooseGuestStory(returnReviewer,choiceID:0)
+    require(damaged.storyProgress(.reviewer).relationship==0,"Poor room care affects the returning reviewer's trust")
+    let third=meet(.reviewer,day:7,hotel:&damaged)
+    require(!damaged.chooseGuestStory(third,choiceID:0),"Low trust cannot unlock a positive guide feature")
+    var oldJSON=try! JSONSerialization.jsonObject(with:JSONEncoder().encode(Motel())) as! [String:Any]
+    oldJSON.removeValue(forKey:"guestStories")
+    let oldSave=try! JSONDecoder().decode(Motel.self,from:JSONSerialization.data(withJSONObject:oldJSON))
+    require(oldSave.guestStories == nil,"Older saves load without story data")
+    print("PASS: branching returning guests, real discounts, show promises, repeated reward prevention, persistent endings, care consequences and old saves")
+}
+guestStoryRules()

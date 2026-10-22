@@ -71,6 +71,22 @@ struct ContentView: View {
             sample.motel!.operations!.nextIncidentTick=10000
             sample.save();return sample
         }
+        if args.contains("--ui-story") || args.contains("--ui-story-bar") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.cash=500;sample.motel!.prepareStoryArrivals()
+            let guest=sample.motel!.waiting.first{$0.storyID == .musician}!
+            var visitor=OfficeVisitor(guest:guest);visitor.phase = .waiting;visitor.pathIndex=OfficeVisitor.path.count-1
+            sample.motel!.world!.reception!.visitor=visitor
+            sample.motel!.world!.place = .office;sample.motel!.world!.player=OfficeReception.clerk
+            sample.motel!.operations!.nextIncidentTick=100000
+            if args.contains("--ui-story-bar") {
+                _=sample.motel!.chooseGuestStory(guest,choiceID:1)
+                sample.motel!.world!.place = .shop;sample.motel!.world!.shop = .bar
+                sample.motel!.world!.player=ShopLayout.counter
+                if args.contains("--ui-story-playing") {_=sample.motel!.startLanternShow()}
+            }
+            sample.save();return sample
+        }
         if args.contains("--ui-creative") || args.contains("--ui-creative-moved") {
             var sample=Game();sample.coins=5000;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.cash=5000
             sample.motel!.guestsServed=20
