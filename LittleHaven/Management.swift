@@ -49,6 +49,10 @@ struct FamilyHome:Codable {
 }
 extension Motel {
     static let chaosLocations=[Tile(x:11,y:13),Tile(x:20,y:17),Tile(x:29,y:27),Tile(x:16,y:28),Tile(x:34,y:10)]
+    var availableHotelIncidentSites:[Tile] {
+        let map=relocatedGrounds
+        return Self.chaosLocations.filter{!map.blocked($0) && !map.blocked(Tile(x:$0.x,y:$0.y+1))}
+    }
     var isAtHome:Bool {visit == nil && worldState.place == .house}
     var isAtShop:Bool {visit == nil && worldState.place == .shop}
     var currentShop:NeighborhoodShop? {isAtShop ? worldState.shop : nil}
@@ -322,9 +326,13 @@ extension Motel {
         guard !caught else { return }
         expireGuestFavour()
         var state = operationsState
-        // Migrate an active city fight from older checkpoints into the courtyard.
-        if let incident=state.incident, incident.kind == .fight,
-           !Self.chaosLocations.contains(incident.tile) { state.incident!.location=Self.chaosLocations[0] }
+        // A relocated building must never leave a legacy emergency inside a wall.
+        if let incident=state.incident,incident.kind != .pool,
+           (incident.kind == .fight && !Self.chaosLocations.contains(incident.tile) ||
+            groundBlocked(incident.tile) || groundBlocked(incident.approach)) {
+            if let safe=availableHotelIncidentSites.first {state.incident!.location=safe}
+            else {state.incident=nil;state.nextIncidentTick=state.tick+30}
+        }
         var completedIssues:[Int]=[]
         var staffRepairs:[String]=[]
         var pumpServiced=false
@@ -333,12 +341,15 @@ extension Motel {
         tickParking(&state)
         if state.incident == nil && state.consequences?.police == nil && occupancy > 0 && state.tick >= state.nextIncidentTick {
             let kind = ChaosKind.allCases[state.incidentsStarted % ChaosKind.allCases.count]
-            state.incidentsStarted += 1
-            let guests = rooms.compactMap(\.guest)
-            state.incident = MotelIncident(kind:kind,guest:guests.first,otherGuest:guests.dropFirst().first)
-            if kind == .pool {state.incident!.location=groundTile(kind.tile)}
-            else {state.incident!.location=Self.chaosLocations[(state.incidentsStarted / 3 + (kind == .fight ? 2 : 0)) % Self.chaosLocations.count]}
-            lastEvent = kind.title + " Check the grounds or send a trained employee."
+            let sites=availableHotelIncidentSites
+            if kind == .pool || !sites.isEmpty {
+                state.incidentsStarted += 1
+                let guests=rooms.compactMap(\.guest)
+                state.incident=MotelIncident(kind:kind,guest:guests.first,otherGuest:guests.dropFirst().first)
+                if kind == .pool {state.incident!.location=groundTile(kind.tile)}
+                else {state.incident!.location=sites[(state.incidentsStarted/3+(kind == .fight ? 2 : 0))%sites.count]}
+                lastEvent=kind.title+" Check the grounds or send a trained employee."
+            } else {state.nextIncidentTick=state.tick+30}
         }
         if var incident = state.incident {
             incident.elapsed += 1

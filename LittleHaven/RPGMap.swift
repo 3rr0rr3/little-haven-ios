@@ -333,6 +333,10 @@ extension Motel {
                 }
             }}
         }
+        if let incident=operationsState.incident,incident.kind != .pool,
+           map.blocked(incident.tile) || map.blocked(incident.approach) {
+            world!.structureOffsets=old;lastEvent="Keep the active emergency area clear.";return false
+        }
         // Every entrance and service approach must remain accessible after placement.
         for anchor in creativeStructures.flatMap(\.anchors) where !RPGMaps.grounds.blocked(anchor) && map.blocked(groundTile(anchor)) {
             world!.structureOffsets=old;lastEvent="Leave the doors and service approaches clear.";return false
@@ -358,9 +362,20 @@ extension Motel {
             }
         }
         var parking=bikeParking
+        let entrances=Set(creativeStructures.flatMap(\.anchors).map(groundTile))
+        var reserved=Set(parkedBikes.map{parking[$0.id] ?? HotelCar.tile($0.slot)})
         for bike in parkedBikes {
             let position=parking[bike.id] ?? HotelCar.tile(bike.slot)
-            if map.blocked(position) {parking[bike.id]=groundNearestWalkable(to:position)}
+            if map.blocked(position) || entrances.contains(position) {
+                reserved.remove(position)
+                var safe:Tile?
+                for y in 1..<map.height-1 {for x in 1..<map.width-1 {
+                    let candidate=Tile(x:x,y:y)
+                    guard !map.blocked(candidate),!reserved.contains(candidate),!entrances.contains(candidate) else{continue}
+                    if safe == nil || candidate.distance(to:position)<safe!.distance(to:position) {safe=candidate}
+                }}
+                if let safe {parking[bike.id]=safe;reserved.insert(safe)}
+            }
         }
         world!.bikeParking=parking
         for (petID,var pet) in worldState.pets ?? [:] where pet.map=="grounds" && map.blocked(pet.tile) {

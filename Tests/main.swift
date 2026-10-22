@@ -1237,3 +1237,28 @@ func creativeAndSpecialistRules() {
     print("PASS: specialist unlocks, separate duties, movable laundry and appliances, collisions, entrances, rejected overlaps and persistent creative layout")
 }
 creativeAndSpecialistRules()
+
+func creativeEmergencyAccessRules() {
+    var game=Motel();game.initializeWorld();game.world!.place = .grounds
+    var state=game.operationsState;state.incident=MotelIncident(kind:.fire);game.operations=state
+    require(!game.relocateStructure("room-8",to:Tile(x:16,y:27)),"Cannot place a building over an active emergency")
+    game.operations!.incident=nil
+    require(game.relocateStructure("room-8",to:Tile(x:16,y:27)),"An unused emergency site is ordinary editable ground")
+    require(!game.availableHotelIncidentSites.contains(ChaosKind.fire.tile),"Future emergencies exclude relocated building footprints")
+    require(game.checkIn(guestID:10,roomID:0),"Establish an occupied motel")
+    game.operations!.nextIncidentTick=0
+    game.tickManagement()
+    require(game.operationsState.incident?.kind == .fire,"Emergency scheduling continues in creative layouts")
+    let incident=game.operationsState.incident!
+    require(!game.groundBlocked(incident.tile) && !game.groundBlocked(incident.approach),"Emergency participants and responders have reachable ground")
+    var bikes=Motel();bikes.initializeWorld();bikes.world!.place = .grounds
+    var parking=bikes.operationsState
+    parking.cars=[HotelCar(id:901,slot:0,color:0xA0B0A0,arrival:8),HotelCar(id:902,slot:1,color:0xB0A090,arrival:8)]
+    bikes.operations=parking
+    require(bikes.relocateStructure("office",to:Tile(x:15,y:29)),"A building can move into the former bicycle parking area")
+    let positions=bikes.parkedBikes.map{bikes.bikeParking[$0.id] ?? HotelCar.tile($0.slot)}
+    let entrances=Set(bikes.creativeStructures.flatMap(\.anchors).map{bikes.groundTile($0)})
+    require(Set(positions).count==positions.count && positions.allSatisfy{!bikes.groundBlocked($0) && !entrances.contains($0)},"Covered bicycles are parked separately away from entrances")
+    print("PASS: creative placement protects active emergencies and keeps future incidents reachable")
+}
+creativeEmergencyAccessRules()
