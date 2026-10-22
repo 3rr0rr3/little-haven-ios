@@ -807,7 +807,7 @@ struct MotelView: View {
         case .basement:change{_=$0.enterBasement()}
         case .door:
             change { value in
-                if value.isAtHome {value.world!.place = .grounds;value.world!.player=Tile(x:FamilyHome.door.x,y:FamilyHome.door.y+1)}
+                if value.isAtHome {value.world!.place = .grounds;value.world!.player=Tile(x:value.groundTile(FamilyHome.door).x,y:value.groundTile(FamilyHome.door).y+1)}
                 else {_=value.leaveReception()}
             }
         case .computer: showManagement=true
@@ -928,7 +928,7 @@ private struct CreativeModeView:View {
                 ScrollView([.horizontal,.vertical]) {
                     ZStack(alignment:.topLeading) {
                         if let source {
-                            Canvas {context,_ in CreativeGroundsArtwork.compose(context:&context,image:source,motel:motel)}
+                            Image(uiImage:source).resizable()
                                 .frame(width:1152,height:1024)
                         }
                         ForEach(motel.creativeStructures.filter{$0.parent==nil}) {item in objectHandle(item)}
@@ -960,7 +960,7 @@ private struct CreativeModeView:View {
                 .confirmationDialog("Restore the original outdoor layout?",isPresented:$confirmReset,titleVisibility:.visible) {
                     Button("Restore layout",role:.destructive){reset();selected=nil;destination=nil;message="Original layout restored."}
                 }
-                .task {
+                .task(id:(motel.worldState.structureOffsets ?? [:]).keys.sorted().map{key in "\(key):\(motel.creativeOffset(key).x):\(motel.creativeOffset(key).y)"}.joined(separator:",")) {
                     let renderer=ImageRenderer(content:MotelGroundsCanvas(motel:motel,x:0,y:0,npcTick:0,sceneryOnly:true,fullMap:true).frame(width:1152,height:1024))
                     source=renderer.uiImage
                 }

@@ -1,4 +1,6 @@
 import Foundation
+import Darwin
+setbuf(stdout,nil)
 
 extension Motel {
     // Older economy/dispatch scenarios begin with an established business.
@@ -446,7 +448,7 @@ func managementRules() {
     require(!manual.resolveNearbyIncident(), "Resolved incidents cannot be claimed twice")
     let data = try! JSONEncoder().encode(staff)
     let saved = try! JSONDecoder().decode(Motel.self,from:data)
-    require(saved.operationsState.workers.count == 5 && saved.operationsState.incidentsResolved == 3, "Staff and incident outcomes survive save/load")
+    require(saved.operationsState.workers.count == StaffRole.allCases.count && saved.operationsState.incidentsResolved == 3, "Staff and incident outcomes survive save/load")
     var legacy = Motel(); legacy.operations = nil
     let old = try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(legacy))
     require(old.operationsState.workers.isEmpty && old.operationsState.reviews.isEmpty, "Old motel saves migrate with no invented employees or ratings")

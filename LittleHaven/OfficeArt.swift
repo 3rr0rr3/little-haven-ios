@@ -166,17 +166,26 @@ enum CozyScenery {
 }
 
 enum NeighborhoodArt {
-    static func draw(context:inout GraphicsContext,level:Int) {
+    static func draw(context:inout GraphicsContext,level:Int,motel:Motel?=nil) {
         // Same seven-by-five footprint as the hotel buildings; no differently colored lawn rectangle.
         for row in 14..<18 {for col in 54...55 {CozyScenery.ground(context:&context,x:Double(col*16),y:Double(row*16),kind:1,seed:row+col)}}
+        let homeContext=context,homeOffset=motel?.creativeOffset("home") ?? Tile(x:0,y:0)
+        context.translateBy(x:Double(homeOffset.x*16),y:Double(homeOffset.y*16))
         CozyScenery.building(context:&context,x:816,y:144,w:112,h:80,doorX:864,name:"HOME",roof:level>1 ? 0x6488B0 : 0xCC7058,paint:0xF0D8A0)
         for x in [820.0,912.0] {CozyScenery.planter(context:&context,x:x,y:224)}
+        context=homeContext
         for (id,origin) in ResidentialLayout.origins.enumerated() {
+            let saved=context,d=motel?.creativeOffset("neighbor-\(id)") ?? Tile(x:0,y:0)
+            context.translateBy(x:Double(d.x*16),y:Double(d.y*16))
             CozyScenery.building(context:&context,x:Double(origin.x*16),y:Double(origin.y*16),w:112,h:80,doorX:Double(ResidentialLayout.doors[id].x*16),name:"",roof:[UInt32(0x7597A2),0xB69775,0xA5869B][id],paint:0xE8D6AD)
             for dx in [4.0,93] {CozyScenery.planter(context:&context,x:Double(origin.x*16)+dx,y:Double((origin.y+5)*16))}
+            context=saved
         }
         for shop in NeighborhoodShop.allCases {
+            let saved=context,d=motel?.creativeOffset("shop-"+shop.id) ?? Tile(x:0,y:0)
+            context.translateBy(x:Double(d.x*16),y:Double(d.y*16))
             DecorArt.storefront(&context,shop:shop)
+            context=saved
         }
     }
 }
@@ -574,7 +583,7 @@ enum ShopKeeperArt {
 }
 
 enum BeachArt {
-    static func draw(context c:inout GraphicsContext) {
+    static func draw(context c:inout GraphicsContext,motel:Motel?=nil) {
         for row in stride(from:40,to:64,by:2) {for col in stride(from:0,to:39,by:2) {CozyScenery.tree(context:&c,x:Double(col*16),y:Double(row*16+8))}}
         let sand=CGRect(x:640,y:640,width:512,height:384)
         c.fill(Path(sand),with:.linearGradient(Gradient(colors:[Color(hex:0xEBDBB1),Color(hex:0xF3E3BC),Color(hex:0xDDC598)]),startPoint:CGPoint(x:640,y:640),endPoint:CGPoint(x:900,y:1024)))
@@ -596,8 +605,14 @@ enum BeachArt {
             }
         }
         for col in 40..<58 {CozyScenery.block(context:&c,x:Double(col*16),y:641,w:15.8,h:13,color:0xBC9C75,depth:0.6)}
-        for tile in BeachLayout.palms {DecorArt.palm(&c,Double(tile.x*16),Double(tile.y*16))}
+        for (id,tile) in BeachLayout.palms.enumerated() {
+            let saved=c,d=motel?.creativeOffset("palm-\(id)") ?? Tile(x:0,y:0)
+            c.translateBy(x:Double(d.x*16),y:Double(d.y*16))
+            DecorArt.palm(&c,Double(tile.x*16),Double(tile.y*16));c=saved
+        }
         for (i,tile) in BeachLayout.lounges.enumerated() {
+            let saved=c,d=motel?.creativeOffset("chair-\(i)") ?? Tile(x:0,y:0)
+            c.translateBy(x:Double(d.x*16),y:Double(d.y*16))
             let x=Double(tile.x*16),y=Double(tile.y*16)
             DecorArt.rug(&c,x-3,y+5,21,31,i%2==0 ? 0xCC998B : 0x8DB7B4)
             CozyScenery.block(context:&c,x:x+2,y:y+2,w:12,h:28,color:0xEFE3BE,depth:1)
@@ -611,6 +626,7 @@ enum BeachArt {
                 c.fill(p,with:.color(Color(hex:sector%2==0 ? (i%2==0 ? 0xCD958B : 0x82AEB5) : 0xFFF3D8)))
             }
             c.stroke(Path(ellipseIn:CGRect(x:center.x-18,y:center.y-10,width:36,height:20)),with:.color(Color(hex:0xB39B78)),lineWidth:0.6)
+            c=saved
         }
         for i in 0..<30 {
             let x=652+Double((i*73)%264),y=670+Double((i*47)%300)
@@ -696,41 +712,61 @@ enum FacilitiesArt {
             block(x,y,w,9,0x4B6C60)
             c.draw(Text(value).font(.system(size:3.2,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF2E2BB)),at:CGPoint(x:x+w/2,y:y+4.5))
         }
+        func beginObject(_ id:String)->GraphicsContext {
+            let saved=c,d=motel.creativeOffset(id)
+            c.translateBy(x:Double(d.x*16),y:Double(d.y*16));return saved
+        }
         // Connected pool pump cabinet, pipework, gauges and a fault indicator.
+        let savedpump=beginObject("pump")
         block(160,338,16,30,0x5C7879);block(162,340,12,26,0x8DA9A4)
         c.stroke(Path(ellipseIn:CGRect(x:164,y:343,width:8,height:8)),with:.color(Color(hex:0xE9DBB8)),lineWidth:1)
         block(167,346,1,4,0x4A5551);block(155,353,7,3,0x7F9C99);block(154,354,3,13,0x7F9C99)
         block(163,357,3,3,motel.serviceAvailable(.repair) ? 0xDA795A : 0x94BE82)
         for y in [361.0,364] {block(168,y,5,0.8,0x4E6865)}
+        c=savedpump
         // Breakfast terrace south of the pool; all equipment is off the walking lane.
+        let savedbreakfast=beginObject("breakfast")
         block(30,413,51,7,0xA27D53);block(32,420,46,13,0xBE9B70)
         block(35,404,12,11,0x6C8C81);block(37,406,8,5,0xD8D3AF)
         for x in [51.0,60,69] {block(x,411,6,4,0xEBD9AC)}
         sign("BREAKFAST TERRACE",28,393,57)
+        c=savedbreakfast
+        let savedbreakfasttable=beginObject("breakfast-table")
         block(32,464,47,12,0xAB855C);block(36,477,3,6,0x705C46);block(72,477,3,6,0x705C46)
         for x in [40.0,58] {c.fill(Path(ellipseIn:CGRect(x:x,y:467,width:11,height:4)),with:.color(Color(hex:0xF0E3C6)))}
         block(34,455,39,5,0x7F9D88);block(34,482,39,5,0x7F9D88)
+        c=savedbreakfasttable
         // Three-tile alcove between the office and room 101.
         let x=Double(FacilityLayout.laundryFootprint.x*16),y=Double(FacilityLayout.laundryFootprint.y*16)
+        let savedlaundry=beginObject("laundry")
         block(x,y+12,48,68,0xCAB995)
         block(x,y+12,48,5,0x6A8D80)
         block(x,y+16,2,64,0x6A8D80)
         sign("LAUNDRY",x,y,48)
+        c=savedlaundry
+        let savedwasher=beginObject("washer")
         block(x+2,y+18,15,28,0x8BA69A);block(x+3,y+20,13,4,0xDFDDC4)
         c.fill(Path(ellipseIn:CGRect(x:x+4,y:y+28,width:11,height:13)),with:.color(Color(hex:0x537F83)))
         c.stroke(Path(ellipseIn:CGRect(x:x+5,y:y+29,width:9,height:11)),with:.color(Color(hex:0xBBCFC6)),lineWidth:1)
         block(x+4,y+21,3,2,0xD6B675)
+        c=savedwasher
+        let savedsupplies=beginObject("supplies")
         block(x+19,y+18,27,28,0x6F6552)
         for offset in [21.0,29,37] {
             block(x+20,y+offset+5,25,2,0xC7AB7C)
             block(x+21,y+offset,10,4,0xE6E0C7);block(x+33,y+offset,10,4,0x9DBFAF)
         }
+        c=savedsupplies
+        let savedfolding=beginObject("folding")
         block(x+2,y+51,13,26,0xA99370);block(x+2,y+51,13,4,0xD5C29B)
         if motel.staffStations.contains(.cleaner) {
             for offset in [57.0,62,67] {block(x+3,y+offset,10,4,0xF1E4C5)}
         }
+        c=savedfolding
         block(49,269,12,5,0x9FB8A2);CozyScenery.planter(context:&c,x:47,y:270)
+        let savedluggage=beginObject("luggage")
         RoomObjectArt.draw(context:&c,index:0,x:128,y:176)
+        c=savedluggage
     }
 }
 

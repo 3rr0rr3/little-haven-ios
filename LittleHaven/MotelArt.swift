@@ -231,6 +231,11 @@ struct MotelGroundsCanvas: View, Animatable {
             func label(_ text: String, _ px: Double, _ py: Double, _ size: Double = 4, _ tint: UInt32 = 0xF6E7C4) {
                 context.draw(Text(text).font(.system(size: size, weight: .black, design: .monospaced)).foregroundColor(Color(hex: tint)), at: CGPoint(x: px, y: py))
             }
+            func beginObject(_ id:String)->GraphicsContext {
+                let original=context,d=motel.creativeOffset(id)
+                context.translateBy(x:Double(d.x*16),y:Double(d.y*16))
+                return original
+            }
             for row in 0..<MotelGrounds.height {
                 for col in 0..<MotelGrounds.width {
                     let px = Double(col * 16), py = Double(row * 16)
@@ -244,11 +249,12 @@ struct MotelGroundsCanvas: View, Animatable {
                     }
                 }
             }
-            BeachArt.draw(context:&context)
-            NeighborhoodArt.draw(context:&context,level:motel.household.level)
+            BeachArt.draw(context:&context,motel:motel)
+            NeighborhoodArt.draw(context:&context,level:motel.household.level,motel:motel)
             // Employee facilities appear only after that employee is hired.
             for role in motel.staffStations {
                 if role == .cleaner {continue} // Housekeeping equipment lives inside the laundry pavilion.
+                let stationContext=beginObject("station-"+role.rawValue)
                 let spot = role == .clerk ? Tile(x:8,y:11) : role.home
                 let px=Double(spot.x*16),py=Double(spot.y*16)
                 rect(px-6,py-4,28,23,0xC1B58E)
@@ -278,47 +284,63 @@ struct MotelGroundsCanvas: View, Animatable {
                     rect(px+19,py+1,10,4,0xADC6B3);rect(px+19,py+7,10,3,0xD5B873)
                 }
                 label(role.station,px+8,py-11,2.7,0x344D3C)
+                context=stationContext
             }
-            for tile in RPGMaps.landscapeTrees {
+            for (treeID,tile) in RPGMaps.landscapeTrees.enumerated() {
+                let saved=beginObject("tree-\(treeID)")
                 CozyScenery.tree(context:&context,x:Double(tile.x*16),y:Double(tile.y*16))
+                context=saved
             }
-            for tile in RPGMaps.landscapeBenches {
+            for (benchID,tile) in RPGMaps.landscapeBenches.enumerated() {
+                let saved=beginObject("bench-\(benchID)")
                 let tx=Double(tile.x*16), ty=Double(tile.y*16)
                 rect(tx,ty+3,16,4,0x9A714D); rect(tx,ty+9,16,4,0xC49A68)
                 rect(tx+2,ty+13,2,3,0x45564B); rect(tx+12,ty+13,2,3,0x45564B)
+                context=saved
             }
             for col in [14,22,30] {
                 for row in [10,19,28] {
+                    let saved=beginObject("flowers-\(col)-\(row)")
                     rect(Double(col*16),Double(row*16),28,8,0xA07855)
                     for flower in 0..<6 { rect(Double(col*16+flower*4+2),Double(row*16-2),3,6,flower % 2 == 0 ? 0xE3A7B1 : 0xF0CE79) }
+                    context=saved
                 }
             }
             FacilitiesArt.draw(context:&context,motel:motel)
             // Small everyday objects keep the grounds lived in, without moving paths.
-            for x in [44.0,49,59,69] {CozyScenery.planter(context:&context,x:x*16,y:21*16)}
-            for (col,row) in [(43,21),(52,21),(62,21),(69,32)] {
+            for (id,x) in [44.0,49,59,69].enumerated() {let saved=beginObject("planter-\(id)");CozyScenery.planter(context:&context,x:x*16,y:21*16);context=saved}
+            for (id,location) in [(43,21),(52,21),(62,21),(69,32)].enumerated() {
+                let (col,row)=location,saved=beginObject("lamp-\(id)")
                 let px=Double(col*16),py=Double(row*16)
                 rect(px+6,py-20,2,34,0x64736A)
                 rect(px+2,py-23,10,7,0xE3D49E)
                 context.fill(Path(ellipseIn:CGRect(x:px+3,y:py-22,width:8,height:4)),with:.color(Color(hex:0xFFF0BA)))
+                context=saved
             }
-            for (col,row) in [(44,38),(66,32)] {
+            for (id,location) in [(44,38),(66,32)].enumerated() {
+                let (col,row)=location,saved=beginObject("bin-\(id)")
                 let px=Double(col*16),py=Double(row*16)
                 rect(px+3,py+3,10,12,0x6D9988);rect(px+2,py+1,12,3,0x496F63)
                 label("RECYCLE",px+8,py+8,2,0xF1E4C1)
+                context=saved
             }
-            for (col,row) in [(46,38),(58,38),(65,38)] {
+            for (id,location) in [(46,38),(58,38),(65,38)].enumerated() {
+                let (col,row)=location,saved=beginObject("town-bench-\(id)")
                 let px=Double(col*16),py=Double(row*16)
                 rect(px,py+3,22,4,0xAD8B64);rect(px,py+10,22,4,0xAD8B64)
                 rect(px+2,py+14,2,3,0x526B59);rect(px+18,py+14,2,3,0x526B59)
                 CozyScenery.planter(context:&context,x:px+28,y:py+3)
+                context=saved
             }
             // The office and nine physical room plots, connected by walkable lanes.
             func building(_ origin: Tile, _ width: Int, _ height: Int, _ door: Tile, _ name: String, _ roof: UInt32, _ paint: UInt32) {
                 CozyScenery.building(context:&context,x:Double(origin.x*16),y:Double(origin.y*16),w:Double(width*16),h:Double(height*16),doorX:Double(door.x*16),name:name,roof:roof,paint:paint)
             }
+            let officeContext=beginObject("office")
             DecorArt.officeFacade(&context,x:48,y:48)
+            context=officeContext
             for index in 0..<9 {
+                let roomContext=beginObject("room-\(index)")
                 let o = MotelGrounds.roomOrigin(index)
                 let actual=index+motel.viewingFloor*9
                 if actual < motel.rooms.count {
@@ -338,6 +360,7 @@ struct MotelGroundsCanvas: View, Animatable {
                     rect(px + 22, py + 22, 52, 18, 0x4B6251)
                     label(actual == motel.rooms.count ? "BUILD NEXT" : "FUTURE ROOM", px + 48, py + 31, 4, 0xF0D393)
                 }
+                context=roomContext
             }
             if motel.managementEnabled {
                 if motel.simulation.facilities.contains(.restaurant) {
@@ -349,9 +372,13 @@ struct MotelGroundsCanvas: View, Animatable {
                 }
             }
             // Pool, courtyard, parking spaces and roadside sign.
+            let savedpool = beginObject("pool")
             CozyScenery.pool(context:&context,x:47,y:287,w:115,h:83)
             label("POOL", 105, 278, 4, 0x4A664A)
+            context=savedpool
+            let savedgardentable = beginObject("garden-table")
             rect(64, 252, 40, 5, 0x9F7854); rect(68, 257, 3, 6, 0x6B634D); rect(97, 257, 3, 6, 0x6B634D)
+            context=savedgardentable
             rect(240,472,365,80,0x747E78)
             label("BIKE PARKING / BIKE CARE",416,466,5,0x2F4E3D)
             for col in [17,25,33] {
@@ -362,8 +389,10 @@ struct MotelGroundsCanvas: View, Animatable {
             }
             rect(238,505,16,25,0x436D76); rect(240,508,12,12,0x8FC3CC)
             label("HIRE DIEGO",245,540,3,0xF4D891)
+            let savedmotelsign = beginObject("motel-sign")
             rect(15, 505, 62, 25, 0x3E5E50)
             label("BRAINSTORM HAVEN", 46, 514, 4); label("MOTOR INN", 46, 522, 4)
+            context=savedmotelsign
             struct Actor {
                 let x: Double; let y: Double; let color: UInt32; let variant: Int; let facing: Int; let name: String; let isPlayer: Bool
             }
@@ -472,69 +501,5 @@ struct MotelPocketMap: View {
             Text("You are in \(motel.mapName.lowercased()), column \(motel.actorTile.x), row \(motel.actorTile.y).").font(.footnote)
             Text("Office: desk = save or upgrade; bed = next day; closet = cleaning kit; paint cabinet = wall colors. Rooms: hold work near mess to clean, use the bed to upgrade furnishings, and use the paint cabinet for colors.").font(.footnote).foregroundStyle(.secondary)
         }.padding(24).foregroundStyle(Color(hex: 0xF5E7C8)).presentationBackground(Color(hex: 0x172A25))
-    }
-}
-
-@MainActor
-struct CreativeGroundsArtwork:View {
-    let motel:Motel
-    var body:some View {
-        let renderer=ImageRenderer(content:MotelGroundsCanvas(motel:motel,x:0,y:0,npcTick:0,sceneryOnly:true,fullMap:true)
-            .frame(width:1152,height:1024))
-        let bitmap=renderer.uiImage
-        Canvas {context,_ in
-            if let bitmap {Self.compose(context:&context,image:bitmap,motel:motel)}
-        }.frame(width:1152,height:1024)
-    }
-    static func compose(context:inout GraphicsContext,image:UIImage,motel:Motel) {
-        let structures=motel.creativeStructures
-        let moved=structures.filter{motel.creativeOffset($0.id) != Tile(x:0,y:0)}
-        let roots=moved.filter{item in !moved.contains{$0.id == item.parent}}
-        let whole=CGRect(x:0,y:0,width:1152,height:1024)
-        let source=Image(uiImage:image)
-        func frame(_ item:CreativeStructure)->CGRect {
-            let a=item.art
-            return CGRect(x:a.x,y:a.y,width:a.width,height:a.height)
-        }
-        // Restore the actual terrain under vacated objects rather than leaving invisible walls or colored patches.
-        for row in 0..<64 {for col in 0..<72 {
-            let road=(35...37).contains(row) || ((40...42).contains(col) && row>1) || (col>39 && (18...20).contains(row))
-            let residential=((43...68).contains(col) && [8,9,16,17].contains(row)) || ((58...59).contains(col) && (8...18).contains(row))
-            let paved=residential || RPGMaps.hotelSidewalk(Tile(x:col,y:row)) || ((43...70).contains(col) && (29...31).contains(row))
-            if BeachLayout.contains(Tile(x:col,y:row)) {
-                context.fill(Path(CGRect(x:col*16,y:row*16,width:16,height:16)),with:.color(Color(hex:0xEBDBB1)))
-            } else {CozyScenery.ground(context:&context,x:Double(col*16),y:Double(row*16),kind:road ? 2 : paved ? 1 : 0,seed:col*17+row*31)}
-        }}
-        var base=context
-        for item in roots {var cutout=Path(whole);cutout.addRect(frame(item));base.clip(to:cutout,style:FillStyle(eoFill:true))}
-        base.draw(source,in:whole)
-        // A separately moved machine leaves the laundry's original floor exposed.
-        for item in roots where item.parent == "laundry" {
-            context.fill(Path(frame(item)),with:.color(Color(hex:0xCAB995)))
-        }
-        for item in moved.sorted(by:{$0.footprint.y<$1.footprint.y}) {
-            let offset=motel.creativeOffset(item.id)
-            var layer=context
-            layer.translateBy(x:Double(offset.x*16),y:Double(offset.y*16))
-            if item.id.hasPrefix("tree-") {
-                CozyScenery.tree(context:&layer,x:Double(item.footprint.x*16),y:Double(item.footprint.y*16))
-                continue
-            }
-            if item.id.hasPrefix("palm-") {
-                DecorArt.palm(&layer,Double(item.footprint.x*16),Double(item.footprint.y*16))
-                continue
-            }
-            var shape=Path(frame(item))
-            let children=structures.filter{$0.parent == item.id}
-            for child in children {shape.addRect(frame(child))}
-            layer.clip(to:shape,style:FillStyle(eoFill:true))
-            layer.draw(source,in:whole)
-            // The pavilion is split into independently movable physical equipment.
-            if !children.isEmpty {
-                var floor=context
-                floor.translateBy(x:Double(offset.x*16),y:Double(offset.y*16))
-                for child in children {floor.fill(Path(frame(child)),with:.color(Color(hex:0xCAB995)))}
-            }
-        }
     }
 }

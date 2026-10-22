@@ -198,11 +198,12 @@ extension Motel {
             let t=role.home
             return CreativeStructure(id:"station-"+role.rawValue,title:role.station.capitalized,
                 footprint:RPGRegion(x:t.x,y:t.y,width:1,height:1),
-                art:RPGRegion(x:t.x*16-8,y:t.y*16-15,width:41,height:39),anchors:[t])
+                art:RPGRegion(x:t.x*16-8,y:t.y*16-15,width:41,height:39),anchors:[t],parent:role == .maintenance ? "pump" : nil)
         }
         return CreativeCatalog.objects+stations
     }
     func creativeOffset(_ id:String)->Tile {
+        if id=="station-clerk" {return creativeOffset("office")}
         let own=worldState.structureOffsets?[id] ?? Tile(x:0,y:0)
         guard let parent=creativeStructures.first(where:{$0.id==id})?.parent else{return own}
         let inherited=worldState.structureOffsets?[parent] ?? Tile(x:0,y:0)
@@ -215,6 +216,11 @@ extension Motel {
             objects.first(where:{$0.footprint.contains(source)}) else{return source}
         let d=creativeOffset(object.id)
         return Tile(x:source.x+d.x,y:source.y+d.y)
+    }
+    func staffHome(_ role:StaffRole)->Tile {
+        if role == .cleaner || role == .clerk {return groundTile(role.home)}
+        let d=creativeOffset("station-"+role.rawValue)
+        return Tile(x:role.home.x+d.x,y:role.home.y+d.y)
     }
     func groundGuestTile(_ id:Int)->Tile {groundTile(MotelGrounds.guestTile(id))}
     func groundRoomDoor(_ id:Int)->Tile {groundTile(MotelGrounds.roomDoor(id))}
@@ -328,6 +334,29 @@ extension Motel {
             let walker=world!.travellers[i]
             let target=walker.destination == MotelGrounds.gate ? MotelGrounds.gate : groundRoomDoor(walker.roomID)
             world!.travellers[i]=MotelWalker(id:walker.id,name:walker.name,color:walker.color,roomID:walker.roomID,player:walker.player,previous:walker.player,destination:target)
+        }
+        for i in world!.travellers.indices where map.blocked(world!.travellers[i].player) {
+            let safe=groundNearestWalkable(to:world!.travellers[i].player)
+            world!.travellers[i].player=safe;world!.travellers[i].previous=safe
+        }
+        for key in ["guests","neighbors","town","witnesses"] {
+            var people=key=="guests" ? worldState.guestPositions ?? [:] : key=="neighbors" ? worldState.neighborPositions ?? [:] : key=="town" ? worldState.townPositions ?? [:] : worldState.witnessPositions ?? [:]
+            for (person,tile) in people where map.blocked(tile) {people[person]=groundNearestWalkable(to:tile)}
+            switch key {
+            case "guests":world!.guestPositions=people
+            case "neighbors":world!.neighborPositions=people;world!.neighborPrevious=people
+            case "town":world!.townPositions=people;world!.townPrevious=people
+            default:world!.witnessPositions=people
+            }
+        }
+        var parking=bikeParking
+        for bike in parkedBikes {
+            let position=parking[bike.id] ?? HotelCar.tile(bike.slot)
+            if map.blocked(position) {parking[bike.id]=groundNearestWalkable(to:position)}
+        }
+        world!.bikeParking=parking
+        for (petID,var pet) in worldState.pets ?? [:] where pet.map=="grounds" && map.blocked(pet.tile) {
+            pet.tile=groundNearestWalkable(to:pet.tile);world!.pets?[petID]=pet
         }
         var ops=operationsState
         for i in ops.workers.indices where map.blocked(ops.workers[i].tile) {

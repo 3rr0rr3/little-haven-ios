@@ -259,7 +259,7 @@ extension Motel {
         guard canSave, cash >= role.hireCost, !operationsState.workers.contains(where: { $0.role == role }) else { return false }
         var state = operationsState
         cash -= role.hireCost
-        state.workers.append(MotelWorker(role:role,tile:groundTile(role.home)))
+        state.workers.append(MotelWorker(role:role,tile:staffHome(role)))
         if state.simulation != nil {state.simulation!.profiles[role.rawValue]=StaffProfile.make(role)}
         operations = state
         lastEvent = "\(role.name) joined as your \(role.title.lowercased()). First shift included; \(role.wage) coins each morning."
@@ -360,7 +360,7 @@ extension Motel {
                 target = MotelGrounds.refuge(from:worker.tile,danger:incident.tile)
             } else if offShift {
                 worker.roomID = nil; worker.progress = 0
-                target = groundTile(worker.role.home)
+                target = staffHome(worker.role)
             } else if responding, let incident = state.incident {
                 worker.roomID = nil
                 target = incident.approach
@@ -386,11 +386,11 @@ extension Motel {
                 target=groundRoomDoor(issue.roomID)
             } else if worker.role == .clerk && (!waiting.isEmpty || reception.visitor != nil) {
                 worker.roomID = nil; worker.progress = 0
-                target = groundTile(worker.role.home)
+                target = staffHome(worker.role)
             } else {
                 worker.roomID = nil
                 worker.progress = 0
-                target = groundTile(worker.role.home)
+                target = staffHome(worker.role)
             }
             if worker.roomID == nil && !responding && state.incident == nil && worker.tile == target {worker.status=offShift ? "OFF SHIFT" : "AT POST"}
             if worker.tile.distance(to:target) > (responding || occupied.contains(target) ? 1 : 0) {
@@ -1053,7 +1053,7 @@ extension Motel {
         if advance {s.clockTicks=0}
         simulation=s
         if advance {advanceHotelHour()}
-        if operationsState.incident == nil,operationsState.tick%6==0,let worker=operationsState.workers.first(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:groundTile($0.role.home))<=1}),workerCanWork(worker,tick:operationsState.tick),!isNight,let guest=waiting.first {
+        if operationsState.incident == nil,operationsState.tick%6==0,let worker=operationsState.workers.first(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:staffHome($0.role))<=1}),workerCanWork(worker,tick:operationsState.tick),!isNight,let guest=waiting.first {
             verifyGuest(guest.id)
             if let room=rooms.first(where:{$0.available && mayCheckIn(guest,room:$0)}) {_=managerAssignGuest(guest.id,roomID:room.id)}
         }
@@ -1536,7 +1536,7 @@ extension Motel {
         guard isRidingBike,let id=worldState.ridingBike else{return false}
         let candidates=[Tile(x:actorTile.x+1,y:actorTile.y),Tile(x:actorTile.x-1,y:actorTile.y),Tile(x:actorTile.x,y:actorTile.y+1),Tile(x:actorTile.x,y:actorTile.y-1)]
         guard let parked=candidates.first(where:{tile in
-            !groundBlocked(tile) && !bikeBlocks(tile) && tile != groundTile(MotelGrounds.officeDoor) && tile != FamilyHome.door && !NeighborhoodShop.allCases.contains{$0.door == tile} && !(0..<9).contains{groundRoomDoor($0)==tile}
+            !groundBlocked(tile) && !bikeBlocks(tile) && tile != groundTile(MotelGrounds.officeDoor) && tile != groundTile(FamilyHome.door) && !NeighborhoodShop.allCases.contains{groundTile($0.door) == tile} && !(0..<9).contains{groundRoomDoor($0)==tile}
         }) else {lastEvent="Find a little open space to park your bike.";return false}
         if world!.bikeParking == nil {world!.bikeParking=[:]}
         world!.bikeParking![id]=parked;world!.ridingBike=nil

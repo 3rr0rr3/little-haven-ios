@@ -53,6 +53,7 @@ struct RPGSceneView: UIViewRepresentable {
     var nightVision = false
     var powerOut = false
     var pumpFault = false
+    var pumpPosition=Tile(x:10,y:21)
     let scenery: () -> AnyView
 
     func makeUIView(context: Context) -> SKView {
@@ -71,7 +72,7 @@ struct RPGSceneView: UIViewRepresentable {
         scene.configure(mapID: mapID, revision: revision, mapSize: mapSize,
                         columns: columns, interior: interior, actors: actors,
                         working: working, workKind: workKind, visual: visual,
-                        weather:weather,cars:cars,bikePositions:bikePositions,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,scenery: scenery)
+                        weather:weather,cars:cars,bikePositions:bikePositions,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,pumpPosition:pumpPosition,scenery: scenery)
     }
     static func dismantleUIView(_ view: SKView, coordinator: ()) {
         view.scene?.removeAllActions()
@@ -141,7 +142,7 @@ final class RPGScene: SKScene {
     @MainActor func configure(mapID: String, revision newRevision: String,
                              mapSize: CGSize, columns: CGFloat, interior: Bool,
                              actors: [RPGActor], working: Bool, workKind:String,
-                             visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],bikePositions:[Int:Tile],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,pumpFault:Bool,
+                             visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],bikePositions:[Int:Tile],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,pumpFault:Bool,pumpPosition:Tile,
                              scenery: () -> AnyView) {
         let changedMap = worldID != mapID
         dimensions = mapSize
@@ -167,7 +168,7 @@ final class RPGScene: SKScene {
             revision = newRevision
         }
         configureHomeTV(mapID:mapID)
-        configurePumpFault(active:mapID == "grounds" && pumpFault)
+        configurePumpFault(active:mapID == "grounds" && pumpFault,at:pumpPosition)
         configureAmbient(night:night && !interior,nightVision:nightVision,powerOut:powerOut)
         configureWeather(interior ? .sunny : weather)
         if !interior { configureCars(cars,day:day,positions:bikePositions) }
@@ -316,10 +317,10 @@ final class RPGScene: SKScene {
 
 
     // Native scene animation: no SwiftUI timer, map rerender or per-frame textures.
-    private func configurePumpFault(active:Bool) {
+    private func configurePumpFault(active:Bool,at tile:Tile) {
         if !active {world.childNode(withName:"pool-pump-fault")?.removeFromParent();return}
-        guard world.childNode(withName:"pool-pump-fault") == nil else{return}
-        let fault=SKNode();fault.name="pool-pump-fault";fault.position=CGPoint(x:168,y:-351);fault.zPosition=360
+        if let existing=world.childNode(withName:"pool-pump-fault") {existing.position=CGPoint(x:tile.x*16+8,y:-(tile.y*16+15));return}
+        let fault=SKNode();fault.name="pool-pump-fault";fault.position=CGPoint(x:tile.x*16+8,y:-(tile.y*16+15));fault.zPosition=360
         for i in 0..<5 {
             let spark=SKShapeNode()
             let path=CGMutablePath();path.move(to:.zero);path.addLine(to:CGPoint(x:Double(i-2)*2,y:5+Double(i%2)*3));path.addLine(to:CGPoint(x:Double(i-2)*3,y:3))
@@ -530,7 +531,7 @@ struct MotelRPGView: View {
             actors += motel.worldState.travellers.map {
                 RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.appearanceSeed, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: incident == nil ? MotelCadence.guestWalk : MotelCadence.travel,expression:incident == nil ? "" : "scared")
             }
-            for worker in motel.operationsState.workers where worker.role != .clerk || worker.tile.distance(to:motel.groundTile(worker.role.home))>1 {
+            for worker in motel.operationsState.workers where worker.role != .clerk || worker.tile.distance(to:motel.staffHome(worker.role))>1 {
                 var workerActor = RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:200+(StaffRole.allCases.firstIndex(of:worker.role) ?? 0),facing:worker.tile.x < (worker.previous?.x ?? worker.tile.x) ? 1 : worker.tile.x > (worker.previous?.x ?? worker.tile.x) ? 2 : worker.tile.y < (worker.previous?.y ?? worker.tile.y) ? 3 : 0,name:worker.role.name,duration:MotelCadence.travel)
                 if let incident {
                     workerActor.expression = worker.role == incident.kind.responder ? (incident.kind == .pool ? "concerned" : "determined") : "scared"
@@ -580,10 +581,9 @@ struct MotelRPGView: View {
         return RPGSceneView(mapID: mapID, revision: worldRevision, mapSize: CGSize(width: interior ? 144 : MotelGrounds.width*16, height: interior ? 144 : MotelGrounds.height*16), columns: 14, interior: interior, actors: actors, working: workProgress > 0,
                             workKind:motel.cleaningTarget == 0 ? "bed" : motel.cleaningTarget == 1 ? "trash" : "mop",
                             visual:motel.operationsState.visual,weather:motel.weather,cars:motel.parkedBikes,bikePositions:motel.bikeParking,day:motel.day,
-                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair)) {
+                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),pumpPosition:motel.groundTile(Tile(x:10,y:21))) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }
             if motel.worldState.place == .office { return AnyView(MotelOfficeCanvas(sceneryOnly: true, motel: motel, x: 0, y: 0)) }
-            if !(motel.worldState.structureOffsets ?? [:]).isEmpty {return AnyView(CreativeGroundsArtwork(motel:motel))}
             return AnyView(MotelGroundsCanvas(motel: motel, x: 0, y: 0, npcTick: 0, sceneryOnly: true, fullMap: true))
         }
     }
