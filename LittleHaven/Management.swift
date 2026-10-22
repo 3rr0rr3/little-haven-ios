@@ -65,14 +65,14 @@ extension Motel {
         !caught && currentShop == shop && actorTile.distance(to:ShopLayout.counter)<=1
     }
     @discardableResult mutating func enterShop(_ shop:NeighborhoodShop)->Bool {
-        guard !caught,!isRidingBike,visit == nil,worldState.place == .grounds,actorTile.distance(to:shop.door)<=1 else{return false}
+        guard !caught,!isRidingBike,visit == nil,worldState.place == .grounds,actorTile.distance(to:groundTile(shop.door))<=1 else{return false}
         initializeWorld();world!.place = .shop;world!.shop=shop;world!.player=ShopLayout.arrival
         lastEvent="Welcome to "+shop.title+". Walk to "+shop.keeperName+"'s counter to browse."
         return true
     }
     @discardableResult mutating func leaveShop()->Bool {
         guard isAtShop,let shop=currentShop,actorTile.distance(to:ShopLayout.exit)<=1 else{return false}
-        world!.place = .grounds;world!.player=Tile(x:shop.door.x,y:shop.door.y+1);world!.shop=nil
+        world!.place = .grounds;world!.player=Tile(x:groundTile(shop.door).x,y:groundTile(shop.door).y+1);world!.shop=nil
         return true
     }
     static let homeDecorObstacles=[RPGRegion(x:1,y:2,width:3,height:2),RPGRegion(x:2,y:5,width:2,height:2),RPGRegion(x:3,y:12,width:1,height:1)]
@@ -133,16 +133,16 @@ enum MotelCadence {
 }
 
 enum StaffRole: String, Codable, CaseIterable, Identifiable {
-    case cleaner, maintenance, security, valet, clerk
+    case cleaner, maintenance, security, valet, clerk, repair, pestControl
     var id: String { rawValue }
-    var title: String { switch self { case .cleaner: return "Housekeeper"; case .maintenance: return "Groundskeeper"; case .security: return "Security guard"; case .valet: return "Bike attendant"; case .clerk: return "Front-desk clerk" } }
-    var name: String { switch self { case .cleaner: return "Luna"; case .maintenance: return "Mateo"; case .security: return "Riley"; case .valet: return "Diego"; case .clerk: return "Nora" } }
-    var hireCost: Int { switch self { case .cleaner: return 100; case .maintenance: return 140; case .security: return 160; case .valet: return 120; case .clerk: return 130 } }
-    var wage: Int { switch self { case .cleaner: return 15; case .maintenance: return 20; case .security: return 25; case .valet: return 18; case .clerk: return 22 } }
-    var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office."; case .valet: return "Walks to parked guest bikes, scrubs and rinses them. Each bike earns 35 coins once per day."; case .clerk: return "Handles daytime arrivals, assigns suitable rooms and collects payments while you work outside." } }
-    var home: Tile { switch self { case .clerk:return Tile(x:6,y:10);case .cleaner:return FacilityLayout.laundry;case .maintenance:return Tile(x:11,y:22);case .security:return Tile(x:11,y:12);case .valet:return Tile(x:15,y:32) } }
-    var station: String { switch self {case .clerk:return "RECEPTION";case .cleaner:return "HOUSEKEEPING";case .maintenance:return "MAINTENANCE";case .security:return "SECURITY";case .valet:return "BIKE CARE"} }
-    var color: UInt32 { switch self { case .cleaner: return 0xB4A1C5; case .maintenance: return 0xD8AC66; case .security: return 0x718DA9; case .valet: return 0x5DA6B0; case .clerk: return 0xD0B777 } }
+    var title: String { switch self { case .cleaner: return "Housekeeper"; case .maintenance: return "Groundskeeper"; case .security: return "Security guard"; case .valet: return "Bike attendant"; case .clerk: return "Front-desk clerk"; case .repair: return "Repair technician"; case .pestControl: return "Pest-control specialist" } }
+    var name: String { switch self { case .cleaner: return "Luna"; case .maintenance: return "Mateo"; case .security: return "Riley"; case .valet: return "Diego"; case .clerk: return "Nora"; case .repair: return "Alex"; case .pestControl: return "Iris" } }
+    var hireCost: Int { switch self { case .cleaner: return 100; case .maintenance: return 140; case .security: return 160; case .valet: return 120; case .clerk: return 130; case .repair: return 150; case .pestControl: return 170 } }
+    var wage: Int { switch self { case .cleaner: return 15; case .maintenance: return 20; case .security: return 25; case .valet: return 18; case .clerk: return 22; case .repair: return 23; case .pestControl: return 24 } }
+    var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office."; case .valet: return "Walks to parked guest bikes, scrubs and rinses them. Each bike earns 35 coins once per day."; case .clerk: return "Handles daytime arrivals, assigns suitable rooms and collects payments while you work outside."; case .repair: return "Repairs room fixtures, leaks, outages and temperature problems using spare parts."; case .pestControl: return "Treats bedbugs and roaches using pesticide. Inspects guest rooms after treatment." } }
+    var home: Tile { switch self { case .clerk:return Tile(x:6,y:10);case .cleaner:return FacilityLayout.laundry;case .maintenance:return Tile(x:11,y:22);case .security:return Tile(x:11,y:12);case .valet:return Tile(x:15,y:32); case .repair:return Tile(x:20,y:11);case .pestControl:return Tile(x:28,y:11) } }
+    var station: String { switch self {case .clerk:return "RECEPTION";case .cleaner:return "HOUSEKEEPING";case .maintenance:return "MAINTENANCE";case .security:return "SECURITY";case .valet:return "BIKE CARE"; case .repair:return "REPAIR WORKSHOP";case .pestControl:return "PEST CONTROL"} }
+    var color: UInt32 { switch self { case .cleaner: return 0xB4A1C5; case .maintenance: return 0xD8AC66; case .security: return 0x718DA9; case .valet: return 0x5DA6B0; case .clerk: return 0xD0B777; case .repair: return 0xCF885C; case .pestControl: return 0x88A78B } }
 }
 struct MotelWorker: Codable, Identifiable {
     let role: StaffRole
@@ -178,8 +178,8 @@ struct MotelIncident: Codable {
     var elapsed = 0
     var staffProgress = 0
     var location: Tile?
-    var tile: Tile { kind == .pool ? kind.tile : location ?? kind.tile }
-    var approach: Tile { kind == .pool ? kind.approach : Tile(x:tile.x,y:tile.y+1) }
+    var tile: Tile { location ?? kind.tile }
+    var approach: Tile { Tile(x:tile.x,y:tile.y+(kind == .pool ? 2 : 1)) }
     let limit = 90
     var remaining: Int { max(0,limit-elapsed) }
 }
@@ -246,7 +246,7 @@ extension Motel {
         StaffRole.allCases.filter { role in operationsState.workers.contains { $0.role == role } }
     }
     func hiringMilestone(_ role:StaffRole)->Int {
-        switch role {case .cleaner:return 3;case .maintenance:return 5;case .security:return 7;case .valet:return 9;case .clerk:return 12}
+        switch role {case .cleaner:return 3;case .maintenance:return 5;case .security:return 7;case .valet:return 9;case .clerk:return 12; case .repair:return 6;case .pestControl:return 8}
     }
     func hiringUnlocked(_ role:StaffRole)->Bool {
         guestsServed >= hiringMilestone(role) || operationsState.workers.contains { $0.role == role }
@@ -259,7 +259,7 @@ extension Motel {
         guard canSave, cash >= role.hireCost, !operationsState.workers.contains(where: { $0.role == role }) else { return false }
         var state = operationsState
         cash -= role.hireCost
-        state.workers.append(MotelWorker(role:role,tile:role.home))
+        state.workers.append(MotelWorker(role:role,tile:groundTile(role.home)))
         if state.simulation != nil {state.simulation!.profiles[role.rawValue]=StaffProfile.make(role)}
         operations = state
         lastEvent = "\(role.name) joined as your \(role.title.lowercased()). First shift included; \(role.wage) coins each morning."
@@ -335,7 +335,8 @@ extension Motel {
             state.incidentsStarted += 1
             let guests = rooms.compactMap(\.guest)
             state.incident = MotelIncident(kind:kind,guest:guests.first,otherGuest:guests.dropFirst().first)
-            if kind != .pool {state.incident!.location=Self.chaosLocations[(state.incidentsStarted / 3 + (kind == .fight ? 2 : 0)) % Self.chaosLocations.count]}
+            if kind == .pool {state.incident!.location=groundTile(kind.tile)}
+            else {state.incident!.location=Self.chaosLocations[(state.incidentsStarted / 3 + (kind == .fight ? 2 : 0)) % Self.chaosLocations.count]}
             lastEvent = kind.title + " Check the grounds or send a trained employee."
         }
         if var incident = state.incident {
@@ -360,7 +361,7 @@ extension Motel {
                 target = MotelGrounds.refuge(from:worker.tile,danger:incident.tile)
             } else if offShift {
                 worker.roomID = nil; worker.progress = 0
-                target = worker.role.home
+                target = groundTile(worker.role.home)
             } else if responding, let incident = state.incident {
                 worker.roomID = nil
                 target = incident.approach
@@ -371,32 +372,32 @@ extension Motel {
             } else if worker.role == .cleaner, let room = rooms.first(where: { $0.dirty && $0.guest == nil }) {
                 if worker.roomID != room.id { worker.progress = 0 }
                 worker.roomID = room.id
-                target = MotelGrounds.roomDoor(room.id)
-            } else if worker.role == .maintenance,let room=rooms.first(where:{!$0.health.faults.isEmpty}) {
+                target = groundRoomDoor(room.id)
+            } else if worker.role.isSpecialist,let room=rooms.first(where:{ $0.health.faults.contains(where:worker.role.handles) }) {
                 if worker.roomID != room.id { worker.progress=0 }
                 worker.roomID=room.id
-                target=MotelGrounds.roomDoor(room.id)
-            } else if worker.role == .maintenance,let issue=state.simulation?.issues.first(where:{![HotelIssueKind.noise,.drugDeal,.privacy,.wifi,.celebrity,.adultVisitor].contains($0.kind)}) {
+                target=groundRoomDoor(room.id)
+            } else if worker.role.isSpecialist,let issue=state.simulation?.issues.first(where:{worker.role.handles($0.kind)}) {
                 if worker.roomID != issue.roomID {worker.progress=0}
                 worker.roomID=issue.roomID
-                target=MotelGrounds.roomDoor(issue.roomID)
+                target=groundRoomDoor(issue.roomID)
             } else if worker.role == .security,let issue=state.simulation?.issues.first(where:{[HotelIssueKind.noise,.drugDeal].contains($0.kind)}) {
                 if worker.roomID != issue.roomID {worker.progress=0}
                 worker.roomID=issue.roomID
-                target=MotelGrounds.roomDoor(issue.roomID)
+                target=groundRoomDoor(issue.roomID)
             } else if worker.role == .clerk && (!waiting.isEmpty || reception.visitor != nil) {
                 worker.roomID = nil; worker.progress = 0
-                target = worker.role.home
+                target = groundTile(worker.role.home)
             } else {
                 worker.roomID = nil
                 worker.progress = 0
-                target = worker.role.home
+                target = groundTile(worker.role.home)
             }
             if worker.roomID == nil && !responding && state.incident == nil && worker.tile == target {worker.status=offShift ? "OFF SHIFT" : "AT POST"}
             if worker.tile.distance(to:target) > (responding || occupied.contains(target) ? 1 : 0) {
                 let next:Tile?
-                if let incident=state.incident,!responding { next=MotelGrounds.escapeStep(from:worker.tile,danger:incident.tile,avoiding:occupied) }
-                else { next=MotelGrounds.staffStep(from:worker.tile,to:target,avoiding:occupied) }
+                if let incident=state.incident,!responding { next=groundEscapeStep(from:worker.tile,danger:incident.tile,avoiding:occupied) }
+                else { next=groundStaffStep(from:worker.tile,to:target,avoiding:occupied) }
                 if let next { worker.tile=next }
                 worker.status=responding ? "RESPONDING" : state.incident != nil ? "RUNNING" : worker.roomID != nil ? "TO JOB" : "TO POST"
             } else if !advanceClock {
@@ -425,19 +426,28 @@ extension Motel {
                     worker.progress = 0; worker.roomID = nil
                     lastEvent = "Diego washed a guest car. +35 coins."
                 }
-            } else if worker.role == .maintenance,let roomID=worker.roomID {
-                worker.status="REPAIRING";worker.progress += 1
+            } else if worker.role.isSpecialist,let roomID=worker.roomID {
+                worker.status=worker.role == .pestControl ? "TREATING PESTS" : "REPAIRING"
+                worker.progress += 1
                 if worker.progress>=8 {
-                    if rooms.first(where:{$0.id==roomID})?.health.faults.isEmpty != false,
-                       let issue=state.simulation?.issues.first(where:{$0.roomID==roomID && ![HotelIssueKind.noise,.drugDeal,.privacy,.wifi,.celebrity,.adultVisitor].contains($0.kind)}) {
+                    let faults=rooms.first(where:{$0.id==roomID})?.health.faults.filter(worker.role.handles) ?? []
+                    let supply:Supply=worker.role == .pestControl ? .pesticide : .parts
+                    if let issue=state.simulation?.issues.first(where:{$0.roomID==roomID && worker.role.handles($0.kind)}) {
                         completedIssues.append(issue.id);worker.progress=0;worker.roomID=nil
-                    } else {
-                    let pests=rooms.first(where:{$0.id==roomID})?.health.faults.contains(.bedbugs) == true || rooms.first(where:{$0.id==roomID})?.health.faults.contains(.roaches) == true
-                    let supply=pests ? Supply.pesticide : .parts
-                    if (state.simulation?.stock[supply.rawValue,default:0] ?? 0) >= 2 && cash>=15 {
-                        completedRepairs.append(roomID);worker.progress=0;worker.roomID=nil
+                    } else if (state.simulation?.stock[supply.rawValue,default:0] ?? 0)>=2 && cash>=15 {
+                        // Commit each specialist's own work; never erase the other specialist's faults.
+                        if let i=rooms.firstIndex(where:{$0.id==roomID}),!faults.isEmpty {
+                            var health=rooms[i].health
+                            health.faults.subtract(faults)
+                            if worker.role == .repair {health.condition=100}
+                            rooms[i].hospitality=health
+                            state.simulation!.stock[supply.rawValue,default:0] -= 2
+                            cash -= 15
+                        } else if let issue=state.simulation?.issues.first(where:{$0.roomID==roomID && worker.role.handles($0.kind)}) {
+                            completedIssues.append(issue.id)
+                        }
+                        worker.progress=0;worker.roomID=nil
                     } else {worker.status="NEED SUPPLIES / COINS"}
-                    }
                 }
             } else if worker.role == .security,let roomID=worker.roomID {
                 worker.status="INVESTIGATING";worker.progress += 1
@@ -466,9 +476,9 @@ extension Motel {
             occupied.insert(worker.tile)
         }
         if advanceClock,var police = state.consequences?.police {
-            if police.tile == Tile(x:6,y:10) { police.arrived = true }
-            else if let next = MotelGrounds.nextStep(from:police.tile,to:Tile(x:6,y:10),avoiding:[]) { police.tile = next }
-            if police.tile == Tile(x:6,y:10) { police.arrived = true }
+            if police.tile == groundTile(Tile(x:6,y:10)) { police.arrived = true }
+            else if let next = groundNextStep(from:police.tile,to:groundTile(Tile(x:6,y:10)),avoiding:[]) { police.tile = next }
+            if police.tile == groundTile(Tile(x:6,y:10)) { police.arrived = true }
             state.consequences!.police = police
         }
         operations = state
@@ -586,7 +596,7 @@ enum HotelService: String, CaseIterable {
 extension Motel {
     var nearbyService: HotelService? {
         guard canSave, visit == nil, worldState.place == .grounds else { return nil }
-        return HotelService.allCases.first { actorTile.distance(to:$0.tile) <= 1 }
+        return HotelService.allCases.first { actorTile.distance(to:groundTile($0.tile)) <= 1 }
     }
     func serviceAvailable(_ service: HotelService) -> Bool {
         (operationsState.serviceDays?[service.rawValue] != day) &&
@@ -603,7 +613,7 @@ extension Motel {
         operations = state
         cash += service.reward
         logMoney(service.reward,category:"Service",note:service.title)
-        playVisual(service.rawValue, target:service.tile)
+        playVisual(service.rawValue, target:groundTile(service.tile))
         lastEvent = "\(service.title) completed! +\(service.reward) coins. Available again tomorrow."
         return true
     }
@@ -817,6 +827,8 @@ struct StaffProfile:Codable {
         case .security:return StaffProfile(speed:65,honesty:60,skill:80)
         case .valet:return StaffProfile(speed:80,honesty:75,skill:65)
         case .clerk:return StaffProfile(speed:70,honesty:70,skill:75)
+        case .repair:return StaffProfile(speed:70,honesty:85,skill:90)
+        case .pestControl:return StaffProfile(speed:65,honesty:90,skill:85)
         }
     }
 }
@@ -1043,14 +1055,14 @@ extension Motel {
         if advance {s.clockTicks=0}
         simulation=s
         if advance {advanceHotelHour()}
-        if operationsState.incident == nil,operationsState.tick%6==0,let worker=operationsState.workers.first(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:$0.role.home)<=1}),workerCanWork(worker,tick:operationsState.tick),!isNight,let guest=waiting.first {
+        if operationsState.incident == nil,operationsState.tick%6==0,let worker=operationsState.workers.first(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:groundTile($0.role.home))<=1}),workerCanWork(worker,tick:operationsState.tick),!isNight,let guest=waiting.first {
             verifyGuest(guest.id)
             if let room=rooms.first(where:{$0.available && mayCheckIn(guest,room:$0)}) {_=managerAssignGuest(guest.id,roomID:room.id)}
         }
         if operationsState.tick%10==0,let worker=operationsState.workers.first(where:{$0.role == .clerk && $0.active}),workerCanWork(worker,tick:operationsState.tick),
            let issue=simulation.issues.first(where:{[HotelIssueKind.privacy,.wifi,.celebrity,.adultVisitor].contains($0.kind)}) {_=respondToIssue(issue.id,choice:0)}
         if operationsState.tick%15==0,let issue=simulation.issues.first,
-           operationsState.workers.contains(where:{$0.active && $0.role == (issue.kind == .noise || issue.kind == .drugDeal ? .security : .maintenance) && $0.tile.distance(to:MotelGrounds.roomDoor(issue.roomID))<=1 && workerCanWork($0,tick:operationsState.tick)}) { _=respondToIssue(issue.id,choice:0) }
+           operationsState.workers.contains(where:{$0.active && ($0.role.handles(issue.kind) || $0.role == .security && [HotelIssueKind.noise,.drugDeal].contains(issue.kind)) && $0.tile.distance(to:groundRoomDoor(issue.roomID))<=1 && workerCanWork($0,tick:operationsState.tick)}) { _=respondToIssue(issue.id,choice:0) }
         if isNight,operationsState.incident==nil {var state=operationsState;state.nextIncidentTick=min(state.nextIncidentTick,state.tick+25);operations=state}
     }
     mutating func advanceHotelHour() {
@@ -1289,8 +1301,8 @@ extension Motel {
         guard checkIn(guestID:id,roomID:roomID) else{return false}
         if world != nil {
             if reception.visitor?.guest.id==id {world?.reception?.visitor=nil}
-            let start=Tile(x:6,y:10)
-            world?.travellers.append(MotelWalker(id:id,name:guest.name,color:guest.color,roomID:roomID,player:start,previous:start,destination:MotelGrounds.roomDoor(roomID)))
+            let start=groundTile(Tile(x:6,y:10))
+            world?.travellers.append(MotelWalker(id:id,name:guest.name,color:guest.color,roomID:roomID,player:start,previous:start,destination:groundRoomDoor(roomID)))
         }
         return true
     }
@@ -1308,7 +1320,7 @@ enum GuestFavourKind:String,Codable,CaseIterable {
     var title:String { switch self { case .towels:return "fresh towels";case .snacks:return "a snack";case .toiletries:return "toiletries" } }
     var stockKey:String { rawValue }
     var source:Tile { switch self { case .towels:return HotelService.laundry.tile;case .snacks:return HotelService.breakfast.tile;case .toiletries:return FacilityLayout.supplies } }
-    var sourceName:String { switch self {case .towels:return "the laundry station";case .snacks:return "the breakfast station";case .toiletries:return "the guest supply pavilion near the south entrance"} }
+    var sourceName:String { switch self {case .towels:return "the laundry station";case .snacks:return "the breakfast station";case .toiletries:return "the shelves in the laundry pavilion"} }
 }
 struct GuestFavour:Codable {
     enum Status:String,Codable {case pending,fulfilled,declined,expired,apologized}
@@ -1331,7 +1343,7 @@ extension Motel {
     }
     var nearbyHospitalityRoom:MotelRoom? {
         guard !caught,visit == nil,worldState.place == .grounds else {return nil}
-        return rooms.first {$0.id/9 == viewingFloor && $0.guest != nil && actorTile.distance(to:MotelGrounds.roomDoor($0.id))<=1}
+        return rooms.first {$0.id/9 == viewingFloor && $0.guest != nil && actorTile.distance(to:groundRoomDoor($0.id))<=1}
     }
     func canOfferGuestFavour(_ roomID:Int)->Bool {
         guard nearbyHospitalityRoom?.id == roomID,let guest=rooms.first(where:{$0.id==roomID})?.guest else {return false}
@@ -1372,7 +1384,7 @@ extension Motel {
     }
     var canCollectGuestFavour:Bool {
         guard !caught,visit == nil,worldState.place == .grounds,let f=worldState.guestFavour,f.status == .pending,!f.collected,operationsState.tick<f.deadline else{return false}
-        return actorTile.distance(to:f.kind.source)<=1
+        return actorTile.distance(to:groundTile(f.kind.source))<=1
     }
     @discardableResult mutating func collectGuestFavour()->Bool {
         guard canCollectGuestFavour,let f=worldState.guestFavour else{return false}
@@ -1468,16 +1480,16 @@ enum FacilityLayout {
 extension Motel {
     var nearbyBeachChair:Int? {
         guard !caught,visit == nil,worldState.place == .grounds else{return nil}
-        return BeachLayout.lounges.indices.first {actorTile.distance(to:BeachLayout.approach($0))<=1}
+        return BeachLayout.lounges.indices.first {actorTile.distance(to:groundTile(BeachLayout.approach($0)))<=1}
     }
     var isRelaxing:Bool {worldState.beachSeat != nil && visit == nil && worldState.place == .grounds}
     var relaxingTile:Tile? {
         guard isRelaxing,let index=worldState.beachSeat,BeachLayout.lounges.indices.contains(index) else{return nil}
-        return BeachLayout.lounges[index]
+        return groundTile(BeachLayout.lounges[index])
     }
     @discardableResult mutating func sitOnBeachChair()->Bool {
         guard !isRelaxing,let chair=nearbyBeachChair else{return false}
-        initializeWorld();world!.player=BeachLayout.approach(chair);world!.beachSeat=chair
+        initializeWorld();world!.player=groundTile(BeachLayout.approach(chair));world!.beachSeat=chair
         lastEvent="You settle into the beach lounger. Enjoy the sea breeze. Move or stand up when ready."
         return true
     }
@@ -1525,11 +1537,23 @@ extension Motel {
         guard isRidingBike,let id=worldState.ridingBike else{return false}
         let candidates=[Tile(x:actorTile.x+1,y:actorTile.y),Tile(x:actorTile.x-1,y:actorTile.y),Tile(x:actorTile.x,y:actorTile.y+1),Tile(x:actorTile.x,y:actorTile.y-1)]
         guard let parked=candidates.first(where:{tile in
-            !MotelGrounds.blocked(tile) && !bikeBlocks(tile) && tile != MotelGrounds.officeDoor && tile != FamilyHome.door && !NeighborhoodShop.allCases.contains{$0.door == tile} && !(0..<9).contains{MotelGrounds.roomDoor($0)==tile}
+            !groundBlocked(tile) && !bikeBlocks(tile) && tile != groundTile(MotelGrounds.officeDoor) && tile != FamilyHome.door && !NeighborhoodShop.allCases.contains{$0.door == tile} && !(0..<9).contains{groundRoomDoor($0)==tile}
         }) else {lastEvent="Find a little open space to park your bike.";return false}
         if world!.bikeParking == nil {world!.bikeParking=[:]}
         world!.bikeParking![id]=parked;world!.ridingBike=nil
         lastEvent="Bike parked. Walk beside it to ride again."
         return true
+    }
+}
+
+extension StaffRole {
+    var isSpecialist:Bool { self == .repair || self == .pestControl }
+    func handles(_ fault:RoomFault)->Bool {
+        let pest = fault == .bedbugs || fault == .roaches
+        return self == .pestControl ? pest : self == .repair && !pest
+    }
+    func handles(_ issue:HotelIssueKind)->Bool {
+        self == .pestControl ? [HotelIssueKind.bedbugs,.roaches].contains(issue) :
+        self == .repair && [HotelIssueKind.vandalism,.outage,.leak,.ac,.temperature].contains(issue)
     }
 }

@@ -23,7 +23,7 @@ func hiringMilestoneRules() {
         require(business.staffStations.contains(role),"Hiring adds only that worker's station")
     }
     let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(business))
-    require(saved.staffStations.count == 5 && saved.hiringUnlocked(.clerk),"Milestones and stations survive saves")
+    require(saved.staffStations.count == StaffRole.allCases.count && saved.hiringUnlocked(.clerk),"Milestones and stations survive saves")
     business.guestsServed=0
     require(business.hiringUnlocked(.clerk),"Existing employees are preserved in older saves")
     business.enableManagement()
@@ -421,7 +421,7 @@ func managementRules() {
     var staff = Motel()
     staff.initializeWorld(); staff.cash = 1000
     for role in StaffRole.allCases { require(staff.hireEstablishedStaff(role), "Each staff role can be hired") }
-    require(staff.cash == 350 && !staff.hireEstablishedStaff(.cleaner), "Hiring charges once and prevents duplicate employees")
+    require(staff.cash == 1000-StaffRole.allCases.reduce(0){$0+$1.hireCost} && !staff.hireEstablishedStaff(.cleaner), "Hiring charges once and prevents duplicate employees")
     staff.rooms[0].dirty = true
     for _ in 0..<80 { staff.tickManagement() }
     require(!staff.rooms[0].dirty && staff.rooms[0].cleanedTasks?.count == 3, "Housekeeper walks to and cleans a vacant room")
@@ -434,7 +434,7 @@ func managementRules() {
     }
     staff.cash = 5; _ = staff.nextDay()
     require(staff.cash == 5 && staff.operationsState.workers.allSatisfy { !$0.active }, "Insufficient wages put workers off duty without debt")
-    staff.cash = 100; _ = staff.nextDay()
+    staff.cash = StaffRole.allCases.reduce(0){$0+$1.wage}; _ = staff.nextDay()
     require(staff.cash == 0 && staff.operationsState.workers.allSatisfy { $0.active }, "Paying wages restores the next shift")
     var manual = Motel()
     manual.initializeWorld(); _ = manual.checkIn(guestID:10,roomID:0)
@@ -784,7 +784,7 @@ func continuousStaffAndFamilyRoomRules() {
     var health=business.rooms[1].health;health.faults=[.pipe];business.rooms[1].hospitality=health
     business.injectIssue(.noise,roomID:2)
     business.operations!.nextIncidentTick=10000
-    for role in [StaffRole.cleaner,.maintenance,.security,.valet] {require(business.hireEstablishedStaff(role),"Hire workers for real job dispatch")}
+    for role in [StaffRole.cleaner,.maintenance,.security,.valet,.repair,.pestControl] {require(business.hireEstablishedStaff(role),"Hire workers for real job dispatch")}
     for frame in 0..<360 {business.tickManagement(advanceClock:frame%MotelCadence.businessSteps==0)}
     require(!business.rooms[0].dirty,"Housekeeping completes actual room work")
     require(business.rooms[1].health.faults.isEmpty,"Maintenance reaches and repairs the actual room")
@@ -1193,3 +1193,37 @@ func restaurantAndBikeRules() {
     print("PASS: restaurant location and ordering, bicycle mounting/movement/parking/save, desk check-in and corner stairs")
 }
 restaurantAndBikeRules()
+
+func creativeAndSpecialistRules() {
+    var game=Motel();game.initializeWorld();game.enableManagement()
+    require(!game.hiringUnlocked(.repair) && !game.hiringUnlocked(.pestControl),"Specialists unlock through guest service")
+    game.guestsServed=20;game.cash=5000
+    require(game.hire(.repair) && game.hire(.pestControl),"Two distinct specialists can be hired")
+    require(game.staffStations.contains(.repair) && game.staffStations.contains(.pestControl),"Specialists each receive a physical station")
+    require(StaffRole.repair.handles(RoomFault.pipe) && !StaffRole.repair.handles(RoomFault.roaches),"Repair specialist leaves pest work to Iris")
+    require(StaffRole.pestControl.handles(RoomFault.bedbugs) && !StaffRole.pestControl.handles(RoomFault.ac),"Pest specialist leaves repairs to Alex")
+    var health=game.rooms[0].health;health.faults=[.pipe,.bedbugs];game.rooms[0].hospitality=health
+    game.waiting=[];game.operations!.nextIncidentTick=10000
+    for i in game.operations!.workers.indices {game.operations!.workers[i].tile=game.groundRoomDoor(0)}
+    for frame in 0..<150 {game.tickManagement(advanceClock:frame%6==0)}
+    require(game.rooms[0].health.faults.isEmpty,"Alex and Iris complete their actual independent room jobs")
+    require(game.relocateStructure("laundry",to:Tile(x:20,y:30)),"Whole laundry can move away from the sidewalk")
+    require(game.groundTile(FacilityLayout.laundry) == Tile(x:21,y:33),"Washer interaction follows the pavilion")
+    require(!game.groundBlocked(Tile(x:11,y:4)) && game.groundBlocked(Tile(x:20,y:31)),"Laundry walls move with the artwork")
+    require(game.relocateStructure("washer",to:Tile(x:24,y:30)),"Washer moves independently")
+    require(game.groundTile(FacilityLayout.laundry) == Tile(x:25,y:32),"Individual appliance keeps its service approach")
+    let loaded=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(game))
+    require(loaded.groundTile(FacilityLayout.supplies) == game.groundTile(FacilityLayout.supplies),"Creative positions survive save and load")
+    let before=game.worldState.structureOffsets
+    require(!game.relocateStructure("home",to:Tile(x:14,y:4)),"Overlapping another room is rejected")
+    require(game.worldState.structureOffsets == before,"Rejected placement leaves layout unchanged")
+    require(game.relocateStructure("shop-fish",to:Tile(x:40,y:55)),"Shop can relocate into another region")
+    game.world!.place = .grounds;game.world!.player=game.groundTile(NeighborhoodShop.fish.door)
+    require(game.enterShop(.fish),"Relocated shop entrance still works")
+    game.world!.player=ShopLayout.exit
+    require(game.leaveShop() && game.actorTile == game.groundTile(Tile(x:47,y:36)),"Shop exits return to relocated doorway")
+    game.resetCreativeLayout()
+    require((game.worldState.structureOffsets ?? [:]).isEmpty && game.groundTile(FacilityLayout.laundry)==FacilityLayout.laundry,"Original layout can be restored")
+    print("PASS: specialist unlocks, separate duties, movable laundry and appliances, collisions, entrances, rejected overlaps and persistent creative layout")
+}
+creativeAndSpecialistRules()

@@ -94,9 +94,9 @@ struct FullscreenJoystick: View {
     }
     var body:some View {
         ZStack {
-            Circle().fill(Color(hex:0x203D32).opacity(0.88))
-            Circle().stroke(Color(hex:0xF5E7C8).opacity(0.45),lineWidth:2).padding(6)
-            Circle().fill(Color(hex:0x9ABD9E)).frame(width:48,height:48)
+            Circle().fill(Color(hex:0x203D32).opacity(offset == .zero ? 0.06 : 0.18))
+            Circle().stroke(Color(hex:0xF5E7C8).opacity(offset == .zero ? 0.10 : 0.28),lineWidth:2).padding(6)
+            Circle().fill(Color(hex:0x9ABD9E).opacity(offset == .zero ? 0.12 : 0.38)).frame(width:48,height:48)
                 .shadow(color:.black.opacity(0.25),radius:3,y:3)
                 .offset(offset).allowsHitTesting(false)
         }.frame(width:128,height:128).contentShape(Circle())

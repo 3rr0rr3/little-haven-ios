@@ -550,6 +550,21 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["482 COINS"].exists)
         capture(app,"Fish restaurant order and diners")
     }
+    func testCreativeEditorOpensAndMovesWasher() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-creative","--ui-touch","--ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.buttons["openCreative"].waitForExistence(timeout:15))
+        app.buttons["openCreative"].tap()
+        XCTAssertTrue(app.buttons["closeCreative"].waitForExistence(timeout:10))
+        let washer=app.descendants(matching:.any)["creative-washer"].firstMatch
+        XCTAssertTrue(washer.waitForExistence(timeout:5))
+        let origin=washer.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5))
+        origin.press(forDuration:0.6,thenDragTo:origin.withOffset(CGVector(dx:45,dy:130)))
+        capture(app,"Creative mode physical object relocation")
+        app.buttons["closeCreative"].tap()
+        XCTAssertTrue(app.descendants(matching:.any)["fullscreenJoystick"].firstMatch.waitForExistence(timeout:5))
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

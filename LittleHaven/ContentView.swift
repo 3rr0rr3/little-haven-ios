@@ -35,6 +35,17 @@ struct ContentView: View {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch")}
+        if args.contains("--ui-creative") || args.contains("--ui-creative-moved") {
+            var sample=Game();sample.coins=5000;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement()
+            sample.motel!.guestsServed=20
+            for role in StaffRole.allCases {_=sample.motel!.hire(role)}
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:12,y:8)
+            if args.contains("--ui-creative-moved") {
+                _=sample.motel!.relocateStructure("laundry",to:Tile(x:20,y:30))
+                sample.motel!.world!.player=Tile(x:22,y:35)
+            }
+            sample.motel!.operations!.nextIncidentTick=10000;sample.save();return sample
+        }
         if args.contains("--ui-bike") || args.contains("--ui-bike-riding") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.waiting=[];sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:15,y:32)
@@ -316,7 +327,7 @@ struct ContentView: View {
             TownRPGView(game:game).ignoresSafeArea()
             VStack {
                 HStack {
-                    Text("LITTLE HAVEN").font(.headline)
+                    Text("BRAINSTORM HAVEN").font(.headline)
                     Spacer()
                     Button {townDirection=nil;showJournal=true} label:{Image(systemName:"book.closed.fill").padding(12)}.accessibilityLabel("Open journal")
                 }.padding(10).background(Color(hex:0x172A25).opacity(0.9),in:RoundedRectangle(cornerRadius:16))
@@ -365,9 +376,9 @@ struct ContentView: View {
             }
             Button("Keep exploring", role: .cancel) { }
         } message: {
-            Text(game.ownsHouse ? "Your own little corner of Little Haven. Welcome home." : game.coins >= 500 ? "A sunny room, a warm bed, and a fresh start. Ready to make it yours?" : "FOR SALE / 500 coins\nYou need \(500 - game.coins) more. Ask the townspeople if they can help with your cottage fund.")
+            Text(game.ownsHouse ? "Your own little corner of Brainstorm Haven. Welcome home." : game.coins >= 500 ? "A sunny room, a warm bed, and a fresh start. Ready to make it yours?" : "FOR SALE / 500 coins\nYou need \(500 - game.coins) more. Ask the townspeople if they can help with your cottage fund.")
         }
-        .alert("Little Haven", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
+        .alert("Brainstorm Haven", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
             Button("Continue") { message = nil }
         } message: { Text(message ?? "") }
     }
@@ -376,7 +387,7 @@ struct ContentView: View {
             VStack(spacing: 12) {
                 HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("LITTLE HAVEN").font(.system(size: 22, weight: .black, design: .rounded)).tracking(2)
+                        Text("BRAINSTORM HAVEN").font(.system(size: 22, weight: .black, design: .rounded)).tracking(2)
                         Text(game.inside ? "YOUR COTTAGE / HOME AT LAST" : "WILLOW TOWN / A NEW BEGINNING")
                             .font(.system(size: 9, weight: .bold, design: .monospaced)).tracking(1)
                             .foregroundStyle(cream.opacity(0.6))
@@ -690,9 +701,9 @@ struct MotelTitleScreen: View {
                 } else {
                     VStack(spacing:12) {
                         VStack(spacing:0) {
-                            Text("MOTEL").font(.system(size:min(60,proxy.size.width*0.15),weight:.black,design:.rounded)).tracking(3)
+                            Text("BRAINSTORM").font(.system(size:min(42,proxy.size.width*0.10),weight:.black,design:.rounded)).tracking(3)
                                 .foregroundStyle(Color(hex:0xFFB4A4)).shadow(color:.red,radius:8)
-                            Text("SIMULATOR").font(.system(size:min(36,proxy.size.width*0.082),weight:.heavy,design:.rounded)).tracking(2)
+                            Text("HAVEN").font(.system(size:min(36,proxy.size.width*0.082),weight:.heavy,design:.rounded)).tracking(2)
                                 .foregroundStyle(Color(hex:0xB8F2EE)).shadow(color:.cyan,radius:8)
                             Text("A GAME OF HOSPITALITY").font(.system(size:11,weight:.bold,design:.monospaced)).tracking(1).padding(.top,8)
                         }.padding(20).background(Color(hex:0x193D43).opacity(0.96),in:RoundedRectangle(cornerRadius:20))
@@ -706,7 +717,7 @@ struct MotelTitleScreen: View {
                                 menuButton("QUIT",tint:0x653C35,id:"titleQuit") { confirmQuit = true }
                             }
                         }.frame(maxWidth:460)
-                        Text("LITTLE HAVEN / YOUR NEXT SHIFT AWAITS").font(.system(size:9,weight:.bold,design:.monospaced)).shadow(color:.black,radius:3)
+                        Text("BRAINSTORM HAVEN / YOUR NEXT SHIFT AWAITS").font(.system(size:9,weight:.bold,design:.monospaced)).shadow(color:.black,radius:3)
                     }.padding(24)
                 }
                 if confirmQuit {

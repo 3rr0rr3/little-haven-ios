@@ -358,7 +358,7 @@ struct ExpandedOfficeArt: View {
             rect(207,35,10,12,0x80644A); rect(202,29,20,12,0x77975C)
             text("COFFEE",194,74,3)
             if clerkHired {rect(80,66,18,4,0x547A6B);text("NORA",89,68,2.5)}
-            text("LITTLE HAVEN / RECEPTION",120,4.5,4)
+            text("BRAINSTORM HAVEN / RECEPTION",120,4.5,4)
         }.frame(width:240,height:240)
     }
 }
@@ -410,7 +410,7 @@ enum DecorArt {
         CozyScenery.block(context:&c,x:x-3,y:y+5,w:134,h:13,color:0x5A7977,depth:1)
         CozyScenery.block(context:&c,x:x+2,y:y+2,w:124,h:5,color:0x91AAA0,depth:0.7)
         CozyScenery.block(context:&c,x:x+6,y:y+23,w:116,h:17,color:0x344F4E,depth:0.8)
-        c.draw(Text("LITTLE HAVEN • OFFICE").font(.system(size:5.4,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E5BC)),at:CGPoint(x:x+64,y:y+31))
+        c.draw(Text("BRAINSTORM HAVEN • OFFICE").font(.system(size:5.4,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E5BC)),at:CGPoint(x:x+64,y:y+31))
         // Reception glazing, service counter visible behind the large windows.
         for dx in [8.0,84] {
             CozyScenery.block(context:&c,x:x+dx,y:y+47,w:34,h:33,color:0x648C8D,depth:0.6)

@@ -41,7 +41,7 @@ extension Motel {
             else if isAtHome {trailBlocked=homeBlocked(trail)}
             else if isAtShop {trailBlocked=shopBlocked(trail)}
             else if isAtReception {trailBlocked=RPGMaps.office.blocked(trail)}
-            else {trailBlocked=MotelGrounds.blocked(trail)}
+            else {trailBlocked=groundBlocked(trail)}
             if pet.map != petMap || previousMap != petMap || trailBlocked {
                 let nearby=[Tile(x:actorTile.x-1,y:actorTile.y),Tile(x:actorTile.x+1,y:actorTile.y),Tile(x:actorTile.x,y:actorTile.y-1)]
                 pet.tile=nearby.first { tile in
@@ -51,7 +51,7 @@ extension Motel {
                     if isAtBasement {return !BasementLayout.blocked(tile) && tile != BasementLayout.stairs}
                     if isAtHome { return !homeBlocked(tile) && tile != FamilyHome.exit }
                     if isAtReception { return !RPGMaps.office.blocked(tile) && tile != OfficeReception.door }
-                    return !MotelGrounds.blocked(tile)
+                    return !groundBlocked(tile)
                 } ?? actorTile
                 arrivals.insert(pet.tile)
             } else {
@@ -105,7 +105,7 @@ extension Motel {
                 visitor.pathIndex -= 1
                 if visitor.pathIndex <= 0 {
                     let start = Tile(x: 6,y: 10)
-                    let destination = visitor.roomID.map { MotelGrounds.roomDoor($0) } ?? MotelGrounds.gate
+                    let destination = visitor.roomID.map { groundRoomDoor($0) } ?? MotelGrounds.gate
                     world!.travellers.append(MotelWalker(id: visitor.guest.id,name: visitor.guest.name,color: visitor.guest.color,roomID: visitor.roomID ?? -1,player: start,previous: start,destination: destination))
                     office.visitor = nil
                     world!.reception = office

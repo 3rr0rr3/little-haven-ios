@@ -155,7 +155,7 @@ struct Motel: Codable {
         guard canSave, !goalReached, cash >= expansionCost else { return false }
         cash -= expansionCost
         rooms.append(MotelRoom(id: rooms.count))
-        lastEvent = managementEnabled && goalReached ? "Capacity reached. Buy land or add an upper floor on the management board." : goalReached ? "Nine rooms! You built Little Haven into a thriving Airb&b. Keep running it as long as you like." : "Room \(rooms.last!.number) is built and ready for its first guest."
+        lastEvent = managementEnabled && goalReached ? "Capacity reached. Buy land or add an upper floor on the management board." : goalReached ? "Nine rooms! You built Brainstorm Haven into a thriving Airb&b. Keep running it as long as you like." : "Room \(rooms.last!.number) is built and ready for its first guest."
         return true
     }
     @discardableResult mutating func nextDay() -> Bool {
@@ -249,7 +249,7 @@ struct Motel: Codable {
         lastEvent = roomVisit.pocket > 0 ? "You slipped out with \(roomVisit.pocket) coins worth of belongings. Visit the pawn shop to sell them." : "Back outside. The desk is waiting."
         visit = nil
         if world != nil {
-            let door = MotelGrounds.roomDoor(roomVisit.roomID)
+            let door = groundRoomDoor(roomVisit.roomID)
             world!.place = .grounds
             world!.player = Tile(x: door.x, y: door.y + 1)
             world!.facing = 0

@@ -259,10 +259,13 @@ struct MotelGroundsCanvas: View, Animatable {
                     rect(px+17,py-7,12,20,0x748F87)
                     for i in 0..<3 {rect(px+18,py-5+Double(i)*5,10,3,i == 1 ? 0xA5C9BE : 0xF1E4C5)}
                     rect(px-7,py+4,5,10,0xB49366)
-                case .maintenance:
+                case .maintenance, .repair:
                     rect(px+17,py-7,13,18,0x8F7356)
                     rect(px+18,py-6,11,5,0xD2B777)
                     rect(px+21,py,2,9,0xC4CECA);rect(px+18,py+2,8,2,0xC4CECA)
+                case .pestControl:
+                    rect(px+18,py-7,11,19,0x8FAA8B);rect(px+21,py-10,5,4,0xD8D7B1)
+                    rect(px+19,py-2,9,3,0xEADCB5);rect(px-5,py+4,6,9,0xD0B875)
                 case .security:
                     rect(px+17,py-7,14,18,0x5C7481)
                     rect(px+19,py-5,10,7,0xA2C2BC);rect(px+22,py+3,3,7,0x2F4446)
@@ -337,14 +340,9 @@ struct MotelGroundsCanvas: View, Animatable {
                 }
             }
             if motel.managementEnabled {
-                label("FLOOR \(motel.viewingFloor+1)",200,38,6,0xF2D58F)
                 if motel.simulation.facilities.contains(.restaurant) {
                     rect(46,410,38,24,0x9F795A); rect(52,405,26,7,0xD2B478)
                     label("CAFE",65,419,5,0xF4E2BD)
-                }
-                if motel.simulation.economy == .festival {
-                    for flag in 0..<8 {rect(176+Double(flag*12),245,7,9,flag%2==0 ? 0xD9957E : 0xE3C26F)}
-                    label("FESTIVAL",220,238,5,0x3D5C47)
                 }
                 if motel.simulation.facilities.contains(.parking) {
 
@@ -365,7 +363,7 @@ struct MotelGroundsCanvas: View, Animatable {
             rect(238,505,16,25,0x436D76); rect(240,508,12,12,0x8FC3CC)
             label("HIRE DIEGO",245,540,3,0xF4D891)
             rect(15, 505, 62, 25, 0x3E5E50)
-            label("LITTLE HAVEN", 46, 514, 4); label("MOTOR INN", 46, 522, 4)
+            label("BRAINSTORM HAVEN", 46, 514, 4); label("MOTOR INN", 46, 522, 4)
             struct Actor {
                 let x: Double; let y: Double; let color: UInt32; let variant: Int; let facing: Int; let name: String; let isPlayer: Bool
             }
@@ -474,5 +472,69 @@ struct MotelPocketMap: View {
             Text("You are in \(motel.mapName.lowercased()), column \(motel.actorTile.x), row \(motel.actorTile.y).").font(.footnote)
             Text("Office: desk = save or upgrade; bed = next day; closet = cleaning kit; paint cabinet = wall colors. Rooms: hold work near mess to clean, use the bed to upgrade furnishings, and use the paint cabinet for colors.").font(.footnote).foregroundStyle(.secondary)
         }.padding(24).foregroundStyle(Color(hex: 0xF5E7C8)).presentationBackground(Color(hex: 0x172A25))
+    }
+}
+
+@MainActor
+struct CreativeGroundsArtwork:View {
+    let motel:Motel
+    var body:some View {
+        let renderer=ImageRenderer(content:MotelGroundsCanvas(motel:motel,x:0,y:0,npcTick:0,sceneryOnly:true,fullMap:true)
+            .frame(width:1152,height:1024))
+        let bitmap=renderer.uiImage
+        Canvas {context,_ in
+            if let bitmap {Self.compose(context:&context,image:bitmap,motel:motel)}
+        }.frame(width:1152,height:1024)
+    }
+    static func compose(context:inout GraphicsContext,image:UIImage,motel:Motel) {
+        let structures=motel.creativeStructures
+        let moved=structures.filter{motel.creativeOffset($0.id) != Tile(x:0,y:0)}
+        let roots=moved.filter{item in !moved.contains{$0.id == item.parent}}
+        let whole=CGRect(x:0,y:0,width:1152,height:1024)
+        let source=Image(uiImage:image)
+        func frame(_ item:CreativeStructure)->CGRect {
+            let a=item.art
+            return CGRect(x:a.x,y:a.y,width:a.width,height:a.height)
+        }
+        // Restore the actual terrain under vacated objects rather than leaving invisible walls or colored patches.
+        for row in 0..<64 {for col in 0..<72 {
+            let road=(35...37).contains(row) || ((40...42).contains(col) && row>1) || (col>39 && (18...20).contains(row))
+            let residential=((43...68).contains(col) && [8,9,16,17].contains(row)) || ((58...59).contains(col) && (8...18).contains(row))
+            let paved=residential || RPGMaps.hotelSidewalk(Tile(x:col,y:row)) || ((43...70).contains(col) && (29...31).contains(row))
+            if BeachLayout.contains(Tile(x:col,y:row)) {
+                context.fill(Path(CGRect(x:col*16,y:row*16,width:16,height:16)),with:.color(Color(hex:0xEBDBB1)))
+            } else {CozyScenery.ground(context:&context,x:Double(col*16),y:Double(row*16),kind:road ? 2 : paved ? 1 : 0,seed:col*17+row*31)}
+        }}
+        var base=context
+        for item in roots {var cutout=Path(whole);cutout.addRect(frame(item));base.clip(to:cutout,style:FillStyle(eoFill:true))}
+        base.draw(source,in:whole)
+        // A separately moved machine leaves the laundry's original floor exposed.
+        for item in roots where item.parent == "laundry" {
+            context.fill(Path(frame(item)),with:.color(Color(hex:0xCAB995)))
+        }
+        for item in moved.sorted(by:{$0.footprint.y<$1.footprint.y}) {
+            let offset=motel.creativeOffset(item.id)
+            var layer=context
+            layer.translateBy(x:Double(offset.x*16),y:Double(offset.y*16))
+            if item.id.hasPrefix("tree-") {
+                CozyScenery.tree(context:&layer,x:Double(item.footprint.x*16),y:Double(item.footprint.y*16))
+                continue
+            }
+            if item.id.hasPrefix("palm-") {
+                DecorArt.palm(&layer,Double(item.footprint.x*16),Double(item.footprint.y*16))
+                continue
+            }
+            var shape=Path(frame(item))
+            let children=structures.filter{$0.parent == item.id}
+            for child in children {shape.addRect(frame(child))}
+            layer.clip(to:shape,style:FillStyle(eoFill:true))
+            layer.draw(source,in:whole)
+            // The pavilion is split into independently movable physical equipment.
+            if !children.isEmpty {
+                var floor=context
+                floor.translateBy(x:Double(offset.x*16),y:Double(offset.y*16))
+                for child in children {floor.fill(Path(frame(child)),with:.color(Color(hex:0xCAB995)))}
+            }
+        }
     }
 }

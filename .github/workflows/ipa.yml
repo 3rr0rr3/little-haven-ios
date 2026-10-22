@@ -282,6 +282,20 @@ jobs:
           xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-action-checkin --ui-touch
           sleep 1
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-checkin-desk.png
+      - name: Capture creative layout and subtle full-screen controls
+        if: ${{ always() && env.SIM_DEVICE != '' }}
+        run: |
+          set -euo pipefail
+          for MODE in creative creative-moved; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-touch
+            sleep 3
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
+          done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-creative --ui-creative-preview --ui-touch
+          sleep 3
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-creative-editor.png
       - name: Capture guest interaction
         if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |

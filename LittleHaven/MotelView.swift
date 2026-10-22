@@ -47,6 +47,7 @@ struct MotelView: View {
     @AppStorage("littlehaven.haptics") private var haptics = true
     @State private var neighborhood: NeighborhoodShop?
     @State private var showHome = false
+    @State private var showCreative = false
     @State private var showOptions = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var movement: Tile?
@@ -78,13 +79,20 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
             if motel.caught { gameOver }
             else if fullscreenTouch { fullscreenWorld }
             else { worldScreen }
+        }
+        .sheet(isPresented:$showCreative) {
+            CreativeModeView(motel:motel,move:{id,tile in
+                var moved=false
+                change {moved=$0.relocateStructure(id,to:tile)}
+                return moved
+            },reset:{change{$0.resetCreativeLayout()}})
         }
         .foregroundStyle(cream).background(Color(hex: 0x172A25))
         .overlay(alignment: .bottom) {
@@ -102,6 +110,7 @@ struct MotelView: View {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--ui-dialogue") { family = .hildarelys }
             for id in 0..<8 where ProcessInfo.processInfo.arguments.contains("--ui-corral-\(id)") {corral=id}
+            if ProcessInfo.processInfo.arguments.contains("--ui-creative-preview") {showCreative=true}
             if ProcessInfo.processInfo.arguments.contains("--ui-creature-portrait") { family = .mochi }
             if ProcessInfo.processInfo.arguments.contains("--ui-guest-dialogue") { talkingRoom=0 }
             if ProcessInfo.processInfo.arguments.contains("--ui-police") { showPolice = true }
@@ -223,7 +232,7 @@ struct MotelView: View {
                         Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
                         Button(motel.hiringUnlocked(.cleaner) ? "Hire employees" : "Staff unlocks • \(motel.guestsServed)/3 guests") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")
                     }
-                } else if !motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}).isEmpty {
+                } else if !fullscreenTouch && !motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}).isEmpty {
                     HStack {
                         ForEach(motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}), id: \.key) { pet in
                             Button(motel.companionName(pet.key)) { stop(); family=OfficeTap(rawValue:pet.key) }.buttonStyle(MotelButtonStyle(subdued:true))
@@ -237,16 +246,31 @@ struct MotelView: View {
             scene.ignoresSafeArea()
                 .environment(\.worldTouch,interactAtTouch)
             VStack(spacing:8) {
-                HStack {
-                    VStack(alignment:.leading) {
-                        Text(motel.mapName).font(.headline)
-                        Text("DAY \(motel.day) / \(motel.cash) coins").font(.caption.monospaced())
-                    }.accessibilityElement(children:.ignore).accessibilityLabel(motel.mapName)
-                        .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).").accessibilityIdentifier("touchPosition")
-                    Spacer()
-                    Button {stop();showMap=true} label:{Image(systemName:"map.fill").padding(12)}.accessibilityLabel("Airb&b map")
-                    Button {stop();showPause=true} label:{Image(systemName:"pause.fill").padding(12)}.accessibilityLabel("Pause game")
-                }.padding(8).background(Color(hex:0x172A25).opacity(0.9),in:RoundedRectangle(cornerRadius:16))
+                VStack(spacing:8) {
+                    HStack(spacing:10) {
+                        VStack(alignment:.leading,spacing:2) {
+                            Text(motel.mapName).font(.system(size:13,weight:.bold,design:.rounded)).lineLimit(1)
+                            Text("DAY \(motel.day) · \(motel.clockLabel)").font(.system(size:9,weight:.medium,design:.monospaced)).opacity(0.65)
+                        }.accessibilityElement(children:.ignore).accessibilityLabel(motel.mapName)
+                            .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).").accessibilityIdentifier("touchPosition")
+                        Spacer(minLength:0)
+                        Label("\(motel.cash)",systemImage:"circle.circle.fill").font(.system(size:15,weight:.bold,design:.rounded)).foregroundStyle(gold)
+                    }
+                    HStack(spacing:4) {
+                        toolbarItem("Map",symbol:"map",id:"fullscreenMap"){showMap=true}
+                        toolbarItem("Reviews",symbol:"star.bubble",id:"openReviews"){panel = .reviews}
+                        if !motel.operationsState.workers.isEmpty {
+                            toolbarItem("Team",symbol:"person.2",id:"openStaff"){panel = .staff}
+                        }
+                        if motel.isAtReception && motel.actorTile.distance(to:OfficeReception.computer)<=1 {
+                            toolbarItem("Office PC",symbol:"desktopcomputer",id:"fullscreenComputer"){showManagement=true}
+                        }
+                        toolbarItem("Creative",symbol:"square.and.pencil",id:"openCreative"){showCreative=true}
+                        toolbarItem("Pause",symbol:"pause",id:"fullscreenPause"){showPause=true}
+                    }
+                }.padding(12)
+                    .background(.ultraThinMaterial,in:RoundedRectangle(cornerRadius:22))
+                    .overlay(RoundedRectangle(cornerRadius:22).stroke(cream.opacity(0.12),lineWidth:1))
                 priorityAlerts
                 Spacer()
                 if working {ProgressView(value:workProgress).tint(gold)}
@@ -259,6 +283,14 @@ struct MotelView: View {
             }.padding(.horizontal,16).padding(.vertical,8)
             worldOverlay
         }
+    }
+    private func toolbarItem(_ title:String,symbol:String,id:String,action:@escaping ()->Void)->some View {
+        Button {stop();action()} label:{
+            VStack(spacing:4) {
+                Image(systemName:symbol).font(.system(size:16,weight:.semibold))
+                Text(title).font(.system(size:8,weight:.semibold))
+            }.frame(maxWidth:.infinity).frame(height:38)
+        }.buttonStyle(.plain).accessibilityLabel(title == "Pause" ? "Pause game" : title == "Map" ? "Airb&b map" : title).accessibilityIdentifier(id)
     }
     private func steer(_ direction:Tile?) {
         guard !paused,!motel.caught,scenePhase == .active else{joystickDirection=nil;return}
@@ -281,6 +313,7 @@ struct MotelView: View {
                 }
                 Spacer(minLength: 4)
                 Label("\(motel.cash)", systemImage: "circle.circle.fill").font(.system(size: 18, weight: .heavy, design: .monospaced)).foregroundStyle(gold).accessibilityElement(children: .ignore).accessibilityLabel("Cash \(motel.cash) coins").accessibilityIdentifier("motelCash")
+                Button {stop();showCreative=true} label:{Image(systemName:"square.and.pencil").frame(width:28,height:40)}.accessibilityLabel("Creative mode").accessibilityIdentifier("openCreative")
                 Button { stop(); showMap = true } label: { Image(systemName: "map.fill").frame(width: 36, height: 40) }.accessibilityLabel("Airb&b map")
                 Button { stop(); showPause = true } label: { Image(systemName: "pause.fill").frame(width: 28, height: 40) }.accessibilityLabel("Pause game")
             }
@@ -860,5 +893,104 @@ private struct HotelNoticeCard:View {
             .background(Color(hex:0x20392E).opacity(0.98),in:RoundedRectangle(cornerRadius:13))
             .overlay(RoundedRectangle(cornerRadius:13).stroke(tint.opacity(0.65),lineWidth:1))
             .accessibilityElement(children:.combine)
+    }
+}
+
+private struct CreativeModeView:View {
+    let motel:Motel
+    let move:(String,Tile)->Bool
+    let reset:()->Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var selected:String?
+    @State private var destination:Tile?
+    @State private var message="Hold a structure, then drag it to open ground."
+    @State private var zoom=0.75
+    @State private var source:UIImage?
+    @State private var confirmReset=false
+    private var selectedObject:CreativeStructure? {motel.creativeStructures.first{$0.id==selected}}
+    var body:some View {
+        NavigationStack {
+            VStack(spacing:8) {
+                HStack {
+                    Image(systemName:"hand.draw.fill").foregroundStyle(Color(hex:0xEFC977))
+                    Text(message).font(.system(size:12,weight:.medium,design:.rounded))
+                    Spacer()
+                }.padding(.horizontal)
+                HStack {
+                    Picker("Structure",selection:$selected) {
+                        Text("Choose an object").tag(String?.none)
+                        ForEach(motel.creativeStructures) {item in Text(item.title).tag(Optional(item.id))}
+                    }.accessibilityIdentifier("creativeObjectPicker")
+                    Spacer()
+                    Button {zoom=max(0.4,zoom-0.15)} label:{Image(systemName:"minus.magnifyingglass")}
+                    Button {zoom=min(1.5,zoom+0.15)} label:{Image(systemName:"plus.magnifyingglass")}
+                }.padding(.horizontal)
+                ScrollView([.horizontal,.vertical]) {
+                    ZStack(alignment:.topLeading) {
+                        if let source {
+                            Canvas {context,_ in CreativeGroundsArtwork.compose(context:&context,image:source,motel:motel)}
+                                .frame(width:1152,height:1024)
+                        }
+                        ForEach(motel.creativeStructures.filter{$0.parent==nil}) {item in objectHandle(item)}
+                        ForEach(motel.creativeStructures.filter{$0.parent != nil}) {item in objectHandle(item)}
+                        if let item=selectedObject,let destination {
+                            Rectangle().fill(Color(hex:0xEFC977).opacity(0.28))
+                                .overlay(Rectangle().stroke(Color(hex:0xEFC977),style:StrokeStyle(lineWidth:2,dash:[4])))
+                                .frame(width:CGFloat(item.footprint.width*16),height:CGFloat(item.footprint.height*16))
+                                .offset(x:CGFloat(destination.x*16),y:CGFloat(destination.y*16)).allowsHitTesting(false)
+                        }
+                    }.frame(width:1152,height:1024).coordinateSpace(name:"creativeMap")
+                        .scaleEffect(zoom,anchor:.topLeading)
+                        .frame(width:1152*zoom,height:1024*zoom,alignment:.topLeading)
+                }.background(Color(hex:0x233E32))
+                if let item=selectedObject {
+                    HStack {
+                        Text(item.title).font(.caption.bold())
+                        Spacer()
+                        Text("Hold and drag to move").font(.caption).foregroundStyle(.secondary)
+                    }.padding(.horizontal)
+                }
+                Text("Changes save automatically. Doors, services and walking routes move with structures.")
+                    .font(.system(size:10)).foregroundStyle(.secondary).padding(.horizontal).padding(.bottom,8)
+            }.navigationTitle("Creative mode").navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement:.topBarLeading) {Button("Reset"){confirmReset=true}}
+                    ToolbarItem(placement:.topBarTrailing) {Button("Done"){dismiss()}.accessibilityIdentifier("closeCreative")}
+                }
+                .confirmationDialog("Restore the original outdoor layout?",isPresented:$confirmReset,titleVisibility:.visible) {
+                    Button("Restore layout",role:.destructive){reset();selected=nil;destination=nil;message="Original layout restored."}
+                }
+                .task {
+                    let renderer=ImageRenderer(content:MotelGroundsCanvas(motel:motel,x:0,y:0,npcTick:0,sceneryOnly:true,fullMap:true).frame(width:1152,height:1024))
+                    source=renderer.uiImage
+                }
+        }
+    }
+    private func objectHandle(_ item:CreativeStructure)->some View {
+        let f=item.footprint,d=motel.creativeOffset(item.id)
+        return Rectangle().fill(selected==item.id ? Color.yellow.opacity(0.12) : Color.white.opacity(0.001))
+            .overlay(Rectangle().stroke(selected==item.id ? Color.yellow : Color.white.opacity(0.2),lineWidth:selected==item.id ? 2 : 0.5))
+            .frame(width:CGFloat(f.width*16),height:CGFloat(f.height*16))
+            .offset(x:CGFloat((f.x+d.x)*16),y:CGFloat((f.y+d.y)*16))
+            .accessibilityLabel(item.title).accessibilityIdentifier("creative-"+item.id)
+            .onTapGesture {selected=item.id;message="Hold and drag "+item.title.lowercased()+" to relocate it."}
+            .gesture(LongPressGesture(minimumDuration:0.35).sequenced(before:DragGesture(minimumDistance:0,coordinateSpace:.named("creativeMap")))
+                .onChanged {value in
+                    switch value {
+                    case .first(true):selected=item.id
+                    case .second(true,let drag):
+                        selected=item.id
+                        if let drag {
+                            destination=Tile(x:f.x+d.x+Int((drag.translation.width/16).rounded()),y:f.y+d.y+Int((drag.translation.height/16).rounded()))
+                        }
+                    default:break
+                    }
+                }
+                .onEnded {_ in
+                    if let target=destination {
+                        message=move(item.id,target) ? item.title+" placed." : "That position blocks a structure or entrance. Try open ground."
+                    }
+                    destination=nil
+                })
     }
 }
