@@ -160,7 +160,7 @@ enum BasementLayout {
     static let homeStairs=Tile(x:7,y:6)
     static let stairs=Tile(x:12,y:25)
     static let arrival=Tile(x:12,y:24)
-    static let titles=["Wizard cat","Two-tail fox","Blue cat","Ogre cat","Shark cat","Mighty cat","Fang cat","Football cat"]
+    static let titles=["Wizard Chichu","Two-tail fox","Blue Chichu","Ogre Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Football Chichu"]
     static func pen(_ id:Int)->RPGRegion {RPGRegion(x:id%2 == 0 ? 2 : 15,y:3+(id/2)*5,width:8,height:4)}
     static func gate(_ id:Int)->Tile {let p=pen(id);return Tile(x:id%2 == 0 ? 10 : 14,y:p.y+2)}
     static func creature(_ id:Int,tick:Int)->Tile {
