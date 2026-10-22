@@ -1211,6 +1211,7 @@ func creativeAndSpecialistRules() {
     for i in game.operations!.workers.indices {game.operations!.workers[i].tile=game.groundRoomDoor(0)}
     for frame in 0..<150 {game.tickManagement(advanceClock:frame%6==0)}
     require(game.rooms[0].health.faults.isEmpty,"Alex and Iris complete their actual independent room jobs")
+    require(game.operationsState.serviceDays?[HotelService.repair.rawValue] == game.day,"Repair technician also services the physical pool pump")
     require(game.relocateStructure("laundry",to:Tile(x:20,y:30)),"Whole laundry can move away from the sidewalk")
     require(game.groundTile(FacilityLayout.laundry) == Tile(x:21,y:33),"Washer interaction follows the pavilion")
     require(!game.groundBlocked(Tile(x:11,y:4)) && game.groundBlocked(Tile(x:20,y:31)),"Laundry walls move with the artwork")

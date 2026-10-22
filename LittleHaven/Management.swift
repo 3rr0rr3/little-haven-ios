@@ -139,7 +139,7 @@ enum StaffRole: String, Codable, CaseIterable, Identifiable {
     var name: String { switch self { case .cleaner: return "Luna"; case .maintenance: return "Mateo"; case .security: return "Riley"; case .valet: return "Diego"; case .clerk: return "Nora"; case .repair: return "Alex"; case .pestControl: return "Iris" } }
     var hireCost: Int { switch self { case .cleaner: return 100; case .maintenance: return 140; case .security: return 160; case .valet: return 120; case .clerk: return 130; case .repair: return 150; case .pestControl: return 170 } }
     var wage: Int { switch self { case .cleaner: return 15; case .maintenance: return 20; case .security: return 25; case .valet: return 18; case .clerk: return 22; case .repair: return 23; case .pestControl: return 24 } }
-    var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office."; case .valet: return "Walks to parked guest bikes, scrubs and rinses them. Each bike earns 35 coins once per day."; case .clerk: return "Handles daytime arrivals, assigns suitable rooms and collects payments while you work outside."; case .repair: return "Repairs room fixtures, leaks, outages and temperature problems using spare parts."; case .pestControl: return "Treats bedbugs and roaches using pesticide. Inspects guest rooms after treatment." } }
+    var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office."; case .valet: return "Walks to parked guest bikes, scrubs and rinses them. Each bike earns 35 coins once per day."; case .clerk: return "Handles daytime arrivals, assigns suitable rooms and collects payments while you work outside."; case .repair: return "Repairs room fixtures, leaks, outages and temperature problems using spare parts. Also services the pool pump."; case .pestControl: return "Treats bedbugs and roaches using pesticide. Inspects guest rooms after treatment." } }
     var home: Tile { switch self { case .clerk:return Tile(x:6,y:10);case .cleaner:return FacilityLayout.laundry;case .maintenance:return Tile(x:11,y:22);case .security:return Tile(x:11,y:12);case .valet:return Tile(x:15,y:32); case .repair:return Tile(x:20,y:11);case .pestControl:return Tile(x:28,y:11) } }
     var station: String { switch self {case .clerk:return "RECEPTION";case .cleaner:return "HOUSEKEEPING";case .maintenance:return "MAINTENANCE";case .security:return "SECURITY";case .valet:return "BIKE CARE"; case .repair:return "REPAIR WORKSHOP";case .pestControl:return "PEST CONTROL"} }
     var color: UInt32 { switch self { case .cleaner: return 0xB4A1C5; case .maintenance: return 0xD8AC66; case .security: return 0x718DA9; case .valet: return 0x5DA6B0; case .clerk: return 0xD0B777; case .repair: return 0xCF885C; case .pestControl: return 0x88A78B } }
@@ -326,6 +326,8 @@ extension Motel {
         if let incident=state.incident, incident.kind == .fight,
            !Self.chaosLocations.contains(incident.tile) { state.incident!.location=Self.chaosLocations[0] }
         var completedIssues:[Int]=[]
+        var staffRepairs:[String]=[]
+        var pumpServiced=false
         if advanceClock {
         state.tick += 1
         tickParking(&state)
@@ -380,6 +382,10 @@ extension Motel {
                 if worker.roomID != issue.roomID {worker.progress=0}
                 worker.roomID=issue.roomID
                 target=groundRoomDoor(issue.roomID)
+            } else if worker.role == .repair && serviceAvailable(.repair) {
+                if worker.roomID != -1 {worker.progress=0}
+                worker.roomID = -1
+                target=groundTile(HotelService.repair.tile)
             } else if worker.role == .security,let issue=state.simulation?.issues.first(where:{[HotelIssueKind.noise,.drugDeal].contains($0.kind)}) {
                 if worker.roomID != issue.roomID {worker.progress=0}
                 worker.roomID=issue.roomID
@@ -425,6 +431,13 @@ extension Motel {
                     worker.progress = 0; worker.roomID = nil
                     lastEvent = "Diego washed a guest car. +35 coins."
                 }
+            } else if worker.role == .repair && worker.roomID == -1 {
+                worker.status="REPAIRING PUMP";worker.progress += 1
+                if worker.progress>=8 {
+                    var days=state.serviceDays ?? [:];days[HotelService.repair.rawValue]=day;state.serviceDays=days
+                    cash += HotelService.repair.reward;pumpServiced=true
+                    worker.progress=0;worker.roomID=nil
+                }
             } else if worker.role.isSpecialist,let roomID=worker.roomID {
                 worker.status=worker.role == .pestControl ? "TREATING PESTS" : "REPAIRING"
                 worker.progress += 1
@@ -432,7 +445,10 @@ extension Motel {
                     let faults=rooms.first(where:{$0.id==roomID})?.health.faults.filter(worker.role.handles) ?? []
                     let supply:Supply=worker.role == .pestControl ? .pesticide : .parts
                     if let issue=state.simulation?.issues.first(where:{$0.roomID==roomID && worker.role.handles($0.kind)}) {
-                        completedIssues.append(issue.id);worker.progress=0;worker.roomID=nil
+                        let required=worker.role == .pestControl ? 2 : 1
+                        if (state.simulation?.stock[supply.rawValue,default:0] ?? 0)>=required && cash>=issue.kind.cost {
+                            completedIssues.append(issue.id);worker.progress=0;worker.roomID=nil
+                        } else {worker.status="NEED SUPPLIES / COINS"}
                     } else if (state.simulation?.stock[supply.rawValue,default:0] ?? 0)>=2 && cash>=15 {
                         // Commit each specialist's own work; never erase the other specialist's faults.
                         if let i=rooms.firstIndex(where:{$0.id==roomID}),!faults.isEmpty {
@@ -442,6 +458,7 @@ extension Motel {
                             rooms[i].hospitality=health
                             state.simulation!.stock[supply.rawValue,default:0] -= 2
                             cash -= 15
+                            staffRepairs.append(worker.role.name+" • Room "+String(rooms[i].number))
                         } else if let issue=state.simulation?.issues.first(where:{$0.roomID==roomID && worker.role.handles($0.kind)}) {
                             completedIssues.append(issue.id)
                         }
@@ -481,6 +498,8 @@ extension Motel {
             state.consequences!.police = police
         }
         operations = state
+        for job in staffRepairs {logMoney(-15,category:"Staff maintenance",note:job);lastEvent=job+" inspected and treated."}
+        if pumpServiced {logMoney(HotelService.repair.reward,category:"Service",note:"Alex repaired the pool pump");lastEvent="Alex repaired the pool pump."}
         for issueID in completedIssues {_=respondToIssue(issueID,choice:0)}
         if advanceClock && operationsState.simulation != nil { tickSimulation() }
     }
