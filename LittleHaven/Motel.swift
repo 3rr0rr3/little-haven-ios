@@ -48,7 +48,7 @@ struct RoomVisit: Codable {
 }
 struct Motel: Codable {
     static let goal = 9
-    static let guestNames = ["Robin", "Sasha", "Ellis", "Alex", "Morgan", "Casey", "Jamie", "Blair", "Drew", "Quinn"]
+    static let guestNames = ["Robin", "Sasha", "Ellis", "Alex", "Morgan", "Casey", "Jamie", "Blair", "Drew", "Quinn", "Camila", "Mateo", "Luna", "Diego", "Amara", "Noah", "Valentina", "Leo", "Zoe", "Hugo", "Isabel", "Finn", "Lucia", "Oscar"]
     static func appearanceSeed(name:String,id:Int)->Int {100+(guestNames.firstIndex(of:name) ?? id)}
     static let themeNames = ["Sage", "Sunset", "Ocean", "Plum"]
     static let themeColors: [UInt32] = [0x91B7A1, 0xD99B7E, 0x82AFC1, 0xAE95B9]

@@ -315,7 +315,7 @@ extension Motel {
         var state = operationsState
         let incident = state.incident!
         state.visualSerial = (state.visualSerial ?? 0) + 1
-        state.visual = HotelVisual(id:state.visualSerial!,kind:incident.kind == .fire ? "extinguish" : incident.kind == .pool ? "rescue" : "calm",origin:actorTile,target:incident.tile,map:"grounds",guest:incident.guest,otherGuest:incident.otherGuest,outfit:FamilyHome.outfitColors[household.outfit])
+        state.visual = HotelVisual(id:state.visualSerial!,kind:incident.kind == .fire ? "extinguish" : incident.kind == .pool ? "rescue" : "calm",origin:actorTile,target:incident.tile,map:"grounds",guest:incident.guest,otherGuest:incident.otherGuest,outfit:FamilyHome.outfitColors[household.outfit],response:true)
         state.incident = nil
         state.incidentsResolved += 1
         state.nextIncidentTick = state.tick + 30
@@ -668,6 +668,7 @@ struct HotelVisual: Codable {
     var guest:MotelGuest? = nil
     var otherGuest:MotelGuest? = nil
     var outfit:UInt32? = nil
+    var response:Bool? = nil
 }
 struct HotelCar: Codable, Identifiable {
     let id: Int

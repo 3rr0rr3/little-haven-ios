@@ -297,8 +297,9 @@ final class RPGScene: SKScene {
                 if working && node.childNode(withName:"work") == nil {
                     let frames=activityFrames(workKind)
                     let prop=SKSpriteNode(texture:frames[0])
-                    prop.name="work"; prop.size=CGSize(width:42,height:42)
-                    prop.position=CGPoint(x:7,y:-3); prop.zPosition=6
+                    prop.name="work"; prop.size=CGSize(width:28,height:28)
+                    prop.position=CGPoint(x:8,y:-5); prop.zPosition=6
+                    addWorkingHands(to:prop)
                     prop.run(.repeatForever(.animate(with:frames,timePerFrame:0.12)))
                     node.addChild(prop)
                 } else if !working { node.childNode(withName:"work")?.removeFromParent() }
@@ -355,6 +356,14 @@ final class RPGScene: SKScene {
         screen.addChild(travel);world.addChild(screen)
     }
 
+    private func addWorkingHands(to tool:SKNode) {
+        for index in 0..<2 {
+            let hand=SKShapeNode(ellipseOf:CGSize(width:3.5,height:4))
+            hand.fillColor=UIColor(red:0.88,green:0.71,blue:0.55,alpha:1);hand.strokeColor = .clear
+            hand.position=CGPoint(x:-5+index*6,y:-2);hand.zPosition=2;tool.addChild(hand)
+            hand.run(.repeatForever(.sequence([.moveBy(x:1,y:2,duration:0.18),.moveBy(x:-1,y:-2,duration:0.18)])))
+        }
+    }
     @MainActor private func activityFrames(_ kind:String) -> [SKTexture] {
         if let cached=actionTextures[kind] { return cached }
         let frames=(0..<8).map { frame -> SKTexture in
@@ -368,7 +377,7 @@ final class RPGScene: SKScene {
         return frames
     }
     @MainActor private func showVisual(_ visual:HotelVisual) {
-        if ["extinguish","rescue","calm"].contains(visual.kind) {showResponse(visual);return}
+        if visual.response == true {showResponse(visual);return}
         let frames=activityFrames(visual.kind)
         let sprite=SKSpriteNode(texture:frames[0])
         sprite.size=CGSize(width:visual.kind == "checkin" ? 22 : 28,height:visual.kind == "checkin" ? 22 : 28)
@@ -376,6 +385,7 @@ final class RPGScene: SKScene {
         if !visual.kind.hasPrefix("steal-") && visual.kind != "checkin" {sprite.position=CGPoint(x:visual.origin.x*16+15,y:-(visual.origin.y*16+9))}
         sprite.zPosition=CGFloat(visual.origin.y*16+100)
         world.addChild(sprite)
+        if !visual.kind.hasPrefix("steal-") && visual.kind != "checkin" {addWorkingHands(to:sprite)}
         if visual.kind.hasPrefix("steal-") {
             sprite.size=CGSize(width:32,height:32)
             let target=CGPoint(x:CGFloat(visual.origin.x*16+8),y: -CGFloat(visual.origin.y*16+5))
