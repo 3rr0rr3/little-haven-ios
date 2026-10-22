@@ -1228,6 +1228,11 @@ func creativeAndSpecialistRules() {
     require(game.leaveShop() && game.actorTile == game.groundTile(Tile(x:47,y:36)),"Shop exits return to relocated doorway")
     game.resetCreativeLayout()
     require((game.worldState.structureOffsets ?? [:]).isEmpty && game.groundTile(FacilityLayout.laundry)==FacilityLayout.laundry,"Original layout can be restored")
+    var office=Motel();office.initializeWorld()
+    require(office.relocateStructure("office",to:Tile(x:23,y:29)),"Reception building can move")
+    office.world!.place = .office
+    require(office.leaveReception() && office.actorTile==office.groundTile(Tile(x:6,y:10)),"Reception exits follow the moved office")
+    require(office.groundNextStep(from:MotelGrounds.gate,to:office.groundTile(MotelGrounds.officeDoor),avoiding:[]) != nil,"Visitors can still route to the reception entrance")
     print("PASS: specialist unlocks, separate duties, movable laundry and appliances, collisions, entrances, rejected overlaps and persistent creative layout")
 }
 creativeAndSpecialistRules()

@@ -302,7 +302,13 @@ struct MotelGroundsCanvas: View, Animatable {
                 for row in [10,19,28] {
                     let saved=beginObject("flowers-\(col)-\(row)")
                     rect(Double(col*16),Double(row*16),28,8,0xA07855)
-                    for flower in 0..<6 { rect(Double(col*16+flower*4+2),Double(row*16-2),3,6,flower % 2 == 0 ? 0xE3A7B1 : 0xF0CE79) }
+                    for flower in 0..<6 {
+                        let fx=Double(col*16+flower*4+2),fy=Double(row*16-2)
+                        rect(fx+0.8,fy+1,1,6,0x668D57)
+                        context.fill(Path(ellipseIn:CGRect(x:fx-0.8,y:fy+2,width:3,height:2)),with:.color(Color(hex:0x7CA76A)))
+                        context.fill(Path(ellipseIn:CGRect(x:fx-0.5,y:fy-1,width:4,height:4)),with:.color(Color(hex:flower%2==0 ? 0xE4A8B3 : 0xEACB7B)))
+                        context.fill(Path(ellipseIn:CGRect(x:fx+0.8,y:fy+0.2,width:1.4,height:1.4)),with:.color(Color(hex:0xF8E6AB)))
+                    }
                     context=saved
                 }
             }
@@ -364,8 +370,10 @@ struct MotelGroundsCanvas: View, Animatable {
             }
             if motel.managementEnabled {
                 if motel.simulation.facilities.contains(.restaurant) {
+                    let cafeContext=beginObject("breakfast")
                     rect(46,410,38,24,0x9F795A); rect(52,405,26,7,0xD2B478)
                     label("CAFE",65,419,5,0xF4E2BD)
+                    context=cafeContext
                 }
                 if motel.simulation.facilities.contains(.parking) {
 

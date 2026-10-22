@@ -130,6 +130,7 @@ struct CreativeStructure:Identifiable {
     var parent:String?=nil
 }
 enum CreativeCatalog {
+    static let parentIDs:[String:String]=["washer":"laundry","supplies":"laundry","folding":"laundry","station-maintenance":"pump"]
     static let objects:[CreativeStructure] = {
         var result:[CreativeStructure]=[]
         func add(_ id:String,_ title:String,_ x:Int,_ y:Int,_ w:Int,_ h:Int,_ anchors:[Tile]=[],_ art:RPGRegion?=nil,_ parent:String?=nil) {
@@ -205,7 +206,7 @@ extension Motel {
     func creativeOffset(_ id:String)->Tile {
         if id=="station-clerk" {return creativeOffset("office")}
         let own=worldState.structureOffsets?[id] ?? Tile(x:0,y:0)
-        guard let parent=creativeStructures.first(where:{$0.id==id})?.parent else{return own}
+        guard let parent=CreativeCatalog.parentIDs[id] else{return own}
         let inherited=worldState.structureOffsets?[parent] ?? Tile(x:0,y:0)
         return Tile(x:own.x+inherited.x,y:own.y+inherited.y)
     }
@@ -377,7 +378,18 @@ extension Motel {
         return true
     }
     mutating func resetCreativeLayout() {
-        initializeWorld();world!.structureOffsets=nil;reconcileInteriorSpawn()
+        initializeWorld();world!.structureOffsets=nil
+        for i in world!.travellers.indices {
+            let walker=world!.travellers[i]
+            let target=walker.destination == MotelGrounds.gate ? MotelGrounds.gate : groundRoomDoor(walker.roomID)
+            world!.travellers[i]=MotelWalker(id:walker.id,name:walker.name,color:walker.color,roomID:walker.roomID,player:walker.player,previous:walker.player,destination:target)
+        }
+        var ops=operationsState
+        if ops.incident?.kind == .pool {ops.incident!.location=ChaosKind.pool.tile}
+        for i in ops.workers.indices where groundBlocked(ops.workers[i].tile) {
+            ops.workers[i].tile=groundNearestWalkable(to:ops.workers[i].tile);ops.workers[i].previous=ops.workers[i].tile
+        }
+        operations=ops;reconcileInteriorSpawn()
         lastEvent="Original map layout restored."
     }
 }

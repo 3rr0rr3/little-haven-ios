@@ -763,7 +763,9 @@ enum FacilitiesArt {
             for offset in [57.0,62,67] {block(x+3,y+offset,10,4,0xF1E4C5)}
         }
         c=savedfolding
+        let savedgarden=beginObject("garden-table")
         block(49,269,12,5,0x9FB8A2);CozyScenery.planter(context:&c,x:47,y:270)
+        c=savedgarden
         let savedluggage=beginObject("luggage")
         RoomObjectArt.draw(context:&c,index:0,x:128,y:176)
         c=savedluggage

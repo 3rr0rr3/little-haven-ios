@@ -66,7 +66,7 @@ struct OfficeReceptionView: View {
     }
     private var actors: [RPGActor] {
         var result = [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You")]
-        if motel.operationsState.workers.contains(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:staffHome($0.role)) <= 1})  {
+        if motel.operationsState.workers.contains(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:motel.staffHome($0.role)) <= 1})  {
             result.append(RPGActor(id:"clerk-nora",tile:Tile(x:6,y:3),color:StaffRole.clerk.color,variant:204,name:"Nora"))
         }
         if let visitor { result.append(RPGActor(id:"reception-guest",tile:visitor.tile,color:visitor.guest.color,variant:visitor.guest.appearanceSeed,facing:visitor.phase == .leaving ? 0 : 3,name:visitor.guest.name,duration:0.3)) }

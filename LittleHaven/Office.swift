@@ -104,7 +104,7 @@ extension Motel {
             case .leaving:
                 visitor.pathIndex -= 1
                 if visitor.pathIndex <= 0 {
-                    let start = Tile(x: 6,y: 10)
+                    let start = groundTile(Tile(x: 6,y: 10))
                     let destination = visitor.roomID.map { groundRoomDoor($0) } ?? MotelGrounds.gate
                     world!.travellers.append(MotelWalker(id: visitor.guest.id,name: visitor.guest.name,color: visitor.guest.color,roomID: visitor.roomID ?? -1,player: start,previous: start,destination: destination))
                     office.visitor = nil
@@ -138,7 +138,7 @@ extension Motel {
         guard isAtReception, !caught else { return false }
         initializeWorld()
         world!.place = .grounds
-        world!.player = Tile(x: 6,y: 10)
+        world!.player = groundTile(Tile(x: 6,y: 10))
         return true
     }
     @discardableResult mutating func receptionTools() -> Bool {
