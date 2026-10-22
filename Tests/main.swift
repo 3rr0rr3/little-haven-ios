@@ -245,8 +245,13 @@ func worldRules() {
     require(walk.receptionTools(), "Tap the office closet to collect tools from the desk")
     _ = walk.leaveReception()
     require(walk.worldState.place == .grounds && walk.actorTile == Tile(x: 6, y: 10), "Office door leads onto the actual grounds")
-    walk.moveActor(dx: -1, dy: 0)
-    walk.moveActor(dx: 0, dy: 1)
+    let customer=walk.waitingTile(10)
+    for _ in 0..<120 {
+        if walk.actorTile.distance(to:customer)<=1 {break}
+        let occupied=Set(walk.waiting.map{walk.waitingTile($0.id)})
+        guard let step=walk.groundNextStep(from:walk.actorTile,to:customer,avoiding:occupied.subtracting([customer])) else{fatalError("Customer waiting spot must be reachable")}
+        walk.moveActor(dx:step.x-walk.actorTile.x,dy:step.y-walk.actorTile.y)
+    }
     require(walk.nearbyAction == .guest(10), "Walk beside the waiting guest to talk")
     require(!walk.chargeGuest(11, roomID: 0), "Cannot charge a different guest through the nearby interaction")
     require(walk.chargeGuest(10, roomID: 0) && walk.cash == 260, "Nearby payment assigns the room and charges exactly once")
@@ -257,9 +262,12 @@ func worldRules() {
         if walk.worldState.travellers.isEmpty { break }
     }
     require(walk.worldState.travellers.isEmpty && walk.guestPresent(in: 0), "Guest pathfinding reaches the assigned room")
-    walk.moveActor(dx: 1, dy: 0)
-    require(walk.actorTile == Tile(x: 5, y: 11), "Cannot walk through a waiting customer")
-    walk.moveActor(dx: 0, dy: -1)
+    let waitingCustomer=walk.waitingTile(11)
+    let approach=[Tile(x:waitingCustomer.x-1,y:waitingCustomer.y),Tile(x:waitingCustomer.x+1,y:waitingCustomer.y)].first{!walk.groundBlocked($0)}!
+    walk.world!.player=approach
+    walk.moveActor(dx:waitingCustomer.x-approach.x,dy:waitingCustomer.y-approach.y)
+    require(walk.actorTile == approach, "Cannot walk through a waiting customer")
+    walk.world!.player=Tile(x:5,y:10)
     walk.moveActor(dx: 1, dy: -1)
     require(walk.worldState.place == .office, "Diagonal movement can reach an unobstructed doorway")
     walk.world!.player = Tile(x: 4, y: 5)
