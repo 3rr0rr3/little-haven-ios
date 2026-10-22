@@ -49,6 +49,35 @@ enum MotelAction: Hashable {
     case none, office, room(Int), guest(Int), construction, desk, save, rest, tools
     case paint(Int?), furniture(Int?), clean(Int), loot(Int), exit, incident
 }
+private final class GroundsRoutes: @unchecked Sendable {
+    private let lock = NSLock()
+    private var fields: [Tile: [Int]] = [:]
+    func distances(to target: Tile) -> [Int] {
+        lock.lock()
+        defer { lock.unlock() }
+        if let field = fields[target] { return field }
+        var field = Array(repeating: -1, count: MotelGrounds.width * MotelGrounds.height)
+        var queue = [target], cursor = 0
+        field[target.y * MotelGrounds.width + target.x] = 0
+        while cursor < queue.count {
+            let tile = queue[cursor]; cursor += 1
+            let distance = field[tile.y * MotelGrounds.width + tile.x] + 1
+            for (dx, dy) in [(0,1),(1,0),(-1,0),(0,-1)] {
+                let next = Tile(x: tile.x + dx, y: tile.y + dy)
+                guard !MotelGrounds.blocked(next) else { continue }
+                let index = next.y * MotelGrounds.width + next.x
+                guard field[index] == -1 else { continue }
+                field[index] = distance; queue.append(next)
+            }
+        }
+        // Bound memory even when visitors choose many different destinations.
+        if fields.count >= 32 { fields.removeAll(keepingCapacity: true) }
+        fields[target] = field
+        return field
+    }
+}
+private let groundsRoutes = GroundsRoutes()
+
 enum MotelGrounds {
     static let width = 72
     static let height = 64
@@ -98,6 +127,26 @@ enum MotelGrounds {
             return [(0,1),(1,0),(-1,0),(0,-1)].map { Tile(x:start.x+$0.0,y:start.y+$0.1) }.first {
                 !blocked($0) && !avoiding.contains($0) && $0.distance(to:target)<start.distance(to:target)
             }
+        }
+        // Reuse static distance fields, but verify the entire preferred path
+        // against moving actors before taking it. Otherwise retain dynamic BFS.
+        if !blocked(start) {
+            let field = groundsRoutes.distances(to: target)
+            var cursor = start
+            var first: Tile?
+            while cursor != target {
+                let distance = field[cursor.y * width + cursor.x]
+                guard distance > 0 else { break }
+                let candidates = [(0,1),(1,0),(-1,0),(0,-1)].map {
+                    Tile(x: cursor.x + $0.0, y: cursor.y + $0.1)
+                }
+                guard let next = candidates.first(where: {
+                    !blocked($0) && field[$0.y * width + $0.x] == distance - 1
+                }), !avoiding.contains(next) else { break }
+                if first == nil { first = next }
+                cursor = next
+            }
+            if cursor == target { return first }
         }
         var queue = [start]
         var seen: Set<Tile> = [start]

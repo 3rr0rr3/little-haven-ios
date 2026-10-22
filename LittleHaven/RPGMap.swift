@@ -1,5 +1,30 @@
 import Foundation
 
+private final class GroundsMemo<Key: Equatable, Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var entry: (Key, Value)?
+    func value(for key: Key, build: () -> Value) -> Value {
+        lock.lock()
+        defer { lock.unlock() }
+        if let entry, entry.0 == key { return entry.1 }
+        let result = build()
+        entry = (key, result)
+        return result
+    }
+}
+private struct GroundsLayoutKey: Equatable {
+    let offsets: [String: Tile]
+    let stations: [String]
+}
+private struct WaitingLayoutKey: Equatable {
+    let layout: GroundsLayoutKey
+    let rooms: [Int]
+    let guests: [Int]
+}
+private let groundsMapMemo = GroundsMemo<GroundsLayoutKey, RPGMapDefinition>()
+private let waitingTargetsMemo = GroundsMemo<WaitingLayoutKey, [Int: Tile]>()
+
+
 // Engine-neutral map database, shared by movement, events and pathfinding.
 // Coordinates are top-left tile coordinates, matching RPG Maker conventions.
 struct RPGRegion: Codable {
@@ -211,6 +236,7 @@ extension Motel {
         return Tile(x:own.x+inherited.x,y:own.y+inherited.y)
     }
     func groundTile(_ source:Tile)->Tile {
+        guard !(worldState.structureOffsets ?? [:]).isEmpty else { return source }
         let objects=creativeStructures
         guard let object=objects.first(where:{$0.anchors.contains(source)}) ??
             objects.first(where:{$0.parent != nil && $0.footprint.contains(source)}) ??
@@ -224,7 +250,15 @@ extension Motel {
         return Tile(x:role.home.x+d.x,y:role.home.y+d.y)
     }
     /// Waiting guests use separate courtyard spots, with the office entrance kept clear.
+    private var groundsLayoutKey: GroundsLayoutKey {
+        GroundsLayoutKey(offsets: worldState.structureOffsets ?? [:], stations: staffStations.map(\.rawValue))
+    }
     var waitingGuestTargets:[Int:Tile] {
+        let key = WaitingLayoutKey(layout: groundsLayoutKey, rooms: rooms.map(\.id),
+            guests: waiting.filter { $0.id != reception.visitor?.guest.id }.map(\.id))
+        return waitingTargetsMemo.value(for: key) { buildWaitingGuestTargets() }
+    }
+    private func buildWaitingGuestTargets() -> [Int: Tile] {
         let map=relocatedGrounds,entrance=groundTile(Tile(x:6,y:10))
         let preferred=[Tile(x:10,y:16),Tile(x:10,y:24),Tile(x:10,y:29),
             Tile(x:13,y:11),Tile(x:21,y:11),Tile(x:29,y:11),Tile(x:37,y:11),
@@ -258,6 +292,9 @@ extension Motel {
     func groundRoomDoor(_ id:Int)->Tile {groundTile(MotelGrounds.roomDoor(id))}
     var relocatedGrounds:RPGMapDefinition {
         guard !(worldState.structureOffsets ?? [:]).isEmpty else{return RPGMaps.grounds}
+        return groundsMapMemo.value(for: groundsLayoutKey) { buildRelocatedGrounds() }
+    }
+    private func buildRelocatedGrounds() -> RPGMapDefinition {
         var map=RPGMaps.grounds
         let objects=creativeStructures
         map.obstacles=map.obstacles.flatMap {r->[RPGRegion] in

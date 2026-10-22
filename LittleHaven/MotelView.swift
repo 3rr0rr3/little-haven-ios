@@ -170,10 +170,12 @@ struct MotelView: View {
                 guard !Task.isCancelled, scenePhase == .active else { break }
                 if !paused && !motel.caught {
                     ticks += 1
-                    if (motel.operationsState.incident != nil || ticks % 2 == 0)  { change { $0.tickWorld() } }
-                    if ticks % 2 == 0 && (motel.isAtReception || motel.isAtHome || motel.reception.visitor != nil) { change { $0.tickReception() } }
-                    if ticks % 6 == 0 && motel.visit?.sneaking == true { change { $0.tick() } }
-                    change { $0.tickManagement(advanceClock:ticks % MotelCadence.businessSteps == 0) }
+                    change { current in
+                        if current.operationsState.incident != nil || ticks % 2 == 0 { current.tickWorld() }
+                        if ticks % 2 == 0 && (current.isAtReception || current.isAtHome || current.reception.visitor != nil) { current.tickReception() }
+                        if ticks % 6 == 0 && current.visit?.sneaking == true { current.tick() }
+                        current.tickManagement(advanceClock:ticks % MotelCadence.businessSteps == 0)
+                    }
                 }
             }
         }

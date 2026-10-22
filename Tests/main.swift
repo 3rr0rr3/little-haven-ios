@@ -1401,3 +1401,27 @@ func clearReceptionEntranceRules() {
     print("PASS: distributed waiting areas, clear sidewalks and entrance, legacy crowd migration, saved waiting guests and one-at-a-time office exits")
 }
 clearReceptionEntranceRules()
+
+func navigationMemoRules() {
+    var hotel = Motel(); hotel.initializeWorld()
+    hotel.waiting = Motel.arrivals(day: 8, count: 12, randomize: false)
+    let original = hotel.waitingGuestTargets
+    require(hotel.waitingGuestTargets == original, "Repeated waiting lookup is stable")
+    let removed = hotel.waiting.removeFirst().id
+    require(hotel.waitingGuestTargets[removed] == nil, "Waiting cache invalidates after guest departure")
+    hotel.world!.structureOffsets = ["office": Tile(x: 1, y: 0)]
+    require(hotel.groundTile(MotelGrounds.officeDoor).x == MotelGrounds.officeDoor.x + 1, "Layout cache follows creative relocation")
+    require(hotel.relocatedGrounds.events.first { $0.id == "office" }?.tile == hotel.groundTile(MotelGrounds.officeDoor), "Relocated map events follow moved office")
+    hotel.world!.structureOffsets = nil
+    require(hotel.groundTile(MotelGrounds.officeDoor) == MotelGrounds.officeDoor, "Clearing creative layout restores coordinates")
+    let start = Tile(x: 10, y: 16), target = Tile(x: 10, y: 24)
+    if let step = MotelGrounds.nextStep(from: start, to: target, avoiding: []) {
+        require(start.distance(to: step) == 1 && !MotelGrounds.blocked(step), "Cached route takes a legal step")
+        let blocked: Set<Tile> = [step]
+        if let detour = MotelGrounds.nextStep(from: start, to: target, avoiding: blocked) {
+            require(!blocked.contains(detour) && !MotelGrounds.blocked(detour), "Cached routes respect moving blockers")
+        }
+    }
+    print("PASS: navigation memo invalidation and moving obstacle fallback")
+}
+navigationMemoRules()
