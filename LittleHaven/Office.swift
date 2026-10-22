@@ -106,6 +106,13 @@ extension Motel {
                 if visitor.pathIndex <= 0 {
                     let start = groundTile(Tile(x: 6,y: 10))
                     let destination = visitor.roomID.map { groundRoomDoor($0) } ?? MotelGrounds.gate
+                    let exitOccupied=worldState.travellers.contains{$0.player == start} ||
+                        (worldState.place == .grounds && visit == nil && actorTile == start)
+                    if exitOccupied {
+                        visitor.pathIndex=0;office.visitor=visitor;world!.reception=office;return
+                    }
+                    world!.travellers.removeAll{$0.id == visitor.guest.id}
+                    world!.guestPositions?.removeValue(forKey:visitor.guest.id)
                     world!.travellers.append(MotelWalker(id: visitor.guest.id,name: visitor.guest.name,color: visitor.guest.color,roomID: visitor.roomID ?? -1,player: start,previous: start,destination: destination))
                     office.visitor = nil
                     world!.reception = office

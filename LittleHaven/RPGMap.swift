@@ -223,7 +223,38 @@ extension Motel {
         let d=creativeOffset("station-"+role.rawValue)
         return Tile(x:role.home.x+d.x,y:role.home.y+d.y)
     }
-    func groundGuestTile(_ id:Int)->Tile {groundTile(MotelGrounds.guestTile(id))}
+    /// Waiting guests use separate courtyard spots, with the office entrance kept clear.
+    var waitingGuestTargets:[Int:Tile] {
+        let map=relocatedGrounds,entrance=groundTile(Tile(x:6,y:10))
+        let preferred=[Tile(x:10,y:16),Tile(x:10,y:24),Tile(x:10,y:29),
+            Tile(x:13,y:11),Tile(x:21,y:11),Tile(x:29,y:11),Tile(x:37,y:11),
+            Tile(x:21,y:20),Tile(x:29,y:20),Tile(x:37,y:20),
+            Tile(x:21,y:29),Tile(x:29,y:29),Tile(x:36,y:31),Tile(x:2,y:29)]
+        let fallback=(11...32).filter{$0%3 == 2}.flatMap{y in
+            (2...37).filter{$0%3 == 2}.map{x in Tile(x:x,y:y)}
+        }
+        let doors=rooms.map{groundRoomDoor($0.id)}
+        var seen=Set<Tile>()
+        let sites=(preferred+fallback).filter{tile in
+            seen.insert(tile).inserted && !map.blocked(tile) &&
+            tile.distance(to:entrance)>3 && !RPGMaps.hotelSidewalk(tile) &&
+            !doors.contains{$0.distance(to:tile)<=1}
+        }
+        var assigned:[Int:Tile]=[:],used=[Tile]()
+        for guest in waiting where guest.id != reception.visitor?.guest.id {
+            guard !sites.isEmpty else{break}
+            let index=abs(guest.id%sites.count)
+            let ordered=Array(sites[index...])+Array(sites[..<index])
+            if let tile=ordered.first(where:{candidate in !used.contains{$0.distance(to:candidate)<3}}) ??
+                ordered.first(where:{!used.contains($0)}) {
+                assigned[guest.id]=tile;used.append(tile)
+            }
+        }
+        return assigned
+    }
+    func groundGuestTile(_ id:Int)->Tile {
+        waitingGuestTargets[id] ?? groundNearestWalkable(to:Tile(x:10,y:16))
+    }
     func groundRoomDoor(_ id:Int)->Tile {groundTile(MotelGrounds.roomDoor(id))}
     var relocatedGrounds:RPGMapDefinition {
         guard !(worldState.structureOffsets ?? [:]).isEmpty else{return RPGMaps.grounds}

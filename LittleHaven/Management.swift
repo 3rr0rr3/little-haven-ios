@@ -179,7 +179,7 @@ struct GuestReview: Codable, Identifiable {
 }
 enum ChaosKind: String, Codable, CaseIterable {
     case fire, pool, fight
-    var responseDuration:Double {self == .pool ? 12 : self == .fire ? 6 : 5.6}
+    var responseDuration:Double {self == .pool ? 9 : self == .fire ? 6 : 5.6}
     var title: String { switch self { case .fire: return "Fire in the courtyard!"; case .pool: return "Guest in the pool!"; case .fight: return "A fight outside!" } }
     var detail: String { switch self { case .fire: return "A fire has broken out nearby. Go outside and put it out before it spreads."; case .pool: return "A guest fell into the pool and needs help getting out. Reach the south pool edge and help them."; case .fight: return "Two guests are arguing and shoving outside. Go over and calm them down." } }
     var action: String { switch self { case .fire: return "Put out the fire"; case .pool: return "Help the guest out"; case .fight: return "Break up the fight" } }

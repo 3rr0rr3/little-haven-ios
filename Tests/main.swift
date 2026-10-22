@@ -377,20 +377,20 @@ func receptionRules() {
     motel.moveActor(dx:-1,dy:0)
     require(!motel.acceptReceptionGuest(roomID:0) && !motel.declineReceptionGuest(), "Clients cannot be decided before arriving")
     let familyStart = motel.reception.hildarelys
-    for _ in 0..<12 { motel.tickReception() }
+    for _ in 0..<12 { motel.tickReception();motel.tickWorld() }
     require(motel.receptionGuest?.id == 10 && motel.reception.visitor?.tile == Tile(x:4,y:6), "Client walks from door to front of desk")
     require(motel.acceptReceptionGuest(roomID:0) && motel.cash == 260, "Accepting charges the correct room price once")
     require(!motel.acceptReceptionGuest(roomID:1) && motel.cash == 260, "Double acceptance cannot charge twice")
     require(!motel.guestPresent(in:0), "Accepted visitor is not teleported into room while leaving reception")
-    for _ in 0..<11 { motel.tickReception() }
+    for _ in 0..<11 { motel.tickReception();motel.tickWorld() }
     require(motel.worldState.travellers.contains { $0.id == 10 && $0.destination == MotelGrounds.roomDoor(0) }, "Accepted client leaves office and walks to assigned room")
-    for _ in 0..<12 { motel.tickReception() }
+    for _ in 0..<12 { motel.tickReception();motel.tickWorld() }
     require(motel.receptionGuest?.id == 11, "Next client arrives after first leaves")
     let before = motel.cash
     require(motel.declineReceptionGuest() && motel.cash == before && !motel.waiting.contains { $0.id == 11 }, "Declining removes client without payment or occupancy")
-    for _ in 0..<11 { motel.tickReception() }
+    for _ in 0..<11 { motel.tickReception();motel.tickWorld() }
     require(motel.worldState.travellers.contains { $0.id == 11 && $0.destination == MotelGrounds.gate }, "Declined client walks toward road")
-    for _ in 0..<4 { motel.tickReception() }
+    for _ in 0..<4 { motel.tickReception();motel.tickWorld() }
     require(motel.reception.hildarelys != familyStart, "Hildarelys walks around the office")
     require(motel.leaveReception() && motel.actorTile == Tile(x:6,y:10), "Tapping office door resumes free movement outside")
     let position = motel.actorTile
@@ -737,7 +737,7 @@ func reactiveGuestsAndStaffPosts() {
     require(saved.operationsState.incident?.guest?.appearanceSeed == guest.appearanceSeed && saved.operationsState.incident?.guest?.color == guest.color,"Pool event preserves guest identity through checkpoints")
     emergency.operations!.incident=nil
     for _ in 0..<90 { emergency.tickWorld() }
-    require(emergency.waitingTile(bystander.id) == MotelGrounds.guestTile(bystander.id),"Guests return after the emergency")
+    require(emergency.waitingTile(bystander.id) == emergency.groundGuestTile(bystander.id),"Guests return to their spread-out waiting areas after the emergency")
     print("PASS: individual staff posts, return to work, evacuation, recovery and emergency guest identity")
 }
 reactiveGuestsAndStaffPosts()
@@ -1353,3 +1353,34 @@ func pursuitAndRandomFireRules() {
     print("PASS: police pursuit in six maps, moving targets, mandatory case persistence and varied safe fire locations")
 }
 pursuitAndRandomFireRules()
+
+func clearReceptionEntranceRules() {
+    var hotel=Motel();hotel.initializeWorld()
+    hotel.waiting=Motel.arrivals(day:8,count:12,randomize:false)
+    hotel.world!.place = .grounds;hotel.world!.player=Tile(x:10,y:11)
+    hotel.operations!.nextIncidentTick=10000
+    let entrance=hotel.groundTile(Tile(x:6,y:10))
+    let targets=hotel.waitingGuestTargets
+    require(targets.count==12 && Set(targets.values).count==12,"Every waiting guest has a distinct courtyard destination")
+    require(targets.values.allSatisfy{!hotel.groundBlocked($0) && $0.distance(to:entrance)>3 && !RPGMaps.hotelSidewalk($0)},"Waiting areas leave the reception entrance and sidewalks clear")
+    hotel.world!.guestPositions=Dictionary(uniqueKeysWithValues:hotel.waiting.map{($0.id,entrance)})
+    for _ in 0..<90 {hotel.tickWorld()}
+    let positions=hotel.waiting.map{hotel.waitingTile($0.id)}
+    require(Set(positions).count==positions.count && positions.allSatisfy{$0.distance(to:entrance)>3},"A legacy entrance crowd separates and leaves the doorway")
+    let loaded=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(hotel))
+    require(loaded.waitingGuestTargets==targets && loaded.worldState.guestPositions==hotel.worldState.guestPositions,"Spread-out waiting guests survive save and reload")
+    var office=Motel();office.initializeWorld()
+    let guest=office.waiting.removeFirst()
+    var visitor=OfficeVisitor(guest:guest);visitor.phase = .leaving;visitor.pathIndex=1;visitor.roomID=0
+    office.world!.reception!.visitor=visitor
+    let exit=office.groundTile(Tile(x:6,y:10))
+    office.world!.travellers=[MotelWalker(id:999,name:"Leaving",color:0xAABBCC,roomID:-1,player:exit,previous:exit,destination:MotelGrounds.gate)]
+    office.tickReception()
+    require(office.reception.visitor?.guest.id==guest.id && office.worldState.travellers.count==1,"Guests wait inside until the exterior exit clears")
+    office.tickWorld();office.tickReception()
+    require(office.reception.visitor==nil && office.worldState.travellers.filter{$0.id==guest.id}.count==1,"One guest exits after the previous guest moves away")
+    require(Set(office.worldState.travellers.map(\.player)).count==office.worldState.travellers.count,"Departing guests do not overlap at the exit")
+    require(ChaosKind.pool.responseDuration==9,"Pool rescue uses the previous animation duration")
+    print("PASS: distributed waiting areas, clear sidewalks and entrance, legacy crowd migration, saved waiting guests and one-at-a-time office exits")
+}
+clearReceptionEntranceRules()

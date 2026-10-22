@@ -71,7 +71,7 @@ jobs:
         if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |
           set -euo pipefail
-          for SPEC in fire:2.2 fight:2.2 pool:1.8 pool:3.8 pool:7.0; do
+          for SPEC in pool:1.8 pool:3.8; do
             MODE=${SPEC%:*}
             TIME=${SPEC#*:}
             xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
@@ -79,6 +79,10 @@ jobs:
             sleep 9
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-$MODE-$TIME.png"
           done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-entrance-flow --ui-testing --ui-touch
+          sleep 3
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-response-entrance-flow.png
       - name: Preserve response previews for early visual review
         uses: actions/upload-artifact@v4
         with:

@@ -24,6 +24,7 @@ struct MotelWorldState: Codable {
     var barDrink:BarDrink?
     var barOrders:Int?
     var guestPositions: [Int:Tile]?
+    var guestPrevious: [Int:Tile]?
     var witnessPositions: [Int:Tile]?
     var neighborPositions:[Int:Tile]?
     var neighborPrevious:[Int:Tile]?
@@ -429,20 +430,28 @@ extension Motel {
         initializeWorld()
         var state = worldState
         state.tick += 1
-        var positions = state.guestPositions ?? [:]
-        positions = positions.filter { id,_ in waiting.contains { $0.id == id } }
-        for guest in waiting {
-            let current = positions[guest.id] ?? groundGuestTile(guest.id)
-            let target: Tile
-            if let danger = operationsState.incident?.tile, current.distance(to:danger) < 12 || positions[guest.id] != nil {
-                target = MotelGrounds.refuge(from:current,danger:danger)
-            } else { target = groundGuestTile(guest.id) }
-            let occupied=Set(positions.filter { $0.key != guest.id }.map(\.value))
+        let outdoorGuests=waiting.filter{$0.id != reception.visitor?.guest.id}
+        let destinations=waitingGuestTargets
+        var positions=(state.guestPositions ?? [:]).filter{id,_ in outdoorGuests.contains{$0.id == id}}
+        var previous:[Int:Tile]=[:]
+        let entrance=groundTile(Tile(x:6,y:10))
+        var reserved=Set(state.travellers.map(\.player)+[entrance,groundTile(MotelGrounds.officeDoor)])
+        if state.place == .grounds && visit == nil {reserved.insert(state.player)}
+        for guest in outdoorGuests {
+            let target=destinations[guest.id] ?? groundGuestTile(guest.id)
+            let saved=positions[guest.id] ?? target
+            let current=groundBlocked(saved) ? groundNearestWalkable(to:saved) : saved
+            previous[guest.id]=current
+            let occupied=Set(positions.filter{$0.key != guest.id}.map(\.value)).union(reserved)
             if let danger=operationsState.incident?.tile {
                 positions[guest.id]=groundEscapeStep(from:current,danger:danger,avoiding:occupied) ?? current
-            } else { positions[guest.id]=groundNextStep(from:current,to:target,avoiding:occupied) ?? current }
+            } else {
+                positions[guest.id]=groundNextStep(from:current,to:target,avoiding:occupied) ?? current
+            }
         }
-        state.guestPositions = positions
+        state.guestPositions=positions;state.guestPrevious=previous
+        var travellerIDs=Set<Int>()
+        state.travellers=state.travellers.filter{travellerIDs.insert($0.id).inserted}
         let witnesses=simulation.issues.filter { [HotelIssueKind.adultVisitor,.drugDeal,.cult,.celebrity].contains($0.kind) }
         var witnessPositions=(state.witnessPositions ?? [:]).filter { id,_ in witnesses.contains { $0.id == id } }
         for witness in witnesses {
@@ -453,7 +462,7 @@ extension Motel {
             } else { witnessPositions[witness.id]=groundNextStep(from:current,to:origin,avoiding:Set(positions.values)) ?? current }
         }
         state.witnessPositions=witnessPositions
-        var occupied = Set(waiting.map { positions[$0.id] ?? groundGuestTile($0.id) } + state.travellers.map(\.player))
+        var occupied = Set(positions.values).union(state.travellers.map(\.player))
         if state.place == .grounds && visit == nil { occupied.insert(state.player) }
         for index in state.travellers.indices {
             var walker = state.travellers[index]

@@ -44,6 +44,16 @@ struct ContentView: View {
             sample.motel!.operations!.consequences=BusinessConsequences(police:PoliceCase(number:1,guest:"Test",cause:.fire,tile:Tile(x:7,y:7),acceptsBribe:false,map:"office"))
             sample.save();return sample
         }
+        if args.contains("--ui-entrance-flow") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.waiting=Motel.arrivals(day:8,count:12,randomize:false)
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:10,y:11)
+            let entrance=sample.motel!.groundTile(Tile(x:6,y:10))
+            sample.motel!.world!.guestPositions=Dictionary(uniqueKeysWithValues:sample.motel!.waiting.map{($0.id,entrance)})
+            for _ in 0..<90 {sample.motel!.tickWorld()}
+            sample.motel!.operations!.nextIncidentTick=10000
+            sample.save();return sample
+        }
         if args.contains("--ui-counter") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.world!.place = .office;sample.motel!.world!.player=OfficeReception.clerk
