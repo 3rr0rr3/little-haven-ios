@@ -239,7 +239,7 @@ struct HomeInteriorArt:View {
 }
 
 enum PersonalArt {
-    static func draw(context: inout GraphicsContext,x: Double,y: Double,variant: Int,facing: Int,walk: Double,shirt:UInt32=0xC7D0D4) {
+    static func draw(context: inout GraphicsContext,x: Double,y: Double,variant: Int,facing: Int,walk: Double,shirt:UInt32=0xC7D0D4,hands:Bool=true,kneeling:Bool=false) {
         let woman = variant == 8, child = variant == 9
         let ink: UInt32 = 0x302D2D
         let skin: UInt32 = woman ? 0xD79F77 : 0xE3B38E
@@ -258,10 +258,14 @@ enum PersonalArt {
         if facing == 1 || facing == 2 {
             context.translateBy(x:x+8,y:0);context.scaleBy(x:0.72,y:1);context.translateBy(x:-x-8,y:0)
         }
-        box(4,11,3.5,4+step*0.4,0x41414A); box(8.5,11,3.5,4-step*0.4,0x41414A)
-        oval(3,14+step*0.4,5,1.8,ink); oval(8,14-step*0.4,5,1.8,ink)
+        if kneeling {
+            box(4,12,8,2.5,0x41414A);oval(9,13,6,2.5,ink)
+        } else {
+            box(4,11,3.5,4+step*0.4,0x41414A); box(8.5,11,3.5,4-step*0.4,0x41414A)
+            oval(3,14+step*0.4,5,1.8,ink); oval(8,14-step*0.4,5,1.8,ink)
+        }
         box(2.5,5,11,9,child ? 0xD88BAA : woman ? 0x292A2C : shirt)
-        oval(0.8,8+step*0.4,3.5,4,skin); oval(11.7,8-step*0.4,3.5,4,skin)
+        if hands {oval(0.8,8+step*0.4,3.5,4,skin);oval(11.7,8-step*0.4,3.5,4,skin)}
         if woman && facing != 3 {
             for i in 0..<5 { oval(3+Double(i*2),8+Double(i%2)*3,2,1.6,0xE8E2CF) }
         } else if !child && !woman && facing == 0 {

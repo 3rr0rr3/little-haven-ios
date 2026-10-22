@@ -36,6 +36,14 @@ struct ContentView: View {
         let args = ProcessInfo.processInfo.arguments
         Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}
+        if args.contains("--ui-police-pursuit") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.cash=500;sample.motel!.world!.place = .office
+            sample.motel!.world!.player=OfficeReception.clerk
+            sample.motel!.operations=MotelOperations()
+            sample.motel!.operations!.consequences=BusinessConsequences(police:PoliceCase(number:1,guest:"Test",cause:.fire,tile:Tile(x:7,y:7),acceptsBribe:false,map:"office"))
+            sample.save();return sample
+        }
         if args.contains("--ui-counter") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.world!.place = .office;sample.motel!.world!.player=OfficeReception.clerk

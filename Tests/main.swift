@@ -905,6 +905,7 @@ func receptionAndCompanionRules() {
     state.consequences=BusinessConsequences()
     var police=PoliceCase(number:1,guest:"Test",cause:.fight)
     police.tile=Tile(x:6,y:11)
+    motel.world!.place = .grounds;motel.world!.player=Tile(x:6,y:10)
     state.consequences!.police=police
     motel.operations=state
     motel.tickManagement()
@@ -1301,3 +1302,54 @@ func responseAndGuestVariationRules() {
     print("PASS: counter interaction, randomized arrivals, varied pool victims, response identity and creature names")
 }
 responseAndGuestVariationRules()
+
+func pursuitAndRandomFireRules() {
+    var motel=Motel();motel.initializeWorld()
+    let cases:[(MotelPlace,NeighborhoodShop?,Int?,Tile)]=[
+        (.grounds,nil,nil,Tile(x:35,y:32)),
+        (.office,nil,nil,OfficeReception.clerk),
+        (.house,nil,nil,Tile(x:7,y:6)),
+        (.basement,nil,nil,Tile(x:12,y:7)),
+        (.shop,.fish,nil,Tile(x:7,y:10)),
+        (.grounds,nil,0,Tile(x:4,y:4))
+    ]
+    for (place,shop,room,position) in cases {
+        motel.world!.place=place;motel.world!.shop=shop;motel.world!.player=position
+        motel.visit=room.map{RoomVisit(roomID:$0,sneaking:false,player:position)}
+        motel.operations!.consequences=BusinessConsequences(police:PoliceCase(number:1,guest:"Test",cause:.fire,acceptsBribe:false))
+        for _ in 0..<260 {
+            motel.tickManagement(advanceClock:false)
+            if motel.policeRequiresDecision {break}
+        }
+        let officer=motel.business.police!
+        require(officer.arrived && (officer.map ?? "grounds")==motel.petMap && officer.tile.distance(to:motel.actorTile)<=1,"Police physically reach the player in every map")
+        let before=motel.actorTile;motel.moveActor(dx:1,dy:0)
+        require(motel.actorTile==before,"Cannot walk out of mandatory police conversation")
+        motel.cash=1000;require(motel.tryPoliceBribe() && motel.policeRequiresDecision,"Rejected bribe keeps the case open")
+        let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(motel))
+        require(restored.policeRequiresDecision && restored.business.police!.bribeTried,"Reload cannot dismiss a case or retry a refused bribe")
+        require(motel.payPoliceFine() && !motel.policeRequiresDecision,"Payment releases the conversation")
+    }
+    motel.visit=nil;motel.world!.place = .grounds;motel.world!.player=Tile(x:30,y:32)
+    motel.operations!.consequences=BusinessConsequences(police:PoliceCase(number:2,guest:"Test",cause:.fire))
+    for _ in 0..<5 {motel.tickManagement(advanceClock:false)}
+    motel.world!.place = .house;motel.world!.player=Tile(x:7,y:7)
+    for _ in 0..<260 {motel.tickManagement(advanceClock:false);if motel.policeRequiresDecision {break}}
+    require(motel.business.police?.map=="house" && motel.policeRequiresDecision,"Pursuit updates when the player changes maps")
+    _=motel.payPoliceFine()
+    motel.world!.place = .grounds;motel.world!.player=Tile(x:11,y:14)
+    motel.rooms[0].guest=Motel.arrivals(day:1,count:1)[0]
+    var locations=Set<Tile>(),previous:Tile?
+    for _ in 0..<40 {
+        motel.operations!.incident=nil;motel.operations!.incidentsStarted=0;motel.operations!.nextIncidentTick=0
+        motel.tickManagement()
+        let incident=motel.operationsState.incident!
+        require(incident.kind == .fire && incident.tile != previous,"Consecutive fires choose a different location")
+        require((2...37).contains(incident.tile.x) && (3...33).contains(incident.tile.y),"Fire stays around the motel")
+        require(!motel.groundBlocked(incident.tile) && !motel.groundBlocked(incident.approach),"Fire and response position stay accessible")
+        previous=incident.tile;locations.insert(incident.tile)
+    }
+    require(locations.count>5,"Fires have more than five possible positions")
+    print("PASS: police pursuit in six maps, moving targets, mandatory case persistence and varied safe fire locations")
+}
+pursuitAndRandomFireRules()

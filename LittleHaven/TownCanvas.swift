@@ -124,8 +124,8 @@ struct PaperPortrait: View {
 // Layered geometric paper shapes: round heads, wide eyes, mitten hands and short coats.
 enum PaperPerson {
     static func draw(context: inout GraphicsContext, x: Double, y: Double,
-                     color: UInt32, variant: Int, facing: Int, walk: Double, expression: String = "") {
-        if [7,8,9].contains(variant) { PersonalArt.draw(context: &context, x: x, y: y, variant: variant, facing: facing, walk: walk,shirt:color); return }
+                     color: UInt32, variant: Int, facing: Int, walk: Double, expression: String = "", hands:Bool=true, kneeling:Bool=false) {
+        if [7,8,9].contains(variant) { PersonalArt.draw(context: &context, x: x, y: y, variant: variant, facing: facing, walk: walk,shirt:color,hands:hands,kneeling:kneeling); return }
         let ink: UInt32 = 0x343333
         let seed = abs(variant)
         let skin: UInt32 = [UInt32(0xF0C9A0),0xD6A477,0xA87350,0x734A37,0xE9B693][seed % 5]
@@ -180,8 +180,10 @@ enum PaperPerson {
             let seam=facing == 1 ? 5.0 : 11.0
             line([CGPoint(x:seam,y:7),CGPoint(x:seam,y:13)],ink,0.3)
         }
-        oval(0.6, 9 + walk * 0.7, 3.5, 3.7, skin)
-        oval(11.9, 9 - walk * 0.7, 3.5, 3.7, skin)
+        if hands {
+            oval(0.6, 9 + walk * 0.7, 3.5, 3.7, skin)
+            oval(11.9, 9 - walk * 0.7, 3.5, 3.7, skin)
+        }
         context=bodyContext
         if style == 1 || style == 3 || style == 6 { oval(1, -4.5, 14, 13.5, hair) }
         oval(1.7, -5, 12.6, 12.5, skin)

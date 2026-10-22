@@ -1,6 +1,12 @@
 import SwiftUI
 
 extension Motel {
+    var policeActors:[RPGActor] {
+        guard let police=business.police,(police.map ?? "grounds") == petMap else{return []}
+        let previous=police.previous ?? police.tile
+        let facing=police.tile.x<previous.x ? 1 : police.tile.x>previous.x ? 2 : police.tile.y<previous.y ? 3 : 0
+        return [RPGActor(id:"police",tile:police.tile,color:0x54739C,variant:0,facing:facing,marker:"!",duration:MotelCadence.travel,expression:"serious")]
+    }
     var petActors: [RPGActor] {
         visiblePets.map { pet in
             RPGActor(id:pet.key,tile:pet.value.tile,color:pet.key == "chichu" ? 0x85817C : 0xE9E2D0,variant:0,facing:actorFacing,name:companionName(pet.key),duration:0.14,creature:pet.key == "mochi",animal:pet.key == "mochi" ? 0 : pet.key == "chichu" ? 1 : 2,displayScale:pet.key == "mochi" ? 0.7 : 0.55)
@@ -31,7 +37,7 @@ struct FamilyHouseView:View {
         RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You"),
         RPGActor(id:"hildarelys",tile:motel.reception.hildarelys,color:0x292A2C,variant:8,facing:motel.reception.tick%12<6 ? 2 : 1,name:"Hildarelys",duration:0.65),
         RPGActor(id:"samhil",tile:OfficeReception.samhil,color:0xD88BAA,variant:9,facing:3,name:"Samhil",displayScale:0.8),
-        ] + motel.petActors}
+        ] + motel.petActors + motel.policeActors}
     var body:some View {
         GeometryReader {proxy in
             let scale=min(proxy.size.width/240,proxy.size.height/240)
@@ -70,7 +76,7 @@ struct OfficeReceptionView: View {
             result.append(RPGActor(id:"clerk-nora",tile:Tile(x:6,y:3),color:StaffRole.clerk.color,variant:204,name:"Nora"))
         }
         if let visitor { result.append(RPGActor(id:"reception-guest",tile:visitor.tile,color:visitor.guest.color,variant:visitor.guest.appearanceSeed,facing:visitor.phase == .leaving ? 0 : 3,name:visitor.guest.name,duration:0.3)) }
-        return result + motel.petActors
+        return result + motel.petActors + motel.policeActors
     }
     var body: some View {
         GeometryReader { proxy in
@@ -113,7 +119,7 @@ struct ShopInteriorView:View {
         [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You"),
          RPGActor(id:"shopkeeper-"+shop.rawValue,tile:ShopLayout.keeper,color:shop.keeperColor,variant:460+shop.uniform,name:shop.keeperName,shopUniform:shop.uniform)] + ((shop == .bar || shop == .fish) ? BarLayout.seats.enumerated().map { index,tile in
              RPGActor(id:(shop == .fish ? "fish-diner-" : "bar-patron-")+"\(index)",tile:tile,color:[UInt32(0xA58AAB),0x9CB69E,0xD1AD74][index%3],variant:520+index,facing:index%2 == 0 ? 2 : 1,name:["Avery","Rosa","Theo","Mila","Leon","Iris"][index])
-         } : []) + motel.petActors
+         } : []) + motel.petActors + motel.policeActors
     }
     var body:some View {
         GeometryReader {proxy in
@@ -154,7 +160,7 @@ struct BasementView:View {
             let tile=BasementLayout.creature(id,tick:motel.worldState.tick)
             let previous=BasementLayout.creature(id,tick:max(0,motel.worldState.tick-5))
             return RPGActor(id:"corral-creature-\(id)",tile:tile,color:0x999999,variant:id,facing:tile.x<previous.x ? 1 : tile.x>previous.x ? 2 : tile.y<previous.y ? 3 : 0,duration:MotelCadence.travel*5,corralCreature:id+1,displayScale:0.95)
-        } + motel.petActors
+        } + motel.petActors + motel.policeActors
     }
     var body:some View {
         VStack(spacing:4) {

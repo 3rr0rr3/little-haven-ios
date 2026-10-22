@@ -51,7 +51,18 @@ extension Motel {
     static let chaosLocations=[Tile(x:11,y:13),Tile(x:20,y:17),Tile(x:29,y:27),Tile(x:16,y:28),Tile(x:34,y:10)]
     var availableHotelIncidentSites:[Tile] {
         let map=relocatedGrounds
-        return Self.chaosLocations.filter{!map.blocked($0) && !map.blocked(Tile(x:$0.x,y:$0.y+1))}
+        // Keep legacy anchors first for save migration, then sample the entire motel.
+        let candidates=Self.chaosLocations + (3...33).flatMap { y in
+            (2...37).map { x in Tile(x:x,y:y) }
+        }
+        var seen=Set<Tile>()
+        return candidates.filter { tile in
+            seen.insert(tile).inserted && !map.blocked(tile) &&
+            !map.blocked(Tile(x:tile.x,y:tile.y+1)) &&
+            !map.blocked(Tile(x:tile.x+1,y:tile.y)) &&
+            tile.distance(to:groundTile(Tile(x:6,y:10)))>2 &&
+            !rooms.contains{groundRoomDoor($0.id).distance(to:tile)<=1}
+        }
     }
     var isAtHome:Bool {visit == nil && worldState.place == .house}
     var isAtShop:Bool {visit == nil && worldState.place == .shop}
@@ -168,6 +179,7 @@ struct GuestReview: Codable, Identifiable {
 }
 enum ChaosKind: String, Codable, CaseIterable {
     case fire, pool, fight
+    var responseDuration:Double {self == .pool ? 12 : self == .fire ? 6 : 5.6}
     var title: String { switch self { case .fire: return "Fire in the courtyard!"; case .pool: return "Guest in the pool!"; case .fight: return "A fight outside!" } }
     var detail: String { switch self { case .fire: return "A fire has broken out nearby. Go outside and put it out before it spreads."; case .pool: return "A guest fell into the pool and needs help getting out. Reach the south pool edge and help them."; case .fight: return "Two guests are arguing and shoving outside. Go over and calm them down." } }
     var action: String { switch self { case .fire: return "Put out the fire"; case .pool: return "Help the guest out"; case .fight: return "Break up the fight" } }
@@ -198,6 +210,8 @@ struct PoliceCase: Codable {
     var acceptsBribe = Bool.random()
     var message = ""
     var reason:String?
+    var map:String?
+    var previous:Tile?
 }
 struct BusinessConsequences: Codable {
     var deaths = 0
@@ -217,6 +231,7 @@ struct MotelOperations: Codable {
     var visual: HotelVisual?
     var visualSerial: Int?
     var lastPoolGuestName:String?
+    var lastFireLocation:Tile?
     var cars: [HotelCar]?
     var washIncome: Int?
     var weatherOverride: HotelWeather?
@@ -329,7 +344,7 @@ extension Motel {
         var state = operationsState
         // A relocated building must never leave a legacy emergency inside a wall.
         if let incident=state.incident,incident.kind != .pool,
-           (incident.kind == .fight && !Self.chaosLocations.contains(incident.tile) ||
+           (!((2...37).contains(incident.tile.x) && (3...33).contains(incident.tile.y)) ||
             groundBlocked(incident.tile) || groundBlocked(incident.approach)) {
             if let safe=availableHotelIncidentSites.first {state.incident!.location=safe}
             else {state.incident=nil;state.nextIncidentTick=state.tick+30}
@@ -352,7 +367,12 @@ extension Motel {
                 state.incident=MotelIncident(kind:kind,guest:victim,otherGuest:other)
                 if kind == .pool {state.lastPoolGuestName=victim?.name}
                 if kind == .pool {state.incident!.location=groundTile(kind.tile)}
-                else {state.incident!.location=sites[(state.incidentsStarted/3+(kind == .fight ? 2 : 0))%sites.count]}
+                else {
+                    let fresh=kind == .fire ? sites.filter{$0 != state.lastFireLocation} : sites
+                    let location=(fresh.isEmpty ? sites : fresh).randomElement()!
+                    state.incident!.location=location
+                    if kind == .fire {state.lastFireLocation=location}
+                }
                 lastEvent=kind.title+" Check the grounds or send a trained employee."
             } else {state.nextIncidentTick=state.tick+30}
         }
@@ -507,11 +527,9 @@ extension Motel {
             state.workers[index] = worker
             occupied.insert(worker.tile)
         }
-        if advanceClock,var police = state.consequences?.police {
-            if police.tile == groundTile(Tile(x:6,y:10)) { police.arrived = true }
-            else if let next = groundNextStep(from:police.tile,to:groundTile(Tile(x:6,y:10)),avoiding:[]) { police.tile = next }
-            if police.tile == groundTile(Tile(x:6,y:10)) { police.arrived = true }
-            state.consequences!.police = police
+        if var police=state.consequences?.police {
+            advancePolice(&police)
+            state.consequences!.police=police
         }
         operations = state
         for job in staffRepairs {logMoney(-15,category:"Staff maintenance",note:job);lastEvent=job+" inspected and treated."}
@@ -538,7 +556,7 @@ extension Motel {
         state.incidentsMissed += 1
         state.incident = nil
         state.nextIncidentTick = state.tick + 30
-        guard let index = rooms.firstIndex(where: { $0.guest != nil }), let guest = rooms[index].guest else {
+        guard let index = rooms.firstIndex(where: { $0.guest?.id == incident.guest?.id && $0.guest != nil }) ?? rooms.firstIndex(where: { $0.guest != nil }), let guest = rooms[index].guest else {
             lastEvent = "The emergency caused damage. Repairs cost 40 coins."
             return
         }
@@ -689,7 +707,7 @@ extension Motel {
     mutating func playVisual(_ kind: String, target: Tile? = nil) {
         var state = operationsState
         state.visualSerial = (state.visualSerial ?? 0) + 1
-        state.visual = HotelVisual(id:state.visualSerial!,kind:kind,origin:actorTile,target:target ?? actorTile,map:visualMap)
+        state.visual = HotelVisual(id:state.visualSerial!,kind:kind,origin:actorTile,target:target ?? actorTile,map:visualMap,outfit:FamilyHome.outfitColors[household.outfit])
         operations = state
     }
     mutating func tickParking(_ state: inout MotelOperations) {
@@ -1207,7 +1225,7 @@ extension Motel {
             rooms[i].hospitality=h
         }
         logMoney(-issue.kind.cost,category:"Guest service",note:issue.kind.title)
-        playVisual(repairKinds.contains(issue.kind) ? "repair" : pestKinds.contains(issue.kind) ? "mop" : "calm")
+        playVisual(repairKinds.contains(issue.kind) ? "repair" : pestKinds.contains(issue.kind) ? "pest" : "calm")
         lastEvent="Handled: "+issue.kind.title+". Guest trust improved.";return true
     }
     mutating func finishSimulationDay() {
@@ -1593,5 +1611,72 @@ extension StaffRole {
     func handles(_ issue:HotelIssueKind)->Bool {
         self == .pestControl ? [HotelIssueKind.bedbugs,.roaches].contains(issue) :
         self == .repair && [HotelIssueKind.vandalism,.outage,.leak,.ac,.temperature].contains(issue)
+    }
+}
+
+extension Motel {
+    var policeRequiresDecision:Bool {business.police?.arrived == true}
+    private func policeEntrance(_ map:String)->(outside:Tile,inside:Tile) {
+        if map == "house" || map == "basement" {
+            let door=groundTile(FamilyHome.door)
+            return (Tile(x:door.x,y:door.y+1),map == "basement" ? BasementLayout.arrival : Tile(x:7,y:12))
+        }
+        if map.hasPrefix("shop-"),let shop=NeighborhoodShop(rawValue:String(map.dropFirst(5))) {
+            let door=groundTile(shop.door)
+            return (Tile(x:door.x,y:door.y+1),ShopLayout.arrival)
+        }
+        if map.hasPrefix("room-"),let room=Int(map.dropFirst(5)) {
+            return (groundRoomDoor(room),Tile(x:4,y:7))
+        }
+        return (groundTile(Tile(x:6,y:10)),Tile(x:7,y:12))
+    }
+    func policeBlocked(_ tile:Tile,map:String)->Bool {
+        if map == "grounds" {return groundBlocked(tile)}
+        if map == "house" {return homeBlocked(tile)}
+        if map == "basement" {return BasementLayout.blocked(tile)}
+        if map.hasPrefix("room-") {return RoomVisit.blocked(tile)}
+        if map.hasPrefix("shop-") {
+            return map == "shop-bar" || map == "shop-fish" ? BarLayout.blocked(tile) : ShopLayout.blocked(tile)
+        }
+        return MotelGrounds.officeBlocked(tile)
+    }
+    private func policeStep(from start:Tile,to target:Tile,map:String)->Tile? {
+        if map == "grounds" {return groundNextStep(from:start,to:target,avoiding:[])}
+        var queue=[start],seen:Set<Tile>=[start],parents:[Tile:Tile]=[:],cursor=0
+        while cursor<queue.count {
+            let current=queue[cursor];cursor += 1
+            for (dx,dy) in [(0,-1),(1,0),(-1,0),(0,1)] {
+                let next=Tile(x:current.x+dx,y:current.y+dy)
+                guard !policeBlocked(next,map:map),seen.insert(next).inserted else{continue}
+                parents[next]=current
+                if next == target {
+                    var step=next
+                    while let previous=parents[step],previous != start {step=previous}
+                    return step
+                }
+                queue.append(next)
+            }
+        }
+        return nil
+    }
+    private func advancePolice(_ police:inout PoliceCase) {
+        guard !police.arrived else{return}
+        let current=police.map ?? "grounds",destination=petMap
+        police.previous=police.tile
+        if current != destination {
+            // Walk to the relevant doorway before changing maps, and leave interiors
+            // through their entrance if the player moves elsewhere.
+            let portal=policeEntrance(current == "grounds" ? destination : current)
+            let target=current == "grounds" ? portal.outside : portal.inside
+            if police.tile.distance(to:target)<=1 {
+                police.map=current == "grounds" ? destination : "grounds"
+                police.tile=current == "grounds" ? portal.inside : portal.outside
+                police.previous=police.tile
+            } else if let next=policeStep(from:police.tile,to:target,map:current) {police.tile=next}
+        } else {
+            if police.tile.distance(to:actorTile)>1,
+               let next=policeStep(from:police.tile,to:actorTile,map:current) {police.tile=next}
+            if police.tile.distance(to:actorTile)<=1 {police.arrived=true}
+        }
     }
 }

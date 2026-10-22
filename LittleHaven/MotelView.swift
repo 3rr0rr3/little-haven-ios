@@ -81,7 +81,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
@@ -98,6 +98,14 @@ struct MotelView: View {
             },reset:{change{$0.resetCreativeLayout()};game.save()})
         }
         .foregroundStyle(cream).background(Color(hex: 0x172A25))
+        .overlay {
+            if let police=motel.business.police,police.arrived {
+                ZStack(alignment:.bottom) {
+                    Color.black.opacity(0.3).ignoresSafeArea().contentShape(Rectangle()).onTapGesture {}
+                    policeDialogue(police).padding(12)
+                }.accessibilityAddTraits(.isModal)
+            }
+        }
         .overlay(alignment: .bottom) {
             Group {
                 if let toast, !paused {
@@ -112,7 +120,7 @@ struct MotelView: View {
             if motel.business.police?.arrived == true { showPolice=true }
             #if DEBUG
             if let kind=ChaosKind.allCases.first(where:{ProcessInfo.processInfo.arguments.contains("--ui-action-response-"+$0.rawValue)}) {
-                change{_=$0.resolveNearbyIncident()};responseDuration=kind == .pool ? 9 : 3.6
+                change{_=$0.resolveNearbyIncident()};responseDuration=kind.responseDuration
             }
             if ProcessInfo.processInfo.arguments.contains("--ui-dialogue") { family = .hildarelys }
             for id in 0..<8 where ProcessInfo.processInfo.arguments.contains("--ui-corral-\(id)") {corral=id}
@@ -136,6 +144,9 @@ struct MotelView: View {
         .onChange(of:fullscreenTouch) {_,_ in stop()}
         .task(id:responseDuration) {
             guard responseDuration > 0 else{return}
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("--ui-response-time") {return}
+            #endif
             do {try await Task.sleep(for:.seconds(responseDuration))} catch {return}
             responseDuration=0
         }
@@ -190,7 +201,13 @@ struct MotelView: View {
             if !Task.isCancelled && toast == text { toast = nil }
         }
         .onChange(of: motel.business.police?.arrived) { _, arrived in
-            if arrived == true { stop(); panel=nil; family=nil; showIncident=false; showPolice=true }
+            if arrived == true {
+                stop();panel=nil;family=nil;talkingRoom=nil;corral=nil
+                showIncident=false;showCreative=false;showManagement=false;showHome=false
+                neighborhood=nil;showOptions=false;showPause=false;showMap=false
+                confirmRest=false;showSneak=false;confirmRestore=false;showPolice=true
+                game.save()
+            }
         }
         .onChange(of: mapIdentity) { _, _ in stop() }
         .onChange(of: motel.actorTile) { _, _ in working = false; workProgress = 0 }
@@ -297,11 +314,12 @@ struct MotelView: View {
                     if motel.nearbyAction != .none {actionButton.frame(width:160,height:82)}
                 }
             }.padding(.horizontal,16).padding(.vertical,8)
+            if motel.policeRequiresDecision {Color.black.opacity(0.25).ignoresSafeArea().contentShape(Rectangle()).onTapGesture {}}
             worldOverlay
         }
     }
     private func toolbarItem(_ title:String,symbol:String,id:String,action:@escaping ()->Void)->some View {
-        Button {stop();action()} label:{
+        Button {guard !motel.policeRequiresDecision else{return};stop();action()} label:{
             VStack(spacing:4) {
                 Image(systemName:symbol).font(.system(size:16,weight:.semibold))
                 Text(title).font(.system(size:8,weight:.semibold))
@@ -353,6 +371,7 @@ struct MotelView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 20))
                 .overlay(RoundedRectangle(cornerRadius: 20).stroke(cream.opacity(0.18), lineWidth: 1))
                 // Notifications must not participate in the map's layout or move its touch targets.
+                .overlay {if motel.policeRequiresDecision {Color.black.opacity(0.25).contentShape(Rectangle()).onTapGesture {}}}
                 .overlay(alignment: .bottom) { worldOverlay }
                 .frame(maxHeight: .infinity)
             if let visit = motel.visit, visit.sneaking {
@@ -461,18 +480,18 @@ struct MotelView: View {
     private func policeDialogue(_ police: PoliceCase) -> some View {
         var choices: [DialogueChoice] = []
         if police.arrived {
-            choices.append(DialogueChoice(title:"Pay fine / \(police.fine)",action:{ change { _ = $0.payPoliceFine() }; showPolice = false }))
+            choices.append(DialogueChoice(title:"Pay fine / \(police.fine)",action:{ change { _ = $0.payPoliceFine() }; if motel.business.police == nil {showPolice=false};game.save() }))
             if !police.bribeTried && motel.cash >= 80 {
-                choices.append(DialogueChoice(title:"Risk a bribe / 80",action:{ change { _ = $0.tryPoliceBribe() }; if motel.business.police == nil { showPolice = false } }))
+                choices.append(DialogueChoice(title:"Risk a bribe / 80",action:{ change { _ = $0.tryPoliceBribe() }; if motel.business.police == nil { showPolice = false };game.save() }))
             }
         }
-        let detail = police.arrived ? "\(police.guest) died in the \(police.cause.rawValue) emergency. Your fine is \(police.fine) coins. Bribery may be refused and increase the fine. Unpaid fines are deducted from future room income. \(police.message)" : "An officer is walking from the road to reception after a guest death. Keep the grounds safe. Talk once the officer arrives."
+        let detail = police.arrived ? "\(police.guest) died in the \(police.cause.rawValue) emergency. Your fine is \(police.fine) coins. Bribery may be refused and increase the fine. Unpaid fines are deducted from future room income. \(police.message)" : "An officer is looking for you and will approach wherever you are. You must settle the case when the officer speaks to you."
         let report=police.reason.map {police.arrived ? $0+" Fine: \(police.fine) coins. "+police.message : "An officer is on the way after complaints about night operations."} ?? detail
-        return GameDialogue(speaker:"Officer Vega",text:report,portrait:AnyView(PaperPortrait(color:0x54739C,variant:0)),choices:choices) { showPolice = false }
+        return GameDialogue(speaker:"Officer Vega",text:report,portrait:AnyView(PaperPortrait(color:0x54739C,variant:0)),choices:choices,dismissible:!police.arrived) { if !police.arrived {showPolice=false} }
     }
 
     @ViewBuilder private var worldOverlay: some View {
-                if showPolice, let police = motel.business.police {
+                if let police=motel.business.police, showPolice && !police.arrived {
                     policeDialogue(police).padding(12)
                 } else if let id=talkingRoom, let room=motel.rooms.first(where:{$0.id==id}), let guest=room.guest {
                     guestDialogue(room:room,guest:guest).padding(12)
@@ -807,7 +826,7 @@ struct MotelView: View {
     }
     private func incidentChoices(_ kind: ChaosKind) -> [DialogueChoice] {
         if motel.nearbyIncident { return [DialogueChoice(title:kind.action,action:{
-            let duration=kind == .pool ? 9.0 : 3.6
+            let duration=kind.responseDuration
             change { _ = $0.resolveNearbyIncident() };showIncident=false;responseDuration=duration
         })] }
         if motel.isAtReception { return [DialogueChoice(title:"Go outside",action:{ change { _ = $0.leaveReception() }; showIncident = false })] }

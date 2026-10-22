@@ -258,7 +258,7 @@ extension Motel {
         }
     }
     mutating func moveActor(dx: Int, dy: Int) {
-        guard !caught, abs(dx) <= 1, abs(dy) <= 1, dx != 0 || dy != 0 else { return }
+        guard !caught, !policeRequiresDecision, abs(dx) <= 1, abs(dy) <= 1, dx != 0 || dy != 0 else { return }
         initializeWorld()
         world!.beachSeat=nil
         if visit != nil { move(dx: dx, dy: dy); return }

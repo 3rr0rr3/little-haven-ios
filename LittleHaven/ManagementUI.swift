@@ -119,13 +119,14 @@ struct GameDialogue: View {
     let text: String
     let portrait: AnyView
     let choices: [DialogueChoice]
+    var dismissible=true
     let close: () -> Void
     var body: some View {
         VStack(alignment:.leading,spacing:12) {
             HStack {
                 Text(speaker.uppercased()).font(.system(size:13,weight:.black,design:.monospaced)).tracking(1).foregroundStyle(Color(hex:0xF2CE7F))
                 Spacer()
-                Button("Back",action:close).font(.system(size:11,weight:.bold,design:.monospaced)).foregroundStyle(Color(hex:0xE9DAB9))
+                if dismissible {Button("Back",action:close).font(.system(size:11,weight:.bold,design:.monospaced)).foregroundStyle(Color(hex:0xE9DAB9))}
             }
             HStack(alignment:.top,spacing:12) {
                 portrait.frame(width:64,height:76).background(Color(hex:0x344E40)).overlay(Rectangle().stroke(Color(hex:0xC4A96F),lineWidth:1))
@@ -223,19 +224,25 @@ enum ChaosArt {
             context.stroke(path,with:.color(Color(hex:tint)),lineWidth:width)
         }
         if kind == 1 {
-            // Flames stretch, sparks rise and smoke drifts independently.
+            // Smoke is behind the flames, with a broad hot base and three distinct tongues.
             for i in 0..<4 {
-                let x=2+Double(i)*4.5
-                let sway=sin(phase+Double(i))*2.5
-                var flame=Path()
-                flame.move(to:CGPoint(x:x,y:26))
-                flame.addQuadCurve(to:CGPoint(x:x+4+sway,y:3+Double(i%2)*5),control:CGPoint(x:x-3,y:15))
-                flame.addQuadCurve(to:CGPoint(x:x+8,y:26),control:CGPoint(x:x+13,y:14))
-                context.fill(flame,with:.color(Color(hex:i%2 == 0 ? 0xE96D38 : 0xF8C74F)))
-                oval(x+2,18,4,8,0xFFE7A0)
-                let rise=(stride*2+Double(i)*3).truncatingRemainder(dividingBy:16)
-                oval(x+sin(phase)*2,14-rise,5+rise/4,4+rise/4,0x79776E)
-                oval(x+3,20-rise,1.2,1.8,0xFFD879)
+                let rise=(stride*1.4+Double(i)*4).truncatingRemainder(dividingBy:18)
+                var smoke=context;smoke.opacity=0.22+rise/80
+                smoke.fill(Path(ellipseIn:CGRect(x:5+Double(i)*3+sin(phase)*2,y:12-rise/2,width:5+rise/3,height:4+rise/3)),with:.color(Color(hex:0x746B60)))
+            }
+            for i in 0..<3 {
+                let x=1+Double(i)*7,sway=sin(phase+Double(i)*1.7)*2
+                let top=4+Double(i%2)*3+cos(phase)*1.5
+                var flame=Path();flame.move(to:CGPoint(x:x,y:26))
+                flame.addCurve(to:CGPoint(x:x+4+sway,y:top),control1:CGPoint(x:x-3,y:19),control2:CGPoint(x:x+7,y:15))
+                flame.addCurve(to:CGPoint(x:x+8,y:26),control1:CGPoint(x:x+3,y:14),control2:CGPoint(x:x+12,y:20))
+                flame.closeSubpath()
+                context.fill(flame,with:.linearGradient(Gradient(colors:[Color(hex:0xED7230),Color(hex:0xFFC448)]),startPoint:CGPoint(x:x,y:6),endPoint:CGPoint(x:x,y:26)))
+                var core=Path();core.move(to:CGPoint(x:x+1,y:26))
+                core.addQuadCurve(to:CGPoint(x:x+5+sway/2,y:15),control:CGPoint(x:x+2,y:21))
+                core.addQuadCurve(to:CGPoint(x:x+7,y:26),control:CGPoint(x:x+9,y:24));core.closeSubpath()
+                context.fill(core,with:.color(Color(hex:0xFFF0AE)))
+                oval(x+4+sway,10-(stride+Double(i)*2).truncatingRemainder(dividingBy:8),0.8,1.4,0xFFCF68)
             }
         } else if kind == 2 {
             // Render the same guest, then submerge the lower body. Identity survives the event.
@@ -833,17 +840,8 @@ struct HotelMiniGame:View {
                 let elapsed=timeline.date.timeIntervalSince(started)
                 let phase=elapsed.truncatingRemainder(dividingBy:1.6)/1.6
                 VStack {
-                    ZStack {
-                        Canvas {context,_ in
-                            context.translateBy(x:16,y:5+sin(elapsed*12)*1.5)
-                            context.scaleBy(x:2.7,y:2.7)
-                            PaperPerson.draw(context:&context,x:4,y:9,color:outfit,variant:7,facing:2,walk:0)
-                            let hand=Path(ellipseIn:CGRect(x:20,y:20+sin(elapsed*12),width:3,height:4))
-                            context.fill(hand,with:.color(Color(hex:0xDFB58C)))
-                        }.frame(width:100,height:100)
-                        HotelActionArtwork(kind:repairing ? "repair" : "mop",frame:Int(elapsed*8)%8)
-                            .scaleEffect(0.8).offset(x:28,y:17)
-                    }.frame(width:150,height:100)
+                    WorkingCharacterArtwork(kind:repairing ? "repair" : "mop",frame:Int(elapsed*12)%12,color:outfit)
+                        .scaleEffect(2.2).frame(width:150,height:110)
                     GeometryReader {geometry in
                         ZStack(alignment:.leading) {
                             Capsule().fill(Color.white.opacity(0.1))
@@ -864,5 +862,105 @@ struct HotelMiniGame:View {
                 if hits>=3 {if !complete(){message="Need supplies and repair coins. Cancel, restock and try again.";hits=2}}
             }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("miniGameTap")
         }.padding(24).foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
+    }
+}
+
+/// Original character art with articulated shoulders, elbows, wrists and held tools.
+struct WorkingCharacterArtwork:View {
+    let kind:String
+    let frame:Int
+    var color:UInt32=0xC7D0D4
+    var variant=7
+    var facing=2
+    var body:some View {
+        Canvas { c,_ in
+            let wave=sin(Double(frame) * .pi/6)
+            let press=(1-cos(Double(frame) * .pi/3))/2
+            let skin:UInt32=variant == 7 ? 0xE3B38E : [UInt32(0xF0C9A0),0xD6A477,0xA87350,0x734A37,0xE9B693][abs(variant)%5]
+            if facing == 1 {c.translateBy(x:48,y:0);c.scaleBy(x:-1,y:1)}
+            func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ tint:UInt32) {
+                c.fill(Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:tint)))
+            }
+            func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ tint:UInt32) {
+                let p=Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:1)
+                c.fill(p,with:.color(Color(hex:tint)));c.stroke(p,with:.color(Color(hex:0x36443D)),lineWidth:0.35)
+            }
+            func line(_ points:[CGPoint],_ tint:UInt32,_ width:Double) {
+                var p=Path()
+                for (i,v) in points.enumerated(){if i==0 {p.move(to:v)} else {p.addLine(to:v)}}
+                c.stroke(p,with:.color(Color(hex:tint)),style:StrokeStyle(lineWidth:width,lineCap:.round,lineJoin:.round))
+            }
+            func arm(_ sx:Double,_ sy:Double,_ ex:Double,_ ey:Double,_ hx:Double,_ hy:Double) {
+                line([CGPoint(x:sx,y:sy),CGPoint(x:ex,y:ey),CGPoint(x:hx,y:hy)],0x393733,3.1)
+                line([CGPoint(x:sx,y:sy),CGPoint(x:ex,y:ey)],color,2.7)
+                line([CGPoint(x:ex,y:ey),CGPoint(x:hx,y:hy)],skin,2.5)
+                oval(hx-1.5,hy-1.5,3,3,skin)
+            }
+            let bodyX=kind == "cpr" ? 17.0+press*0.5 : 16.0
+            let bodyY=kind == "cpr" ? 21.0+press*0.7 : 19.0
+            PaperPerson.draw(context:&c,x:bodyX,y:bodyY,color:color,variant:variant,
+                facing:kind == "calm" || kind == "swim" ? 0 : 2,walk:0,hands:false,kneeling:kind == "cpr" || kind == "swim")
+            switch kind {
+            case "extinguish":
+                box(27,27,6.5,11,0xC94B38);box(28,30,4.5,4.5,0xF3E8CD)
+                box(29,24,2,3,0x525B55)
+                line([CGPoint(x:27,y:24),CGPoint(x:33,y:24+press*0.7)],0x343D3D,1.2)
+                var hose=Path();hose.move(to:CGPoint(x:32,y:26))
+                hose.addCurve(to:CGPoint(x:37,y:25+wave),control1:CGPoint(x:38,y:36),control2:CGPoint(x:40,y:29))
+                c.stroke(hose,with:.color(Color(hex:0x303B39)),style:StrokeStyle(lineWidth:1.3,lineCap:.round))
+                arm(20,25,23,27,29,24.7+press*0.5);arm(28,25,31,28,36,25+wave)
+                line([CGPoint(x:36,y:25+wave),CGPoint(x:40,y:23+wave)],0x303B39,2)
+            case "swim","rescue":
+                arm(20,25,16-wave*3,28,13-wave*2,31+wave*3)
+                arm(28,25,32+wave*3,28,35+wave*2,31-wave*3)
+                for side in [13.0,34] {
+                    c.stroke(Path(ellipseIn:CGRect(x:side-4,y:32+wave,width:8,height:2)),with:.color(.white.opacity(0.65)),lineWidth:0.6)
+                }
+            case "cpr":
+                arm(21,27,29,29+press,40,33+press*1.5)
+                arm(29,27,34,29+press,40.5,33+press*1.5)
+                oval(38.5,32+press*1.5,4,2.2,skin)
+            case "calm":
+                arm(20,25,15,25-wave,11,21-wave);arm(28,25,33,25-wave,37,21-wave)
+                box(9.5,17-wave,3,5,skin);box(35.5,17-wave,3,5,skin)
+            case "repair","build":
+                box(34,31,10,7,0x75857C)
+                let tip=CGPoint(x:38,y:32),handle=CGPoint(x:31+wave*3,y:25-wave)
+                line([handle,tip],0xCBD3CE,1.8)
+                c.stroke(Path(ellipseIn:CGRect(x:36.4,y:30.4,width:3.2,height:3.2)),with:.color(Color(hex:0xD5DBD6)),lineWidth:1)
+                arm(20,25,25,29,34,34);arm(28,25,30,27,handle.x,handle.y)
+            case "pest":
+                box(27,29,6,9,0xD3B46F);box(29,26,2,3,0x4B6457)
+                line([CGPoint(x:30,y:27),CGPoint(x:37,y:28+wave)],0x485B50,1.1)
+                arm(20,25,24,29,29,28);arm(28,25,33,29,36,28+wave)
+                for i in 0..<5 {let t=Double((frame+i)%12)/12;oval(37+t*9,29+t*6,0.8+t,0.8+t,0xD7DCC2)}
+            case "mop","carwash":
+                let head=CGPoint(x:35+wave*5,y:40)
+                line([CGPoint(x:28,y:24),head],0xB7986A,1.5);oval(head.x-5,head.y-1,10,3,0xB9D1BD)
+                for i in 0..<4 {line([CGPoint(x:head.x-4+Double(i)*2,y:40),CGPoint(x:head.x-4+Double(i)*2,y:42)],0xDAE1CF,0.6)}
+                arm(20,25,23,29,29+wave,29);arm(28,25,30,29,32+wave*2,33)
+            case "garden":
+                box(31,29,8,7,0x8EAA70);line([CGPoint(x:38,y:31),CGPoint(x:43,y:29)],0x8EAA70,2)
+                arm(20,25,25,29,32,29);arm(28,25,31,27,35,28)
+                for i in 0..<4 {oval(42+Double(i),31+Double((frame+i)%6),0.7,1.4,0xD5E8D5)}
+            case "paint":
+                let ry=28+wave*4
+                line([CGPoint(x:31,y:35),CGPoint(x:37,y:ry)],0xB39262,1.4)
+                box(34,ry-3,8,3,0xB0C7A4);arm(28,25,30,29,32,32);arm(20,25,22,29,24,32)
+            case "bed","laundry":
+                var sheet=Path();sheet.move(to:CGPoint(x:27,y:28-wave))
+                sheet.addQuadCurve(to:CGPoint(x:43,y:28+wave),control:CGPoint(x:35,y:24-wave*3))
+                sheet.addLine(to:CGPoint(x:43,y:36));sheet.addLine(to:CGPoint(x:27,y:36));sheet.closeSubpath()
+                c.fill(sheet,with:.color(Color(hex:0xF0EBD8)));c.stroke(sheet,with:.color(Color(hex:0xADBBA6)),lineWidth:0.5)
+                arm(20,25,23,28,27,28-wave);arm(28,25,35,27,42,28+wave)
+            case "trash","luggage":
+                box(34,32-wave*2,8,9,kind == "trash" ? 0x46584C : 0xAA7856)
+                line([CGPoint(x:36,y:32-wave*2),CGPoint(x:36,y:30-wave*2),CGPoint(x:40,y:30-wave*2),CGPoint(x:40,y:32-wave*2)],0x33453C,1)
+                arm(28,25,32,28,38,30-wave*2);arm(20,25,19,28,19,31)
+            default:
+                box(27,31,16,1.5,0xB18C60);box(32,27,4,4,0xEEE1C4);oval(38,28,5,3,0xCEAB6E)
+                arm(20,25,24,29,28,31);arm(28,25,33,29,40,31)
+            }
+        }.frame(width:48,height:48)
     }
 }

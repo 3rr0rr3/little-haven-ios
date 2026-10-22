@@ -231,9 +231,11 @@ final class LittleHavenUITests: XCTestCase {
     func testPoliceFineAndBribe() {
         let app = launch("--ui-police")
         XCTAssertTrue(app.buttons["Risk a bribe / 80"].waitForExistence(timeout:10))
+        XCTAssertFalse(app.buttons["Back"].exists,"Police conversation has no dismiss button")
         app.buttons["Risk a bribe / 80"].tap()
         XCTAssertTrue(cash(app).contains("780"))
         XCTAssertTrue(app.buttons["Pay fine / 350"].waitForExistence(timeout:3))
+        XCTAssertFalse(app.buttons["Back"].exists,"Rejected bribe still requires payment")
         capture(app,"Police refuse bribe after a fatal emergency")
         app.buttons["Pay fine / 350"].tap()
         XCTAssertTrue(cash(app).contains("430"))
@@ -601,6 +603,20 @@ final class LittleHavenUITests: XCTestCase {
         capture(app,"Player helping rescued guest recover")
         Thread.sleep(forTimeInterval:5)
         XCTAssertTrue(app.buttons["Walk east"].exists)
+    }
+    func testPoliceFindsPlayerInFullscreenOffice() {
+        let app=XCUIApplication();app.launchArguments=["--ui-police-pursuit","--ui-touch","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["Pay fine / 200"].waitForExistence(timeout:20),"Officer must walk around reception counter and approach player")
+        XCTAssertFalse(app.buttons["Back"].exists)
+        app.coordinate(withNormalizedOffset:CGVector(dx:0.05,dy:0.15)).tap()
+        XCTAssertTrue(app.buttons["Pay fine / 200"].exists,"Tapping outside must not dismiss the conversation")
+        app.buttons["Risk a bribe / 80"].tap()
+        XCTAssertTrue(app.buttons["Pay fine / 350"].waitForExistence(timeout:3))
+        XCTAssertFalse(app.buttons["Back"].exists)
+        capture(app,"Mandatory police decision in fullscreen reception")
+        app.buttons["Pay fine / 350"].tap()
+        XCTAssertFalse(app.buttons["Pay fine / 350"].exists)
+        XCTAssertTrue(app.buttons["fullscreenPause"].exists)
     }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
