@@ -207,7 +207,7 @@ extension Motel {
         if player.distance(to:groundTile(FamilyHome.door)) <= 1 { return .home }
         for shop in NeighborhoodShop.allCases where player.distance(to:groundTile(shop.door)) <= 1 { return .shop(shop) }
         if nearbyIncident { return .incident }
-        if let guest = waiting.first(where: { player.distance(to: waitingTile($0.id)) <= 1 }) { return .guest(guest.id) }
+        if let guest = waiting.first(where: { $0.id != reception.visitor?.guest.id && player.distance(to: waitingTile($0.id)) <= 1 }) { return .guest(guest.id) }
         if player.distance(to: groundTile(MotelGrounds.officeDoor)) <= 1 { return .office }
         for room in rooms where room.id / 9 == viewingFloor && player.distance(to: groundRoomDoor(room.id)) <= 1 { return .room(room.id) }
         if !goalReached && (player.distance(to: MotelGrounds.sign) <= 1 || player.distance(to: groundRoomDoor(rooms.count)) <= 1) { return .construction }
@@ -302,7 +302,7 @@ extension Motel {
             world = state
             return
         }
-        let occupied = Set(waiting.map { waitingTile($0.id) } + state.travellers.map(\.player))
+        let occupied = Set(waiting.filter{$0.id != reception.visitor?.guest.id}.map { waitingTile($0.id) } + state.travellers.map(\.player))
         guard !groundBlocked(next), !bikeBlocks(next), !occupied.contains(next) else { world = state; return }
         if dx != 0 && dy != 0 {
             for tile in [Tile(x: state.player.x + dx, y: state.player.y), Tile(x: state.player.x, y: state.player.y + dy)] {

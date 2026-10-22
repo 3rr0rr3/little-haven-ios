@@ -1388,6 +1388,15 @@ func clearReceptionEntranceRules() {
     office.tickWorld();office.tickReception()
     require(office.reception.visitor==nil && office.worldState.travellers.filter{$0.id==guest.id}.count==1,"One guest exits after the previous guest moves away")
     require(Set(office.worldState.travellers.map(\.player)).count==office.worldState.travellers.count,"Departing guests do not overlap at the exit")
+    var inside=Motel();inside.initializeWorld()
+    let insideGuest=inside.waiting[0]
+    var atDesk=OfficeVisitor(guest:insideGuest);atDesk.phase = .waiting;atDesk.pathIndex=OfficeVisitor.path.count-1
+    inside.world!.reception!.visitor=atDesk;inside.world!.place = .grounds
+    let oldSpot=inside.waitingTile(insideGuest.id)
+    inside.world!.player=Tile(x:oldSpot.x-1,y:oldSpot.y)
+    require(inside.nearbyAction != .guest(insideGuest.id),"An indoor client cannot be spoken to at an invisible outdoor spot")
+    inside.moveActor(dx:1,dy:0)
+    require(inside.actorTile==oldSpot,"An indoor client cannot block outdoor walking")
     require(ChaosKind.pool.responseDuration==9,"Pool rescue uses the previous animation duration")
     print("PASS: distributed waiting areas, clear sidewalks and entrance, legacy crowd migration, saved waiting guests and one-at-a-time office exits")
 }
