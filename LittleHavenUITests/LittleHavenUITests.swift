@@ -574,6 +574,34 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(restored.waitForExistence(timeout:5))
         XCTAssertEqual(restored.value as? String,savedPosition,"Creative changes survive closing and reopening the app")
     }
+
+    func testFullscreenCounterGuestAndToolbarVisibility() {
+        let app=XCUIApplication();app.launchArguments=["--ui-counter","--ui-touch","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["office_guest"].waitForExistence(timeout:15))
+        app.buttons["office_guest"].tap()
+        XCTAssertTrue(app.buttons["Accept guest & collect payment"].waitForExistence(timeout:5),app.debugDescription)
+        capture(app,"Reception guest interaction from behind counter")
+        app.buttons["Close interaction"].tap()
+        XCTAssertTrue(app.buttons["hideFullscreenToolbar"].waitForExistence(timeout:5))
+        app.buttons["hideFullscreenToolbar"].tap()
+        XCTAssertTrue(app.buttons["restoreFullscreenToolbar"].waitForExistence(timeout:3))
+        XCTAssertFalse(app.buttons["fullscreenPause"].exists)
+        capture(app,"Hidden toolbar retains joystick and restore button")
+        app.buttons["restoreFullscreenToolbar"].tap()
+        XCTAssertTrue(app.buttons["fullscreenPause"].waitForExistence(timeout:3))
+    }
+    func testPlayerPoolRescueAnimation() {
+        let app=launch("--ui-action-response-pool")
+        XCTAssertTrue(app.buttons["Walk east"].waitForExistence(timeout:15))
+        Thread.sleep(forTimeInterval:1)
+        capture(app,"Player swimming to actual guest")
+        Thread.sleep(forTimeInterval:2)
+        capture(app,"Player bringing guest to shore")
+        Thread.sleep(forTimeInterval:2)
+        capture(app,"Player helping rescued guest recover")
+        Thread.sleep(forTimeInterval:5)
+        XCTAssertTrue(app.buttons["Walk east"].exists)
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

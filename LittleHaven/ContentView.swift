@@ -34,7 +34,25 @@ struct ContentView: View {
     private static func initialGame() -> Game {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
-        if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch")}
+        Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
+        if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}
+        if args.contains("--ui-counter") {
+            var sample=Game();sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.world!.place = .office;sample.motel!.world!.player=OfficeReception.clerk
+            var visitor=OfficeVisitor(guest:sample.motel!.waiting[0]);visitor.phase = .waiting;visitor.pathIndex=OfficeVisitor.path.count-1
+            sample.motel!.world!.reception!.visitor=visitor
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            sample.save();return sample
+        }
+        if let kind=ChaosKind.allCases.first(where:{args.contains("--ui-action-response-"+$0.rawValue)}) {
+            var sample=Game();sample.wakeUp();sample.motel!.initializeWorld()
+            for id in 0..<3 {_=sample.motel!.checkIn(guestID:10+id,roomID:id)}
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=kind.approach
+            sample.motel!.operations=MotelOperations()
+            sample.motel!.operations!.incident=MotelIncident(kind:kind,guest:sample.motel!.rooms[1].guest,otherGuest:sample.motel!.rooms[2].guest)
+            sample.motel!.operations!.nextIncidentTick=10000
+            sample.save();return sample
+        }
         if args.contains("--ui-creative") || args.contains("--ui-creative-moved") {
             var sample=Game();sample.coins=5000;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.cash=5000
             sample.motel!.guestsServed=20
@@ -632,6 +650,7 @@ extension EnvironmentValues {
 }
 
 struct GameOptionsView: View {
+    @AppStorage("littlehaven.hideFullscreenToolbar") private var hideFullscreenToolbar = false
     @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
     @Environment(\.dismiss) private var dismiss
     @AppStorage("littlehaven.hints") private var hints = true
@@ -647,6 +666,7 @@ struct GameOptionsView: View {
                     Toggle("Action haptics", isOn: $haptics)
                     Toggle("Full screen / joystick controls", isOn: $fullscreenTouch).accessibilityIdentifier("optionFullscreenTouch")
                     Text("Fill the screen with the world. Move the visible joystick to walk and release it to stop. Tap nearby objects or use the action button.").font(.caption)
+                    if fullscreenTouch {Toggle("Hide top toolbar",isOn:$hideFullscreenToolbar).accessibilityIdentifier("optionHideToolbar");Text("Tap the small eye button to restore the toolbar. Emergency alerts remain visible.").font(.caption)}
                     if !fullscreenTouch { Toggle("Larger D-pad buttons", isOn: $largeControls).accessibilityIdentifier("optionLargeControls") }
                     Divider().overlay(Color(hex:0xEFC977))
                     Text("Controls").font(.title2.monospaced().bold())
@@ -655,7 +675,7 @@ struct GameOptionsView: View {
                     Divider().overlay(Color(hex:0xEFC977))
                     Text("Saved game").font(.title2.monospaced().bold())
                     Text("Continue loads your last checkpoint. New Game starts from zero after confirmation. Save at the office before leaving. Quit closes the game session; use the Home gesture to leave the app.")
-                    Button("Restore default options") { hints = true; haptics = true; largeControls = false; fullscreenTouch = false }
+                    Button("Restore default options") { hints = true; haptics = true; largeControls = false; fullscreenTouch = false; hideFullscreenToolbar = false }
                         .buttonStyle(MotelButtonStyle(subdued:true))
                 }.font(.subheadline).padding(22)
                     .background(Color(hex:0x29483D),in:RoundedRectangle(cornerRadius:16))

@@ -160,7 +160,7 @@ enum BasementLayout {
     static let homeStairs=Tile(x:1,y:13)
     static let stairs=Tile(x:12,y:25)
     static let arrival=Tile(x:12,y:24)
-    static let titles=["Wizard Chichu","Two-tail fox","Blue Chichu","Ogre Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Football Chichu"]
+    static let titles=["Wizard Chichu","Two-tail fox","Blue Chichu","Shrek Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Messi Chichu"]
     static func pen(_ id:Int)->RPGRegion {RPGRegion(x:id%2 == 0 ? 2 : 15,y:3+(id/2)*5,width:8,height:4)}
     static func gate(_ id:Int)->Tile {let p=pen(id);return Tile(x:id%2 == 0 ? 10 : 14,y:p.y+2)}
     static func creature(_ id:Int,tick:Int)->Tile {
@@ -200,5 +200,15 @@ extension Motel {
         world!.corrals![id]=care
         lastEvent=BasementLayout.titles[id]+(feed ? " enjoys a fresh meal." : " comes to the fence for attention.")
         return true
+    }
+}
+
+extension Motel {
+    /// The visitor and receptionist can speak across the solid counter.
+    func canTouchInteract(at target:Tile)->Bool {
+        if actorTile.distance(to:target)<=2 {return true}
+        guard isAtReception,let visitor=reception.visitor,visitor.phase == .waiting,
+              visitor.tile == target else{return false}
+        return (2...6).contains(actorTile.x) && actorTile.y == 3
     }
 }

@@ -216,6 +216,7 @@ struct MotelOperations: Codable {
     var actionUntil: Int?
     var visual: HotelVisual?
     var visualSerial: Int?
+    var lastPoolGuestName:String?
     var cars: [HotelCar]?
     var washIncome: Int?
     var weatherOverride: HotelWeather?
@@ -314,7 +315,7 @@ extension Motel {
         var state = operationsState
         let incident = state.incident!
         state.visualSerial = (state.visualSerial ?? 0) + 1
-        state.visual = HotelVisual(id:state.visualSerial!,kind:incident.kind == .fire ? "extinguish" : incident.kind == .pool ? "rescue" : "calm",origin:actorTile,target:incident.tile,map:"grounds")
+        state.visual = HotelVisual(id:state.visualSerial!,kind:incident.kind == .fire ? "extinguish" : incident.kind == .pool ? "rescue" : "calm",origin:actorTile,target:incident.tile,map:"grounds",guest:incident.guest,otherGuest:incident.otherGuest,outfit:FamilyHome.outfitColors[household.outfit])
         state.incident = nil
         state.incidentsResolved += 1
         state.nextIncidentTick = state.tick + 30
@@ -345,7 +346,11 @@ extension Motel {
             if kind == .pool || !sites.isEmpty {
                 state.incidentsStarted += 1
                 let guests=rooms.compactMap(\.guest)
-                state.incident=MotelIncident(kind:kind,guest:guests.first,otherGuest:guests.dropFirst().first)
+                let candidates=kind == .pool ? guests.filter{$0.name != state.lastPoolGuestName} : guests
+                let victim=(candidates.isEmpty ? guests : candidates).randomElement()
+                let other=guests.filter{$0.id != victim?.id}.randomElement()
+                state.incident=MotelIncident(kind:kind,guest:victim,otherGuest:other)
+                if kind == .pool {state.lastPoolGuestName=victim?.name}
                 if kind == .pool {state.incident!.location=groundTile(kind.tile)}
                 else {state.incident!.location=sites[(state.incidentsStarted/3+(kind == .fight ? 2 : 0))%sites.count]}
                 lastEvent=kind.title+" Check the grounds or send a trained employee."
@@ -660,6 +665,9 @@ struct HotelVisual: Codable {
     let origin: Tile
     let target: Tile
     let map: String
+    var guest:MotelGuest? = nil
+    var otherGuest:MotelGuest? = nil
+    var outfit:UInt32? = nil
 }
 struct HotelCar: Codable, Identifiable {
     let id: Int

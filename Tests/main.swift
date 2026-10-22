@@ -1,4 +1,6 @@
 import Foundation
+
+Motel.randomizeGuestArrivals = false
 import Darwin
 setbuf(stdout,nil)
 
@@ -1262,3 +1264,39 @@ func creativeEmergencyAccessRules() {
     print("PASS: creative placement protects active emergencies and keeps future incidents reachable")
 }
 creativeEmergencyAccessRules()
+
+func responseAndGuestVariationRules() {
+    var hotel=Motel();hotel.initializeWorld();hotel.world!.place = .office
+    var visitor=OfficeVisitor(guest:hotel.waiting[0]);visitor.phase = .waiting;visitor.pathIndex=OfficeVisitor.path.count-1
+    hotel.world!.reception!.visitor=visitor;hotel.world!.player=OfficeReception.clerk
+    require(hotel.canTouchInteract(at:visitor.tile),"Receptionist can speak across counter")
+    hotel.world!.player=Tile(x:12,y:3)
+    require(!hotel.canTouchInteract(at:visitor.tile),"Reception exception does not permit remote guest interaction")
+    hotel.world!.place = .house;hotel.world!.player=OfficeReception.clerk
+    require(!hotel.canTouchInteract(at:visitor.tile),"Counter exception is limited to reception")
+    let batches=(1...20).map{Motel.arrivals(day:$0,count:4,randomize:true)}
+    require(Set(batches.map{$0.map(\.name).joined(separator:",")}).count>1,"Daily guest combinations and order vary")
+    require(batches.allSatisfy{Set($0.map(\.id)).count==$0.count && Set($0.map(\.name)).count==$0.count},"Each arriving batch has distinct identities")
+    require(Set(batches.flatMap{$0}.map(\.id)).count==80,"Guest IDs remain unique across days")
+    hotel=Motel();hotel.initializeWorld();hotel.world!.place = .grounds
+    for id in 0..<3 {_=hotel.checkIn(guestID:10+id,roomID:id)}
+    var victims:[String]=[]
+    for _ in 0..<12 {
+        hotel.operations!.incident=nil;hotel.operations!.incidentsStarted=1;hotel.operations!.nextIncidentTick=0
+        hotel.tickManagement()
+        let event=hotel.operationsState.incident!
+        require(event.kind == .pool && event.guest != nil,"Pool selects an actual checked-in guest")
+        if let previous=victims.last {require(event.guest!.name != previous,"Pool does not repeatedly choose the same victim when others are available")}
+        victims.append(event.guest!.name)
+        hotel.world!.player=event.approach
+        require(hotel.resolveNearbyIncident(),"Rescue begins at pool")
+        let visual=hotel.operationsState.visual!
+        require(visual.guest?.id==event.guest?.id && visual.outfit != nil,"Rescue animation retains victim identity and player outfit")
+        require(!hotel.resolveNearbyIncident(),"Response cannot award completion twice")
+        let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(hotel))
+        require(restored.operationsState.lastPoolGuestName==event.guest?.name,"Victim rotation survives checkpoints")
+    }
+    require(BasementLayout.titles[3]=="Shrek Chichu" && BasementLayout.titles[7]=="Messi Chichu","Sanctuary names updated")
+    print("PASS: counter interaction, randomized arrivals, varied pool victims, response identity and creature names")
+}
+responseAndGuestVariationRules()

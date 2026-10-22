@@ -42,6 +42,8 @@ struct MotelView: View {
     @Binding var game: Game
     @Environment(\.returnToTitle) private var returnToTitle
     @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
+    @AppStorage("littlehaven.hideFullscreenToolbar") private var hideFullscreenToolbar = false
+    @State private var responseDuration = 0.0
     @State private var joystickDirection:Tile?
     @AppStorage("littlehaven.hints") private var showHints = true
     @AppStorage("littlehaven.haptics") private var haptics = true
@@ -79,7 +81,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
@@ -109,6 +111,9 @@ struct MotelView: View {
             change { $0.reconcileInteriorSpawn(); if !testingUI || ProcessInfo.processInfo.arguments.contains("--ui-management") { $0.enableManagement() } }
             if motel.business.police?.arrived == true { showPolice=true }
             #if DEBUG
+            if let kind=ChaosKind.allCases.first(where:{ProcessInfo.processInfo.arguments.contains("--ui-action-response-"+$0.rawValue)}) {
+                change{_=$0.resolveNearbyIncident()};responseDuration=kind == .pool ? 9 : 3.6
+            }
             if ProcessInfo.processInfo.arguments.contains("--ui-dialogue") { family = .hildarelys }
             for id in 0..<8 where ProcessInfo.processInfo.arguments.contains("--ui-corral-\(id)") {corral=id}
             if ProcessInfo.processInfo.arguments.contains("--ui-creative-preview") {showCreative=true}
@@ -129,6 +134,11 @@ struct MotelView: View {
             }
         }
         .onChange(of:fullscreenTouch) {_,_ in stop()}
+        .task(id:responseDuration) {
+            guard responseDuration > 0 else{return}
+            do {try await Task.sleep(for:.seconds(responseDuration))} catch {return}
+            responseDuration=0
+        }
         .task(id: movement) {
             guard let direction = movement else { return }
             let clock=ContinuousClock()
@@ -247,6 +257,9 @@ struct MotelView: View {
             scene.ignoresSafeArea()
                 .environment(\.worldTouch,interactAtTouch)
             VStack(spacing:8) {
+                if hideFullscreenToolbar {
+                    HStack {Spacer();Button {hideFullscreenToolbar=false} label:{Image(systemName:"eye").padding(12).background(.ultraThinMaterial,in:Capsule())}.accessibilityLabel("Show top toolbar").accessibilityIdentifier("restoreFullscreenToolbar")}
+                } else {
                 VStack(spacing:8) {
                     HStack(spacing:10) {
                         VStack(alignment:.leading,spacing:2) {
@@ -267,11 +280,13 @@ struct MotelView: View {
                             toolbarItem("Office PC",symbol:"desktopcomputer",id:"fullscreenComputer"){showManagement=true}
                         }
                         toolbarItem("Creative",symbol:"square.and.pencil",id:"openCreative"){showCreative=true}
+                        toolbarItem("Hide",symbol:"eye.slash",id:"hideFullscreenToolbar"){hideFullscreenToolbar=true}
                         toolbarItem("Pause",symbol:"pause",id:"fullscreenPause"){showPause=true}
                     }
                 }.padding(12)
                     .background(.ultraThinMaterial,in:RoundedRectangle(cornerRadius:22))
                     .overlay(RoundedRectangle(cornerRadius:22).stroke(cream.opacity(0.12),lineWidth:1))
+                }
                 priorityAlerts
                 Spacer()
                 if working {ProgressView(value:workProgress).tint(gold)}
@@ -301,7 +316,7 @@ struct MotelView: View {
     private func interactAtTouch(_ target:Tile,_ completion:(()->Void)?) {
         guard fullscreenTouch,!paused,!motel.caught else{return}
         stop()
-        guard motel.actorTile.distance(to:target)<=2 else {toast="Move closer to interact.";return}
+        guard motel.canTouchInteract(at:target) else {toast="Move closer to interact.";return}
         completion?()
     }
     private var worldScreen: some View {
@@ -791,7 +806,10 @@ struct MotelView: View {
         return [DialogueChoice(title:"Watch together",action:{ toast = "You share a funny cartoon with Samhil."; family = nil })]
     }
     private func incidentChoices(_ kind: ChaosKind) -> [DialogueChoice] {
-        if motel.nearbyIncident { return [DialogueChoice(title:kind.action,action:{ change { _ = $0.resolveNearbyIncident() }; showIncident = false })] }
+        if motel.nearbyIncident { return [DialogueChoice(title:kind.action,action:{
+            let duration=kind == .pool ? 9.0 : 3.6
+            change { _ = $0.resolveNearbyIncident() };showIncident=false;responseDuration=duration
+        })] }
         if motel.isAtReception { return [DialogueChoice(title:"Go outside",action:{ change { _ = $0.leaveReception() }; showIncident = false })] }
         return []
     }

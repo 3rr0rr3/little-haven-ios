@@ -264,7 +264,7 @@ final class RPGScene: SKScene {
                 let frames=activityFrames(actor.action)
                 let prop=SKSpriteNode(texture:frames[0])
                 prop.name="activity"; prop.size=CGSize(width:actor.action == "carwash" ? 24 : 40,height:actor.action == "carwash" ? 24 : 40)
-                prop.position = actor.action == "carwash" ? CGPoint(x:8,y:-8) : actor.action == "extinguish" ? CGPoint(x:0,y:14) : actor.action == "rescue" ? CGPoint(x:0,y:22) : CGPoint(x:10,y:-1)
+                prop.position = actor.action == "carwash" ? CGPoint(x:8,y:-8) : actor.action == "extinguish" ? CGPoint(x:8,y:-4) : actor.action == "rescue" ? CGPoint(x:8,y:-4) : CGPoint(x:10,y:-1)
                 prop.zPosition=5
                 prop.run(.repeatForever(.animate(with:frames,timePerFrame:0.12)))
                 node.addChild(prop)
@@ -274,6 +274,7 @@ final class RPGScene: SKScene {
             }
             if actor.effect == 0 {node.zRotation=actor.resting ? -0.12 : 0}
             node.zPosition = CGFloat(actor.tile.y * 16)
+            if actor.id == "player" {node.alpha=world.childNode(withName:"player-response") == nil ? 1 : 0}
             let caption = actor.marker
             if caption.isEmpty { node.childNode(withName:"caption")?.removeFromParent() }
             else {
@@ -367,11 +368,13 @@ final class RPGScene: SKScene {
         return frames
     }
     @MainActor private func showVisual(_ visual:HotelVisual) {
+        if ["extinguish","rescue","calm"].contains(visual.kind) {showResponse(visual);return}
         let frames=activityFrames(visual.kind)
         let sprite=SKSpriteNode(texture:frames[0])
-        sprite.size=CGSize(width:visual.kind == "checkin" ? 22 : 48,height:visual.kind == "checkin" ? 22 : 48)
+        sprite.size=CGSize(width:visual.kind == "checkin" ? 22 : 28,height:visual.kind == "checkin" ? 22 : 28)
         sprite.position=CGPoint(x:CGFloat(visual.target.x*16+8),y: -CGFloat(visual.target.y*16+5))
-        sprite.zPosition=CGFloat(visual.target.y*16+100)
+        if !visual.kind.hasPrefix("steal-") && visual.kind != "checkin" {sprite.position=CGPoint(x:visual.origin.x*16+15,y:-(visual.origin.y*16+9))}
+        sprite.zPosition=CGFloat(visual.origin.y*16+100)
         world.addChild(sprite)
         if visual.kind.hasPrefix("steal-") {
             sprite.size=CGSize(width:32,height:32)
@@ -384,6 +387,98 @@ final class RPGScene: SKScene {
             sprite.run(.sequence([.repeat(.animate(with:frames,timePerFrame:0.1),count:3),.fadeOut(withDuration:0.25),.removeFromParent()]))
         }
     }
+
+    /// Animate the same paper character at hand height, rather than a tool over its head.
+    @MainActor private func showResponse(_ visual:HotelVisual) {
+        world.childNode(withName:"player-response")?.removeFromParent()
+        let root=SKNode();root.name="player-response";root.zPosition=30000
+        world.addChild(root)
+        world.childNode(withName:"actor:player")?.alpha=0
+        func point(_ tile:Tile)->CGPoint {CGPoint(x:tile.x*16+8,y:-(tile.y*16+5))}
+        func person(_ guest:MotelGuest?,player:Bool=false)->SKSpriteNode {
+            let actor=RPGActor(id:"response",tile:visual.origin,color:player ? (visual.outfit ?? 0x6AACA3) : (guest?.color ?? 0xD99B7E),variant:player ? 7 : (guest?.appearanceSeed ?? 100),facing:2)
+            let node=SKSpriteNode(texture:sprite(actor,stride:0));node.size=CGSize(width:24,height:28)
+            if player {
+                let frames=[sprite(actor,stride:1),sprite(actor,stride:0),sprite(actor,stride:-1),sprite(actor,stride:0)]
+                node.run(.repeatForever(.animate(with:frames,timePerFrame:0.14)),withKey:"response-limbs")
+            }
+            root.addChild(node);return node
+        }
+        func arm(on node:SKNode,x:CGFloat)->SKShapeNode {
+            let arm=SKShapeNode(rectOf:CGSize(width:3,height:8),cornerRadius:1.5)
+            arm.fillColor=UIColor(red:0.88,green:0.71,blue:0.55,alpha:1);arm.strokeColor = .clear
+            arm.position=CGPoint(x:x,y:-2);arm.zPosition=4;node.addChild(arm);return arm
+        }
+        let player=person(nil,player:true);player.position=point(visual.origin);player.zPosition=4
+        let hand=arm(on:player,x:8)
+        let caption=SKLabelNode(fontNamed:"AvenirNext-Bold")
+        caption.fontSize=5;caption.fontColor=UIColor(red:1,green:0.93,blue:0.74,alpha:1)
+        caption.position=CGPoint(x:point(visual.origin).x,y:point(visual.origin).y+26)
+        root.addChild(caption)
+        let duration:Double
+        if visual.kind == "rescue" {
+            duration=9;caption.text="SWIMMING TO GUEST"
+            let victim=person(visual.guest);victim.position=point(visual.target);victim.zPosition=3
+            let waterline=SKShapeNode(ellipseOf:CGSize(width:30,height:8))
+            waterline.fillColor=UIColor(red:0.38,green:0.76,blue:0.8,alpha:0.75)
+            waterline.strokeColor=UIColor(white:0.95,alpha:0.8);waterline.lineWidth=0.7
+            waterline.position=CGPoint(x:0,y:-7);waterline.zPosition=6;player.addChild(waterline)
+            hand.run(.repeatForever(.sequence([.rotate(toAngle:1.4,duration:0.2),.rotate(toAngle:-1.1,duration:0.2)])),withKey:"swim-stroke")
+            let left=arm(on:player,x:-8)
+            left.run(.repeatForever(.sequence([.rotate(toAngle:-1.2,duration:0.2),.rotate(toAngle:1.1,duration:0.2)])))
+            player.run(.sequence([.rotate(toAngle:-0.65,duration:0.2),.move(to:point(visual.target),duration:1.8),
+                .run {caption.text="PULLING GUEST TO SAFETY"},
+                .move(to:point(visual.origin),duration:2),.rotate(toAngle:0,duration:0.2),
+                .run {waterline.removeFromParent();left.removeFromParent();hand.removeAction(forKey:"swim-stroke");player.removeAction(forKey:"response-limbs");caption.text="HELPING GUEST RECOVER"},
+                .repeat(.sequence([.moveBy(x:0,y:-2,duration:0.18),.moveBy(x:0,y:2,duration:0.18)]),count:10),
+                .run {caption.text="GUEST IS SAFE"}]))
+            let shore=CGPoint(x:point(visual.origin).x+14,y:point(visual.origin).y-5)
+            victim.run(.sequence([.wait(forDuration:2),.group([.move(to:shore,duration:2),.rotate(toAngle:0.35,duration:2)]),
+                .rotate(toAngle:.pi/2,duration:0.2),.wait(forDuration:3.6),.rotate(toAngle:0,duration:0.3),
+                .moveBy(x:10,y:0,duration:0.5)]))
+            // Both hands compress together over the rescued guest during the recovery phase.
+            let compression=arm(on:player,x:11);compression.isHidden=true
+            compression.run(.sequence([.wait(forDuration:4.2),.unhide(),
+                .repeat(.sequence([.moveBy(x:2,y:-3,duration:0.18),.moveBy(x:-2,y:3,duration:0.18)]),count:10),.hide()]))
+            hand.run(.sequence([.wait(forDuration:4.2),.repeat(.sequence([.moveBy(x:2,y:-3,duration:0.18),.moveBy(x:-2,y:3,duration:0.18)]),count:10)]))
+        } else if visual.kind == "extinguish" {
+            duration=3.6;caption.text="USING EXTINGUISHER"
+            let tank=SKShapeNode(rectOf:CGSize(width:6,height:11),cornerRadius:1.5)
+            tank.fillColor=UIColor(red:0.78,green:0.24,blue:0.18,alpha:1);tank.strokeColor=UIColor(white:0.85,alpha:1);tank.lineWidth=0.5
+            tank.position=CGPoint(x:9,y:-4);tank.zPosition=5;player.addChild(tank)
+            let lever=SKShapeNode(rectOf:CGSize(width:6,height:1.2))
+            lever.fillColor = .darkGray;lever.strokeColor = .clear;lever.position=CGPoint(x:0,y:7);tank.addChild(lever)
+            lever.run(.repeatForever(.sequence([.rotate(toAngle:-0.25,duration:0.15),.rotate(toAngle:0,duration:0.15)])))
+            hand.run(.repeatForever(.sequence([.moveBy(x:0,y:1.5,duration:0.15),.moveBy(x:0,y:-1.5,duration:0.15)])))
+            let fireActor=RPGActor(id:"response-fire",tile:visual.target,color:0xE78245,variant:0,effect:1)
+            let fire=SKSpriteNode(texture:sprite(fireActor,stride:0));fire.size=CGSize(width:28,height:34)
+            fire.position=point(visual.target);root.addChild(fire)
+            fire.run(.sequence([.wait(forDuration:0.6),.group([.fadeOut(withDuration:2.3),.scale(to:0.25,duration:2.3)])]))
+            for i in 0..<24 {
+                let foam=SKShapeNode(circleOfRadius:CGFloat(1+i%3))
+                foam.fillColor=UIColor(red:0.87,green:0.96,blue:0.94,alpha:0.85);foam.strokeColor = .clear
+                foam.position=CGPoint(x:player.position.x+10,y:player.position.y+1);foam.alpha=0;foam.zPosition=6;root.addChild(foam)
+                let destination=CGPoint(x:fire.position.x+CGFloat(i%7-3),y:fire.position.y+CGFloat(i%5))
+                foam.run(.sequence([.wait(forDuration:Double(i)*0.1),.fadeIn(withDuration:0.05),
+                    .group([.move(to:destination,duration:0.45),.scale(to:2,duration:0.45)]),.fadeOut(withDuration:0.3)]))
+            }
+        } else {
+            duration=3.6;caption.text="SEPARATING THE GUESTS"
+            let first=person(visual.guest),second=person(visual.otherGuest)
+            first.position=point(visual.target);second.position=CGPoint(x:first.position.x+16,y:first.position.y)
+            player.run(.sequence([.move(to:CGPoint(x:first.position.x+8,y:first.position.y-5),duration:0.6),
+                .run {caption.text="CALM DOWN — GIVE EACH OTHER SPACE"}]))
+            hand.run(.repeatForever(.sequence([.rotate(toAngle:-1.2,duration:0.3),.rotate(toAngle:-0.5,duration:0.3)])))
+            let left=arm(on:player,x:-8)
+            left.run(.repeatForever(.sequence([.rotate(toAngle:1.2,duration:0.3),.rotate(toAngle:0.5,duration:0.3)])))
+            first.run(.sequence([.wait(forDuration:0.6),.moveBy(x:-22,y:3,duration:1.2)]))
+            second.run(.sequence([.wait(forDuration:0.6),.moveBy(x:22,y:3,duration:1.2)]))
+        }
+        root.run(.sequence([.wait(forDuration:duration),.fadeOut(withDuration:0.15),.run { [weak self] in
+            self?.world.childNode(withName:"actor:player")?.alpha=1
+        },.removeFromParent()]))
+    }
+
     @MainActor private func configureCars(_ cars:[HotelCar],day:Int,positions:[Int:Tile]) {
         let ids=Set(cars.map { "car:\($0.id)" })
         for node in world.children where node.name?.hasPrefix("car:") == true && !ids.contains(node.name!) { node.removeFromParent() }
