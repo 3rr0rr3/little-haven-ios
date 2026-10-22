@@ -968,31 +968,44 @@ private struct CreativeModeView:View {
         }
     }
     private func objectHandle(_ item:CreativeStructure)->some View {
-        let f=item.footprint,a=item.art,d=motel.creativeOffset(item.id)
-        return Rectangle().fill(selected==item.id ? Color.yellow.opacity(0.12) : Color.white.opacity(0.001))
-            .overlay(Rectangle().stroke(selected==item.id ? Color.yellow : Color.white.opacity(0.2),lineWidth:selected==item.id ? 2 : 0.5))
+        let a=item.art,d=motel.creativeOffset(item.id),f=item.footprint
+        let active=selected==item.id
+        let fill:Color=active ? Color.yellow.opacity(0.12) : Color.white.opacity(0.001)
+        let border:Color=active ? Color.yellow : Color.white.opacity(0.2)
+        let positionText="Column \(f.x+d.x), row \(f.y+d.y)."
+        let handle=Rectangle().fill(fill)
+            .overlay(Rectangle().stroke(border,lineWidth:active ? 2 : 0.5))
             .frame(width:CGFloat(a.width),height:CGFloat(a.height))
             .offset(x:CGFloat(a.x+d.x*16),y:CGFloat(a.y+d.y*16))
+        return handle
             .accessibilityElement(children:.ignore).accessibilityAddTraits(.isButton)
-            .accessibilityLabel(item.title).accessibilityValue("Column \(f.x+d.x), row \(f.y+d.y).").accessibilityIdentifier("creative-"+item.id)
+            .accessibilityLabel(Text(item.title)).accessibilityValue(Text(positionText))
+            .accessibilityIdentifier("creative-"+item.id)
             .onTapGesture {selected=item.id;message="Hold and drag "+item.title.lowercased()+" to relocate it."}
-            .gesture(LongPressGesture(minimumDuration:0.35).sequenced(before:DragGesture(minimumDistance:0,coordinateSpace:.named("creativeMap")))
-                .onChanged {value in
-                    switch value {
-                    case .first(true):selected=item.id
-                    case .second(true,let drag):
-                        selected=item.id
-                        if let drag {
-                            destination=Tile(x:f.x+d.x+Int((drag.translation.width/16).rounded()),y:f.y+d.y+Int((drag.translation.height/16).rounded()))
-                        }
-                    default:break
+            .gesture(relocationGesture(item))
+    }
+    private func relocationGesture(_ item:CreativeStructure)->some Gesture {
+        let f=item.footprint,d=motel.creativeOffset(item.id)
+        return LongPressGesture(minimumDuration:0.35)
+            .sequenced(before:DragGesture(minimumDistance:0,coordinateSpace:.named("creativeMap")))
+            .onChanged { (value:SequenceGesture<LongPressGesture,DragGesture>.Value) in
+                switch value {
+                case .first(true):selected=item.id
+                case .second(true,let drag):
+                    selected=item.id
+                    if let drag {
+                        let dx=Int((drag.translation.width/16).rounded())
+                        let dy=Int((drag.translation.height/16).rounded())
+                        destination=Tile(x:f.x+d.x+dx,y:f.y+d.y+dy)
                     }
+                default:break
                 }
-                .onEnded {_ in
-                    if let target=destination {
-                        message=move(item.id,target) ? item.title+" placed." : "That position blocks a structure or entrance. Try open ground."
-                    }
-                    destination=nil
-                })
+            }
+            .onEnded {_ in
+                if let target=destination {
+                    message=move(item.id,target) ? item.title+" placed." : "That position blocks a structure or entrance. Try open ground."
+                }
+                destination=nil
+            }
     }
 }

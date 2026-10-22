@@ -36,7 +36,7 @@ struct ContentView: View {
         let args = ProcessInfo.processInfo.arguments
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch")}
         if args.contains("--ui-creative") || args.contains("--ui-creative-moved") {
-            var sample=Game();sample.coins=5000;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement()
+            var sample=Game();sample.coins=5000;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.cash=5000
             sample.motel!.guestsServed=20
             for role in StaffRole.allCases {_=sample.motel!.hire(role)}
             sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:12,y:8)
