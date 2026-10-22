@@ -91,8 +91,9 @@ struct MotelView: View {
             CreativeModeView(motel:motel,move:{id,tile in
                 var moved=false
                 change {moved=$0.relocateStructure(id,to:tile)}
+                if moved {game.save()}
                 return moved
-            },reset:{change{$0.resetCreativeLayout()}})
+            },reset:{change{$0.resetCreativeLayout()};game.save()})
         }
         .foregroundStyle(cream).background(Color(hex: 0x172A25))
         .overlay(alignment: .bottom) {
@@ -973,7 +974,7 @@ private struct CreativeModeView:View {
             .frame(width:CGFloat(a.width),height:CGFloat(a.height))
             .offset(x:CGFloat(a.x+d.x*16),y:CGFloat(a.y+d.y*16))
             .accessibilityElement(children:.ignore).accessibilityAddTraits(.isButton)
-            .accessibilityLabel(item.title).accessibilityIdentifier("creative-"+item.id)
+            .accessibilityLabel(item.title).accessibilityValue("Column \(f.x+d.x), row \(f.y+d.y).").accessibilityIdentifier("creative-"+item.id)
             .onTapGesture {selected=item.id;message="Hold and drag "+item.title.lowercased()+" to relocate it."}
             .gesture(LongPressGesture(minimumDuration:0.35).sequenced(before:DragGesture(minimumDistance:0,coordinateSpace:.named("creativeMap")))
                 .onChanged {value in

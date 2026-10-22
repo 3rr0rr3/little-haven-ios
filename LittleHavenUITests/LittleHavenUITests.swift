@@ -562,9 +562,17 @@ final class LittleHavenUITests: XCTestCase {
         let origin=washer.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5))
         origin.press(forDuration:0.6,thenDragTo:origin.withOffset(CGVector(dx:0,dy:192)))
         XCTAssertTrue(app.staticTexts["Washing machine placed."].waitForExistence(timeout:5),app.debugDescription)
+        let savedPosition=washer.value as? String
+        XCTAssertNotNil(savedPosition)
         capture(app,"Creative mode physical object relocation")
         app.buttons["closeCreative"].tap()
         XCTAssertTrue(app.descendants(matching:.any)["fullscreenJoystick"].firstMatch.waitForExistence(timeout:5))
+        app.terminate();app.launchArguments=["--ui-touch","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["openCreative"].waitForExistence(timeout:15))
+        app.buttons["openCreative"].tap()
+        let restored=app.descendants(matching:.any)["creative-washer"].firstMatch
+        XCTAssertTrue(restored.waitForExistence(timeout:5))
+        XCTAssertEqual(restored.value as? String,savedPosition,"Creative changes survive closing and reopening the app")
     }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
