@@ -917,9 +917,9 @@ struct WorkingCharacterArtwork:View {
                     c.stroke(Path(ellipseIn:CGRect(x:side-4,y:32+wave,width:8,height:2)),with:.color(.white.opacity(0.65)),lineWidth:0.6)
                 }
             case "cpr":
-                arm(21,27,29,29+press,40,33+press*1.5)
-                arm(29,27,34,29+press,40.5,33+press*1.5)
-                oval(38.5,32+press*1.5,4,2.2,skin)
+                arm(21,27,32,29+press,45,33+press*1.5)
+                arm(29,27,37,29+press,45.5,33+press*1.5)
+                oval(43.5,32+press*1.5,4,2.2,skin)
             case "calm":
                 arm(20,25,15,25-wave,11,21-wave);arm(28,25,33,25-wave,37,21-wave)
                 box(9.5,17-wave,3,5,skin);box(35.5,17-wave,3,5,skin)

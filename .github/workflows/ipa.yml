@@ -43,11 +43,6 @@ jobs:
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
           xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility -only-testing:LittleHavenUITests/LittleHavenUITests/testPlayerPoolRescueAnimation -resultBundlePath CreativeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
-      - name: Test controls, motel management and game-over recovery
-        timeout-minutes: 24
-        run: |
-          set -euo pipefail
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SIM_DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -skip-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -skip-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility -skip-testing:LittleHavenUITests/LittleHavenUITests/testPlayerPoolRescueAnimation -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
       - name: Verify and package IPA
         run: |
           set -euo pipefail
@@ -84,6 +79,17 @@ jobs:
             sleep 9
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-$MODE-$TIME.png"
           done
+      - name: Preserve response previews for early visual review
+        uses: actions/upload-artifact@v4
+        with:
+          name: Response-previews
+          path: LittleHaven-response-*.png
+          if-no-files-found: error
+      - name: Test controls, motel management and game-over recovery
+        timeout-minutes: 24
+        run: |
+          set -euo pipefail
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SIM_DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -skip-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -skip-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility -skip-testing:LittleHavenUITests/LittleHavenUITests/testPlayerPoolRescueAnimation -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
       - name: Capture chapter previews
         if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |
