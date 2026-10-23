@@ -1023,7 +1023,7 @@ struct HavenLifeView:View {
                 .navigationTitle("Haven life").navigationBarTitleDisplayMode(.inline)
                 .toolbar {ToolbarItem(placement:.confirmationAction) {Button("Done") {dismiss()}}}
                 .tint(Color(hex:0xEFC977)).onAppear{tab=initialTab}
-                .accessibilityIdentifier("havenLife")
+                .accessibilityElement(children:.contain)
         }
     }
     private var neighbors:some View {

@@ -51,6 +51,13 @@ jobs:
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
           xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility -only-testing:LittleHavenUITests/LittleHavenUITests/testPlayerPoolRescueAnimation -only-testing:LittleHavenUITests/LittleHavenUITests/testGuestStoryChoiceAndSavedMemory -only-testing:LittleHavenUITests/LittleHavenUITests/testLanternGuestStoryShow -only-testing:LittleHavenUITests/LittleHavenUITests/testNeighborRelationshipAndFavor -only-testing:LittleHavenUITests/LittleHavenUITests/testWeeklyActivityRoundsAndPrize -only-testing:LittleHavenUITests/LittleHavenUITests/testCorralAdventureAndEmployeeRequest -resultBundlePath CreativeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+      - name: Preserve focused failure diagnostics immediately
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Focused-test-failure
+          path: CreativeResults.xcresult
+          if-no-files-found: ignore
       - name: Verify and package IPA
         run: |
           set -euo pipefail
@@ -280,7 +287,7 @@ jobs:
           kill -KILL "$PUMP_VIDEO_PID" 2>/dev/null || true
           wait "$PUMP_VIDEO_PID" || true
       - name: Capture full screen touch mode and laundry
-        if: ${{ !cancelled() && always() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |
           set -euo pipefail
           xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
@@ -304,7 +311,7 @@ jobs:
           sleep 2
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-small-room-items.png
       - name: Capture basement and all eight residents
-        if: ${{ !cancelled() && always() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |
           set -euo pipefail
           xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
@@ -318,7 +325,7 @@ jobs:
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-corral-$ID.png"
           done
       - name: Capture restaurant bikes and corner stairs
-        if: ${{ !cancelled() && always() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |
           set -euo pipefail
           for MODE in fish fish-exterior bike bike-riding home-stairs; do
@@ -332,7 +339,7 @@ jobs:
           sleep 1
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-checkin-desk.png
       - name: Capture creative layout and subtle full-screen controls
-        if: ${{ !cancelled() && always() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |
           set -euo pipefail
           for MODE in creative creative-moved; do
