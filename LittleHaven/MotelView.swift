@@ -265,8 +265,16 @@ struct MotelView: View {
                     Button(motel.todaysActivity?.title ?? "Weekly activity") {stop();havenTab = .calendar;showHavenLife=true}
                         .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("openHavenActivity")
                 } else if let pet=motel.exploringPet {
-                    Button("Explore with "+motel.companionName(pet)) {stop();change{_=$0.exploreWithPet()};game.save()}
-                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("exploreWithPet")
+                    HStack(spacing:6) {
+                        if !fullscreenTouch {
+                            ForEach(motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}),id:\.key) { companion in
+                                Button(motel.companionName(companion.key)) {stop();family=OfficeTap(rawValue:companion.key)}
+                                    .buttonStyle(MotelButtonStyle(subdued:true))
+                            }
+                        }
+                        Button(fullscreenTouch ? "Explore with "+motel.companionName(pet) : "Explore") {stop();change{_=$0.exploreWithPet()};game.save()}
+                            .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("exploreWithPet")
+                    }
                 } else if motel.nearbyBike != nil {
                     Button("Ride bike") {stop();change{_=$0.mountNearbyBike()}}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("rideBike")
                 } else if motel.isRelaxing {
