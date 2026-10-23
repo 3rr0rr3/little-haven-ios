@@ -3,6 +3,20 @@ import XCTest
 final class LittleHavenUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
+    func testProductionWakeUpStartsFirstChapter() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-wake"]
+        app.launch()
+        let wake=app.buttons["wakeUp"]
+        XCTAssertTrue(wake.waitForExistence(timeout:15))
+        if !wake.isHittable {app.swipeUp()}
+        wake.tap()
+        XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:30),app.debugDescription)
+        Thread.sleep(forTimeInterval:3)
+        XCTAssertEqual(app.state,.runningForeground)
+        capture(app,"Production first chapter after wake-up")
+    }
+
     func testHoldReleaseCollisionAndSave() {
         let app = launch("--ui-fresh")
         let map = app.otherElements["townMap"]

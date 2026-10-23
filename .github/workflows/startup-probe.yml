@@ -1,0 +1,36 @@
+name: Diagnose production chapter startup
+on:
+  push:
+    branches: ['codex/diagnose-wakeup-42']
+permissions:
+  contents: read
+jobs:
+  startup:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exercise actual production initialization before UI fixtures
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/startup-probe
+          cp Tests/Startup/main.swift /tmp/startup-probe/main.swift
+          swiftc -g LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift /tmp/startup-probe/main.swift -o /tmp/startup-probe/run
+          /tmp/startup-probe/run
+      - name: Test the wake button with production guests and management enabled
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath probe-build -parallel-testing-enabled NO -only-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -resultBundlePath StartupResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+      - name: Preserve native startup diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Production-startup-diagnostics
+          path: |
+            StartupResults.xcresult
+            ~/Library/Logs/DiagnosticReports/*
+          if-no-files-found: ignore
