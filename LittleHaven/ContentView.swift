@@ -44,6 +44,7 @@ struct ContentView: View {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeExpansion();sample.motel!.initializeKitchenGarden()
             sample.motel!.cash=500;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000
             sample.motel!.havenOccasions=HavenOccasions();sample.motel!.world!.place = .office;sample.motel!.world!.player=Tile(x:4,y:5)
+            var reputation=sample.motel!.simulation;reputation.reputation=80;sample.motel!.simulation=reputation
             sample.motel!.rooms[0].guest=Motel.arrivals(day:1,count:1,randomize:false)[0];sample.motel!.rooms[0].nightsLeft=3
             if args.contains("--ui-occasion-host") || args.contains("--ui-occasion-decor") {
                 _=sample.motel!.acceptCelebration();_=sample.motel!.prepareCelebration(0);_=sample.motel!.prepareCelebration(2)

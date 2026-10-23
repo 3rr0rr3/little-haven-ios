@@ -1756,6 +1756,7 @@ func occasionRules() {
     func base()->Motel {
         var m=Motel();m.initializeWorld();m.enableManagement();m.initializeExpansion();m.initializeKitchenGarden()
         m.havenOccasions=HavenOccasions();m.world!.place = .office;m.cash=1000
+        var state=m.simulation;state.reputation=80;m.simulation=state
         m.rooms[0].guest=MotelGuest(id:601,name:"Celebrating guest",nights:3,color:0x91B7A1,story:"Birthday",category:.traveler);m.rooms[0].nightsLeft=3
         return m
     }
