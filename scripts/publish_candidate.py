@@ -34,9 +34,9 @@ blob('downloads/BrainstormHaven-40.ipa', data)
 verification = {'source':source, 'version':'40.0', 'build':'45', 'size':len(data), 'sha256':digest}
 blob('downloads/BrainstormHaven-40-verification.json', json.dumps(verification, indent=2).encode())
 for image in sorted(Path('.').glob('LittleHaven-response-painted-*.png')):
-    reduced = Path('/tmp') / image.name
-    subprocess.run(['sips','-Z','780',str(image),'--out',str(reduced)],check=True,stdout=subprocess.DEVNULL)
-    blob('previews/v40/' + image.name, reduced.read_bytes())
+    reduced = Path('/tmp') / (image.stem+'.jpg')
+    subprocess.run(['sips','-s','format','jpeg','-s','formatOptions','90','-Z','1100',str(image),'--out',str(reduced)],check=True,stdout=subprocess.DEVNULL)
+    blob('previews/v40/' + image.stem+'.jpg', reduced.read_bytes())
 tree = api('/git/trees', {'base_tree':api('/git/commits/' + source)['tree']['sha'], 'tree':entries})
 commit = api('/git/commits', {'message':'Verified Brainstorm Haven v40 build45 [skip ci]', 'tree':tree['sha'], 'parents':[source]})
 api('/git/refs', {'ref':'refs/heads/' + branch, 'sha':commit['sha']})

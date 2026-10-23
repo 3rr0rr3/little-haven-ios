@@ -31,6 +31,18 @@ enum PaintedArt {
             }
         }
     }
+    /// Resize the walls around an entrance, keeping the painted door on its existing gameplay anchor.
+    static func facade(_ name:String,in rect:CGRect,sourceDoor:ClosedRange<Double>,doorX:Double,doorWidth:Double,context:inout GraphicsContext)->Bool {
+        guard let original=image("bh-"+name)?.cgImage else{return false}
+        let first=Int(Double(original.width)*sourceDoor.lowerBound),last=Int(Double(original.width)*sourceDoor.upperBound)
+        let left=doorX-rect.minX,right=rect.maxX-doorX-doorWidth
+        guard first>0,last>first,last<original.width,left>0,right>0 else{return draw(name,in:rect,context:&context)}
+        let slices:[(CGRect,CGRect)]=[(CGRect(x:0,y:0,width:first,height:original.height),CGRect(x:rect.minX,y:rect.minY,width:left,height:rect.height)),
+                    (CGRect(x:first,y:0,width:last-first,height:original.height),CGRect(x:doorX,y:rect.minY,width:doorWidth,height:rect.height)),
+                    (CGRect(x:last,y:0,width:original.width-last,height:original.height),CGRect(x:doorX+doorWidth,y:rect.minY,width:right,height:rect.height))]
+        for (source,target) in slices {if let piece=original.cropping(to:source) {context.draw(Image(decorative:piece,scale:1),in:target)}}
+        return true
+    }
     static func finish(_ path:Path,bounds:CGRect,color:UInt32,context:inout GraphicsContext,wood:Bool=false) {
         var layer=context;layer.clip(to:path)
         texture(wood ? "timber" : "plaster",in:bounds,context:&layer,unit:48,opacity:wood ? 0.38 : 0.24,blend:.softLight)
@@ -45,6 +57,16 @@ enum PaintedArt {
         }
     }
     static func nameplate(_ text:String,in rect:CGRect,context:inout GraphicsContext,font:Double) {
+        if let original=image("bh-nameplate")?.cgImage {
+            // Three-slice the real painted sign so its end grain and bolts stay proportional.
+            let cap=min(original.height/2,original.width/3)
+            let side=min(rect.height*Double(cap)/Double(original.height),rect.width/3)
+            let pieces:[(CGRect,CGRect)]=[(CGRect(x:0,y:0,width:cap,height:original.height),CGRect(x:rect.minX,y:rect.minY,width:side,height:rect.height)),
+                        (CGRect(x:cap,y:0,width:original.width-2*cap,height:original.height),CGRect(x:rect.minX+side,y:rect.minY,width:rect.width-2*side,height:rect.height)),
+                        (CGRect(x:original.width-cap,y:0,width:cap,height:original.height),CGRect(x:rect.maxX-side,y:rect.minY,width:side,height:rect.height))]
+            for (source,target) in pieces {if let piece=original.cropping(to:source) {context.draw(Image(decorative:piece,scale:1),in:target)}}
+            context.draw(Text(text).font(.system(size:font,weight:.black,design:.rounded)).foregroundColor(Color(hex:0x49392D)),at:CGPoint(x:rect.midX,y:rect.midY));return
+        }
         // Painted material is tiled rather than stretching a whole reference scene.
         let outline=Path(roundedRect:rect,cornerRadius:1.5)
         context.fill(outline,with:.color(Color(hex:0x75553B)))

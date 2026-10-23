@@ -320,6 +320,7 @@ enum RoomObjectArt {
     static func draw(context: inout GraphicsContext, index:Int, x:Double, y:Double, scale:Double = 1) {
         var c=context
         c.translateBy(x:x,y:y); c.scaleBy(x:scale,y:scale)
+        if PaintedArt.draw(index==0 ? "suitcase" : index==1 ? "watch" : "camera",in:CGRect(x:0,y:0,width:16,height:16),context:&c,fit:true) {return}
         func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32,_ radius:Double = 1) {
             c.fill(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:radius),with:.color(Color(hex:color)))
         }
@@ -1045,8 +1046,7 @@ struct WorkingCharacterArtwork:View {
                 facing:kind == "calm" || kind == "swim" ? 0 : 2,walk:0,hands:false,kneeling:kind == "cpr" || kind == "swim")
             switch kind {
             case "extinguish":
-                box(27,27,6.5,11,0xC94B38);box(28,30,4.5,4.5,0xF3E8CD)
-                box(29,24,2,3,0x525B55)
+                PaintedArt.draw("extinguisher",in:CGRect(x:26,y:23,width:10,height:15),context:&c,fit:true)
                 line([CGPoint(x:27,y:24),CGPoint(x:33,y:24+press*0.7)],0x343D3D,1.2)
                 var hose=Path();hose.move(to:CGPoint(x:32,y:26))
                 hose.addCurve(to:CGPoint(x:37,y:25+wave),control1:CGPoint(x:38,y:36),control2:CGPoint(x:40,y:29))

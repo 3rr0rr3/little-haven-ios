@@ -45,28 +45,13 @@ struct TownCanvas: View, Animatable {
                 }
             }
             if game.inside {
-                for y in 0..<9 {
-                    for x in 0..<9 {
-                        let px = Double(x * 16), py = Double(y * 16)
-                        rect(px, py, 16, 16, y < 2 || x == 0 || x == 8 || y == 8 ? 0x5D7161 : 0xB89870)
-                        if y >= 2 && x > 0 && x < 8 && y < 8 { rect(px, py + 15, 16, 1, 0x997C5F); rect(px + 8, py, 1, 15, 0xAA8B66) }
-                    }
-                }
-                rect(48, 65, 48, 35, 0xB66E64)
-                rect(51, 68, 42, 29, 0xD69479)
-                rect(55, 72, 34, 21, 0xB66E64)
-                rect(17, 33, 30, 31, 0x695449)
-                rect(19, 35, 26, 26, 0x91B6AB)
-                rect(21, 36, 22, 8, 0xF3E7C7)
-                rect(98, 34, 13, 14, 0x7F6148)
-                rect(102, 28, 5, 9, 0x5E8C54)
-                rect(98, 27, 13, 5, 0x80A765)
-                rect(57, 8, 30, 19, 0xD6C39B)
-                rect(59, 10, 26, 15, 0xA4C8BC)
-                rect(71, 10, 2, 15, 0xF3E5BD)
-                rect(59, 17, 26, 2, 0xF3E5BD)
-                rect(64, 127, 16, 17, 0xD8C29A)
-                text("EXIT", 72, 137, 0x4F624D, 3)
+                CozyScenery.interior(context:&context,width:144,height:144,floor:0xB89870,wall:0x5D7161)
+                PaintedArt.draw("rug",in:CGRect(x:48,y:65,width:48,height:35),context:&context)
+                PaintedArt.draw("bed",in:CGRect(x:17,y:33,width:30,height:31),context:&context)
+                PaintedArt.draw("fern",in:CGRect(x:98,y:27,width:13,height:21),context:&context)
+                PaintedArt.draw("glazed-window",in:CGRect(x:57,y:8,width:30,height:19),context:&context)
+                PaintedArt.draw("door",in:CGRect(x:64,y:127,width:16,height:17),context:&context)
+                text("EXIT",72,137,0xF4E4BC,3)
                 person(playerX * 16, playerY * 16, 0x6AACA3, true, false)
             } else {
                 for y in 0..<Town.height {
@@ -93,9 +78,7 @@ struct TownCanvas: View, Animatable {
                     rect(Double(x * 16 + 2), 320, 3, 3, 0xF4CF83)
                     rect(Double(x * 16 + 8), 322, 3, 3, 0xDCA5A2)
                 }
-                rect(185, 143, 25, 4, 0x9B7759)
-                rect(187, 147, 3, 7, 0x6E6451)
-                rect(205, 147, 3, 7, 0x6E6451)
+                PaintedArt.draw("park-bench",in:CGRect(x:185,y:143,width:25,height:11),context:&context)
                 rect(269, 114, 2, 12, 0x6C6550)
                 rect(265, 112, 9, 6, 0xE0C08C)
                 let entities = Town.neighbors.map { (Double($0.tile.y), $0.id) } + [(playerY, -1)]

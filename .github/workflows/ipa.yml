@@ -21,15 +21,8 @@ jobs:
     timeout-minutes: 50
     permissions:
       contents: write
-      actions: read
     steps:
       - uses: actions/checkout@v4
-      - name: Recover existing native art previews for review
-        if: github.ref == 'refs/heads/codex/pokopia-scenery'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 scripts/recover_art_previews.py
       - name: Test prologue, motel economy, stealth and checkpoint rules
         run: |
           set -euo pipefail
@@ -102,6 +95,12 @@ jobs:
             xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch --ui-painted-check
             sleep 5
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-$MODE.png"
+          done
+          for MODE in fire pool fight; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-action-response-$MODE" --ui-testing --ui-touch --ui-response-time 1.8
+            sleep 7
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-action-$MODE.png"
           done
           xcrun xcresulttool export attachments --path CreativeResults.xcresult --output-path /tmp/art-ui-diagnostics || true
           python3 scripts/publish_art_previews.py

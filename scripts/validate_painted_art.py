@@ -3,7 +3,7 @@ import hashlib, json, struct, zlib
 from pathlib import Path
 root=Path(__file__).resolve().parents[1]
 manifest=json.loads((root/'ArtSources/PaintedV40/manifest.json').read_text(encoding='utf-8'))
-assert len(manifest['assets'])==75
+assert len(manifest['assets'])==109
 for asset in manifest['assets']:
     path=root/asset['path'];data=path.read_bytes()
     assert hashlib.sha256(data).hexdigest()==asset['sha256'],path
@@ -18,4 +18,4 @@ for asset in manifest['assets']:
     assert catalog['images'][0]['filename']==path.name
 project=(root/'LittleHaven.xcodeproj/project.pbxproj').read_text(encoding='utf-8')
 assert 'PaintedArt.swift' in project and project.count('F00000000000000000000041')>=2
-print('Validated 75 illustrated resources, PNG checksums, catalog entries and source registration.')
+print('Validated 109 illustrated resources, PNG checksums, catalog entries and source registration.')

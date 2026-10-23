@@ -37,7 +37,7 @@ struct ContentView: View {
         if args.contains("--ui-painted-check") {
             let actors=PaintedArt.creatures+["player","hildarelys","samhil","tuki","chichu","chichi","guest-a","guest-b","guest-c","guest-d","guest-a-beach","guest-b-beach","guest-c-beach","guest-d-beach"]
             for name in actors {for facing in 0..<4 {for step in [-1.0,0,1] {precondition(PaintedArt.frame(name,facing:facing,walk:step) != nil,"Missing painted sprite: "+name)}}}
-            for name in ["stone-a","stone-b","timber","lantern","bedding","fence-h","desk","sofa-front","sofa-back","washer","linen"] {precondition(PaintedArt.image("bh-"+name) != nil,"Missing scenery: "+name)}
+            for name in ["stone-a","stone-b","timber","lantern","bedding","fence-h","desk","sofa-front","sofa-back","washer","linen","tv-frame","bath-sink","clothes-rack","extinguisher"] {precondition(PaintedArt.image("bh-"+name) != nil,"Missing scenery: "+name)}
         }
         Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}

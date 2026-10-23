@@ -1058,7 +1058,7 @@
         576,
         896
       ],
-      "sha256": "c71574b8a2f78afa799d2cf0978644da2dc4cf35e773881d933671765028d323"
+      "sha256": "56cba49b9ecc93b1c6ee6eb26801d09b0e58b44b52d0cc0f0290795639bd299f"
     },
     {
       "name": "bh-hildarelys",
@@ -1067,79 +1067,79 @@
         576,
         896
       ],
-      "sha256": "5d72936e0759bb2d49318bb747284bdd4038bbd23ced0280cdd07575ee4284f6",
+      "sha256": "7c11576576a53f8f66c42b616327cbc4b4e08090ebe7044706cc699ae126d432",
       "source_bounds": [
         [
-          174,
-          11,
-          303,
-          350
+          72,
+          68,
+          290,
+          409
         ],
         [
-          473,
-          11,
-          608,
-          351
+          393,
+          68,
+          614,
+          414
         ],
         [
-          782,
-          11,
-          912,
-          351
+          718,
+          69,
+          938,
+          411
         ],
         [
-          180,
-          368,
-          299,
-          700
+          72,
+          449,
+          291,
+          790
         ],
         [
+          399,
+          450,
+          618,
+          791
+        ],
+        [
+          730,
           451,
-          368,
-          607,
-          697
+          950,
+          790
         ],
         [
-          771,
-          368,
-          929,
-          697
+          67,
+          822,
+          288,
+          1163
         ],
         [
-          176,
-          715,
-          296,
-          1050
+          384,
+          824,
+          605,
+          1162
         ],
         [
-          459,
-          715,
-          620,
-          1047
+          713,
+          822,
+          934,
+          1163
         ],
         [
-          789,
-          715,
-          953,
-          1047
+          71,
+          1184,
+          288,
+          1521
         ],
         [
-          170,
-          1067,
-          306,
-          1419
+          394,
+          1182,
+          612,
+          1523
         ],
         [
-          474,
-          1067,
-          616,
-          1419
-        ],
-        [
-          788,
-          1067,
-          928,
-          1419
+          721,
+          1182,
+          942,
+          1526
         ]
       ]
     },
@@ -1482,79 +1482,79 @@
         576,
         896
       ],
-      "sha256": "53ffabe6f26f3a760efe6b0ad9ea101e96d02f9b74b2d5df531bef7375ee011c",
+      "sha256": "e0f9213fb4a6256356da419f34b776e75a67c4bd628db0ddeaee45b1cfba02b9",
       "source_bounds": [
         [
-          190,
-          6,
-          321,
-          342
+          79,
+          60,
+          268,
+          382
         ],
         [
-          477,
-          6,
-          610,
-          346
+          409,
+          62,
+          598,
+          389
         ],
         [
-          769,
-          6,
-          899,
-          347
+          740,
+          62,
+          928,
+          390
         ],
         [
-          196,
-          358,
-          314,
-          701
+          67,
+          430,
+          273,
+          764
         ],
         [
-          453,
-          361,
-          626,
-          698
+          397,
+          431,
+          603,
+          768
         ],
         [
-          753,
-          361,
-          931,
-          699
-        ],
-        [
-          201,
-          717,
-          321,
-          1059
-        ],
-        [
-          453,
-          720,
-          631,
-          1056
-        ],
-        [
-          754,
-          719,
+          729,
+          434,
           934,
-          1056
+          769
         ],
         [
-          189,
-          1072,
-          319,
-          1404
+          73,
+          802,
+          280,
+          1141
         ],
         [
-          473,
-          1069,
-          608,
-          1413
+          403,
+          804,
+          610,
+          1140
         ],
         [
-          769,
-          1071,
-          906,
-          1417
+          735,
+          805,
+          941,
+          1139
+        ],
+        [
+          73,
+          1174,
+          262,
+          1519
+        ],
+        [
+          403,
+          1174,
+          597,
+          1524
+        ],
+        [
+          735,
+          1175,
+          928,
+          1528
         ]
       ]
     },
@@ -1565,7 +1565,7 @@
         576,
         896
       ],
-      "sha256": "59bbaa3b4e4b88b02f2c64fe12ab13e322da379a5bc2ceae1c16b25a1dfd226c"
+      "sha256": "d2b95827d908ab5ade67ec5e10344aae6d249ec4130cee058ea58953bd104c2c"
     },
     {
       "name": "bh-guest-b",
@@ -1574,79 +1574,79 @@
         576,
         896
       ],
-      "sha256": "bd0f17cf0c989fc525e156772b5c3753661ac213811d43c0beba28486fdba160",
+      "sha256": "b03285e8e2574534d9391e8bcf3dfbe5bea1f2bfcb5fd2f84ad06d014630ad57",
       "source_bounds": [
         [
-          193,
-          13,
-          332,
-          334
+          80,
+          52,
+          261,
+          380
         ],
         [
-          466,
-          13,
-          615,
-          343
+          415,
+          51,
+          601,
+          385
         ],
         [
-          747,
-          13,
-          902,
-          343
+          750,
+          52,
+          937,
+          385
         ],
         [
-          201,
-          354,
-          340,
-          683
+          64,
+          433,
+          288,
+          757
         ],
         [
-          452,
-          355,
-          639,
-          687
+          398,
+          433,
+          626,
+          757
         ],
         [
-          738,
-          354,
-          921,
-          688
+          733,
+          433,
+          971,
+          759
         ],
         [
-          181,
-          703,
-          329,
-          1038
+          42,
+          800,
+          270,
+          1131
         ],
         [
-          435,
-          703,
-          638,
-          1037
+          366,
+          803,
+          604,
+          1132
         ],
         [
-          722,
-          703,
-          930,
-          1037
+          716,
+          804,
+          950,
+          1132
         ],
         [
-          183,
-          1056,
-          336,
-          1401
+          82,
+          1168,
+          248,
+          1511
         ],
         [
-          452,
-          1057,
-          633,
-          1412
+          396,
+          1167,
+          598,
+          1516
         ],
         [
-          741,
-          1057,
-          912,
-          1412
+          748,
+          1167,
+          928,
+          1517
         ]
       ]
     },
@@ -1657,7 +1657,7 @@
         576,
         896
       ],
-      "sha256": "f3044a0a8051308f32f52993a0a41c46fc5254a181b67249ab1a7cc1354e54a9"
+      "sha256": "18d80610752fb5522443e3b5b2b96afca2fb64e529c4947359379bf883633961"
     },
     {
       "name": "bh-guest-c",
@@ -1666,79 +1666,79 @@
         576,
         896
       ],
-      "sha256": "241392727291a3ed9ba229a3596f79a7f5bf7e277344552ffb6493ccb57a098b",
+      "sha256": "ab78a6bc5012fced9ad7b043310fb8202f2d955731e493d85640d47c1b347264",
       "source_bounds": [
         [
-          144,
-          9,
-          295,
-          347
+          76,
+          53,
+          257,
+          381
         ],
         [
-          467,
-          10,
-          620,
-          354
+          415,
+          50,
+          595,
+          387
         ],
         [
-          791,
-          11,
-          940,
-          353
+          748,
+          50,
+          927,
+          386
         ],
         [
-          159,
-          369,
+          92,
+          433,
           274,
-          709
+          772
         ],
         [
-          444,
-          369,
-          626,
-          709
+          411,
+          433,
+          599,
+          775
         ],
         [
-          791,
-          370,
-          961,
-          709
+          745,
+          433,
+          933,
+          775
         ],
         [
-          160,
-          727,
-          278,
-          1070
+          75,
+          811,
+          265,
+          1157
         ],
         [
-          455,
-          728,
-          627,
-          1066
+          405,
+          811,
+          599,
+          1157
         ],
         [
-          786,
-          728,
-          965,
-          1070
+          741,
+          812,
+          933,
+          1158
         ],
         [
-          140,
-          1085,
-          293,
-          1418
+          78,
+          1191,
+          262,
+          1518
         ],
         [
-          464,
-          1087,
-          625,
-          1426
+          413,
+          1190,
+          597,
+          1524
         ],
         [
-          797,
-          1088,
-          949,
-          1424
+          742,
+          1190,
+          926,
+          1527
         ]
       ]
     },
@@ -1749,7 +1749,7 @@
         576,
         896
       ],
-      "sha256": "8ac7c63c180445e36a51e89194be81f6d60bbafce201a8a949707616f8a04ac2"
+      "sha256": "f5dc07717a152fe4fd72a795477065b93dd0339d50816fb4ee8654050b3b0460"
     },
     {
       "name": "bh-guest-d",
@@ -1758,79 +1758,79 @@
         576,
         896
       ],
-      "sha256": "27c47c4427c891e3248c03ac0ef5e2a24e86e07788bd500ac50575056a0a7550",
+      "sha256": "731374d06bd8a12c7bf8c1cb823ebe736e707c1870cba00b5c4aa6f28d487dbf",
       "source_bounds": [
         [
-          154,
-          7,
-          301,
-          351
+          68,
+          50,
+          286,
+          385
         ],
         [
-          468,
-          7,
+          395,
+          50,
+          611,
+          394
+        ],
+        [
+          723,
+          50,
+          939,
+          394
+        ],
+        [
+          82,
+          428,
+          293,
+          769
+        ],
+        [
+          402,
+          428,
           614,
-          355
+          769
         ],
         [
-          787,
-          7,
-          934,
-          355
+          743,
+          430,
+          953,
+          769
         ],
         [
-          154,
-          364,
-          297,
-          714
+          61,
+          805,
+          272,
+          1152
         ],
         [
-          456,
-          366,
-          634,
-          712
+          388,
+          804,
+          607,
+          1150
         ],
         [
-          778,
-          366,
-          982,
-          711
+          724,
+          805,
+          941,
+          1151
         ],
         [
-          157,
-          726,
-          300,
-          1072
+          65,
+          1176,
+          283,
+          1526
         ],
         [
-          443,
-          726,
-          628,
-          1070
+          401,
+          1176,
+          616,
+          1533
         ],
         [
-          759,
-          728,
-          964,
-          1069
-        ],
-        [
-          155,
-          1081,
-          301,
-          1418
-        ],
-        [
-          471,
-          1081,
-          622,
-          1419
-        ],
-        [
-          793,
-          1081,
-          947,
-          1419
+          734,
+          1179,
+          948,
+          1537
         ]
       ]
     },
@@ -1841,7 +1841,7 @@
         576,
         896
       ],
-      "sha256": "4c8d0bd97992df084a106016df9e6f424ddd20e661b94f1ec2a9c97cf27935b8"
+      "sha256": "66e3909bc4934b6bf2c981d43684d73832c91fee675c3ad7a906a0133d43faed"
     },
     {
       "name": "bh-guest-a-beach",
@@ -1850,79 +1850,79 @@
         576,
         896
       ],
-      "sha256": "499434e908b28e989038c354c84bc6dad62720862ae108cc7a03b10e3c597cf8",
+      "sha256": "1466fb5e08f678fe5ec3ff9577b9f5c494c510d865a1c257c595a5e16e96e73d",
       "source_bounds": [
         [
-          193,
-          5,
-          331,
-          352
+          83,
+          65,
+          262,
+          382
         ],
         [
-          489,
-          4,
-          633,
-          355
+          411,
+          63,
+          590,
+          392
         ],
         [
-          791,
-          5,
-          929,
-          355
+          743,
+          65,
+          922,
+          392
         ],
         [
-          197,
-          366,
-          326,
-          719
+          80,
+          437,
+          275,
+          762
         ],
         [
-          465,
-          369,
-          646,
-          717
+          404,
+          442,
+          599,
+          762
         ],
         [
-          776,
-          367,
-          961,
-          717
+          734,
+          438,
+          927,
+          762
         ],
         [
-          204,
-          735,
-          333,
-          1087
+          79,
+          806,
+          276,
+          1131
         ],
         [
-          465,
-          739,
-          653,
-          1086
+          405,
+          804,
+          603,
+          1129
         ],
         [
-          776,
-          738,
-          964,
-          1087
+          733,
+          805,
+          931,
+          1129
         ],
         [
-          193,
-          1102,
-          330,
-          1436
+          80,
+          1163,
+          259,
+          1500
         ],
         [
-          487,
-          1099,
-          631,
-          1440
+          408,
+          1163,
+          588,
+          1507
         ],
         [
-          794,
-          1101,
-          936,
-          1441
+          741,
+          1164,
+          921,
+          1510
         ]
       ]
     },
@@ -1933,79 +1933,79 @@
         576,
         896
       ],
-      "sha256": "fa7459c1eff8460cb0769ebaf70ccc99203248e9dfc21224bd93adee78924bd7",
+      "sha256": "35033d18c7e9f2d611e1eb7602e58fb631926d425ef2f35b337f3c7d5f4e25d1",
       "source_bounds": [
         [
-          200,
-          12,
-          334,
-          349
+          83,
+          49,
+          277,
+          374
         ],
         [
-          485,
-          13,
-          626,
-          355
+          410,
+          47,
+          604,
+          381
         ],
         [
-          778,
-          12,
-          925,
-          354
-        ],
-        [
-          205,
-          365,
-          354,
-          709
-        ],
-        [
-          463,
-          364,
-          647,
-          708
-        ],
-        [
-          763,
-          364,
-          944,
-          711
-        ],
-        [
-          180,
-          723,
-          330,
-          1063
-        ],
-        [
-          457,
-          724,
-          655,
-          1064
-        ],
-        [
-          750,
-          724,
-          959,
-          1065
-        ],
-        [
-          192,
-          1078,
-          338,
-          1421
-        ],
-        [
-          467,
-          1079,
-          646,
-          1422
-        ],
-        [
-          776,
-          1079,
+          741,
+          49,
           939,
-          1423
+          381
+        ],
+        [
+          73,
+          432,
+          300,
+          768
+        ],
+        [
+          398,
+          428,
+          628,
+          770
+        ],
+        [
+          728,
+          431,
+          962,
+          772
+        ],
+        [
+          50,
+          804,
+          278,
+          1134
+        ],
+        [
+          370,
+          802,
+          605,
+          1138
+        ],
+        [
+          704,
+          806,
+          936,
+          1139
+        ],
+        [
+          81,
+          1168,
+          267,
+          1506
+        ],
+        [
+          402,
+          1166,
+          594,
+          1514
+        ],
+        [
+          738,
+          1166,
+          933,
+          1514
         ]
       ]
     },
@@ -2016,79 +2016,79 @@
         576,
         896
       ],
-      "sha256": "66cda40cd2de21e94cf73d6b93b174cf8765cb9770b4c16251d7ff9a3e15ac7e",
+      "sha256": "34e4e72e908bc44e949465ba05d29eec7ed0c5af2f6557d52ddb571311604666",
       "source_bounds": [
         [
-          141,
-          8,
-          298,
-          349
+          70,
+          51,
+          260,
+          384
         ],
         [
-          465,
-          9,
-          623,
-          356
+          403,
+          49,
+          595,
+          390
         ],
         [
+          737,
+          50,
+          927,
+          390
+        ],
+        [
+          69,
+          418,
+          263,
+          768
+        ],
+        [
+          397,
+          418,
+          592,
+          766
+        ],
+        [
+          741,
+          419,
+          936,
+          768
+        ],
+        [
+          65,
           790,
-          10,
-          944,
-          356
+          262,
+          1140
         ],
         [
-          158,
-          369,
-          275,
-          711
+          402,
+          789,
+          601,
+          1139
         ],
         [
-          443,
-          368,
-          634,
-          711
+          744,
+          789,
+          941,
+          1142
         ],
         [
-          790,
-          370,
-          967,
-          711
+          76,
+          1161,
+          263,
+          1513
         ],
         [
-          158,
-          726,
-          278,
-          1071
+          402,
+          1161,
+          591,
+          1514
         ],
         [
-          452,
-          726,
-          632,
-          1069
-        ],
-        [
-          782,
-          726,
-          970,
-          1069
-        ],
-        [
-          135,
-          1084,
-          296,
-          1417
-        ],
-        [
-          462,
-          1085,
-          629,
-          1429
-        ],
-        [
-          793,
-          1086,
-          956,
-          1429
+          740,
+          1161,
+          927,
+          1518
         ]
       ]
     },
@@ -2099,79 +2099,79 @@
         576,
         896
       ],
-      "sha256": "203d855ca20cb4eb0e467409907967b04c80845c250ba9d66bbedb078e72ead6",
+      "sha256": "b975478a3b9ddfb00b773dc3e1b8812dfdf9e2f60e742d65ceaa7bfde3aa754c",
       "source_bounds": [
         [
-          161,
-          6,
-          303,
-          359
-        ],
-        [
-          124,
-          6,
-          266,
-          362
-        ],
-        [
-          93,
-          7,
-          234,
-          362
-        ],
-        [
-          174,
-          21,
-          310,
-          362
-        ],
-        [
-          98,
-          22,
+          67,
+          56,
           278,
-          362
+          397
         ],
         [
-          63,
-          24,
-          256,
-          362
+          393,
+          54,
+          605,
+          400
         ],
         [
-          160,
-          14,
-          292,
-          362
+          730,
+          57,
+          940,
+          400
         ],
         [
-          113,
-          15,
-          288,
-          362
+          79,
+          433,
+          287,
+          777
         ],
         [
-          87,
-          15,
-          281,
-          362
+          405,
+          432,
+          620,
+          776
         ],
         [
-          160,
-          0,
-          303,
-          336
+          738,
+          430,
+          952,
+          776
         ],
         [
-          119,
-          1,
-          265,
-          342
+          62,
+          807,
+          267,
+          1156
         ],
         [
-          92,
-          1,
-          236,
-          343
+          392,
+          807,
+          600,
+          1155
+        ],
+        [
+          726,
+          807,
+          937,
+          1155
+        ],
+        [
+          66,
+          1175,
+          276,
+          1522
+        ],
+        [
+          397,
+          1175,
+          606,
+          1526
+        ],
+        [
+          734,
+          1175,
+          943,
+          1529
         ]
       ]
     },
@@ -2318,6 +2318,312 @@
         288
       ],
       "sha256": "8790dbe56f7094971a7e93bf4dd382006e9d9ca7f916f5862e08ae80703b10c5"
+    },
+    {
+      "name": "bh-tv-frame",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tv-frame.imageset/bh-tv-frame.png",
+      "size": [
+        320,
+        164
+      ],
+      "sha256": "37917175ff6059e1638993b99d20c7147bb2c47c42132304694ea466f461fc42"
+    },
+    {
+      "name": "bh-save-journal",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-save-journal.imageset/bh-save-journal.png",
+      "size": [
+        234,
+        215
+      ],
+      "sha256": "3f26ffd8ff7551bf784a5ef0eeaf806d36a6216dca964df9bd901c281ae3758f"
+    },
+    {
+      "name": "bh-tool-rack",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tool-rack.imageset/bh-tool-rack.png",
+      "size": [
+        190,
+        269
+      ],
+      "sha256": "5bcdb84506f919a67db1cc7b6c038b1cb1840be529f882be6e0c5adfd8d56e5a"
+    },
+    {
+      "name": "bh-paint-supplies",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-paint-supplies.imageset/bh-paint-supplies.png",
+      "size": [
+        295,
+        218
+      ],
+      "sha256": "e253b34fd16eaf6a7c916589e062f08f7543fd46f049df0d5d78838ea22ef68b"
+    },
+    {
+      "name": "bh-coffee-set",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-coffee-set.imageset/bh-coffee-set.png",
+      "size": [
+        316,
+        220
+      ],
+      "sha256": "dbfac2dfa71f656ace0328a6fd458b4cfb71e17f6386286f575fd8421ea63a31"
+    },
+    {
+      "name": "bh-bath-sink",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-bath-sink.imageset/bh-bath-sink.png",
+      "size": [
+        253,
+        253
+      ],
+      "sha256": "219e08375546bf5d0c4045fa8483e2f622d6710c5034adf04f092fe7a8497a0f"
+    },
+    {
+      "name": "bh-toilet",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-toilet.imageset/bh-toilet.png",
+      "size": [
+        180,
+        270
+      ],
+      "sha256": "e1069ab38e5a84ba0c39da03ad2ce3c9f66c991bf0500bf51698fdd132d7a6d4"
+    },
+    {
+      "name": "bh-travel-chest",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-travel-chest.imageset/bh-travel-chest.png",
+      "size": [
+        311,
+        180
+      ],
+      "sha256": "4b45b50286340b171db44a46b0d310fce0aac5c12c5ef182690d948e06e64236"
+    },
+    {
+      "name": "bh-trash-bin",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-trash-bin.imageset/bh-trash-bin.png",
+      "size": [
+        162,
+        203
+      ],
+      "sha256": "e9702bce908ab1bb1575eff6d22781dc195db7e7f54e616589e09bf923862aeb"
+    },
+    {
+      "name": "bh-mop-bucket",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-mop-bucket.imageset/bh-mop-bucket.png",
+      "size": [
+        224,
+        260
+      ],
+      "sha256": "8aff0e47649144fc5574b43e029620a568918d52f277564d5927602e53987f57"
+    },
+    {
+      "name": "bh-suitcase",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-suitcase.imageset/bh-suitcase.png",
+      "size": [
+        261,
+        205
+      ],
+      "sha256": "61b34f69374d605065b91eb54f5bbeace454a0c1d222c5716cb128168a268bf0"
+    },
+    {
+      "name": "bh-small-lamp",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-small-lamp.imageset/bh-small-lamp.png",
+      "size": [
+        152,
+        224
+      ],
+      "sha256": "ba175bdca82b7406a6ed7cec2010b93e4963e5e5cb001d77cd0184870e063e80"
+    },
+    {
+      "name": "bh-glazed-window",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-glazed-window.imageset/bh-glazed-window.png",
+      "size": [
+        216,
+        215
+      ],
+      "sha256": "96bdc9202eca7c6c222e824bed02650a531b3493a02fc2dc3a124d96133fdc40"
+    },
+    {
+      "name": "bh-breakfast-counter",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-breakfast-counter.imageset/bh-breakfast-counter.png",
+      "size": [
+        320,
+        209
+      ],
+      "sha256": "a163313163dff1ee73e0381a8f372358854b92587962dbc3b88fad19b9b50756"
+    },
+    {
+      "name": "bh-coffee-table",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-coffee-table.imageset/bh-coffee-table.png",
+      "size": [
+        303,
+        166
+      ],
+      "sha256": "885ce05fc41ef70798a79101b1b021d7808851747c029f7ac24f2d5385a506a9"
+    },
+    {
+      "name": "bh-tv-console",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tv-console.imageset/bh-tv-console.png",
+      "size": [
+        320,
+        134
+      ],
+      "sha256": "0b6ef8295f5609db03bf126d2e29f0959540e0804f40d4c64b985e4fe54cf54a"
+    },
+    {
+      "name": "bh-watch",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-watch.imageset/bh-watch.png",
+      "size": [
+        221,
+        320
+      ],
+      "sha256": "5dfbcc3ae639660d0f85996db72d125d4a2ddbc51b48f37c125ef80cde91a285"
+    },
+    {
+      "name": "bh-camera",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-camera.imageset/bh-camera.png",
+      "size": [
+        320,
+        235
+      ],
+      "sha256": "2aa28e242ab8b261de7ce463fea488c57861d7fe30f6cbba239507f1174110c4"
+    },
+    {
+      "name": "bh-extinguisher",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-extinguisher.imageset/bh-extinguisher.png",
+      "size": [
+        167,
+        320
+      ],
+      "sha256": "d4b17190fc5ec2ec072e41e93c57254e504b3220df6bd8bfbf205f6a52da449c"
+    },
+    {
+      "name": "bh-clothes-rack",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-clothes-rack.imageset/bh-clothes-rack.png",
+      "size": [
+        320,
+        314
+      ],
+      "sha256": "b22e9de8a08df9c7320bcf7629c179d49c7ecd29c506d20fdb4dce60a377bc5f"
+    },
+    {
+      "name": "bh-fish-display",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fish-display.imageset/bh-fish-display.png",
+      "size": [
+        320,
+        282
+      ],
+      "sha256": "815cf98e3de63d47f3f5beddacab25403ff10e71642d1c2c9f098c32fd8fa4ec"
+    },
+    {
+      "name": "bh-folded-clothes",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-folded-clothes.imageset/bh-folded-clothes.png",
+      "size": [
+        320,
+        251
+      ],
+      "sha256": "6b43597482b089fedfb9b0ae189a2278bc907f5748955beaa9da363b00a9ee65"
+    },
+    {
+      "name": "bh-house-warm",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-house-warm.imageset/bh-house-warm.png",
+      "size": [
+        320,
+        270
+      ],
+      "sha256": "2ed6d37f817196c29a22621dbe0cdf7ff87a548518a68e367abb62adfeed343a"
+    },
+    {
+      "name": "bh-house-blue",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-house-blue.imageset/bh-house-blue.png",
+      "size": [
+        320,
+        275
+      ],
+      "sha256": "5f7335428e6d29a08b405075c2645b4206db88d7826a1f04cfba28f5ae02c638"
+    },
+    {
+      "name": "bh-house-green",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-house-green.imageset/bh-house-green.png",
+      "size": [
+        320,
+        280
+      ],
+      "sha256": "32769d84c676b20b0c48757a04f0f41629920117fba672e3f8a729f4681adbbc"
+    },
+    {
+      "name": "bh-store-furniture",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-furniture.imageset/bh-store-furniture.png",
+      "size": [
+        320,
+        236
+      ],
+      "sha256": "6bd6be70916527d955084df45fa754aa57c2ff56a35afa6914f40f397ddffc7f"
+    },
+    {
+      "name": "bh-store-clothing",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-clothing.imageset/bh-store-clothing.png",
+      "size": [
+        320,
+        235
+      ],
+      "sha256": "07e1763d77d336a701853cb1533357a35bdb6ffbadff1469d40b50223c23ded7"
+    },
+    {
+      "name": "bh-store-pawn",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-pawn.imageset/bh-store-pawn.png",
+      "size": [
+        320,
+        242
+      ],
+      "sha256": "17c9270d328c2ba54cd391eb67a4eb010699b5f8bd36a9bba60af6be5b17d0c6"
+    },
+    {
+      "name": "bh-store-bar",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-bar.imageset/bh-store-bar.png",
+      "size": [
+        320,
+        248
+      ],
+      "sha256": "b52f520a8a669e6d747f7ad6912a233797f7a35c596bbf7c6800f304fca41a34"
+    },
+    {
+      "name": "bh-store-fish",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-fish.imageset/bh-store-fish.png",
+      "size": [
+        320,
+        242
+      ],
+      "sha256": "1d53f977e014356ea93360a716fb1aef85e8be630051776658d868abb7edbb85"
+    },
+    {
+      "name": "bh-office-facade",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-office-facade.imageset/bh-office-facade.png",
+      "size": [
+        320,
+        141
+      ],
+      "sha256": "a3b25399430a1dea25b960e3f06951d6dfd62bf78cf860c5688f8dfa39b02732"
+    },
+    {
+      "name": "bh-motel-facade",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-motel-facade.imageset/bh-motel-facade.png",
+      "size": [
+        320,
+        200
+      ],
+      "sha256": "1c33c31ba057b397e357141fa295cc2a6fc5477a5e8621664e87c8cbaab7573f"
+    },
+    {
+      "name": "bh-laundry-shelter",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-laundry-shelter.imageset/bh-laundry-shelter.png",
+      "size": [
+        296,
+        225
+      ],
+      "sha256": "24961019dd8bfd014f5c31a1d9faeb6a1ea95c9cc785fd1ad8ff4358b5c5229e"
+    },
+    {
+      "name": "bh-park-bench",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-park-bench.imageset/bh-park-bench.png",
+      "size": [
+        306,
+        180
+      ],
+      "sha256": "0fc3c9de060e4747dcdd4ffb056f55d8dfc4b075609dbe11c2b33136093e501c"
     }
   ],
   "sources": [
@@ -2388,10 +2694,11 @@
       "file": "player.png"
     },
     {
-      "name": "hildarelys",
+      "name": "hildarelys-v2",
+      "asset_name": "hildarelys",
       "kind": "actor",
-      "prompt": "Draw adult woman with tan medium skin, shoulder-length straight dark brown hair, warm large eyes and red lipstick, black knee-length dress with small cream polka dots, dark shoes.  Production game animation sprite atlas. Exactly THREE columns x FOUR rows in an equal square-cell grid. Row1 FRONT, row2 LEFT profile, row3 RIGHT profile, row4 BACK. Whole body and clothes must face the stated direction; no face on back. Columns neutral idle, left-foot-forward walking, right-foot-forward walking with opposite arm swing. Same identity, scale and foot baseline in every frame, 15% transparent padding in each cell. Full body, cute compact proportions, slightly elevated top-down game camera, fine warm dark outlines, soft anime cel shading and delicate gouache brushwork, natural warm upper-left light, small soft contact shadows. Real TRANSPARENT alpha background. No scenery, lettering, UI, grid, watermark, pixel art, realism or franchise characters. Smooth painted adventure game quality, readable at small scale.",
-      "file": "hildarelys.png"
+      "prompt": "Edit target: first image is the existing character atlas for hildarelys, adult woman, dark shoulder-length hair, black dress with tiny cream polka dots and black shoes. Style/proportions reference ONLY: second image is the game's bespectacled male player atlas. DO NOT copy his male identity, glasses, beard, hair, or clothing onto the edit target. Redesign ALL twelve target poses to match the player's compact CHIBI proportions and warm hand-painted anime RPG illustration style, while preserving the target's own identity, age, gender, skin color, hair, clothes, outfit colors and recognizable personality. Crucial change: each full body is only 2.5 HEADS TALL, large expressive head is 40% of full body height, short rounded torso and short compact limbs, mitten-like tiny hands and large cute eyes; NOT a tall fashion figure, NOT realistic human proportions, NOT a child identity, adult chibi character. Soft cel-shaded forms, subtle warm highlights, gentle painted fabric texture, natural earthy colors, clean dark warm outlines exactly as the reference player. Production sprite sheet, exactly 3 equal columns by 4 equal rows, 12 separate complete uncut figures, roomy transparent gutters all around every figure. Row 1 faces directly toward viewer (south); row 2 faces SCREEN LEFT (west, nose points left); row 3 faces SCREEN RIGHT (east, nose points right); row 4 faces completely away (north, back of head AND back of clothes, no face visible). Every row: column 1 standing idle, column 2 left leg forward/right arm forward, column 3 RIGHT leg forward/LEFT arm forward; genuinely alternating walking strides, not repeated poses. All frames same character design, scale and aligned feet baseline within their own equal grid cell. Entire figure including hair and shoes fits INSIDE each cell with clear transparent margin. Orthographic top-down RPG sprite slight elevated view, no floor, no scene, no text, no borders, no shadows outside small ground contact shadow. Truly transparent background. Keep exact 3x4 layout.",
+      "file": "hildarelys-v2.png"
     },
     {
       "name": "samhil",
@@ -2418,58 +2725,84 @@
       "file": "chichi-painted.png"
     },
     {
-      "name": "guest-a",
+      "name": "guest-a-v2",
+      "asset_name": "guest-a",
       "kind": "actor",
-      "prompt": "Draw friendly young adult man with warm medium skin, short wavy brown hair, expressive dark eyes, cream linen casual shirt, charcoal trousers, brown shoes, no glasses or beard.  Production game animation sprite atlas. Exactly THREE columns x FOUR rows in an equal square-cell grid. Row1 FRONT, row2 LEFT profile, row3 RIGHT profile, row4 BACK. Whole body and clothes must face the stated direction; no face on back. Columns neutral idle, left-foot-forward walking, right-foot-forward walking with opposite arm swing. Same identity, scale and foot baseline in every frame, 15% transparent padding in each cell. Full body, cute compact proportions, slightly elevated top-down game camera, fine warm dark outlines, soft anime cel shading and delicate gouache brushwork, natural warm upper-left light, small soft contact shadows. Real TRANSPARENT alpha background. No scenery, lettering, UI, grid, watermark, pixel art, realism or franchise characters. Smooth painted adventure game quality, readable at small scale.",
-      "file": "guest-a.png"
+      "prompt": "Edit target: first image is the existing character atlas for guest-a, young adult man, wavy brown hair, cream shirt, dark brown trousers and brown shoes. Style/proportions reference ONLY: second image is the game's bespectacled male player atlas. DO NOT copy his male identity, glasses, beard, hair, or clothing onto the edit target. Redesign ALL twelve target poses to match the player's compact CHIBI proportions and warm hand-painted anime RPG illustration style, while preserving the target's own identity, age, gender, skin color, hair, clothes, outfit colors and recognizable personality. Crucial change: each full body is only 2.5 HEADS TALL, large expressive head is 40% of full body height, short rounded torso and short compact limbs, mitten-like tiny hands and large cute eyes; NOT a tall fashion figure, NOT realistic human proportions, NOT a child identity, adult chibi character. Soft cel-shaded forms, subtle warm highlights, gentle painted fabric texture, natural earthy colors, clean dark warm outlines exactly as the reference player. Production sprite sheet, exactly 3 equal columns by 4 equal rows, 12 separate complete uncut figures, roomy transparent gutters all around every figure. Row 1 faces directly toward viewer (south); row 2 faces SCREEN LEFT (west, nose points left); row 3 faces SCREEN RIGHT (east, nose points right); row 4 faces completely away (north, back of head AND back of clothes, no face visible). Every row: column 1 standing idle, column 2 left leg forward/right arm forward, column 3 RIGHT leg forward/LEFT arm forward; genuinely alternating walking strides, not repeated poses. All frames same character design, scale and aligned feet baseline within their own equal grid cell. Entire figure including hair and shoes fits INSIDE each cell with clear transparent margin. Orthographic top-down RPG sprite slight elevated view, no floor, no scene, no text, no borders, no shadows outside small ground contact shadow. Truly transparent background. Keep exact 3x4 layout.",
+      "file": "guest-a-v2.png"
     },
     {
-      "name": "guest-b",
+      "name": "guest-b-v2",
+      "asset_name": "guest-b",
       "kind": "actor",
-      "prompt": "Draw friendly adult woman with light warm skin, long chestnut brown hair tied back, expressive brown eyes, cream linen blouse and long muted charcoal skirt, brown shoes.  Production game animation sprite atlas. Exactly THREE columns x FOUR rows in an equal square-cell grid. Row1 FRONT, row2 LEFT profile, row3 RIGHT profile, row4 BACK. Whole body and clothes must face the stated direction; no face on back. Columns neutral idle, left-foot-forward walking, right-foot-forward walking with opposite arm swing. Same identity, scale and foot baseline in every frame, 15% transparent padding in each cell. Full body, cute compact proportions, slightly elevated top-down game camera, fine warm dark outlines, soft anime cel shading and delicate gouache brushwork, natural warm upper-left light, small soft contact shadows. Real TRANSPARENT alpha background. No scenery, lettering, UI, grid, watermark, pixel art, realism or franchise characters. Smooth painted adventure game quality, readable at small scale.",
-      "file": "guest-b.png"
+      "prompt": "Edit target: first image is the existing character atlas for guest-b, adult woman, long brown ponytail, cream blouse, charcoal long skirt and brown shoes. Style/proportions reference ONLY: second image is the game's bespectacled male player atlas. DO NOT copy his male identity, glasses, beard, hair, or clothing onto the edit target. Redesign ALL twelve target poses to match the player's compact CHIBI proportions and warm hand-painted anime RPG illustration style, while preserving the target's own identity, age, gender, skin color, hair, clothes, outfit colors and recognizable personality. Crucial change: each full body is only 2.5 HEADS TALL, large expressive head is 40% of full body height, short rounded torso and short compact limbs, mitten-like tiny hands and large cute eyes; NOT a tall fashion figure, NOT realistic human proportions, NOT a child identity, adult chibi character. Soft cel-shaded forms, subtle warm highlights, gentle painted fabric texture, natural earthy colors, clean dark warm outlines exactly as the reference player. Production sprite sheet, exactly 3 equal columns by 4 equal rows, 12 separate complete uncut figures, roomy transparent gutters all around every figure. Row 1 faces directly toward viewer (south); row 2 faces SCREEN LEFT (west, nose points left); row 3 faces SCREEN RIGHT (east, nose points right); row 4 faces completely away (north, back of head AND back of clothes, no face visible). Every row: column 1 standing idle, column 2 left leg forward/right arm forward, column 3 RIGHT leg forward/LEFT arm forward; genuinely alternating walking strides, not repeated poses. All frames same character design, scale and aligned feet baseline within their own equal grid cell. Entire figure including hair and shoes fits INSIDE each cell with clear transparent margin. Orthographic top-down RPG sprite slight elevated view, no floor, no scene, no text, no borders, no shadows outside small ground contact shadow. Truly transparent background. Keep exact 3x4 layout.",
+      "file": "guest-b-v2.png"
     },
     {
-      "name": "guest-c",
+      "name": "guest-c-v2",
+      "asset_name": "guest-c",
       "kind": "actor",
-      "prompt": "Draw friendly adult man with dark brown skin, short black curly hair, expressive eyes, cream linen short-sleeved casual shirt, charcoal trousers, dark shoes.  Production game animation sprite atlas. Exactly THREE columns x FOUR rows in an equal square-cell grid. Row1 FRONT, row2 LEFT profile, row3 RIGHT profile, row4 BACK. Whole body and clothes must face the stated direction; no face on back. Columns neutral idle, left-foot-forward walking, right-foot-forward walking with opposite arm swing. Same identity, scale and foot baseline in every frame, 15% transparent padding in each cell. Full body, cute compact proportions, slightly elevated top-down game camera, fine warm dark outlines, soft anime cel shading and delicate gouache brushwork, natural warm upper-left light, small soft contact shadows. Real TRANSPARENT alpha background. No scenery, lettering, UI, grid, watermark, pixel art, realism or franchise characters. Smooth painted adventure game quality, readable at small scale.",
-      "file": "guest-c.png"
+      "prompt": "Edit target: first image is the existing character atlas for guest-c, adult man, dark brown skin, short tightly curled black hair, subtle beard, cream short-sleeve shirt and dark trousers. Style/proportions reference ONLY: second image is the game's bespectacled male player atlas. DO NOT copy his male identity, glasses, beard, hair, or clothing onto the edit target. Redesign ALL twelve target poses to match the player's compact CHIBI proportions and warm hand-painted anime RPG illustration style, while preserving the target's own identity, age, gender, skin color, hair, clothes, outfit colors and recognizable personality. Crucial change: each full body is only 2.5 HEADS TALL, large expressive head is 40% of full body height, short rounded torso and short compact limbs, mitten-like tiny hands and large cute eyes; NOT a tall fashion figure, NOT realistic human proportions, NOT a child identity, adult chibi character. Soft cel-shaded forms, subtle warm highlights, gentle painted fabric texture, natural earthy colors, clean dark warm outlines exactly as the reference player. Production sprite sheet, exactly 3 equal columns by 4 equal rows, 12 separate complete uncut figures, roomy transparent gutters all around every figure. Row 1 faces directly toward viewer (south); row 2 faces SCREEN LEFT (west, nose points left); row 3 faces SCREEN RIGHT (east, nose points right); row 4 faces completely away (north, back of head AND back of clothes, no face visible). Every row: column 1 standing idle, column 2 left leg forward/right arm forward, column 3 RIGHT leg forward/LEFT arm forward; genuinely alternating walking strides, not repeated poses. All frames same character design, scale and aligned feet baseline within their own equal grid cell. Entire figure including hair and shoes fits INSIDE each cell with clear transparent margin. Orthographic top-down RPG sprite slight elevated view, no floor, no scene, no text, no borders, no shadows outside small ground contact shadow. Truly transparent background. Keep exact 3x4 layout.",
+      "file": "guest-c-v2.png"
     },
     {
-      "name": "guest-d",
+      "name": "guest-d-v2",
+      "asset_name": "guest-d",
       "kind": "actor",
-      "prompt": "Draw friendly older woman with medium warm skin, short wavy silver grey hair, expressive eyes and gentle smile, cream linen blouse with long charcoal skirt, dark shoes.  Production game animation sprite atlas. Exactly THREE columns x FOUR rows in an equal square-cell grid. Row1 FRONT, row2 LEFT profile, row3 RIGHT profile, row4 BACK. Whole body and clothes must face the stated direction; no face on back. Columns neutral idle, left-foot-forward walking, right-foot-forward walking with opposite arm swing. Same identity, scale and foot baseline in every frame, 15% transparent padding in each cell. Full body, cute compact proportions, slightly elevated top-down game camera, fine warm dark outlines, soft anime cel shading and delicate gouache brushwork, natural warm upper-left light, small soft contact shadows. Real TRANSPARENT alpha background. No scenery, lettering, UI, grid, watermark, pixel art, realism or franchise characters. Smooth painted adventure game quality, readable at small scale.",
-      "file": "guest-d.png"
+      "prompt": "Edit target: first image is the existing character atlas for guest-d, older adult woman, silver curly bob hair, cream blouse, charcoal skirt and brown shoes. Style/proportions reference ONLY: second image is the game's bespectacled male player atlas. DO NOT copy his male identity, glasses, beard, hair, or clothing onto the edit target. Redesign ALL twelve target poses to match the player's compact CHIBI proportions and warm hand-painted anime RPG illustration style, while preserving the target's own identity, age, gender, skin color, hair, clothes, outfit colors and recognizable personality. Crucial change: each full body is only 2.5 HEADS TALL, large expressive head is 40% of full body height, short rounded torso and short compact limbs, mitten-like tiny hands and large cute eyes; NOT a tall fashion figure, NOT realistic human proportions, NOT a child identity, adult chibi character. Soft cel-shaded forms, subtle warm highlights, gentle painted fabric texture, natural earthy colors, clean dark warm outlines exactly as the reference player. Production sprite sheet, exactly 3 equal columns by 4 equal rows, 12 separate complete uncut figures, roomy transparent gutters all around every figure. Row 1 faces directly toward viewer (south); row 2 faces SCREEN LEFT (west, nose points left); row 3 faces SCREEN RIGHT (east, nose points right); row 4 faces completely away (north, back of head AND back of clothes, no face visible). Every row: column 1 standing idle, column 2 left leg forward/right arm forward, column 3 RIGHT leg forward/LEFT arm forward; genuinely alternating walking strides, not repeated poses. All frames same character design, scale and aligned feet baseline within their own equal grid cell. Entire figure including hair and shoes fits INSIDE each cell with clear transparent margin. Orthographic top-down RPG sprite slight elevated view, no floor, no scene, no text, no borders, no shadows outside small ground contact shadow. Truly transparent background. Keep exact 3x4 layout.",
+      "file": "guest-d-v2.png"
     },
     {
-      "name": "guest-a-beach",
+      "name": "guest-a-beach-v2",
+      "asset_name": "guest-a-beach",
       "kind": "actor",
-      "prompt": "Edit ONLY clothing in the supplied 3-column by4-row character sprite sheet. Preserve exactly the same person, face, skin tone, hair, all twelve poses, cell positions, feet baselines and painterly shading. Change the outfit to appropriate modest beach clothes: a muted sea-green short-sleeved beach shirt, tan swim shorts and sandals, no trousers. Keep full front/left/right/back body and clothing turns, genuine opposite-foot walking frames, alpha transparency. No beach background, no text, no grids or additional people. Hand-painted anime adventure game asset, not photorealistic.",
-      "file": "guest-a-beach.png"
+      "prompt": "Edit target: first image is the existing character atlas for guest-a-beach, young adult man, wavy brown hair, teal floral beach shirt, tan shorts and sandals. Style/proportions reference ONLY: second image is the game's bespectacled male player atlas. DO NOT copy his male identity, glasses, beard, hair, or clothing onto the edit target. Redesign ALL twelve target poses to match the player's compact CHIBI proportions and warm hand-painted anime RPG illustration style, while preserving the target's own identity, age, gender, skin color, hair, clothes, outfit colors and recognizable personality. Crucial change: each full body is only 2.5 HEADS TALL, large expressive head is 40% of full body height, short rounded torso and short compact limbs, mitten-like tiny hands and large cute eyes; NOT a tall fashion figure, NOT realistic human proportions, NOT a child identity, adult chibi character. Soft cel-shaded forms, subtle warm highlights, gentle painted fabric texture, natural earthy colors, clean dark warm outlines exactly as the reference player. Production sprite sheet, exactly 3 equal columns by 4 equal rows, 12 separate complete uncut figures, roomy transparent gutters all around every figure. Row 1 faces directly toward viewer (south); row 2 faces SCREEN LEFT (west, nose points left); row 3 faces SCREEN RIGHT (east, nose points right); row 4 faces completely away (north, back of head AND back of clothes, no face visible). Every row: column 1 standing idle, column 2 left leg forward/right arm forward, column 3 RIGHT leg forward/LEFT arm forward; genuinely alternating walking strides, not repeated poses. All frames same character design, scale and aligned feet baseline within their own equal grid cell. Entire figure including hair and shoes fits INSIDE each cell with clear transparent margin. Orthographic top-down RPG sprite slight elevated view, no floor, no scene, no text, no borders, no shadows outside small ground contact shadow. Truly transparent background. Keep exact 3x4 layout.",
+      "file": "guest-a-beach-v2.png"
     },
     {
-      "name": "guest-b-beach",
+      "name": "guest-b-beach-v2",
+      "asset_name": "guest-b-beach",
       "kind": "actor",
-      "prompt": "Edit ONLY clothing in the supplied 3-column by4-row character sprite sheet. Preserve exactly the same person, face, skin tone, hair, all twelve poses, cell positions, feet baselines and painterly shading. Change the outfit to appropriate modest beach clothes: a muted coral short beach dress over swimwear and sandals, no long skirt. Keep full front/left/right/back body and clothing turns, genuine opposite-foot walking frames, alpha transparency. No beach background, no text, no grids or additional people. Hand-painted anime adventure game asset, not photorealistic.",
-      "file": "guest-b-beach.png"
+      "prompt": "Edit target: first image is the existing character atlas for guest-b-beach, adult woman, long brown ponytail, coral sundress and sandals. Style/proportions reference ONLY: second image is the game's bespectacled male player atlas. DO NOT copy his male identity, glasses, beard, hair, or clothing onto the edit target. Redesign ALL twelve target poses to match the player's compact CHIBI proportions and warm hand-painted anime RPG illustration style, while preserving the target's own identity, age, gender, skin color, hair, clothes, outfit colors and recognizable personality. Crucial change: each full body is only 2.5 HEADS TALL, large expressive head is 40% of full body height, short rounded torso and short compact limbs, mitten-like tiny hands and large cute eyes; NOT a tall fashion figure, NOT realistic human proportions, NOT a child identity, adult chibi character. Soft cel-shaded forms, subtle warm highlights, gentle painted fabric texture, natural earthy colors, clean dark warm outlines exactly as the reference player. Production sprite sheet, exactly 3 equal columns by 4 equal rows, 12 separate complete uncut figures, roomy transparent gutters all around every figure. Row 1 faces directly toward viewer (south); row 2 faces SCREEN LEFT (west, nose points left); row 3 faces SCREEN RIGHT (east, nose points right); row 4 faces completely away (north, back of head AND back of clothes, no face visible). Every row: column 1 standing idle, column 2 left leg forward/right arm forward, column 3 RIGHT leg forward/LEFT arm forward; genuinely alternating walking strides, not repeated poses. All frames same character design, scale and aligned feet baseline within their own equal grid cell. Entire figure including hair and shoes fits INSIDE each cell with clear transparent margin. Orthographic top-down RPG sprite slight elevated view, no floor, no scene, no text, no borders, no shadows outside small ground contact shadow. Truly transparent background. Keep exact 3x4 layout.",
+      "file": "guest-b-beach-v2.png"
     },
     {
-      "name": "guest-c-beach",
+      "name": "guest-c-beach-v2",
+      "asset_name": "guest-c-beach",
       "kind": "actor",
-      "prompt": "Edit ONLY clothing in the supplied 3-column by4-row character sprite sheet. Preserve exactly the same person, face, skin tone, hair, all twelve poses, cell positions, feet baselines and painterly shading. Change the outfit to appropriate modest beach clothes: a muted sea-green short-sleeved beach shirt, tan swim shorts and sandals, no trousers. Keep full front/left/right/back body and clothing turns, genuine opposite-foot walking frames, alpha transparency. No beach background, no text, no grids or additional people. Hand-painted anime adventure game asset, not photorealistic.",
-      "file": "guest-c-beach.png"
+      "prompt": "Edit target: first image is the existing character atlas for guest-c-beach, adult man, dark brown skin, tightly curled short black hair and subtle beard, teal floral beach shirt, tan shorts and sandals. Style/proportions reference ONLY: second image is the game's bespectacled male player atlas. DO NOT copy his male identity, glasses, beard, hair, or clothing onto the edit target. Redesign ALL twelve target poses to match the player's compact CHIBI proportions and warm hand-painted anime RPG illustration style, while preserving the target's own identity, age, gender, skin color, hair, clothes, outfit colors and recognizable personality. Crucial change: each full body is only 2.5 HEADS TALL, large expressive head is 40% of full body height, short rounded torso and short compact limbs, mitten-like tiny hands and large cute eyes; NOT a tall fashion figure, NOT realistic human proportions, NOT a child identity, adult chibi character. Soft cel-shaded forms, subtle warm highlights, gentle painted fabric texture, natural earthy colors, clean dark warm outlines exactly as the reference player. Production sprite sheet, exactly 3 equal columns by 4 equal rows, 12 separate complete uncut figures, roomy transparent gutters all around every figure. Row 1 faces directly toward viewer (south); row 2 faces SCREEN LEFT (west, nose points left); row 3 faces SCREEN RIGHT (east, nose points right); row 4 faces completely away (north, back of head AND back of clothes, no face visible). Every row: column 1 standing idle, column 2 left leg forward/right arm forward, column 3 RIGHT leg forward/LEFT arm forward; genuinely alternating walking strides, not repeated poses. All frames same character design, scale and aligned feet baseline within their own equal grid cell. Entire figure including hair and shoes fits INSIDE each cell with clear transparent margin. Orthographic top-down RPG sprite slight elevated view, no floor, no scene, no text, no borders, no shadows outside small ground contact shadow. Truly transparent background. Keep exact 3x4 layout.",
+      "file": "guest-c-beach-v2.png"
     },
     {
-      "name": "guest-d-beach",
+      "name": "guest-d-beach-v2",
+      "asset_name": "guest-d-beach",
       "kind": "actor",
-      "prompt": "Edit ONLY clothing in the supplied 3-column by4-row character sprite sheet. Preserve exactly the same person, face, skin tone, hair, all twelve poses, cell positions, feet baselines and painterly shading. Change the outfit to appropriate modest beach clothes: a muted coral short beach dress over swimwear and sandals, no long skirt. Keep full front/left/right/back body and clothing turns, genuine opposite-foot walking frames, alpha transparency. No beach background, no text, no grids or additional people. Hand-painted anime adventure game asset, not photorealistic.",
-      "file": "guest-d-beach.png"
+      "prompt": "Edit target: first image is the existing character atlas for guest-d-beach, older adult woman, silver curly bob hair, coral cover-up beach dress and sandals. Style/proportions reference ONLY: second image is the game's bespectacled male player atlas. DO NOT copy his male identity, glasses, beard, hair, or clothing onto the edit target. Redesign ALL twelve target poses to match the player's compact CHIBI proportions and warm hand-painted anime RPG illustration style, while preserving the target's own identity, age, gender, skin color, hair, clothes, outfit colors and recognizable personality. Crucial change: each full body is only 2.5 HEADS TALL, large expressive head is 40% of full body height, short rounded torso and short compact limbs, mitten-like tiny hands and large cute eyes; NOT a tall fashion figure, NOT realistic human proportions, NOT a child identity, adult chibi character. Soft cel-shaded forms, subtle warm highlights, gentle painted fabric texture, natural earthy colors, clean dark warm outlines exactly as the reference player. Production sprite sheet, exactly 3 equal columns by 4 equal rows, 12 separate complete uncut figures, roomy transparent gutters all around every figure. Row 1 faces directly toward viewer (south); row 2 faces SCREEN LEFT (west, nose points left); row 3 faces SCREEN RIGHT (east, nose points right); row 4 faces completely away (north, back of head AND back of clothes, no face visible). Every row: column 1 standing idle, column 2 left leg forward/right arm forward, column 3 RIGHT leg forward/LEFT arm forward; genuinely alternating walking strides, not repeated poses. All frames same character design, scale and aligned feet baseline within their own equal grid cell. Entire figure including hair and shoes fits INSIDE each cell with clear transparent margin. Orthographic top-down RPG sprite slight elevated view, no floor, no scene, no text, no borders, no shadows outside small ground contact shadow. Truly transparent background. Keep exact 3x4 layout.",
+      "file": "guest-d-beach-v2.png"
     },
     {
       "name": "furniture",
       "kind": "furniture",
       "prompt": "Production hand-painted anime RPG furniture prop atlas, real TRANSPARENT alpha background. EXACTLY 4 columns x4 rows of equal square cells, with each object centered at 70% of the available cell area, 15% clear padding on every side, no overlapping cells. Elevated three-quarter TOP-DOWN parallel game camera, warm natural upper-left sunlight, earthy muted palette, soft cel shading and detailed gouache brushwork, worn wood grain and linen fabric. Not pixel art, photorealism or flat clipart. No characters, text, captions or scenery. Row-major objects: row1 [sage green two-seat couch facing DOWN toward viewer; same sage couch viewed from BEHIND with seats opening UP away from viewer; wooden reception desk with small computer, keyboard and brass bell; complete single motel bed with warm cream bedding and sage quilt, pillow at top]. row2 [a small wooden nightstand; a teal drinks vending machine with unlettered colored bottles behind glass; a front-loading sea-green laundry washing machine; wooden open linen cabinet with neatly folded cream towels]. row3 [a wooden dining table set with two plates and cups; a short wooden bar counter with bottles and cups; a low wooden bookshelf filled with varied muted book spines; a wooden workbench with hammer and rolled paper]. row4 [a small cooking stove with a pan; a woven cream and muted red rug; a wooden beach lounger with folded cream cushion, viewed from above; a tall dark wooden doorway with a warm open entrance]. All sixteen objects fully visible and isolated, no cell borders. Keep low short contact shadows only; all object pixels fit inside their own cell.",
       "file": "furniture.png"
+    },
+    {
+      "name": "fixtures",
+      "kind": "fixtures",
+      "prompt": "Production game prop atlas for Brainstorm Haven, NEW reusable illustrated assets, NOT a scene. Exactly 4 columns by 4 rows, 16 equally sized grid cells with transparent empty gutters, no borders, labels, numbers or text. Transparent background. Every item fully contained in its own cell with generous clear margin, separate item silhouettes, no touching between cells. Consistent slightly elevated front/top 2.5D orthographic game perspective, hand-painted anime adventure RPG aesthetic, warm earthy soft cel shading, subtle brush textures, clean warm outlines, simplified readable proportions, polished cozy illustrated game art, NOT photographic, NOT realistic, NOT pixel art, NOT flat vector icons. Objects look tangible and made of painted wood/ceramic/metal. Row-major item order: row1 column1 an upright wide flat-screen television with warm brown wooden surround, no stand or antenna, front-facing wide 46:29 rectangular overall shape, thin wood bezel, blank uniform dark navy widescreen interior occupies 87% of width and 76% height beginning 6.5% from left and 10% from top; row1 col2 open cream save journal resting on a small wooden lectern; row1 col3 tall compact cleaning tool rack with mop, broom and cloths; row1 col4 low wooden rack of paint cans and brushes. Row2 col1 coffee machine, ceramic mugs and small tray grouped as ONE physically connected compact coffee station; row2 col2 small white ceramic bathroom sink inset into a wood vanity with a faucet, slightly elevated game view; row2 col3 compact white ceramic toilet with cistern and lid, game prop; row2 col4 closed wooden luggage chest with brass latch. Row3 col1 small round tidy metal wastebasket; row3 col2 green mop bucket with wringer and mop leaning against it, one connected silhouette; row3 col3 compact leather travel suitcase with brass clasps; row3 col4 small warm glowing bedside lamp on a wood base. Row4 col1 small glazed window with timber frame and muted blue glass; row4 col2 low wooden breakfast serving counter with plates, bread and a kettle; row4 col3 low wooden coffee table with a ceramic teacup and folded cloth; row4 col4 low wide wooden TV console with two drawers, no television or other objects on it. All 16 props use the same hand-painted palette and consistent upper-left lighting, tiny soft ground contact shadows only, no background floor, no realistic photography, no heavy dirty grunge. Retain genuinely transparent alpha.",
+      "file": "fixtures.png"
+    },
+    {
+      "name": "equipment-fixed",
+      "kind": "equipment",
+      "prompt": "Production illustrated game prop atlas for Brainstorm Haven. Exactly THREE columns and TWO rows, six separate fully contained props in equal rectangular cells, transparent gutters, genuine transparent background, NO labels, captions or borders. Same coherent hand-painted anime cozy adventure RPG style: warm muted earthy palette, soft cel shading, visible delicate brushwork, clean dark warm outlines, cute readable proportions, slightly elevated front/top orthographic 2.5D game view, upper-left gentle sunlight, tiny soft contact shadows. Not photorealistic, not flat vectors, not pixel art. Row1 left: a gold wristwatch with a brown leather strap, dial visible, a single connected object. Row1 middle: a compact vintage camera with brown leather strap, lens toward viewer, one connected prop. Row1 right: a red fire extinguisher with black squeeze handle, safety pin and small black nozzle hose hugging the cylinder, entire extinguisher compact and readable, large white label without text. Row2 left: a small wooden clothing store display rack with four hanging cream, teal, lavender and coral shirts, all hangers touching the rail, one connected silhouette. Row2 middle: a compact coastal restaurant wood-and-glass refrigerated fish display cabinet containing two fish on a bed of ice, all physically connected as one prop. Row2 right: a low wooden clothing display table holding neatly folded pastel shirts and trousers, one connected silhouette. Each prop fully isolated within its own exact grid cell with plenty of clear alpha margin. No environment, no people, no additional objects.\n\nTransparency edit: Edit this exact six-prop sheet: REMOVE the entire brown/grey gradient background completely and make it genuinely transparent alpha everywhere outside the six object silhouettes. Remove all diffuse background glow and large surrounding cast shadows. Preserve the six objects themselves, their design, colors, hand-painted shading, positions, sizes and exact three-column by two-row layout. Retain all handles, straps, hose and thin rails. Do not add any scene, background, floor, color fill, checkerboard pattern, text or extra objects. Every prop should be an isolated cutout on true transparency, as production game sprite artwork. Keep plenty of transparent gutters between the six props. Transparency is the primary requirement.",
+      "file": "equipment-fixed.png"
+    },
+    {
+      "name": "facades",
+      "kind": "facades",
+      "prompt": "Production reusable building/prop atlas for Brainstorm Haven, not a complete game scene. EXACTLY FOUR columns by THREE rows, 12 equal cells with generous transparent gutters, all building silhouettes fully contained in their own cells. Genuine transparent alpha background, no ground scenery, no people, no text, no labels, no borders, no logos. Consistent hand-painted anime adventure game environment art matching warm timber animal sanctuaries: muted earthy palette, warm cream plaster, visible wood grain, hand-painted roof tiles, subtle brushwork, soft cel shading, upper-left golden sunlight, soft ambient shadows, clean natural outlines. Slightly elevated top-down front-facing 2.5D RPG perspective, front wall visible, small roof depth visible, no strong sideways isometric rotation. NOT realistic photographs, NOT flat vector blocks, NOT pixel art. Row-major exact object order: row1 col1 a cozy cream plaster home with warm terracotta roof and center-front wooden door, windows on both sides, blank wooden nameplate above center door; row1 col2 same scale and design home with muted blue roof; row1 col3 same home with sage-grey roof; row1 col4 a clearly COMMERCIAL furniture storefront with green awning, flat parapet roof, wide glass display windows showing a small sofa and cabinet, central glass door, blank wide wooden fascia sign. Row2 col1 tailoring/clothing commercial storefront with dusty mauve awning, flat parapet, glass merchandise windows with shirts on hangers, central door, blank fascia sign; row2 col2 navy/ochre pawn-and-curios commercial storefront with glass display windows containing a tiny camera and clock, central door, blank fascia sign; row2 col3 welcoming timber tavern/bar exterior, burgundy awning, warm golden windows, central wooden-and-glass door, subtle mug-shaped decoration but NO text, blank fascia sign, commercial bar not a house; row2 col4 coastal seafood restaurant storefront with muted teal awning and cream plaster, wide windows with laid dining tables, central glass door, tiny fish decoration, blank fascia sign. Row3 col1 a motel reception OFFICE commercial building, wide rectangular cream plaster facade and shallow muted green flat roof/canopy, broad glass windows, a reception desk faintly visible inside, entrance wooden-and-glass door precisely 43% of building width from the left, blank wide sign above, no house roof; row3 col2 a single-story motel guest room unit with a wide low sage canopy, cream textured wall, door precisely 40% of building width from left and one broad window to its right, blank small room-number nameplate directly above door; row3 col3 a compact empty wooden laundry shelter with a shallow roof, open front, timber posts and warm plaster back wall, NO washers, shelves, furniture or laundry objects inside because those are separate movable game assets; row3 col4 a wooden park bench with visible grain and softly worn sage-green painted seat slats. All objects use the same coherent painted design language and readable large forms, rich warm materials, moderate subtle detail, no heavy grunge or photorealism. Full transparent cutouts.",
+      "file": "facades.png"
     }
   ]
 }

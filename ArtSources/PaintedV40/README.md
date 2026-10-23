@@ -1,6 +1,6 @@
 # Painted art library
 
-The 25 original generated sheets and exact prompts are retained here. `manifest.json` records the 75 packed game resources, source bounds, dimensions and SHA-256 checksums. These source sheets are outside the app's resources; only the packed asset catalog is shipped.
+The 28 selected generated sheets and exact prompts are retained here, alongside earlier art iterations. `manifest.json` records the 109 packed game resources, source bounds, dimensions and SHA-256 checksums. These source sheets are outside the app's resources; only the packed asset catalog is shipped.
 
 Actors use a 576 × 896 atlas: three 192 × 224 cells per row, four rows. Rows are front, left, right, back. Columns are idle and alternating walking poses. The common foot baseline is pixel 218. The existing game still renders actors on its 24 × 28 logical canvas with unchanged collision footprints.
 

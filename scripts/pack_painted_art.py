@@ -1,6 +1,6 @@
 """Pack generated artwork into deterministic game atlases; no semantic redraws.
 
-Input: ../painted_sources.json from the workspace. Uses Pillow/numpy only for
+Input: retained prompts/source sheets, or --source-list JSON. Uses Pillow/numpy only for
 alpha cleanup, atlas slicing, fixed scale/baseline alignment and catalog output.
 Generated originals and exact prompts are retained outside the app resources.
 """
@@ -12,8 +12,8 @@ from PIL import Image, ImageFilter, ImageChops, ImageDraw
 ROOT=Path(__file__).resolve().parents[1]
 CATALOG=ROOT/'LittleHaven/Assets.xcassets/Painted'
 ORIGINALS=ROOT/'ArtSources/PaintedV40'
-source_list=ROOT.parent/'painted_sources.json'
-if source_list.exists() and '--saved-sources' not in sys.argv:
+source_list=Path(sys.argv[sys.argv.index('--source-list')+1]) if '--source-list' in sys.argv else None
+if source_list is not None:
     SOURCES=json.loads(source_list.read_text(encoding='utf-8'))
 else:
     SOURCES=json.loads((ORIGINALS/'prompts.json').read_text(encoding='utf-8'))
@@ -59,9 +59,12 @@ def components(image):
 materials=['stone-a','stone-b','stone-c','stone-d','grass','sand','water','earth','oak','walnut','plaster','roof','road','moss','straw','timber']
 props=['fence-h','fence-v','post','nameplate','lantern','water-bowl','feed-bowl','bedding','fern','wildflowers','tree','palm','stairs','banner','spellbook','dumbbell']
 furniture=['sofa-front','sofa-back','desk','bed','nightstand','vending','washer','linen','dining-table','bar-counter','bookshelf','workbench','stove','rug','lounger','door']
+fixtures=['tv-frame','save-journal','tool-rack','paint-supplies','coffee-set','bath-sink','toilet','travel-chest','trash-bin','mop-bucket','suitcase','small-lamp','glazed-window','breakfast-counter','coffee-table','tv-console']
+equipment=['watch','camera','extinguisher','clothes-rack','fish-display','folded-clothes']
+facades=['house-warm','house-blue','house-green','store-furniture','store-clothing','store-pawn','store-bar','store-fish','office-facade','motel-facade','laundry-shelter','park-bench']
 contact=Image.new('RGB',(1200,1200),(56,64,53));pen=ImageDraw.Draw(contact);preview_index=0
 for source in SOURCES:
-    original=Path(source['path']);name=source['name'].replace('-fixed','').replace('-painted','')
+    original=Path(source['path']);name=source.get('asset_name',source['name'].replace('-fixed','').replace('-painted',''))
     target=ORIGINALS/(source['name']+'.png')
     if original.resolve()!=target.resolve():shutil.copy2(original,target)
     source_record={k:v for k,v in source.items() if k!='path'};source_record['file']=source['name']+'.png';manifest['sources'].append(source_record)
@@ -70,12 +73,14 @@ for source in SOURCES:
         for i,label in enumerate(materials):
             tile=image.crop((round(i%4*w/4),round(i//4*h/4),round((i%4+1)*w/4),round((i//4+1)*h/4))).resize((256,256),Image.Resampling.LANCZOS)
             save_asset('bh-'+label,tile)
-    elif source['kind'] in ['props','furniture']:
-        groups=components(clean_alpha(image));assert len(groups)>=16,(name,len(groups))
+    elif source['kind'] in ['props','furniture','fixtures','equipment','facades']:
+        labels=props if source['kind']=='props' else fixtures if source['kind']=='fixtures' else equipment if source['kind']=='equipment' else facades if source['kind']=='facades' else furniture
+        columns,rows=(3,2) if source['kind']=='equipment' else (4,3) if source['kind']=='facades' else (4,4)
+        groups=components(clean_alpha(image));assert len(groups)>=len(labels),(name,len(groups))
         chosen=[]
-        for i,label in enumerate(props if source['kind']=='props' else furniture):
-            cx=(i%4+.5)*w/4;cy=(i//4+.5)*h/4
-            candidates=[g for g in groups if id(g) not in chosen and abs((g['box'][0]+g['box'][2])/2-cx)<w/5 and abs((g['box'][1]+g['box'][3])/2-cy)<h/5]
+        for i,label in enumerate(labels):
+            cx=(i%columns+.5)*w/columns;cy=(i//columns+.5)*h/rows
+            candidates=[g for g in groups if id(g) not in chosen and abs((g['box'][0]+g['box'][2])/2-cx)<w/(columns+1) and abs((g['box'][1]+g['box'][3])/2-cy)<h/(rows+1)]
             assert candidates,(name,label)
             g=min(candidates,key=lambda g:(((g['box'][0]+g['box'][2])/2-cx)/w)**2+(((g['box'][1]+g['box'][3])/2-cy)/h)**2)
             chosen.append(id(g));mask=Image.new('L',(w,h));draw=ImageDraw.Draw(mask)
@@ -88,7 +93,7 @@ for source in SOURCES:
         groups=components(clean_alpha(image));used=set()
         for row in range(4):
             for col in range(3):
-                if name=='guest-d-beach':
+                if name=='guest-d-beach' and source['name']=='guest-d-beach':
                     source_row=3-row if row in [1,2] else row
                     cell=clean_alpha(image.crop((round(col*w/3),round(source_row*h/4),round((col+1)*w/3),round((source_row+1)*h/4))))
                     g=components(cell)[0];mask=Image.new('L',cell.size);draw=ImageDraw.Draw(mask)
@@ -116,7 +121,7 @@ for source in SOURCES:
         if name in ['player','guest-a','guest-b','guest-c','guest-d']:
             array=np.asarray(sheet);red=array[:,:,0].astype(float);green=array[:,:,1].astype(float);blue=array[:,:,2].astype(float)
             yy=np.indices(red.shape)[0]%224
-            fabric=(yy>92)&(yy<179)&(red>105)&(green>95)&(blue>65)&((red-blue)<95)&((red-green)<55)
+            fabric=(yy>98)&(yy<179)&(red>105)&(green>95)&(blue>65)&((red-blue)<65)&(abs(red-green)<30)&(abs(green-blue)<40)
             # Keep the mask inside the central outfit; hands remain skin colored.
             xx=np.indices(red.shape)[1]%192;fabric &= (xx>52)&(xx<142)
             mask=Image.fromarray(np.where(fabric,array[:,:,3],0).astype('uint8'),'L').filter(ImageFilter.GaussianBlur(1))

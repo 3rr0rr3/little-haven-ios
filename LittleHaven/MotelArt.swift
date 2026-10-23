@@ -15,6 +15,13 @@ struct RoomIllustration: View {
 enum InteriorArt {
     static func draw(context: inout GraphicsContext, theme: Int, level: Int, office: Bool) {
         if !office {motelRoom(context:&context,theme:theme,level:level);return}
+        if PaintedArt.image("bh-desk") != nil {
+            CozyScenery.interior(context:&context,width:144,height:144,floor:0xC4AD89,wall:Motel.themeColors[theme])
+            PaintedArt.draw("desk",in:CGRect(x:33,y:42,width:77,height:28),context:&context)
+            PaintedArt.draw("rug",in:CGRect(x:45,y:70,width:43,height:33),context:&context)
+            if level==2 {PaintedArt.draw("sofa-front",in:CGRect(x:20,y:96,width:31,height:18),context:&context)}
+            return
+        }
         func rect(_ x: Double, _ y: Double, _ w: Double, _ h: Double, _ color: UInt32) {
             CozyScenery.block(context:&context,x:x,y:y,w:w,h:h,color:color,depth:0.6)
         }
@@ -66,20 +73,17 @@ enum InteriorArt {
         CozyScenery.interior(context:&c,width:144,height:144,floor:0xD0B99A,wall:Motel.themeColors[theme])
         // A motel sleeping zone, nightstand, luggage rack, work desk and wash nook.
         PaintedArt.draw("bed",in:CGRect(x:29,y:30,width:38,height:36),context:&c)
-        block(17,36,12,14,0xA0825F);block(22,30,4,7,0xDCC384);block(19,27,10,5,0xF0DDA1)
-        block(27,28,42,4,0x88684B)
+        PaintedArt.draw("nightstand",in:CGRect(x:17,y:36,width:12,height:14),context:&c)
+        PaintedArt.draw("small-lamp",in:CGRect(x:19,y:27,width:10,height:11),context:&c)
         DecorArt.rug(&c,30,70,51,24,0xAD947C)
-        block(94,8,29,17,0xEBDFBE);block(96,10,25,13,0xA5CDD1)
-        for x in [91.0,123] {block(x,6,5,22,Motel.themeColors[theme])}
-        block(80,34,29,14,0xA1805D);block(84,30,19,11,0x3C5151);block(86,32,15,7,0x98BFB8)
-        block(88,48,13,8,0x9C8C72)
-        block(91,94,28,17,0x9E805F);block(94,91,22,4,0xE0C79D)
-        block(30,96,18,14,0x947756);block(32,99,14,2,0xD5BE94)
+        PaintedArt.draw("glazed-window",in:CGRect(x:94,y:8,width:29,height:17),context:&c)
+        PaintedArt.draw("tv-console",in:CGRect(x:80,y:40,width:29,height:14),context:&c)
+        PaintedArt.draw("tv-frame",in:CGRect(x:84,y:28,width:19,height:12),context:&c)
+        PaintedArt.draw("travel-chest",in:CGRect(x:91,y:91,width:28,height:20),context:&c)
+        PaintedArt.draw("nightstand",in:CGRect(x:30,y:96,width:18,height:14),context:&c)
         // Compact tiled sink and mirror, with a low divider rather than a house lounge.
-        block(16,113,34,14,0xC5CDBB);block(19,115,15,9,0xEBE8D4)
-        c.stroke(Path(ellipseIn:CGRect(x:22,y:117,width:9,height:5)),with:.color(Color(hex:0x8BA6A0)),lineWidth:0.8)
-        block(37,114,9,11,0xE2DDCA);block(37,111,9,4,0xD1D8C8)
-        block(16,109,33,3,0xA89475)
+        PaintedArt.draw("bath-sink",in:CGRect(x:16,y:109,width:21,height:18),context:&c)
+        PaintedArt.draw("toilet",in:CGRect(x:37,y:110,width:10,height:17),context:&c)
         c.draw(Text("MOTEL / PRIVATE ROOM").font(.system(size:4,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF9EAC9)),at:CGPoint(x:64,y:18))
         if level>0 {CozyScenery.planter(context:&c,x:113,y:113)}
     }
@@ -295,8 +299,7 @@ struct MotelGroundsCanvas: View, Animatable {
             for (benchID,tile) in RPGMaps.landscapeBenches.enumerated() {
                 let saved=beginObject("bench-\(benchID)")
                 let tx=Double(tile.x*16), ty=Double(tile.y*16)
-                rect(tx,ty+3,16,4,0x9A714D); rect(tx,ty+9,16,4,0xC49A68)
-                rect(tx+2,ty+13,2,3,0x45564B); rect(tx+12,ty+13,2,3,0x45564B)
+                PaintedArt.draw("park-bench",in:CGRect(x:tx,y:ty,width:17,height:18),context:&context)
                 context=saved
             }
             for col in [14,22,30] {
@@ -334,8 +337,7 @@ struct MotelGroundsCanvas: View, Animatable {
             for (id,location) in [(46,38),(58,38),(65,38)].enumerated() {
                 let (col,row)=location,saved=beginObject("town-bench-\(id)")
                 let px=Double(col*16),py=Double(row*16)
-                rect(px,py+3,22,4,0xAD8B64);rect(px,py+10,22,4,0xAD8B64)
-                rect(px+2,py+14,2,3,0x526B59);rect(px+18,py+14,2,3,0x526B59)
+                PaintedArt.draw("park-bench",in:CGRect(x:px,y:py,width:24,height:18),context:&context)
                 CozyScenery.planter(context:&context,x:px+28,y:py+3)
                 context=saved
             }

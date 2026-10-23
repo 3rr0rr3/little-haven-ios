@@ -50,6 +50,14 @@ enum CozyScenery {
         }
     }
     static func building(context:inout GraphicsContext,x:Double,y:Double,w:Double,h:Double,doorX:Double,name:String,roof:UInt32,paint:UInt32) {
+        let commercial=name=="MARKET" || name=="WORKSHOP"
+        let facade=name=="MARKET" ? "store-furniture" : name=="WORKSHOP" ? "store-pawn" : ((roof>>16)&255)>((roof&255)+25) ? "house-warm" : (roof&255)>((roof>>8)&255) ? "house-blue" : "house-green"
+        let opening: ClosedRange<Double> = commercial ? (0.4...0.6) : (0.35...0.65)
+        if PaintedArt.facade(facade,in:CGRect(x:x,y:y,width:w,height:h),sourceDoor:opening,doorX:doorX-3,doorWidth:20,context:&context) {
+            if commercial {PaintedArt.nameplate(name,in:CGRect(x:x+w*0.2,y:y+h*0.25,width:w*0.6,height:8),context:&context,font:4)}
+            else if !name.isEmpty {context.draw(Text(name).font(.system(size:4.5,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E3B8)),at:CGPoint(x:x+w/2,y:y+h*0.52))}
+            return
+        }
         let roofH=h*0.47,wallY=y+roofH-1,door=doorX
         shadow(context:&context,x:x-2,y:y+h-5,w:w+13,h:17)
         block(context:&context,x:x+4,y:wallY,w:w-12,h:h-roofH,color:paint,depth:2)
@@ -116,6 +124,8 @@ enum CozyScenery {
         PaintedArt.texture("oak",in:floorRect,context:&context,unit:64,opacity:0.9,blend:.softLight)
         block(context:&context,x:16,y:0,w:width-32,h:30,color:wall,depth:2)
         for xx in [0.0,width-16] {block(context:&context,x:xx,y:0,w:16,h:height,color:wall,depth:1)}
+        PaintedArt.texture("plaster",in:CGRect(x:16,y:0,width:width-32,height:30),context:&context,unit:64,opacity:0.58,blend:.multiply)
+        for xx in [0.0,width-16] {PaintedArt.texture("plaster",in:CGRect(x:xx,y:0,width:16,height:height),context:&context,unit:64,opacity:0.5,blend:.multiply)}
         PaintedArt.texture("timber",in:CGRect(x:15,y:29,width:width-30,height:4),context:&context,unit:48)
         block(context:&context,x:width/2-9,y:height-32,w:18,h:32,color:0xDFCCA4,depth:0.3)
         PaintedArt.sunlight(context:&context,bounds:floorRect)
@@ -181,30 +191,27 @@ struct HomeInteriorArt:View {
             func rect(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ c:UInt32){CozyScenery.block(context:&context,x:x,y:y,w:w,h:h,color:c,depth:0.7)}
             CozyScenery.interior(context:&context,width:240,height:240,floor:Self.floors[home.floor],wall:Motel.themeColors[home.wallpaper])
             DecorArt.shelf(&context,20,42,37)
-            rect(30,83,34,19,0xAE8964);rect(25,88,5,14,0x8A7158);rect(64,88,5,14,0x8A7158)
-            rect(39,86,15,10,0xEADDC2);rect(44,88,5,5,0xA1B895)
+            PaintedArt.draw("coffee-table",in:CGRect(x:25,y:83,width:44,height:19),context:&context)
             DecorArt.rug(&context,82,113,66,59,0xB79079)
             CozyScenery.planter(context:&context,x:48,y:197)
-            rect(25,8,28,18,0xA38462);rect(28,11,22,12,0xA3C3B2)
+            PaintedArt.draw("glazed-window",in:CGRect(x:25,y:7,width:28,height:20),context:&context)
             if home.level > 0 {CozyScenery.planter(context:&context,x:128,y:40)}
             // Upright TV above a narrow console. The screen is a separate animated scene node.
-            rect(158,78,56,10,0x9B7858);rect(161,87,3,5,0x6C5745);rect(207,87,3,5,0x6C5745)
-            rect(163,43,46,29,0x263D3B);rect(166,46,40,22,0x8CBDBB)
+            PaintedArt.draw("tv-console",in:CGRect(x:158,y:78,width:56,height:14),context:&context)
+            PaintedArt.draw("tv-frame",in:CGRect(x:163,y:43,width:46,height:29),context:&context)
             rect(184,72,4,6,0x384945);rect(175,77,22,2,0x384945)
-            rect(162,81,13,3,0xD5C3A0);rect(192,81,17,3,0x5B6E64)
             DecorArt.sofa(&context,161,141,54,0xA592B1,facesTV:true)
-            rect(163,120,48,13,0xB7916E);rect(168,123,12,6,0xDDD1AA);rect(190,124,7,4,0x93B7A7)
-            for x in [157.0,190.0] {rect(x+5,207,15,8,0xBE9A76);rect(x+9,217,6,3,0x82ACA5)}
-            rect(30,155,27,17,0x88684B);rect(34,157,18,12,0xF2E2BC);rect(43,158,1,10,0xB89B70)
+            PaintedArt.draw("coffee-table",in:CGRect(x:163,y:120,width:48,height:13),context:&context)
+            for x in [157.0,190.0] {PaintedArt.draw("bedding",in:CGRect(x:x+5,y:207,width:15,height:8),context:&context);PaintedArt.draw("water-bowl",in:CGRect(x:x+9,y:217,width:6,height:3),context:&context)}
+            PaintedArt.draw("save-journal",in:CGRect(x:30,y:155,width:27,height:17),context:&context)
             context.draw(Text("SAVE").font(.system(size:4,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:44,y:176))
             // Small stair hatch tucked into the lower-left corner.
-            rect(17,210,14,20,0x4B514D)
-            for i in 0..<5 {rect(19,212+Double(i*3),10,2,0xA58C6D)}
+            PaintedArt.draw("stairs",in:CGRect(x:17,y:210,width:14,height:20),context:&context)
             rect(15,209,2,22,0x785D44);rect(31,209,2,22,0x785D44)
             context.draw(Text("DOWN").font(.system(size:2.5,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:24,y:207))
             // Physical workbench: supplies, plans and a hammer, without floating menus.
             PaintedArt.draw("workbench",in:CGRect(x:62,y:174,width:20,height:14),context:&context)
-            rect(111,208,18,32,0xE7D1AD)
+            PaintedArt.draw("door",in:CGRect(x:111,y:208,width:18,height:32),context:&context)
             for item in home.placed {Self.object(context:&context,kind:item.kind,x:Double(item.tile.x*16),y:Double(item.tile.y*16))}
             context.draw(Text("HOME SWEET HOME").font(.system(size:7,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:120,y:17))
         }.frame(width:240,height:240)
@@ -320,25 +327,24 @@ struct ExpandedOfficeArt: View {
             text("RECEPTION",75,87,3)
             rect(50,12,40,12,0x765C43);for i in 0..<6 {rect(54+Double(i)*5.5,15,2,5,0xE8C677)}
             // Rest nook, supplies and paint are tappable from the desk.
-            rect(19,33,23,40,0x715743);rect(21,35,19,36,0x8CB3A4);rect(23,37,15,8,0xF0E3C7)
-            rect(20,114,14,23,0x7A624B);rect(21,116,12,4,0xA5C3B0);rect(24,121,2,13,0xD1B576)
+            PaintedArt.draw("bed",in:CGRect(x:19,y:33,width:23,height:40),context:&context)
+            PaintedArt.draw("tool-rack",in:CGRect(x:20,y:114,width:14,height:23),context:&context)
             text("TOOLS",27,109,3)
-            rect(20,146,14,15,0x7A624B);for i in 0..<4 {rect(21+Double(i*3),149,2,5,Motel.themeColors[i])}; text("PAINT",27,141,3)
+            PaintedArt.draw("paint-supplies",in:CGRect(x:20,y:146,width:14,height:15),context:&context);text("PAINT",27,141,3)
             // Waiting lounge, coffee, local notices and office supplies.
             DecorArt.sofa(&context,160,91,48,0x91ABA2)
-            rect(165,130,37,13,0xB49670);rect(174,131,14,7,0xE3D8B9)
+            PaintedArt.draw("coffee-table",in:CGRect(x:165,y:130,width:37,height:13),context:&context)
             PaintedArt.draw("vending",in:CGRect(x:181,y:165,width:25,height:39),context:&context)
             text("DRINKS",194,160,3)
             rect(122,7,51,20,0xA78B64);rect(125,10,45,14,0xD4C39E)
             for x in [128.0,143,156] {rect(x,12,9,9,0xF2E8CD)}
             DecorArt.shelf(&context,34,176,32)
             CozyScenery.planter(context:&context,x:207,y:207)
-            rect(180,52,28,17,0x977A5A);rect(183,48,10,9,0x4A5C51);rect(184,49,8,5,0xBDD2B6)
-            rect(197,52,5,4,0xF2E6CA)
+            PaintedArt.draw("coffee-set",in:CGRect(x:180,y:48,width:28,height:21),context:&context)
             // Entry rug.
-            rect(97,180,46,29,0xA66F5B); rect(100,183,40,23,0xC59377)
-            rect(112,208,16,32,0xEAD8AE); text("LEAVE",120,230,4)
-            rect(207,35,10,12,0x80644A); rect(202,29,20,12,0x77975C)
+            PaintedArt.draw("rug",in:CGRect(x:97,y:180,width:46,height:29),context:&context)
+            PaintedArt.draw("door",in:CGRect(x:112,y:208,width:16,height:32),context:&context);text("LEAVE",120,230,4)
+            CozyScenery.planter(context:&context,x:202,y:29)
             text("COFFEE",194,74,3)
             if clerkHired {rect(80,66,18,4,0x547A6B);text("NORA",89,68,2.5)}
             text("BRAINSTORM HAVEN / RECEPTION",120,4.5,4)
@@ -352,6 +358,11 @@ enum DecorArt {
         let x=Double((shop.door.x-3)*16),y=Double((shop.door.y-(shop == .bar ? 4 : 6))*16)
         let original=c
         if shop == .bar {c.translateBy(x:0,y:y);c.scaleBy(x:1,y:2.0/3.0);c.translateBy(x:0,y:-y)}
+        let facade=shop == .furniture ? "store-furniture" : shop == .clothing ? "store-clothing" : shop == .pawn ? "store-pawn" : "store-bar"
+        if PaintedArt.facade(facade,in:CGRect(x:x-2,y:y,width:116,height:96),sourceDoor:0.4...0.6,doorX:x+46,doorWidth:23,context:&c) {
+            PaintedArt.nameplate(shop.title.uppercased(),in:CGRect(x:x+15,y:y+24,width:82,height:12),context:&c,font:4.8)
+            c=original;return
+        }
         let color=shop.keeperColor
         func block(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ tint:UInt32) {CozyScenery.block(context:&c,x:x+dx,y:y+dy,w:w,h:h,color:tint,depth:0.7)}
         CozyScenery.shadow(context:&c,x:x-2,y:y+90,w:116,h:10)
@@ -387,6 +398,10 @@ enum DecorArt {
     }
 
     static func officeFacade(_ c:inout GraphicsContext,x:Double,y:Double) {
+        if PaintedArt.facade("office-facade",in:CGRect(x:x-3,y:y+2,width:134,height:94),sourceDoor:0.33...0.49,doorX:x+46,doorWidth:31,context:&c) {
+            PaintedArt.nameplate("BRAINSTORM HAVEN / OFFICE",in:CGRect(x:x+15,y:y+20,width:98,height:12),context:&c,font:4)
+            return
+        }
         // Low commercial frontage within the original eight-by-six-tile footprint.
         CozyScenery.shadow(context:&c,x:x-3,y:y+89,w:134,h:12)
         CozyScenery.block(context:&c,x:x,y:y+12,w:128,h:81,color:0xD6D2BB,depth:2)
@@ -491,9 +506,7 @@ struct ShopInteriorArt:View {
             CozyScenery.interior(context:&c,width:240,height:240,floor:shop == .clothing ? 0xD1BCAE : 0xC6B394,wall:shop.keeperColor)
             DecorArt.shopSign(&c,shop:shop,x:79,y:7)
             DecorArt.rug(&c,94,104,52,91,shop.keeperColor)
-            block(80,67,80,22,0x8D6B4F);block(78,64,84,6,0xDFC59B)
-            block(138,59,13,8,0x435B58);block(140,60,9,5,0xB7D2BD)
-            block(97,68,14,7,0xE9DDC2);block(104,69,0.8,5,0xAF9370)
+            PaintedArt.draw("desk",in:CGRect(x:78,y:58,width:84,height:31),context:&c)
             if shop == .furniture {
                 DecorArt.shelf(&c,19,50,41);DecorArt.sofa(&c,19,90,40,0x92AAA0)
                 DecorArt.sofa(&c,177,50,42,0xB994A3)
@@ -501,18 +514,8 @@ struct ShopInteriorArt:View {
                 for x in [68.0,149] {block(x,145,25,18,0xA37F5A);HomeInteriorArt.object(context:&c,kind:.lamp,x:x+4,y:143)}
                 HomeInteriorArt.object(context:&c,kind:.plant,x:185,y:83)
             } else if shop == .clothing {
-                for x in [22.0,183] {
-                    block(x,47,34,3,0x7F725E)
-                    for i in 0..<4 {
-                        let xx=x+Double(i)*8
-                        block(xx,53,7,15,[UInt32(0x87ABA9),0xC48D96,0xD2B877,0x8B93B7][i])
-                        block(xx+2,50,3,4,0xE2C89E)
-                    }
-                    block(x,89,34,3,0x7F725E)
-                    for i in 0..<3 {block(x+3+Double(i*10),96,8,17,0x6D7A8C)}
-                }
-                for x in [69.0,149] {block(x,145,24,17,0xA78970);block(x+3,143,18,4,0xC798A6)}
-                block(197,120,17,6,0x716953);block(199,115,13,7,0xDBBB79)
+                for x in [22.0,183] {PaintedArt.draw("clothes-rack",in:CGRect(x:x,y:47,width:34,height:66),context:&c)}
+                for x in [69.0,149] {PaintedArt.draw("folded-clothes",in:CGRect(x:x,y:143,width:24,height:19),context:&c)}
             } else {
                 for x in [19.0,178] {
                     block(x,48,41,70,0x7C654F);block(x+3,51,35,63,0xA4C4BF)
@@ -619,6 +622,10 @@ enum BeachArt {
 
 extension DecorArt {
     static func motelUnit(_ c:inout GraphicsContext,x:Double,y:Double,number:Int,status:String,theme:UInt32) {
+        if PaintedArt.facade("motel-facade",in:CGRect(x:x-3,y:y+1,width:102,height:65),sourceDoor:0.2...0.4,doorX:x+29,doorWidth:22,context:&c) {
+            PaintedArt.nameplate(String(number),in:CGRect(x:x+29,y:y+20,width:22,height:9),context:&c,font:5.5)
+            c.draw(Text(status).font(.system(size:3,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF9E9C1)),at:CGPoint(x:x+75,y:y+20));return
+        }
         func block(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ color:UInt32){CozyScenery.block(context:&c,x:x+dx,y:y+dy,w:w,h:h,color:color,depth:0.7)}
         CozyScenery.shadow(context:&c,x:x-4,y:y+59,w:105,h:13)
         block(1,13,94,51,0xE4D3AE)
@@ -703,9 +710,7 @@ enum FacilitiesArt {
         c=savedpump
         // Breakfast terrace south of the pool; all equipment is off the walking lane.
         let savedbreakfast=beginObject("breakfast")
-        block(30,413,51,7,0xA27D53);block(32,420,46,13,0xBE9B70)
-        block(35,404,12,11,0x6C8C81);block(37,406,8,5,0xD8D3AF)
-        for x in [51.0,60,69] {block(x,411,6,4,0xEBD9AC)}
+        PaintedArt.draw("breakfast-counter",in:CGRect(x:30,y:404,width:51,height:29),context:&c)
         sign("BREAKFAST TERRACE",28,393,57)
         c=savedbreakfast
         let savedbreakfasttable=beginObject("breakfast-table")
@@ -716,9 +721,7 @@ enum FacilitiesArt {
         // Three-tile alcove between the office and room 101.
         let x=Double(FacilityLayout.laundryFootprint.x*16),y=Double(FacilityLayout.laundryFootprint.y*16)
         let savedlaundry=beginObject("laundry")
-        block(x,y+12,48,68,0xCAB995)
-        block(x,y+12,48,5,0x6A8D80)
-        block(x,y+16,2,64,0x6A8D80)
+        PaintedArt.draw("laundry-shelter",in:CGRect(x:x,y:y+12,width:48,height:68),context:&c)
         sign("LAUNDRY",x,y,48)
         c=savedlaundry
         let savedwasher=beginObject("washer")
@@ -938,6 +941,9 @@ struct CorralCreaturePortrait:View {
 extension DecorArt {
     static func fishFacade(_ c:inout GraphicsContext) {
         let x=Double((NeighborhoodShop.fish.door.x-3)*16),y=Double((NeighborhoodShop.fish.door.y-4)*16)
+        if PaintedArt.facade("store-fish",in:CGRect(x:x-2,y:y,width:116,height:64),sourceDoor:0.4...0.6,doorX:x+44,doorWidth:25,context:&c) {
+            PaintedArt.nameplate("CORAL CATCH",in:CGRect(x:x+15,y:y+19,width:82,height:10),context:&c,font:4.8);return
+        }
         func block(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ color:UInt32) {CozyScenery.block(context:&c,x:x+dx,y:y+dy,w:w,h:h,color:color,depth:0.7)}
         block(0,7,112,55,0xE4DDC2);block(-2,1,116,9,0x508C91)
         block(5,12,102,16,0x477D82)
@@ -963,12 +969,8 @@ struct FishInteriorArt:View {
             CozyScenery.interior(context:&c,width:240,height:240,floor:0xC6BDA3,wall:0x70A0A0)
             DecorArt.shopSign(&c,shop:.fish,x:79,y:7)
             for x in [20.0,180] {
-                block(x,45,38,70,0x83AFAC);block(x+2,48,34,17,0xBED3C6)
-                for i in 0..<3 {
-                    let y=72+Double(i*12)
-                    c.fill(Path(ellipseIn:CGRect(x:x+7,y:y,width:20,height:5)),with:.color(Color(hex:i%2 == 0 ? 0xC4D2C6 : 0xD0B397)))
-                    block(x+1,y+8,36,2,0xE4D9BD)
-                }
+                PaintedArt.draw("glazed-window",in:CGRect(x:x,y:45,width:38,height:28),context:&c)
+                PaintedArt.draw("fish-display",in:CGRect(x:x,y:77,width:38,height:38),context:&c)
             }
             block(78,68,84,25,0x598C8A);block(76,67,88,5,0xE9DDBB)
             for x in [86.0,109,132] {
@@ -977,8 +979,7 @@ struct FishInteriorArt:View {
             }
             for (index,table) in BarLayout.tables.enumerated() {
                 let x=Double(table.x*16),y=Double(table.y*16)
-                block(x,y,Double(table.width*16),Double(table.height*16)-5,0xAE8B62)
-                block(x+3,y+2,Double(table.width*16)-6,Double(table.height*16)-10,0xE3D8B6)
+                PaintedArt.draw("dining-table",in:CGRect(x:x,y:y,width:Double(table.width*16),height:Double(table.height*16)),context:&c)
                 for dx in [7.0,Double(table.width*16)-18] {
                     c.fill(Path(ellipseIn:CGRect(x:x+dx,y:y+5,width:12,height:8)),with:.color(Color(hex:0xF9EED5)))
                     c.fill(Path(ellipseIn:CGRect(x:x+dx+2,y:y+7,width:8,height:3)),with:.color(Color(hex:index == 1 ? 0xD5A478 : 0xA5B8B0)))
