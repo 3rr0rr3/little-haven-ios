@@ -36,6 +36,29 @@ struct ContentView: View {
         let args = ProcessInfo.processInfo.arguments
         Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}
+
+        if args.contains(where:{$0.hasPrefix("--ui-expansion-")}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeExpansion()
+            sample.motel!.cash=5000;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=sample.motel!.groundTile(HotelService.breakfast.tile)
+            if args.contains("--ui-expansion-breakfast") {
+                let guests=Motel.arrivals(day:1,count:2,randomize:false)
+                for i in 0..<2 {sample.motel!.rooms[i].guest=guests[i];sample.motel!.rooms[i].nightsLeft=2}
+            }
+            if args.contains("--ui-expansion-journey") {
+                sample.motel!.guestsServed=5;var s=sample.motel!.simulation;s.reputation=50;sample.motel!.simulation=s
+            }
+            if args.contains("--ui-expansion-journal") {sample.motel!.world!.player=sample.motel!.groundNearestWalkable(to:Tile(x:57,y:50))}
+            if args.contains("--ui-expansion-routines") {
+                let guests=Motel.arrivals(day:1,count:3,randomize:false)
+                for i in 0..<3 {sample.motel!.rooms[i].guest=guests[i];sample.motel!.rooms[i].nightsLeft=2}
+                var sim=sample.motel!.simulation;sim.hour=14;sample.motel!.simulation=sim
+                for _ in 0..<70 {sample.motel!.tickWorld()}
+                sample.motel!.world!.player=Tile(x:57,y:50)
+            }
+            sample.save();return sample
+        }
+
         if args.contains(where:{$0.hasPrefix("--ui-haven-")}) {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeHavenLife()
             sample.motel!.cash=5000;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000

@@ -693,6 +693,45 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("+2/day"))
         capture(app,"Employee personality and permanent wage raise")
     }
+
+    func testBreakfastRushConsumesSuppliesAndRewardsGuests() {
+        let app=launch("--ui-expansion-breakfast")
+        XCTAssertTrue(app.buttons["cookBreakfast"].waitForExistence(timeout:10))
+        app.buttons["cookBreakfast"].tap()
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Three fresh breakfast"))
+        for _ in 0..<2 {app.buttons["serveBreakfast"].tap()}
+        XCTAssertFalse(app.buttons["serveBreakfast"].isEnabled,"Each guest can eat only once")
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format:"label CONTAINS %@", "waiting: 0")).firstMatch.exists)
+        capture(app,"Morning breakfast service completed")
+    }
+    func testRoomDesignAndMilestoneUnlock() {
+        let app=launch("--ui-expansion-design")
+        XCTAssertTrue(app.buttons["design_0_cozy"].waitForExistence(timeout:10))
+        app.buttons["design_0_cozy"].tap()
+        XCTAssertFalse(app.buttons["design_0_cozy"].isEnabled)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("cozy accommodation"))
+        capture(app,"Guest-aware room design")
+        app.terminate();app.launchArguments=["--ui-expansion-journey","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["claimJourney"].waitForExistence(timeout:10))
+        app.buttons["claimJourney"].tap()
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Welcoming motel"))
+        XCTAssertFalse(app.buttons["claimJourney"].isEnabled,"Next milestone has separate requirements")
+        capture(app,"Motel milestone and facility permit")
+    }
+    func testDiscoveryCollectionCannotBeClaimedTwice() {
+        let app=launch("--ui-expansion-journal")
+        let collect=app.buttons["discovery_shell-pearl"]
+        XCTAssertTrue(collect.waitForExistence(timeout:10))
+        XCTAssertTrue(collect.isEnabled)
+        collect.tap()
+        XCTAssertFalse(app.buttons["discovery_shell-pearl"].exists)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Pearl shell"))
+        capture(app,"Collection journal and physical beach discovery")
+        app.buttons["Done"].tap()
+        app.terminate();app.launchArguments=["--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["Walk east"].waitForExistence(timeout:10),"Collected discovery survives loading and controls remain available")
+    }
+
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

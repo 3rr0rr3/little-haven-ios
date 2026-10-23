@@ -982,6 +982,7 @@ struct WorkingCharacterArtwork:View {
 
 enum HavenTab:String,CaseIterable,Identifiable {
     case neighbors="Neighbors",identity="Identity",team="Team",creatures="Creatures",calendar="Calendar",consequences="Consequences"
+    case journey="Journey",rooms="Room design",breakfast="Breakfast",forecast="Weather",journal="Journal",goals="Daily goals"
     var id:String {rawValue}
 }
 struct HavenLifeView:View {
@@ -1009,6 +1010,12 @@ struct HavenLifeView:View {
                 ScrollView {
                     VStack(alignment:.leading,spacing:18) {
                         switch tab {
+                        case .journey:journey
+                        case .rooms:roomDesigns
+                        case .breakfast:breakfastService
+                        case .forecast:forecast
+                        case .journal:journal
+                        case .goals:dailyGoals
                         case .neighbors:neighbors
                         case .identity:identity
                         case .team:team
@@ -1022,7 +1029,7 @@ struct HavenLifeView:View {
             }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
                 .navigationTitle("Haven life").navigationBarTitleDisplayMode(.inline)
                 .toolbar {ToolbarItem(placement:.confirmationAction) {Button("Done") {dismiss()}}}
-                .tint(Color(hex:0xEFC977)).onAppear{tab=initialTab}
+                .tint(Color(hex:0xEFC977)).onAppear{tab=initialTab;if var value=game.motel {value.initializeExpansion();game.motel=value}}
                 .accessibilityElement(children:.contain)
         }
     }
@@ -1137,6 +1144,107 @@ struct HavenLifeView:View {
             ForEach(motel.haven.completedActivities,id:\.self) {Text($0).font(.caption)}
         }.buttonStyle(.bordered)
     }
+
+    private var journey:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text(Motel.journeyNames[motel.expansion.tier]).font(.title2.bold())
+            Text(motel.journeyRequirement)
+            Text("Guests served: \(motel.guestsServed) · rooms: \(motel.rooms.count) · reputation: \(motel.simulation.reputation)").font(.caption)
+            Button("Claim next milestone") {act{$0.advanceJourney()}}
+                .disabled(!motel.canAdvanceJourney).accessibilityIdentifier("claimJourney")
+            Text("Welcoming motel unlocks the pool permit. Coastal retreat unlocks the restaurant permit. Famous coastal resort unlocks upper-floor construction. Existing facilities remain yours.").font(.subheadline)
+            Text("Daily life").font(.headline)
+            Text("Guests eat breakfast, carry luggage between destinations, visit the beach or pool in clear weather, meet near the bar in the evening and return to their rooms at night. Bad weather brings them to shelter.")
+            ForEach(motel.rooms.filter{$0.guest != nil}) {room in
+                if let guest=room.guest {
+                    VStack(alignment:.leading,spacing:4) {
+                        Text(guest.name+" · "+guest.holiday.title).font(.headline)
+                        Text("Now: "+motel.guestRoutine(guest).rawValue+" · satisfaction \(motel.expansion.satisfaction[guest.id,default:50])/100").font(.caption)
+                    }
+                }
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var roomDesigns:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Design for your guests").font(.title2.bold())
+            Text("Couples like cozy decor and good beds; families value sleeping space and a fridge; business travelers prefer desks, soundproofing and Wi-Fi. Each match adds 4 coins per night and improves satisfaction. Changes require a vacant room.")
+            ForEach(motel.rooms) {room in
+                VStack(alignment:.leading,spacing:10) {
+                    Text("Room \(room.number) · "+motel.roomDesign(room).title).font(.headline)
+                    if let guest=room.guest {
+                        Text(guest.holiday.title+" · "+guest.holiday.need).font(.caption)
+                        Text("Match \(motel.roomMatch(guest,room))/4 · nightly bonus +\(motel.designPremium(guest,room))").font(.caption)
+                    }
+                    ForEach(HavenRoomDesign.allCases) {design in
+                        Button(design.title+(design == .classic ? " / restore" : " / \(design.cost) coins")) {act{$0.designHavenRoom(room.id,design)}}
+                            .disabled(room.guest != nil || motel.roomDesign(room)==design || motel.cash<design.cost)
+                            .accessibilityIdentifier("design_\(room.id)_"+design.rawValue)
+                    }
+                }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var breakfastService:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("The morning rush").font(.title2.bold())
+            Text("Open 08:00–11:59 at the breakfast counter. Cook three portions using 3 snacks and 6 coins. Serve each guest once for 12 coins and happier reviews. Fresh food expires at noon. A hired receptionist helps serve prepared food.")
+            Text("Fresh portions: \(motel.expansion.buffet) · waiting: \(motel.breakfastQueue.count)").font(.headline)
+            if !motel.atBreakfastCounter {Text("Walk to the breakfast counter to cook and serve.").font(.caption)}
+            Button("Cook three breakfasts / 6 coins + 3 snacks") {act{$0.cookHavenBreakfast()}}
+                .disabled(!motel.atBreakfastCounter || !motel.breakfastOpen || motel.cash<6 || motel.simulation.stock["snacks",default:0]<3 || motel.expansion.buffet>9)
+                .accessibilityIdentifier("cookBreakfast")
+            Button("Serve next guest / +12 coins") {act{$0.serveHavenBreakfast()}}
+                .disabled(!motel.atBreakfastCounter || motel.expansion.buffet==0 || motel.breakfastQueue.isEmpty)
+                .accessibilityIdentifier("serveBreakfast")
+            ForEach(motel.breakfastQueue) {guest in Text(guest.name+" · "+guest.holiday.title).font(.caption)}
+            Text("Stock: \(motel.simulation.stock["snacks",default:0]) snacks").font(.caption)
+        }.buttonStyle(.bordered)
+    }
+    private var forecast:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Today: "+motel.weather.title).font(.title2.bold())
+            Text(motel.weatherAdvice)
+            Text("Tomorrow: "+motel.nextWeather.title).font(.headline)
+            Text("Weather is forecast for the whole day. Unprepared storms can damage a drain at noon. Heatwaves draw guests to the pool and make broken AC more upsetting.")
+            Button(motel.expansion.preparedDay==motel.day ? "Prepared for today" : "Secure equipment / 10 coins + 2 parts") {act{$0.prepareHavenWeather()}}
+                .disabled(motel.expansion.preparedDay==motel.day || motel.cash<10 || motel.simulation.stock["parts",default:0]<2)
+                .accessibilityIdentifier("prepareWeather")
+        }.buttonStyle(.bordered)
+    }
+    private var journal:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Discoveries \(motel.expansion.discoveries.count)/\(Motel.discoveries.count)").font(.title2.bold())
+            Text("Explore on foot, fish at the cove, visit the weekly market and bring a following pet. Market treasures cost 30 coins and appear in your reception display. Other discoveries earn 5 coins; fish also add food supplies.")
+            ForEach(Motel.discoveries) {item in
+                VStack(alignment:.leading,spacing:8) {
+                    Text((motel.expansion.discoveries.contains(item.id) ? "✓ " : "◇ ")+item.name).font(.headline)
+                    Text(item.hint).font(.caption)
+                    if !motel.expansion.discoveries.contains(item.id) {
+                        Button(item.group=="fish" ? "Cast fishing line" : item.group=="furniture" ? "Buy market treasure / 30 coins" : "Collect discovery") {act{$0.findHavenDiscovery(item.id)}}
+                            .disabled(!motel.canFindDiscovery(item)).accessibilityIdentifier("discovery_"+item.id)
+                    }
+                }.padding(12).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var dailyGoals:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Three optional goals").font(.title2.bold())
+            Text("No penalty for skipping a goal. Today's rewards are 20 coins and one repair part each. A new set arrives tomorrow.")
+            ForEach(motel.goalKeys,id:\.self) {key in
+                VStack(alignment:.leading,spacing:8) {
+                    Text(motel.goalTitle(key)).font(.headline)
+                    Text("\(min(motel.goalTarget(key),motel.expansion.daily[key,default:0]))/\(motel.goalTarget(key))").font(.caption)
+                    Button(motel.expansion.claimedGoals.contains(key) ? "Reward collected" : "Collect reward") {act{$0.claimHavenGoal(key)}}
+                        .disabled(motel.expansion.claimedGoals.contains(key) || motel.expansion.daily[key,default:0]<motel.goalTarget(key))
+                        .accessibilityIdentifier("goal_"+key)
+                }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+            ForEach(Array(motel.expansion.notes.enumerated()),id:\.offset) {_,note in Text(note).font(.caption)}
+        }.buttonStyle(.bordered)
+    }
+
     private var consequences:some View {
         VStack(alignment:.leading,spacing:14) {
             Text("Canceled bookings: \(motel.haven.cancellations)").font(.headline)

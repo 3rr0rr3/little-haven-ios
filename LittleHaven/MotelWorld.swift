@@ -266,7 +266,7 @@ extension Motel {
         assignRoomColors()
         if Self.randomizeGuestArrivals { prepareStoryArrivals() }
         if world == nil { world = MotelWorldState() }
-        if Self.randomizeGuestArrivals { initializeHavenLife() }
+        if Self.randomizeGuestArrivals { initializeHavenLife();initializeExpansion() }
         if world!.reception == nil { world!.reception = OfficeReception() }
         if world!.place == .office,world!.player.x == 9,MotelGrounds.officeBlocked(world!.player) { world!.player.x=8 }
 
@@ -473,6 +473,7 @@ extension Motel {
             let participants = [incident.guest ?? rooms.compactMap(\.guest).first, incident.kind == .fight ? (incident.otherGuest ?? rooms.compactMap(\.guest).dropFirst().first) : nil].compactMap { $0 }
             if participants.contains(where: { $0.id == guest.id }) { return false }
         }
+        if havenExpansion != nil && expansion.routines[guest.id] != nil {return false}
         if reception.visitor?.guest.id == guest.id { return false }
         return !worldState.travellers.contains { $0.id == guest.id && $0.destination == groundRoomDoor(roomID) }
     }
@@ -562,5 +563,6 @@ extension Motel {
         }
         state.townPositions=townspeople;state.townPrevious=previous;state.townDestinations=destinations
         world = state
+        tickHavenRoutines()
     }
 }

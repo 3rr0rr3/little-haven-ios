@@ -134,6 +134,9 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains("--ui-creature-portrait") { family = .mochi }
             if ProcessInfo.processInfo.arguments.contains("--ui-guest-dialogue") { talkingRoom=0 }
             if ProcessInfo.processInfo.arguments.contains("--ui-story-preview") { storyGuest=motel.receptionGuest }
+            for (argument,tab) in [("--ui-expansion-breakfast",HavenTab.breakfast),("--ui-expansion-design",.rooms),("--ui-expansion-journey",.journey),("--ui-expansion-journal",.journal),("--ui-expansion-goals",.goals)] {
+                if ProcessInfo.processInfo.arguments.contains(argument) {havenTab=tab;showHavenLife=true}
+            }
             if ProcessInfo.processInfo.arguments.contains("--ui-haven-neighbor") {havenTab = .neighbors;showHavenLife=true}
             if ProcessInfo.processInfo.arguments.contains("--ui-haven-team") {havenTab = .team;showHavenLife=true}
             if ProcessInfo.processInfo.arguments.contains("--ui-haven-calendar") {havenTab = .calendar;showHavenLife=true}
@@ -293,6 +296,10 @@ struct MotelView: View {
                 } else if let room=motel.nearbyHospitalityRoom {
                     Button("Talk to "+(room.guest?.name ?? "guest")) { stop();talkingRoom=room.id }
                         .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("talkToGuest")
+                } else if let discovery=motel.nearDiscovery {
+                    Button(discovery.group=="fish" ? "Fish at the cove" : "Discover "+discovery.name) {stop();change{_=$0.findHavenDiscovery(discovery.id)};game.save()}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("collectDiscovery")
+                } else if motel.havenExpansion != nil,motel.atBreakfastCounter {
+                    Button("Breakfast counter") {stop();havenTab = .breakfast;showHavenLife=true}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("openBreakfast")
                 } else if let service = motel.nearbyService {
                     Button(service.title + " / +\(service.reward) coins") {
                         stop(); change { _ = $0.performService(service) }

@@ -1586,3 +1586,80 @@ func connectedHavenLifeRules() {
     print("PASS: neighbor friendships and visits, identity guest mix, employee pay and growth, eight creature quests, pet discoveries, four weekly games, damage bills, cancellations and saved consequences")
 }
 connectedHavenLifeRules()
+
+
+func resortExpansionRules() {
+    func base()->Motel {
+        var m=Motel();m.waiting=[];m.initializeWorld();m.enableManagement();m.initializeHavenLife();m.initializeExpansion();m.cash=10000
+        m.operations!.nextIncidentTick=100000
+        return m
+    }
+    var hotel=base()
+    let couple=MotelGuest(id:300,name:"Avery",nights:2,color:0x91B7A1,story:"A getaway",category:.traveler)
+    let family=MotelGuest(id:301,name:"Reese",nights:2,color:0xD99B7E,story:"Family holiday",category:.traveler)
+    let business=MotelGuest(id:302,name:"Parker",nights:2,color:0x82AFC1,story:"Work trip",category:.traveler)
+    let quote=hotel.bookingQuote(couple,room:hotel.rooms[0])
+    require(hotel.designHavenRoom(0,.cozy),"Vacant rooms can be designed")
+    require(hotel.bookingQuote(couple,room:hotel.rooms[0])==quote+16,"Room suitability changes the actual two-night payment")
+    require(hotel.roomMatch(couple,hotel.rooms[0])>hotel.roomMatch(family,hotel.rooms[0]),"Different trip types value different room designs")
+    hotel.waiting=[couple,family,business]
+    require(hotel.checkIn(guestID:couple.id,roomID:0),"Designed room can be booked")
+    require(!hotel.designHavenRoom(0,.family),"Occupied rooms cannot be rearranged")
+    require(hotel.expansion.satisfaction[couple.id]==65 && hotel.expansion.daily["welcome"]==1,"Guest satisfaction and daily goals use actual check-in")
+    hotel.rooms[1].guest=family;hotel.rooms[1].nightsLeft=2
+    hotel.world!.place = .grounds;hotel.world!.player=hotel.groundTile(HotelService.breakfast.tile)
+    let snacks=hotel.simulation.stock["snacks",default:0],cash=hotel.cash
+    require(hotel.cookHavenBreakfast() && hotel.simulation.stock["snacks"]==snacks-3 && hotel.cash==cash-6,"Breakfast consumes real ingredients and cash")
+    require(hotel.serveHavenBreakfast() && hotel.serveHavenBreakfast() && !hotel.serveHavenBreakfast(),"Each staying guest receives only one breakfast")
+    require(hotel.expansion.buffet==1 && hotel.expansion.meals.count==2,"Breakfast stock and guest queue remain consistent")
+    require(hotel.claimHavenGoal("breakfast") && !hotel.claimHavenGoal("breakfast"),"Optional goal rewards cannot be replayed")
+    var sim=hotel.simulation;sim.hour=12;sim.absoluteHour=12;hotel.simulation=sim
+    hotel.settleExpansionHour()
+    require(hotel.expansion.buffet==0 && !hotel.cookHavenBreakfast(),"Fresh food expires at noon and service closes")
+    hotel.day=2;hotel.refreshExpansionDay()
+    require(hotel.expansion.daily.isEmpty && hotel.expansion.claimedGoals.isEmpty && hotel.expansion.meals.isEmpty,"Daily reset preserves permanent progress but clears the rush")
+
+    var routine=base();routine.rooms[0].guest=couple;routine.rooms[0].nightsLeft=2
+    var s=routine.simulation;s.hour=14;routine.simulation=s
+    for _ in 0..<6 {routine.tickWorld()}
+    require(routine.expansion.routines[couple.id] != nil && !routine.guestPresent(in:0),"A guest outside must not also appear in their room")
+    require(!routine.groundBlocked(routine.routineDestination(couple,room:routine.rooms[0])),"Guest routines route to a real walkable destination")
+    let savedRoutine=routine.expansion.routines[couple.id]!
+    require(savedRoutine.tile != savedRoutine.previous,"Guest routine uses movement rather than teleporting")
+    routine.operations!.weatherOverride = .rain
+    require(routine.guestRoutine(couple)== .shelter,"Rain moves routines to shelter")
+    routine.operations!.weatherOverride = .sunny
+    var night=routine.simulation;night.hour=22;routine.simulation=night
+    var e=routine.expansion;e.routines[couple.id]=HavenRoutineGuest(tile:routine.groundRoomDoor(0),previous:routine.groundRoomDoor(0),activity:.room);routine.havenExpansion=e
+    routine.tickHavenRoutines()
+    require(routine.expansion.routines[couple.id]==nil && routine.guestPresent(in:0),"Returning guests reappear indoors only after reaching their door")
+
+    var storm=base();storm.day=7;storm.refreshExpansionDay();var noon=storm.simulation;noon.hour=12;noon.absoluteHour=156;storm.simulation=noon
+    var prepared=storm
+    require(prepared.prepareHavenWeather() && !prepared.prepareHavenWeather(),"Weather preparation costs resources once per day")
+    storm.settleExpansionHour();prepared.settleExpansionHour()
+    require(storm.rooms[0].health.faults.contains(.pipe) && !prepared.rooms[0].health.faults.contains(.pipe),"Preparation prevents actual storm damage")
+    let condition=storm.rooms[0].health.condition;storm.settleExpansionHour()
+    require(storm.rooms[0].health.condition==condition,"Hourly weather settlement is idempotent")
+
+    var journey=base()
+    require(!journey.advanceJourney() && !journey.journeyAllows(.pool),"New permits require achievements")
+    journey.guestsServed=5;var rep=journey.simulation;rep.reputation=50;journey.simulation=rep
+    require(journey.advanceJourney() && journey.journeyAllows(.pool) && !journey.journeyAllows(.restaurant),"First milestone unlocks the pool but not later permits")
+    require(!journey.advanceJourney(),"Milestone money cannot be farmed")
+
+    var collector=base();collector.world!.place = .grounds
+    collector.world!.player=collector.groundNearestWalkable(to:collector.groundTile(Tile(x:57,y:50)))
+    require(collector.findHavenDiscovery("shell-pearl") && !collector.findHavenDiscovery("shell-pearl"),"A physical shell becomes a permanent collection entry")
+    collector.world!.player=Tile(x:6,y:10)
+    require(!collector.findHavenDiscovery("shell-coral"),"Journal hints cannot collect distant objects")
+    let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(hotel))
+    require(restored.expansion.designs[0]== .cozy && restored.expansion.tier==hotel.expansion.tier,"Design and progression survive saving")
+    let collection=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(collector))
+    require(collection.expansion.discoveries.contains("shell-pearl"),"Discoveries survive saving")
+    var object=try! JSONSerialization.jsonObject(with:JSONEncoder().encode(hotel)) as! [String:Any]
+    object.removeValue(forKey:"havenExpansion")
+    require((try! JSONDecoder().decode(Motel.self,from:JSONSerialization.data(withJSONObject:object))).havenExpansion==nil,"Older checkpoints load without expansion state")
+    print("PASS: routines and room presence, room-aware bookings, breakfast inventory and queue, weather prevention, milestone gates, discoveries, optional goals and old saves")
+}
+resortExpansionRules()

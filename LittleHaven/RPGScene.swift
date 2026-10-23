@@ -24,6 +24,8 @@ struct RPGActor {
     var expression = ""
     var shopUniform = 0
     var resting = false
+    var routine = ""
+    var celebrating = false
 }
 
 private struct WorldTouchKey: EnvironmentKey {
@@ -224,6 +226,7 @@ final class RPGScene: SKScene {
                 node.removeAction(forKey: "move")
                 node.run(.move(to: target, duration: stepDuration), withKey: "move")
             }
+            configureEverydayAnimation(actor,node:node,moving:moving)
             if actor.id.hasPrefix("fish-diner-") && node.childNode(withName:"dining-fork") == nil {
                 let fork=SKShapeNode(rectOf:CGSize(width:0.7,height:4),cornerRadius:0.2)
                 fork.name="dining-fork";fork.fillColor=UIColor(white:0.85,alpha:1);fork.strokeColor = .clear
@@ -301,6 +304,37 @@ final class RPGScene: SKScene {
         }
         layoutCamera(jump: changedMap)
     }
+
+    // Small reusable props animate on the scene, without per-frame map redraws.
+    private func configureEverydayAnimation(_ actor:RPGActor,node:SKSpriteNode,moving:Bool) {
+        let key=actor.routine+"-\(actor.celebrating)-\(actor.animal>0 && !moving)"
+        guard node.userData?["everyday"] as? String != key else{return}
+        node.userData?["everyday"]=key
+        node.childNode(withName:"everyday")?.removeFromParent()
+        let detail=SKNode();detail.name="everyday";detail.zPosition=3
+        if actor.routine=="breakfast" || actor.routine=="bar" {
+            let cup=SKShapeNode(rectOf:CGSize(width:3,height:4),cornerRadius:0.5)
+            cup.fillColor=UIColor(Color(hex:actor.routine=="bar" ? 0xC68A51 : 0xF5E7C8));cup.strokeColor = .clear
+            cup.position=CGPoint(x:6,y:-3);detail.addChild(cup)
+            if !UIAccessibility.isReduceMotionEnabled {cup.run(.repeatForever(.sequence([.wait(forDuration:1.5),.moveBy(x:-1,y:5,duration:0.5),.wait(forDuration:0.5),.moveBy(x:1,y:-5,duration:0.5)])))}
+        } else if actor.routine=="luggage" {
+            let bag=SKShapeNode(rectOf:CGSize(width:5,height:7),cornerRadius:1)
+            bag.fillColor=UIColor(Color(hex:0xB58B63));bag.strokeColor=UIColor(Color(hex:0x69523E));bag.lineWidth=0.6
+            bag.position=CGPoint(x:8,y:-8);detail.addChild(bag)
+        }
+        if actor.celebrating {
+            let star=SKShapeNode(circleOfRadius:1.6);star.fillColor=UIColor(Color(hex:0xEFC977));star.strokeColor = .clear
+            star.position=CGPoint(x:8,y:10);detail.addChild(star)
+            if !UIAccessibility.isReduceMotionEnabled {star.run(.repeatForever(.sequence([.fadeAlpha(to:0.3,duration:1),.fadeAlpha(to:1,duration:1)])))}
+        }
+        if actor.animal>0 && !moving && !actor.creature && !UIAccessibility.isReduceMotionEnabled {
+            let breath=SKShapeNode(ellipseOf:CGSize(width:4,height:1.5));breath.fillColor=UIColor.white.withAlphaComponent(0.5);breath.strokeColor = .clear
+            breath.position=CGPoint(x:5,y:8);detail.addChild(breath)
+            breath.run(.repeatForever(.sequence([.fadeAlpha(to:0,duration:1.4),.fadeAlpha(to:0.5,duration:1.4)])))
+        }
+        if !detail.children.isEmpty {node.addChild(detail)}
+    }
+
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
         let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.cycling)-\(actor.bikeColor)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)"
         if let texture = textures[key] { return texture }
@@ -564,7 +598,23 @@ final class RPGScene: SKScene {
                 func block(_ rect:CGRect,_ color:UInt32,_ radius:CGFloat=1) {
                     let shape=SKShapeNode(rect:rect,cornerRadius:radius);shape.fillColor=UIColor(Color(hex:color));shape.strokeColor = .clear;node.addChild(shape)
                 }
-                if prop.kind==0 {
+                if prop.kind>=5 {
+                    if prop.kind==6 {
+                        for x in [CGFloat(-22),CGFloat(-5)] {
+                            block(CGRect(x:x,y:-8,width:15,height:29),0xF5E7C8,2)
+                            block(CGRect(x:x+1,y:-7,width:13,height:18),0x91B7A1,1)
+                            block(CGRect(x:x+2,y:13,width:11,height:6),0xFFF2D9,2)
+                        }
+                    } else if prop.kind==7 {
+                        block(CGRect(x:-11,y:-4,width:24,height:10),0xA1805D,1)
+                        block(CGRect(x:-6,y:3,width:10,height:7),0x3C5151,1)
+                        block(CGRect(x:-5,y:4,width:8,height:5),0x82AFC1,1)
+                        block(CGRect(x:5,y:-1,width:6,height:4),0xF5E7C8,0)
+                    } else {
+                        block(CGRect(x:-18,y:-4,width:29,height:8),prop.kind==5 ? 0xD99B7E : 0xEFC977,2)
+                        block(CGRect(x:-14,y:3,width:8,height:6),0xF5E7C8,2)
+                    }
+                } else if prop.kind==0 {
                     let glimmer=SKShapeNode(circleOfRadius:3);glimmer.fillColor=UIColor(Color(hex:0xF3D77A));glimmer.strokeColor = .white
                     glimmer.run(.repeatForever(.sequence([.fadeAlpha(to:0.4,duration:0.8),.fadeAlpha(to:1,duration:0.8)])))
                     node.addChild(glimmer)
@@ -725,7 +775,7 @@ struct MotelRPGView: View {
         let worldRevision=layoutRevision+"facilities-world-29-\(motel.serviceAvailable(.repair))-" + motel.staffStations.map(\.rawValue).joined(separator:",") + "-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
         var actors = [RPGActor(id: "player", tile: motel.relaxingTile ?? motel.actorTile, color: FamilyHome.outfitColors[motel.household.outfit], variant: 7, facing: motel.isRelaxing ? 0 : motel.actorFacing, resting:motel.isRelaxing)]
         if !interior {
-            actors += motel.neighborhoodActors + motel.neighborActors
+            actors += motel.neighborhoodActors + motel.neighborActors + motel.routineActors
             let incident = motel.operationsState.incident
             let victim = incident?.guest ?? motel.rooms.compactMap(\.guest).first
             let other = incident?.otherGuest ?? motel.rooms.compactMap(\.guest).dropFirst().first
@@ -738,7 +788,7 @@ struct MotelRPGView: View {
                     expression:incident == nil ? "" : "scared")
             }
             actors += motel.worldState.travellers.map {
-                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.appearanceSeed, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: incident == nil ? MotelCadence.guestWalk : MotelCadence.travel,expression:incident == nil ? "" : "scared")
+                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.appearanceSeed, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: incident == nil ? MotelCadence.guestWalk : MotelCadence.travel,expression:incident == nil ? "" : "scared",routine:"luggage")
             }
             for worker in motel.operationsState.workers where worker.role != .clerk || worker.tile.distance(to:motel.staffHome(worker.role))>1 {
                 var workerActor = RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:200+(StaffRole.allCases.firstIndex(of:worker.role) ?? 0),facing:worker.tile.x < (worker.previous?.x ?? worker.tile.x) ? 1 : worker.tile.x > (worker.previous?.x ?? worker.tile.x) ? 2 : worker.tile.y < (worker.previous?.y ?? worker.tile.y) ? 3 : 0,name:worker.role.name,duration:MotelCadence.travel)
@@ -754,6 +804,7 @@ struct MotelRPGView: View {
                     workerActor.action = incident.kind == .fire ? "extinguish" : incident.kind == .pool ? "rescue" : "calm"
                     workerActor.expression = incident.kind == .pool ? "concerned" : "determined"
                 }
+                workerActor.celebrating=(motel.haven.employees[worker.role.rawValue]?.level ?? 1)>1
                 actors.append(workerActor)
             }
             if motel.managementEnabled {
@@ -787,7 +838,7 @@ struct MotelRPGView: View {
         return RPGSceneView(mapID: mapID, revision: worldRevision, mapSize: CGSize(width: interior ? 144 : MotelGrounds.width*16, height: interior ? 144 : MotelGrounds.height*16), columns: 14, interior: interior, actors: actors, working: workProgress > 0,
                             workKind:motel.cleaningTarget == 0 ? "bed" : motel.cleaningTarget == 1 ? "trash" : "mop",
                             visual:motel.operationsState.visual,weather:motel.weather,cars:motel.parkedBikes,bikePositions:motel.bikeParking,day:motel.day,
-                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps) {
+                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps+motel.expansionWorldProps) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }
             if motel.worldState.place == .office { return AnyView(MotelOfficeCanvas(sceneryOnly: true, motel: motel, x: 0, y: 0)) }
             return AnyView(MotelGroundsCanvas(motel: motel, x: 0, y: 0, npcTick: 0, sceneryOnly: true, fullMap: true))
@@ -795,3 +846,38 @@ struct MotelRPGView: View {
     }
 }
 
+
+
+extension Motel {
+    var routineActors:[RPGActor] {
+        guard havenExpansion != nil,worldState.place == .grounds,visit==nil else{return []}
+        return rooms.compactMap {room in
+            guard let guest=room.guest,let r=expansion.routines[guest.id],!worldState.travellers.contains(where:{$0.id==guest.id}) else{return nil}
+            let happy=expansion.satisfaction[guest.id,default:50]
+            return RPGActor(id:"routine-\(guest.id)",tile:r.tile,color:guest.color,variant:guest.appearanceSeed,
+                facing:r.tile.x<r.previous.x ? 1 : r.tile.x>r.previous.x ? 2 : r.tile.y<r.previous.y ? 3 : 0,
+                duration:MotelCadence.guestWalk,expression:operationsState.incident == nil ? happy>=70 ? "cheerful" : happy<35 ? "angry" : "calm" : "scared",
+                routine:r.tile==routineDestination(guest,room:room) ? r.activity.rawValue : "luggage")
+        }
+    }
+    var expansionWorldProps:[HavenWorldProp] {
+        guard havenExpansion != nil else{return []}
+        if let visit,let room=rooms.first(where:{$0.id==visit.roomID}),roomDesign(room) != .classic {
+            let kind=roomDesign(room) == .cozy ? 5 : roomDesign(room) == .family ? 6 : 7
+            return [.init(id:"room-design-\(room.id)-\(kind)",tile:kind==7 ? Tile(x:6,y:6) : Tile(x:3,y:3),kind:kind)]
+        }
+        if visit==nil,worldState.place == .office {
+            return Self.discoveries.filter{$0.group=="furniture" && expansion.discoveries.contains($0.id)}.enumerated().map {i,item in
+                HavenWorldProp(id:"display-"+item.id,tile:Tile(x:2+i%2,y:11+i/2),kind:8)
+            }
+        }
+        guard visit==nil,worldState.place == .grounds else{return []}
+        var props=[HavenWorldProp]()
+        if breakfastOpen && expansion.buffet>0 {props.append(.init(id:"fresh-buffet",tile:groundTile(HotelService.breakfast.tile),kind:3))}
+        for item in Self.discoveries where !expansion.discoveries.contains(item.id) && item.group=="shell" {
+            if item.id != "shell-moon" || simulation.hour>=19 {props.append(.init(id:item.id,tile:expansionWalkable(to:groundTile(item.tile)),kind:0))}
+        }
+
+        return props
+    }
+}

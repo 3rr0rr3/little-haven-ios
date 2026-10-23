@@ -307,13 +307,16 @@ extension Motel {
         let penalty = state.guestPenalties.removeValue(forKey:guest.id) ?? 0
         let theft = room.stolen.isEmpty ? 0 : 3
         let baseStars = max(1,min(5,4 + min(1,room.furniture) - penalty - theft))
-        let stars = managementEnabled ? max(1,min(5,baseStars - room.health.faults.count - (room.health.cleanliness < 60 ? 2 : 0) + (room.health.upgrades.contains(.bed) ? 1 : 0))) : baseStars
+        let contentment=havenExpansion == nil ? 0 : (expansion.satisfaction[guest.id,default:50]>=75 ? 1 : expansion.satisfaction[guest.id,default:50]<35 ? -1 : 0)
+        let stars = managementEnabled ? max(1,min(5,baseStars + contentment - room.health.faults.count - (room.health.cleanliness < 60 ? 2 : 0) + (room.health.upgrades.contains(.bed) ? 1 : 0))) : baseStars
         let text: String
         if theft > 0 { text = "My belongings disappeared. I cannot recommend this Airb&b." }
         else if brokenPromise { text = "The host promised supplies and never delivered them. That hurt my trust." }
         else if penalty > 0 { text = "The trouble outside was not handled in time. It spoiled my stay." }
         else if managementEnabled && !room.health.faults.isEmpty {text="Maintenance and pest problems interrupted my stay."}
         else if managementEnabled && room.health.cleanliness<60 {text="The room needed cleaning. I would expect better hygiene."}
+        else if contentment<0 {text="The room did not suit my trip, and service felt neglected."}
+        else if contentment>0 {text="The room suited my trip beautifully, and the thoughtful service made my stay."}
         else if stars == 5 { text = "Lovely upgraded room and a peaceful stay. I would come back!" }
         else { text = "A clean room and a friendly welcome. Good value for the night." }
         state.reviews.insert(GuestReview(id:id,guest:guest.name,day:day,room:room.number,stars:stars,text:text),at:0)
@@ -650,11 +653,13 @@ extension Motel {
         return HotelService.allCases.first { actorTile.distance(to:groundTile($0.tile)) <= 1 }
     }
     func serviceAvailable(_ service: HotelService) -> Bool {
-        (operationsState.serviceDays?[service.rawValue] != day) &&
+        if service == .breakfast,havenExpansion != nil {return breakfastOpen && !breakfastQueue.isEmpty}
+        return (operationsState.serviceDays?[service.rawValue] != day) &&
         (!(service == .breakfast || service == .luggage) || occupancy > 0)
     }
     @discardableResult mutating func performService(_ service: HotelService) -> Bool {
         guard nearbyService == service, serviceAvailable(service), !caught else { return false }
+        if service == .breakfast,havenExpansion != nil {return serveHavenBreakfast()}
         var state = operationsState
         var days = state.serviceDays ?? [:]
         days[service.rawValue] = day
@@ -663,6 +668,7 @@ extension Motel {
         state.actionUntil = state.tick + 3
         operations = state
         cash += service.reward
+        if service == .repair {countHavenGoal("repair")}
         logMoney(service.reward,category:"Service",note:service.title)
         playVisual(service.rawValue, target:groundTile(service.tile))
         lastEvent = "\(service.title) completed! +\(service.reward) coins. Available again tomorrow."
@@ -701,6 +707,7 @@ struct HotelCar: Codable, Identifiable {
 extension Motel {
     var weather: HotelWeather {
         if operationsState.simulation?.economy == .heatwave {return .sunny}
+        if havenExpansion != nil {return operationsState.weatherOverride ?? Self.forecastWeather(day)}
         return operationsState.weatherOverride ?? HotelWeather.allCases[((day-1) + operationsState.tick / 75) % HotelWeather.allCases.count]
     }
     var visualMap: String { visit.map { "room-\($0.roomID)" } ?? worldState.place.rawValue }
@@ -970,7 +977,7 @@ extension Motel {
         return simulation.plan
     }
     func bookingQuote(_ guest:MotelGuest,room:MotelRoom)->Int {
-        let price=rate(for:room)
+        let price=rate(for:room)+designPremium(guest,room)
         let total: Int
         switch bookingPlan(guest,room:room) {
         case .nightly:total=price*guest.nights
@@ -986,7 +993,7 @@ extension Motel {
         if simulation.powerOut || simulation.waterOut { return false }
         if (guest.kind == .suspicious || guest.kind == .adultVisitor || guest.kind == .dealer) && !simulation.checkedIDs.contains(guest.id) && !simulation.shadyOffers { return false }
         if simulation.stock[Supply.toiletries.rawValue,default:0] < 1 || simulation.stock[Supply.towels.rawValue,default:0] < 1 { return false }
-        return rate(for:room) <= guestBudget(guest)
+        return rate(for:room)+designPremium(guest,room) <= guestBudget(guest)
     }
     func checkInExplanation(_ guest:MotelGuest,room:MotelRoom)->String {
         if !managementEnabled { return "" }
@@ -994,7 +1001,7 @@ extension Motel {
         if isNight && guest.kind != .adultVisitor && !simulation.shadyOffers { return "Normal check-in is closed for the night. Reopen at 07:00." }
         if [.suspicious,.adultVisitor,.dealer].contains(guest.kind) && !simulation.checkedIDs.contains(guest.id) { return simulation.shadyOffers ? "Unverified off-books rental: raises police attention." : "Verify this guest's ID first." }
         if simulation.stock["toiletries",default:0] < 1 || simulation.stock["towels",default:0] < 1 { return "Restock towels and toiletries first." }
-        return rate(for:room) > guestBudget(guest) ? "This guest cannot afford the current rate. Lower your pricing policy." : "Ready for check-in."
+        return rate(for:room)+designPremium(guest,room) > guestBudget(guest) ? "This guest cannot afford the current rate. Lower your pricing policy." : "Ready for check-in."
     }
     mutating func verifyGuest(_ id:Int) { guard managementEnabled,waiting.contains(where:{$0.id==id}),!simulation.checkedIDs.contains(id) else{return}; var s=simulation;s.checkedIDs.insert(id);s.ethical += 1;simulation=s;lastEvent="Identity verified. Standard booking rules apply." }
     mutating func registerContract(_ guest:MotelGuest,room:MotelRoom,payment:Int) {
@@ -1043,6 +1050,7 @@ extension Motel {
         guard managementEnabled,let i=rooms.firstIndex(where:{$0.id==id}),useCleaningStock(full:true) else{return false}
         var h=rooms[i].health;h.cleanliness=100;h.faults.remove(.mattress);rooms[i].hospitality=h
         rooms[i].dirty=false;rooms[i].cleanedTasks=Set(MotelGrounds.cleaningTiles.indices)
+        countHavenGoal("clean")
         playVisual("mop");lastEvent="Room \(rooms[i].number) cleaned and linen refreshed.";return true
     }
     @discardableResult mutating func repairRoom(_ id:Int)->Bool {
@@ -1052,9 +1060,11 @@ extension Motel {
         let item=pests ? Supply.pesticide : .parts
         guard s.stock[item.rawValue,default:0]>=2,cash>=15 else{lastEvent="Need 2 \(item.title) and 15 coins.";return false}
         s.stock[item.rawValue,default:0] -= 2;simulation=s;cash -= 15;h.condition=100;h.faults=[];rooms[i].hospitality=h
+        countHavenGoal("repair")
         logMoney(-15,category:"Repair",note:"Room \(rooms[i].number)");playVisual("repair");lastEvent="Room repaired, inspected and pest-treated.";return true
     }
     @discardableResult mutating func installFacility(_ facility:Facility)->Bool {
+        if !journeyAllows(facility) {lastEvent="Earn "+Self.journeyNames[facilityJourneyTier(facility)]+" in Haven life to unlock this facility.";return false}
         guard managementEnabled,!simulation.facilities.contains(facility),cash>=facility.cost,simulation.reputation>=facility.requiredRep,
               facility != .upperFloor || simulation.facilities.contains(.adjacentLot),
               facility != .nightVision || simulation.facilities.contains(.cameras) else{return false}
@@ -1184,6 +1194,7 @@ extension Motel {
             }
         }
         simulation=s
+        settleExpansionHour()
         for id in due {if let room=rooms.first(where:{$0.guest?.id==id}) {_=checkoutGuest(room.id)}}
         if simulation.heat>=35 && business.police==nil {
             var state=operationsState;var consequences=state.consequences ?? BusinessConsequences()

@@ -69,6 +69,7 @@ struct Motel: Codable {
     var home: FamilyHome?
     var guestStories: GuestStoryBook?
     var havenLife: HavenLife?
+    var havenExpansion:HavenExpansion?
     var household: FamilyHome { home ?? FamilyHome() }
     var expansionCost: Int { 250 + (rooms.count - 3) * 150 }
     var occupancy: Int { rooms.filter { $0.guest != nil }.count }
@@ -108,6 +109,7 @@ struct Motel: Codable {
         guestsServed += 1
         if isAtReception {playVisual("checkin",target:OfficeReception.computer)}
         registerContract(guest,room:rooms[roomIndex],payment:payment)
+        welcomeRoutineGuest(guest,room:rooms[roomIndex])
         prepareChaosClock()
         lastEvent = "\(guest.name) checked into room \(rooms[roomIndex].number). +\(payment) coins."
         return true
@@ -118,6 +120,7 @@ struct Motel: Codable {
         guard useCleaningStock(full:true) else { return false }
         rooms[index].dirty = false
         if operationsState.simulation != nil { var health=rooms[index].health; health.cleanliness=100; health.faults.remove(.mattress); rooms[index].hospitality=health }
+        countHavenGoal("clean")
         playVisual("mop")
         rooms[index].cleanedTasks = Set(MotelGrounds.cleaningTiles.indices)
         lastEvent = "Room \(rooms[index].number) is ready. A little elbow grease costs nothing."
@@ -188,6 +191,7 @@ struct Motel: Codable {
         if Self.randomizeGuestArrivals || guestStories != nil { prepareStoryArrivals() }
         settleHavenDay()
         attractHavenGuests()
+        refreshExpansionDay()
         if let oldVisit=visit,oldVisit.sneaking,rooms.first(where:{$0.id==oldVisit.roomID})?.guest==nil {
             var empty=RoomVisit(roomID:oldVisit.roomID,sneaking:false)
             empty.player=oldVisit.player;empty.facing=oldVisit.facing;empty.pocket=oldVisit.pocket;empty.loot=oldVisit.loot
@@ -854,5 +858,317 @@ extension Motel {
         for i in waiting.indices where waiting[i].storyID == nil {
             if i%3 != 2 {waiting[i].category=mix[(day+i)%mix.count]}
         }
+    }
+}
+
+
+// Optional expansion state keeps pre-expansion checkpoints decodable.
+enum HavenTrip:String,Codable,CaseIterable,Identifiable {
+    case couple,family,business
+    var id:String {rawValue}
+    var title:String {switch self {case .couple:return "Cozy getaway";case .family:return "Family holiday";case .business:return "Business visit"}}
+    var need:String {switch self {case .couple:return "Warm decor and a comfortable bed";case .family:return "Extra sleeping space and a mini-fridge";case .business:return "A quiet room, desk and reliable Wi-Fi"}}
+}
+enum HavenRoomDesign:String,Codable,CaseIterable,Identifiable {
+    case classic,cozy,family,business
+    var id:String {rawValue}
+    var title:String {rawValue.capitalized}
+    var cost:Int {self == .classic ? 0 : 75}
+}
+enum HavenRoutine:String,Codable {case room,breakfast,beach,bar,walk,shelter}
+struct HavenRoutineGuest:Codable {
+    var tile:Tile
+    var previous:Tile
+    var activity:HavenRoutine
+}
+struct HavenDiscovery:Identifiable {
+    let id:String
+    let name:String
+    let hint:String
+    let tile:Tile
+    let group:String
+}
+struct HavenExpansion:Codable {
+    var tier=0
+    var designs:[Int:HavenRoomDesign]=[:]
+    var routines:[Int:HavenRoutineGuest]=[:]
+    var satisfaction:[Int:Int]=[:]
+    var dailyDay=0
+    var daily:[String:Int]=[:]
+    var claimedGoals:Set<String>=[]
+    var discoveries:Set<String>=[]
+    var searches:Set<String>=[]
+    var preparedDay=0
+    var weatherSettledHour = -1
+    var breakfastDay=0
+    var buffet=0
+    var meals:Set<Int>=[]
+    var missedMeals:Set<Int>=[]
+    var notes:[String]=[]
+}
+extension MotelGuest {
+    var holiday:HavenTrip {HavenTrip.allCases[abs(id)%HavenTrip.allCases.count]}
+}
+extension Motel {
+    var expansion:HavenExpansion {havenExpansion ?? HavenExpansion()}
+    mutating func initializeExpansion() {
+        if havenExpansion == nil {havenExpansion=HavenExpansion()}
+        refreshExpansionDay()
+    }
+    mutating func refreshExpansionDay() {
+        guard var e=havenExpansion,e.dailyDay != day else{return}
+        e.dailyDay=day;e.daily=[:];e.claimedGoals=[];e.searches=[];e.meals=[];e.missedMeals=[]
+        e.breakfastDay=day;e.buffet=0;e.weatherSettledHour = -1
+        let guests=Set(rooms.compactMap{$0.guest?.id})
+        e.routines=e.routines.filter{guests.contains($0.key)}
+        e.satisfaction=e.satisfaction.filter{guests.contains($0.key)}
+        havenExpansion=e
+    }
+    mutating func expansionNote(_ text:String) {
+        guard var e=havenExpansion else{return}
+        e.notes.insert("Day \(day): "+text,at:0);e.notes=Array(e.notes.prefix(20));havenExpansion=e;lastEvent=text
+    }
+    mutating func countHavenGoal(_ key:String,_ amount:Int=1) {
+        guard havenExpansion != nil else{return};refreshExpansionDay()
+        var e=expansion;e.daily[key,default:0]+=amount;havenExpansion=e
+    }
+    static let journeyNames=["Roadside beginnings","Welcoming motel","Coastal retreat","Famous coastal resort"]
+    var journeyRequirement:String {
+        switch expansion.tier {
+        case 0:return "Serve 5 guests, own 3 rooms and reach 45 reputation"
+        case 1:return "Serve 15 guests, own 4 rooms and reach 60 reputation"
+        case 2:return "Serve 30 guests, own 6 rooms, complete 4 weekly activities and reach 75 reputation"
+        default:return "Your coastal resort is famous. Keep building your collection and community."
+        }
+    }
+    var canAdvanceJourney:Bool {
+        guard havenExpansion != nil else{return false}
+        switch expansion.tier {
+        case 0:return guestsServed>=5 && rooms.count>=3 && simulation.reputation>=45
+        case 1:return guestsServed>=15 && rooms.count>=4 && simulation.reputation>=60
+        case 2:return guestsServed>=30 && rooms.count>=6 && haven.completedActivities.count>=4 && simulation.reputation>=75
+        default:return false
+        }
+    }
+    @discardableResult mutating func advanceJourney()->Bool {
+        guard !caught,canAdvanceJourney else{return false}
+        var e=expansion;e.tier+=1;havenExpansion=e
+        let reward=e.tier*100;cash+=reward
+        logMoney(reward,category:"Milestone",note:Self.journeyNames[e.tier])
+        expansionNote(Self.journeyNames[e.tier]+" earned! +\(reward) coins and new facility permits.");return true
+    }
+    func facilityJourneyTier(_ facility:Facility)->Int {
+        switch facility {case .pool:return 1;case .restaurant:return 2;case .upperFloor:return 3;default:return 0}
+    }
+    func journeyAllows(_ facility:Facility)->Bool {havenExpansion == nil || expansion.tier>=facilityJourneyTier(facility)}
+    func roomDesign(_ room:MotelRoom)->HavenRoomDesign {expansion.designs[room.id] ?? .classic}
+    func roomMatch(_ guest:MotelGuest,_ room:MotelRoom)->Int {
+        guard havenExpansion != nil else{return 0}
+        let design=roomDesign(room);let h=room.health
+        var score=0
+        switch guest.holiday {
+        case .couple:
+            if design == .cozy {score+=2};if room.theme==1 || room.theme==3 {score+=1};if h.upgrades.contains(.bed) {score+=1}
+        case .family:
+            if design == .family {score+=2};if h.upgrades.contains(.fridge) {score+=1};if room.furniture>0 {score+=1}
+        case .business:
+            if design == .business {score+=2};if h.upgrades.contains(.soundproof) {score+=1};if simulation.facilities.contains(.wifi) && !simulation.powerOut {score+=1}
+        }
+        return min(4,score)
+    }
+    func designPremium(_ guest:MotelGuest,_ room:MotelRoom)->Int {roomMatch(guest,room)*4}
+    @discardableResult mutating func designHavenRoom(_ id:Int,_ design:HavenRoomDesign)->Bool {
+        guard havenExpansion != nil,!caught,let i=rooms.firstIndex(where:{$0.id==id}),rooms[i].guest==nil,roomDesign(rooms[i]) != design,cash>=design.cost else{return false}
+        cash-=design.cost;var e=expansion;e.designs[id]=design;havenExpansion=e
+        logMoney(-design.cost,category:"Room design",note:"Room \(rooms[i].number): "+design.title)
+        playVisual("build");expansionNote("Room \(rooms[i].number) now offers "+design.title.lowercased()+" accommodation.");return true
+    }
+    mutating func welcomeRoutineGuest(_ guest:MotelGuest,room:MotelRoom) {
+        guard havenExpansion != nil else{return}
+        var e=expansion;e.satisfaction[guest.id]=min(100,45+roomMatch(guest,room)*10);havenExpansion=e
+        countHavenGoal("welcome")
+    }
+    static func forecastWeather(_ day:Int)->HotelWeather {
+        [.sunny,.sunny,.rain,.sunny,.wind,.sunny,.storm][max(0,day-1)%7]
+    }
+    var nextWeather:HotelWeather {Self.forecastWeather(day+1)}
+    var weatherAdvice:String {
+        if simulation.economy == .heatwave {return "Heatwave: guests seek the pool. Stock towels and keep the AC working."}
+        switch weather {
+        case .storm:return "Storm: guests take shelter. Secure equipment before 12:00 to prevent storm damage."
+        case .rain:return "Rain: guests gather at the sheltered breakfast terrace."
+        case .wind:return "Wind: beach visitors return to sheltered areas."
+        case .snow:return "Cold weather: guests stay near warm indoor spaces."
+        case .sunny:return "Clear skies: guests visit the beach and pool during the afternoon."
+        }
+    }
+    @discardableResult mutating func prepareHavenWeather()->Bool {
+        guard havenExpansion != nil,!caught,expansion.preparedDay != day,simulation.stock["parts",default:0]>=2,cash>=10 else{return false}
+        var e=expansion;e.preparedDay=day;havenExpansion=e
+        var s=simulation;s.stock["parts",default:0]-=2;simulation=s;cash-=10
+        logMoney(-10,category:"Weather preparation",note:"Equipment secured")
+        playVisual("repair");expansionNote("Equipment secured, drains cleared and emergency supplies checked for today.");return true
+    }
+    func guestRoutine(_ guest:MotelGuest)->HavenRoutine {
+        let hour=simulation.hour
+        if hour>=21 || hour<8 {return .room}
+        if hour<11 {return .breakfast}
+        if weather != .sunny {return .shelter}
+        if hour<12 {return .walk}
+        if hour<18 {return .beach}
+        return guest.holiday == .family ? .walk : .bar
+    }
+    func expansionWalkable(to tile:Tile)->Tile {
+        if !groundBlocked(tile) {return tile}
+        for radius in 1...5 {
+            for dy in -radius...radius {for dx in -radius...radius where abs(dx)+abs(dy)==radius {
+                let candidate=Tile(x:tile.x+dx,y:tile.y+dy)
+                if !groundBlocked(candidate) {return candidate}
+            }}
+        }
+        return groundNearestWalkable(to:tile)
+    }
+    func routineDestination(_ guest:MotelGuest,room:MotelRoom)->Tile {
+        let id=abs(guest.id)%3
+        let tile:Tile
+        switch guestRoutine(guest) {
+        case .room:return groundRoomDoor(room.id)
+        case .breakfast,.shelter:tile=Tile(x:3+id,y:29)
+        case .beach:tile=simulation.economy == .heatwave ? Tile(x:9,y:17+id) : Tile(x:57+id*2,y:50)
+        case .bar:tile=Tile(x:65-id,y:17)
+        case .walk:tile=Tile(x:40+id*3,y:33)
+        }
+        return expansionWalkable(to:groundTile(tile))
+    }
+    mutating func tickHavenRoutines() {
+        guard havenExpansion != nil,managementEnabled,!caught else{return}
+        refreshExpansionDay()
+        var e=expansion
+        let live=rooms.filter{$0.guest != nil && $0.id/9==viewingFloor}
+        let ids=Set(live.compactMap{$0.guest?.id});e.routines=e.routines.filter{ids.contains($0.key)}
+        var reserved=Set(worldState.travellers.map(\.player)+Array((worldState.guestPositions ?? [:]).values))
+        reserved.formUnion(e.routines.values.map(\.tile))
+        reserved.insert(groundTile(MotelGrounds.officeDoor));reserved.insert(groundTile(Tile(x:6,y:10)))
+        if worldState.place == .grounds {reserved.insert(actorTile)}
+        for room in live {
+            guard let guest=room.guest,!worldState.travellers.contains(where:{$0.id==guest.id}) else{continue}
+            let kind=guestRoutine(guest)
+            if kind == .room && e.routines[guest.id]==nil {continue}
+            let door=groundRoomDoor(room.id)
+            var routine=e.routines[guest.id] ?? HavenRoutineGuest(tile:door,previous:door,activity:kind)
+            routine.previous=routine.tile;routine.activity=kind
+            reserved.remove(routine.tile)
+            let target=routineDestination(guest,room:room)
+            let step:Tile?
+            if let danger=operationsState.incident?.tile,routine.tile.distance(to:danger)<12 {step=groundEscapeStep(from:routine.tile,danger:danger,avoiding:reserved)}
+            else {step=groundNextStep(from:routine.tile,to:target,avoiding:reserved)}
+            routine.tile=step ?? routine.tile
+            reserved.insert(routine.tile)
+            if kind == .room && routine.tile==door {e.routines.removeValue(forKey:guest.id)}
+            else {e.routines[guest.id]=routine}
+        }
+        havenExpansion=e
+        // Existing clerk can help the morning rush using actual cooked servings.
+        if worldState.tick%12==0,operationsState.workers.contains(where:{$0.active && $0.role == .clerk}),!breakfastQueue.isEmpty {
+            _=serveHavenBreakfast(byStaff:true)
+        }
+    }
+    mutating func settleExpansionHour() {
+        guard havenExpansion != nil else{return};refreshExpansionDay()
+        var e=expansion
+        guard e.weatherSettledHour != simulation.absoluteHour else{return}
+        e.weatherSettledHour=simulation.absoluteHour
+        var s=simulation
+        if s.hour==12 {
+            for room in rooms {
+                guard let g=room.guest,!e.meals.contains(g.id),!e.missedMeals.contains(g.id) else{continue}
+                e.missedMeals.insert(g.id);e.satisfaction[g.id,default:50]=max(0,e.satisfaction[g.id,default:50]-8)
+            }
+            e.buffet=0
+            if weather == .storm && e.preparedDay != day,let i=rooms.indices.first {
+                var h=rooms[i].health;h.condition=max(0,h.condition-8);h.faults.insert(.pipe);rooms[i].hospitality=h
+                s.news="Storm damage: a drain overflowed. Prepare equipment before noon next time."
+            }
+        }
+        for room in rooms {
+            guard let guest=room.guest else{continue}
+            if !room.health.faults.isEmpty || room.health.cleanliness<45 {e.satisfaction[guest.id,default:50]=max(0,e.satisfaction[guest.id,default:50]-3)}
+            if s.economy == .heatwave,room.health.faults.contains(.ac),e.preparedDay != day {e.satisfaction[guest.id,default:50]=max(0,e.satisfaction[guest.id,default:50]-3)}
+        }
+        simulation=s;havenExpansion=e
+    }
+    var atBreakfastCounter:Bool {visit==nil && worldState.place == .grounds && actorTile.distance(to:groundTile(HotelService.breakfast.tile))<=2 && !isRidingBike}
+    var breakfastOpen:Bool {(8...11).contains(simulation.hour)}
+    var breakfastQueue:[MotelGuest] {
+        guard breakfastOpen else{return []}
+        return rooms.compactMap(\.guest).filter{!expansion.meals.contains($0.id)}.sorted{$0.id<$1.id}
+    }
+    @discardableResult mutating func cookHavenBreakfast()->Bool {
+        guard havenExpansion != nil,!caught,atBreakfastCounter,breakfastOpen,expansion.buffet<=9,simulation.stock["snacks",default:0]>=3,cash>=6 else{return false}
+        var s=simulation;s.stock["snacks",default:0]-=3;simulation=s;cash-=6
+        var e=expansion;e.buffet+=3;havenExpansion=e
+        logMoney(-6,category:"Breakfast",note:"Three fresh portions");playVisual("breakfast")
+        expansionNote("Three fresh breakfast portions prepared. Serve guests before noon.");return true
+    }
+    @discardableResult mutating func serveHavenBreakfast(byStaff:Bool=false)->Bool {
+        guard havenExpansion != nil,!caught,(byStaff || atBreakfastCounter),breakfastOpen,expansion.buffet>0,let guest=breakfastQueue.first,
+              !byStaff || operationsState.workers.contains(where:{$0.active && $0.role == .clerk}) else{return false}
+        var e=expansion;e.buffet-=1;e.meals.insert(guest.id);e.satisfaction[guest.id,default:50]=min(100,e.satisfaction[guest.id,default:50]+12);havenExpansion=e
+        cash+=12;logMoney(12,category:"Breakfast",note:guest.name)
+        countHavenGoal("breakfast");if !byStaff {playVisual("breakfast",target:groundTile(HotelService.breakfast.tile))}
+        expansionNote(guest.name+" enjoyed breakfast. +12 coins.");return true
+    }
+    static let discoveries:[HavenDiscovery]=[
+        .init(id:"shell-pearl",name:"Pearl shell",hint:"Search the east beach",tile:Tile(x:57,y:50),group:"shell"),
+        .init(id:"shell-coral",name:"Coral shell",hint:"Search the south shore",tile:Tile(x:61,y:54),group:"shell"),
+        .init(id:"shell-moon",name:"Moon shell",hint:"Search the cove at night",tile:Tile(x:55,y:54),group:"shell"),
+        .init(id:"fish-silver",name:"Silver sardine",hint:"Fish at the cove on a clear day",tile:Tile(x:58,y:51),group:"fish"),
+        .init(id:"fish-red",name:"Red snapper",hint:"Fish at the cove during rain",tile:Tile(x:58,y:51),group:"fish"),
+        .init(id:"fish-gold",name:"Golden reef fish",hint:"Fish at the cove after 18:00",tile:Tile(x:58,y:51),group:"fish"),
+        .init(id:"furniture-lamp",name:"Vintage lamp",hint:"Find a market treasure on weekday 1",tile:Tile(x:46,y:17),group:"furniture"),
+        .init(id:"furniture-chair",name:"Carved beach chair",hint:"Find a market treasure after reaching Welcoming motel",tile:Tile(x:46,y:17),group:"furniture"),
+        .init(id:"furniture-clock",name:"Coastal clock",hint:"Find a market treasure after reaching Coastal retreat",tile:Tile(x:46,y:17),group:"furniture"),
+        .init(id:"keepsake-paw",name:"Tiny paw charm",hint:"Explore the neighborhood with a pet",tile:Tile(x:46,y:38),group:"keepsake"),
+        .init(id:"keepsake-leaf",name:"Emerald leaf",hint:"Explore the neighborhood garden with a pet",tile:Tile(x:49,y:42),group:"keepsake"),
+        .init(id:"keepsake-star",name:"Star pebble",hint:"Explore the beach with a pet",tile:Tile(x:60,y:50),group:"keepsake")
+    ]
+    func canFindDiscovery(_ item:HavenDiscovery)->Bool {
+        guard havenExpansion != nil,!caught,visit==nil,worldState.place == .grounds,!isRidingBike,!expansion.discoveries.contains(item.id),
+              actorTile.distance(to:expansionWalkable(to:groundTile(item.tile)))<=2 else{return false}
+        if item.id=="shell-moon" {return simulation.hour>=19}
+        if item.id=="fish-silver" {return weather == .sunny && simulation.hour<18}
+        if item.id=="fish-red" {return weather == .rain || weather == .storm}
+        if item.id=="fish-gold" {return simulation.hour>=18}
+        if item.group=="furniture" {
+            let tier=item.id=="furniture-clock" ? 2 : item.id=="furniture-chair" ? 1 : 0
+            return havenWeekday==1 && expansion.tier>=tier && cash>=30
+        }
+        if item.group=="keepsake" {return exploringPet != nil}
+        return true
+    }
+    @discardableResult mutating func findHavenDiscovery(_ id:String)->Bool {
+        guard let item=Self.discoveries.first(where:{$0.id==id}),canFindDiscovery(item) else{return false}
+        var e=expansion;e.discoveries.insert(id);havenExpansion=e
+        if item.group=="furniture" {cash-=30;logMoney(-30,category:"Collection",note:item.name)}
+        else {cash+=5;logMoney(5,category:"Discovery",note:item.name)}
+        if item.group=="fish" {var s=simulation;s.stock["snacks",default:0]+=2;simulation=s}
+        countHavenGoal("discover");playVisual(item.group=="fish" ? "garden" : "luggage")
+        expansionNote("Discovered "+item.name+"! Added to your collection journal.");return true
+    }
+    var nearDiscovery:HavenDiscovery? {Self.discoveries.first{canFindDiscovery($0)}}
+    var goalKeys:[String] {
+        let rotations=[["welcome","clean","breakfast"],["repair","discover","welcome"],["breakfast","clean","discover"]]
+        return rotations[max(0,day-1)%rotations.count]
+    }
+    func goalTarget(_ key:String)->Int {key=="breakfast" ? 2 : 1}
+    func goalTitle(_ key:String)->String {
+        switch key {case "welcome":return "Welcome a new guest";case "clean":return "Clean one room";case "repair":return "Complete a repair";case "breakfast":return "Serve two breakfasts";default:return "Find a new discovery"}
+    }
+    @discardableResult mutating func claimHavenGoal(_ key:String)->Bool {
+        guard havenExpansion != nil,!caught,goalKeys.contains(key),!expansion.claimedGoals.contains(key),
+              expansion.daily[key,default:0]>=goalTarget(key) else{return false}
+        var e=expansion;e.claimedGoals.insert(key);havenExpansion=e;cash+=20
+        var s=simulation;s.stock["parts",default:0]+=1;simulation=s
+        logMoney(20,category:"Optional goal",note:goalTitle(key));expansionNote("Daily goal complete! +20 coins and one repair part.");return true
     }
 }
