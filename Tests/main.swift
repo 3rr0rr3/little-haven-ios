@@ -1766,6 +1766,8 @@ func occasionRules() {
     require(!m.requestHavenInspection(),"Inspection rewards cannot be repeated within seven days")
     var poor=base();for i in poor.rooms.indices {poor.rooms[i].dirty=true;var h=poor.rooms[i].health;h.condition=0;poor.rooms[i].hospitality=h}
     require(poor.requestHavenInspection() && poor.occasions.award=="Improvements required","Neglected rooms fail inspection")
+    var weakService=base();var service=weakService.simulation;service.reputation=20;weakService.simulation=service
+    require(weakService.requestHavenInspection() && weakService.occasions.inspectionScore>=75 && !weakService.inspectionHasAward && weakService.rivalAppeal==weakService.inspectionTotal,"A failed minimum check never awards a rivalry bonus even with a high overall score")
     require(m.rivalCampaign(cooperate:false) && !m.rivalCampaign(cooperate:false),"One campaign per week")
     require(m.rivalCampaign(cooperate:true) && !m.rivalCampaign(cooperate:true),"One partnership per week")
     m.day=8;let weekly=m.cash;m.settleOccasionMorning()

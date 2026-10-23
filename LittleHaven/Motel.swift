@@ -1406,7 +1406,8 @@ extension Motel {
         logMoney(passed ? 40 : -20,category:"Inspection",note:o.award)
         occasionNote(o.award+(passed ? ": +60 coins. Your award improves next week's appeal." : ". Fix the lowest checks; return in seven days."));return true
     }
-    var rivalAppeal:Int {min(100,max(0,inspectionTotal+(occasions.inspectionScore>=75 ? 5 : 0)+(occasions.campaignWeek==occasionWeek ? 10 : 0)))}
+    var inspectionHasAward:Bool {occasions.inspectionDay>0 && occasions.inspectionScore>=75 && occasions.award != "Improvements required"}
+    var rivalAppeal:Int {min(100,max(0,inspectionTotal+(inspectionHasAward ? 5 : 0)+(occasions.campaignWeek==occasionWeek ? 10 : 0)))}
     @discardableResult mutating func rivalCampaign(cooperate:Bool)->Bool {
         guard atOccasionDesk,cash >= (cooperate ? 25 : 30) else{return false}
         var o=occasions
@@ -1476,7 +1477,7 @@ extension Motel {
         let finishedWeek=occasionWeek-1
         guard finishedWeek>0,o.rivalWeek<finishedWeek else{return}
         // Compare the completed week before clearing its one-week campaign.
-        let appeal=min(100,inspectionTotal+(o.inspectionScore>=75 ? 5 : 0)+(o.campaignWeek==finishedWeek ? 10 : 0))
+        let appeal=min(100,inspectionTotal+(inspectionHasAward ? 5 : 0)+(o.campaignWeek==finishedWeek ? 10 : 0))
         let rival=55+(finishedWeek*13)%31;o.rivalWeek=finishedWeek;o.rivalScore=rival
         let won=appeal>=rival;if won {o.wins+=1}
         let allied=o.allianceWeek==finishedWeek;havenOccasions=o
