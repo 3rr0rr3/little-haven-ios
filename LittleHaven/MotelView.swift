@@ -826,6 +826,7 @@ struct MotelView: View {
         }
     }
     private var pauseSheet: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 20) {
             Text("On a break").font(.title.bold())
             Text("Move around the Airb&b to do your work. Visit the desk or logbook to save, the tools closet for a mop, and your bed for the next day. Clean all three messes inside a vacated room before renting it again.").font(.body)
@@ -836,7 +837,8 @@ struct MotelView: View {
             Button("Guest stories") { journalAfterPause=true;showPause=false }.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("guestStoriesJournal")
             Button("Options") { showOptions = true }.buttonStyle(MotelButtonStyle(subdued:true))
             Button("Save & return to title") { stop(); game.save(); showPause = false; returnToTitle() }.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("backToTitle")
-        }.padding(24).foregroundStyle(cream).presentationBackground(Color(hex: 0x172A25))
+        }.padding(24)
+        }.foregroundStyle(cream).presentationBackground(Color(hex: 0x172A25))
             .sheet(isPresented:$showOptions) { GameOptionsView() }
     }
     private var gameOver: some View {

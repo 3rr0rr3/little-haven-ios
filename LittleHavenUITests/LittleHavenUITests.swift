@@ -657,6 +657,13 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Willow Home"))
         XCTAssertFalse(app.buttons["neighborFavor0"].isEnabled,"Delivery requires physically collecting the parcel")
         capture(app,"Neighbor friendship and physical favor")
+        app.buttons["Done"].tap()
+        app.buttons["Pause game"].tap()
+        let community=app.buttons["openHavenLife"]
+        XCTAssertTrue(community.waitForExistence(timeout:3))
+        if !community.isHittable {app.swipeUp()}
+        community.tap()
+        XCTAssertTrue(app.buttons["havenTab_Neighbors"].waitForExistence(timeout:5),"Community journal opens after dismissing the scrollable pause menu")
     }
     func testWeeklyActivityRoundsAndPrize() {
         let app=launch("--ui-haven-calendar")
