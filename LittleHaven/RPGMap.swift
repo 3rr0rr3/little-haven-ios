@@ -212,6 +212,9 @@ enum CreativeCatalog {
         for col in [14,22,30] {for row in [10,19,28] {
             add("flowers-\(col)-\(row)","Flower box",col,row,2,1,[],RPGRegion(x:col*16,y:row*16-3,width:29,height:13))
         }}
+        for (id,tile) in Motel.gardenPlots.enumerated() {
+            add("kitchen-plot-\(id)","Kitchen garden plot \(id+1)",tile.x,tile.y,1,1,[],RPGRegion(x:tile.x*16,y:tile.y*16-8,width:16,height:24))
+        }
         add("garden-table","Garden table",4,16,3,1,[HotelService.garden.tile],RPGRegion(x:63,y:251,width:42,height:16))
         add("luggage","Luggage trolley",8,11,1,1,[],RPGRegion(x:128,y:176,width:24,height:28))
         add("motel-sign","Motel sign",1,32,4,1,[],RPGRegion(x:14,y:504,width:64,height:28))

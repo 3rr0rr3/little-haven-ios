@@ -1680,3 +1680,73 @@ func beachWardrobeRules() {
     print("PASS: beach clothing boundaries and return to everyday outfits")
 }
 beachWardrobeRules()
+
+
+func kitchenGardenRules() {
+    func base()->Motel {
+        var m=Motel();m.waiting=[];m.initializeWorld();m.enableManagement();m.initializeExpansion();m.initializeKitchenGarden();m.cash=10000
+        m.world!.place = .grounds;m.world!.player=Tile(x:2,y:17);m.operations!.nextIncidentTick=100000;m.operations!.weatherOverride = .sunny
+        return m
+    }
+    func grow(_ crop:GardenCrop,_ hotel:inout Motel) {
+        hotel.world!.place = .grounds;hotel.world!.player=hotel.gardenTile(0)
+        require(hotel.plantKitchenCrop(0,crop:crop),"Seeds plant at the actual plot")
+        for _ in 0..<crop.days {
+            require(hotel.waterKitchenPlot(0),"Each growing day accepts one watering")
+            require(!hotel.waterKitchenPlot(0),"Watering cannot be repeated for extra growth")
+            require(hotel.nextDay(),"Rest advances the garden through the real motel day transition")
+        }
+        require(hotel.plotReady(0) && hotel.harvestKitchenPlot(0),"Watered crops become harvestable")
+        require(!hotel.harvestKitchenPlot(0),"A harvested plot cannot pay out twice")
+    }
+    var hotel=base()
+    let cash=hotel.cash
+    hotel.world!.player=Tile(x:12,y:16)
+    require(!hotel.plantKitchenCrop(0,crop:.basil) && hotel.cash==cash,"Seeds cannot be planted remotely")
+    hotel.world!.player=hotel.gardenTile(0)
+    require(hotel.plantKitchenCrop(0,crop:.basil),"Starter crop plants")
+    require(!hotel.harvestKitchenPlot(0),"Fresh seeds do not produce instant ingredients")
+    require(hotel.nextDay() && hotel.kitchenPlot(0).growth==0,"Dry soil pauses growth safely")
+    require(hotel.waterKitchenPlot(0) && hotel.nextDay() && hotel.harvestKitchenPlot(0),"Watering restarts growth")
+    let ingredients=hotel.kitchen.pantry
+    hotel.settleGardenMorning()
+    require(hotel.kitchen.pantry==ingredients,"Morning settlement does not duplicate harvests")
+    grow(.tomato,&hotel);grow(.carrot,&hotel)
+    require(hotel.kitchen.unlocked.contains(GardenRecipe.salad.rawValue),"Harvesting tomatoes and carrots unlocks salad")
+    grow(.pepper,&hotel);grow(.basil,&hotel)
+    require(hotel.kitchen.unlocked.contains(GardenRecipe.roast.rawValue),"Pepper harvesting and experience unlock roasted vegetables")
+    hotel.world!.player=hotel.groundTile(HotelService.breakfast.tile)
+    let basil=hotel.kitchen.pantry["basil",default:0],snacks=hotel.simulation.stock["snacks",default:0]
+    require(hotel.cookGardenRecipe(.herbToast),"A starter dish cooks at the physical kitchen")
+    require(hotel.kitchen.pantry["basil"]==basil-1 && hotel.simulation.stock["snacks"]==snacks-1 && hotel.kitchen.plates["herbToast"]==2,"Cooking atomically consumes ingredients and creates two portions")
+    require(hotel.cookGardenRecipe(.herbToast) && hotel.cookGardenRecipe(.herbToast),"Experience uses real cooking")
+    require(hotel.kitchen.unlocked.contains(GardenRecipe.stew.rawValue),"Three batches and the required harvests unlock stew")
+    var outage=hotel.simulation;outage.powerOut=true;hotel.simulation=outage
+    let pantry=hotel.kitchen.pantry
+    require(!hotel.cookGardenRecipe(.roast) && hotel.kitchen.pantry==pantry,"Hot dishes stop during outages without consuming ingredients")
+    require(hotel.cookGardenRecipe(.salad),"A cold salad remains available during a power outage")
+    outage=hotel.simulation;outage.waterOut=true;hotel.simulation=outage
+    require(!hotel.cookGardenRecipe(.salad),"Food preparation still requires running water")
+    outage.powerOut=false;outage.waterOut=false;hotel.simulation=outage
+    let guest=MotelGuest(id:901,name:"Garden guest",nights:2,color:0x91B7A1,story:"Fresh food",category:.traveler)
+    hotel.rooms[0].guest=guest;hotel.rooms[0].nightsLeft=2
+    let payment=hotel.cash,portions=hotel.kitchen.plates["herbToast",default:0]
+    require(hotel.serveGardenDish(.herbToast,guestID:guest.id),"Garden meals serve a real staying guest")
+    require(hotel.cash==payment+18 && hotel.kitchen.plates["herbToast"]==portions-1 && hotel.expansion.meals.contains(guest.id),"Serving pays money, consumes a portion and fulfills breakfast")
+    require(!hotel.serveGardenDish(.salad,guestID:guest.id) && !hotel.serveGardenDish(.herbToast,guestID:999),"Meals cannot be farmed or sold to nonexistent guests")
+    var rain=base();rain.operations!.weatherOverride = .rain
+    require(rain.plantKitchenCrop(0,crop:.basil) && !rain.waterKitchenPlot(0) && rain.nextDay() && rain.plotReady(0),"Rain waters crops naturally")
+    var moved=base();_=moved.plantKitchenCrop(0,crop:.basil)
+    moved.world!.structureOffsets=["kitchen-plot-0":Tile(x:8,y:0)]
+    require(moved.gardenTile(0)==Tile(x:10,y:18) && moved.kitchenPlot(0).crop == .basil,"Creative relocation moves the plot without losing its crop")
+    let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(hotel))
+    require(restored.kitchen.unlocked==hotel.kitchen.unlocked && restored.kitchen.pantry==hotel.kitchen.pantry && restored.kitchen.servedDay==hotel.kitchen.servedDay,"Recipes, ingredients and serving limits survive reloading")
+    var object=try! JSONSerialization.jsonObject(with:JSONEncoder().encode(hotel)) as! [String:Any]
+    object.removeValue(forKey:"kitchenGarden")
+    require((try! JSONDecoder().decode(Motel.self,from:JSONSerialization.data(withJSONObject:object))).kitchenGarden==nil,"Older saves load without garden state")
+    for night in [false,true] {for vision in [false,true] {
+        require(Motel.ambientOpacity(night:night,nightVision:vision,powerOut:true)==Motel.ambientOpacity(night:night,nightVision:vision,powerOut:false),"Outages never dim the full map")
+    }}
+    print("PASS: growing and rain, real overnight progress, recipe unlocks, ingredient accounting, guest meal rewards, creative plot relocation, old saves and outage visibility")
+}
+kitchenGardenRules()

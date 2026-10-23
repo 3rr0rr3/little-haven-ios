@@ -266,7 +266,7 @@ extension Motel {
         assignRoomColors()
         if Self.randomizeGuestArrivals { prepareStoryArrivals() }
         if world == nil { world = MotelWorldState() }
-        if Self.randomizeGuestArrivals { initializeHavenLife();initializeExpansion() }
+        if Self.randomizeGuestArrivals { initializeHavenLife();initializeExpansion();initializeKitchenGarden() }
         if world!.reception == nil { world!.reception = OfficeReception() }
         if world!.place == .office,world!.player.x == 9,MotelGrounds.officeBlocked(world!.player) { world!.player.x=8 }
 

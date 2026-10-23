@@ -38,6 +38,36 @@ struct ContentView: View {
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}
 
 
+
+        if args.contains(where:{$0.hasPrefix("--ui-garden-") || $0.hasPrefix("--ui-outage-")}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeExpansion();sample.motel!.initializeKitchenGarden()
+            sample.motel!.cash=500;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:2,y:17)
+            var k=sample.motel!.kitchen
+            if args.contains("--ui-garden-harvest") {
+                k.plots[0]=KitchenPlot(crop:.tomato,growth:2,wateredDay:1);k.harvested=["carrot"];k.harvests=1
+            }
+            if args.contains("--ui-garden-world") {
+                k.plots[0]=KitchenPlot(crop:.tomato,growth:2,wateredDay:1)
+                k.plots[1]=KitchenPlot(crop:.carrot,growth:1,wateredDay:1)
+                k.plots[2]=KitchenPlot(crop:.basil,growth:1,wateredDay:1)
+                sample.motel!.world!.player=Tile(x:2,y:20)
+            }
+            if args.contains("--ui-garden-kitchen") {
+                k.pantry=["basil":3,"tomato":3,"carrot":3,"pepper":3]
+                sample.motel!.world!.player=sample.motel!.groundTile(HotelService.breakfast.tile)
+                sample.motel!.rooms[0].guest=Motel.arrivals(day:1,count:1,randomize:false)[0];sample.motel!.rooms[0].nightsLeft=2
+            }
+            sample.motel!.kitchenGarden=k
+            if args.contains(where:{$0.hasPrefix("--ui-outage-")}) {
+                sample.motel!.world!.player=Tile(x:12,y:16)
+                var s=sample.motel!.simulation;s.powerOut=true
+                s.hour=args.contains("--ui-outage-night") ? 22 : 12;sample.motel!.simulation=s
+                sample.motel!.operations!.weatherOverride = .sunny
+            }
+            sample.save();return sample
+        }
+
         if args.contains("--ui-beach-outfits") || args.contains("--ui-beach-outfits-street") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeExpansion()
             sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000

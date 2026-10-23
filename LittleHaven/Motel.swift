@@ -70,6 +70,7 @@ struct Motel: Codable {
     var guestStories: GuestStoryBook?
     var havenLife: HavenLife?
     var havenExpansion:HavenExpansion?
+    var kitchenGarden:KitchenGarden?
     var household: FamilyHome { home ?? FamilyHome() }
     var expansionCost: Int { 250 + (rooms.count - 3) * 150 }
     var occupancy: Int { rooms.filter { $0.guest != nil }.count }
@@ -169,7 +170,9 @@ struct Motel: Codable {
     }
     @discardableResult mutating func nextDay() -> Bool {
         guard !caught, (visit == nil || managementEnabled), business.police == nil else { return false }
+        prepareGardenNight()
         day += 1
+        settleGardenMorning()
         let beforeWages=cash
         payStaffForDay()
         logMoney(cash-beforeWages,category:"Wages",note:"Day and night shift payroll")
@@ -1179,5 +1182,158 @@ extension Motel {
 extension Motel {
     func guestUsesBeachwear(at tile:Tile)->Bool {
         visit==nil && worldState.place == .grounds && tile.y>=42 && BeachLayout.contains(tile) && !BeachLayout.water(tile)
+    }
+}
+
+
+enum GardenCrop:String,Codable,CaseIterable,Identifiable {
+    case basil,tomato,carrot,pepper
+    var id:String {rawValue}
+    var title:String {rawValue.capitalized}
+    var seedCost:Int {switch self {case .basil:return 4;case .tomato:return 6;case .carrot:return 5;case .pepper:return 7}}
+    var days:Int {switch self {case .basil:return 1;case .tomato,.carrot:return 2;case .pepper:return 3}}
+    var harvestYield:Int {self == .basil ? 2 : 3}
+}
+enum GardenRecipe:String,Codable,CaseIterable,Identifiable {
+    case herbToast,salad,roast,stew
+    var id:String {rawValue}
+    var title:String {switch self {case .herbToast:return "Garden herb toast";case .salad:return "Sunshine salad";case .roast:return "Roasted garden vegetables";case .stew:return "Haven harvest stew"}}
+    var ingredients:[GardenCrop:Int] {switch self {
+    case .herbToast:return [.basil:1];case .salad:return [.tomato:1,.carrot:1]
+    case .roast:return [.pepper:1,.carrot:1];case .stew:return [.basil:1,.tomato:1,.pepper:1]
+    }}
+    var snacks:Int {self == .herbToast || self == .stew ? 1 : 0}
+    var needsPower:Bool {self != .salad}
+    var price:Int {switch self {case .herbToast:return 18;case .salad:return 22;case .roast:return 27;case .stew:return 32}}
+    var unlockHint:String {switch self {
+    case .herbToast:return "Your starter recipe. Grow basil to begin."
+    case .salad:return "Harvest both tomatoes and carrots."
+    case .roast:return "Harvest peppers and complete three harvests."
+    case .stew:return "Cook three batches and harvest basil, tomatoes and peppers."
+    }}
+    var ingredientText:String {
+        GardenCrop.allCases.compactMap{crop in ingredients[crop].map{"\($0) "+crop.title.lowercased()}}.joined(separator:", ")+(snacks>0 ? ", \(snacks) snack" : "")
+    }
+}
+struct KitchenPlot:Codable {
+    var crop:GardenCrop?
+    var growth=0
+    var wateredDay=0
+}
+struct KitchenGarden:Codable {
+    var plots:[Int:KitchenPlot]=[:]
+    var pantry:[String:Int]=[:]
+    var harvested:Set<String>=[]
+    var harvests=0
+    var batches=0
+    var unlocked:Set<String>=[GardenRecipe.herbToast.rawValue]
+    var plates:[String:Int]=[:]
+    var servedDay:[Int:Int]=[:]
+    var settledDay=0
+}
+extension Motel {
+    var kitchen:KitchenGarden {kitchenGarden ?? KitchenGarden()}
+    static let gardenPlots=[Tile(x:2,y:18),Tile(x:2,y:20),Tile(x:2,y:22)]
+    static func ambientOpacity(night:Bool,nightVision:Bool,powerOut:Bool)->Double {
+        // Outages affect services, never the readability of the whole map.
+        nightVision ? 0.18 : night ? 0.5 : 0
+    }
+    mutating func initializeKitchenGarden() {
+        if kitchenGarden == nil {var k=KitchenGarden();k.settledDay=day;kitchenGarden=k}
+    }
+    func gardenTile(_ id:Int)->Tile {groundTile(Self.gardenPlots[max(0,min(2,id))])}
+    func kitchenPlot(_ id:Int)->KitchenPlot {kitchen.plots[id] ?? KitchenPlot()}
+    var nearKitchenPlot:Int? {
+        guard !caught,visit==nil,worldState.place == .grounds,!isRidingBike else{return nil}
+        return Self.gardenPlots.indices.first{actorTile.distance(to:gardenTile($0))<=1}
+    }
+    var atGardenKitchen:Bool {
+        !caught && !isRidingBike && (atBreakfastCounter || (worldState.place == .shop && worldState.shop == .fish && canTrade(.fish)))
+    }
+    func plotReady(_ id:Int)->Bool {
+        let plot=kitchenPlot(id);return plot.crop.map{plot.growth >= $0.days} ?? false
+    }
+    func plotWatered(_ id:Int)->Bool {
+        kitchenPlot(id).wateredDay==day || weather == .rain || weather == .storm
+    }
+    @discardableResult mutating func plantKitchenCrop(_ id:Int,crop:GardenCrop)->Bool {
+        guard Self.gardenPlots.indices.contains(id),nearKitchenPlot==id,kitchenPlot(id).crop==nil,cash>=crop.seedCost else{return false}
+        initializeKitchenGarden()
+        var k=kitchen;k.plots[id]=KitchenPlot(crop:crop,wateredDay:(weather == .rain || weather == .storm) ? day : 0);kitchenGarden=k
+        cash-=crop.seedCost;logMoney(-crop.seedCost,category:"Garden seeds",note:crop.title)
+        playVisual("garden",target:gardenTile(id));lastEvent=crop.title+" planted. Water it, then rest to grow.";return true
+    }
+    @discardableResult mutating func waterKitchenPlot(_ id:Int)->Bool {
+        guard Self.gardenPlots.indices.contains(id),nearKitchenPlot==id,kitchenPlot(id).crop != nil,!plotReady(id),!plotWatered(id),!simulation.waterOut else{return false}
+        initializeKitchenGarden();var k=kitchen;var plot=kitchenPlot(id);plot.wateredDay=day;k.plots[id]=plot;kitchenGarden=k
+        playVisual("garden",target:gardenTile(id));lastEvent="Plot \(id+1) watered. It will grow overnight.";return true
+    }
+    mutating func prepareGardenNight() {
+        guard kitchenGarden != nil,weather == .rain || weather == .storm else{return}
+        var k=kitchen
+        for id in Self.gardenPlots.indices where k.plots[id]?.crop != nil {
+            var plot=kitchenPlot(id);plot.wateredDay=day;k.plots[id]=plot
+        }
+        kitchenGarden=k
+    }
+    mutating func settleGardenMorning() {
+        guard var k=kitchenGarden,day>k.settledDay else{return}
+        let elapsed=min(30,day-k.settledDay)
+        for offset in 0..<elapsed {
+            let prior=k.settledDay+offset
+            for id in Self.gardenPlots.indices {
+                guard var plot=k.plots[id],let crop=plot.crop else{continue}
+                if plot.wateredDay==prior {plot.growth=min(crop.days,plot.growth+1)}
+                k.plots[id]=plot
+            }
+        }
+        k.settledDay=day;k.servedDay=k.servedDay.filter{$0.value==day};kitchenGarden=k
+    }
+    mutating func unlockGardenRecipes() {
+        guard var k=kitchenGarden else{return}
+        let before=k.unlocked
+        if k.harvested.contains("tomato") && k.harvested.contains("carrot") {k.unlocked.insert(GardenRecipe.salad.rawValue)}
+        if k.harvested.contains("pepper") && k.harvests>=3 {k.unlocked.insert(GardenRecipe.roast.rawValue)}
+        if k.batches>=3 && ["basil","tomato","pepper"].allSatisfy({k.harvested.contains($0)}) {k.unlocked.insert(GardenRecipe.stew.rawValue)}
+        kitchenGarden=k
+        let added=GardenRecipe.allCases.filter{!before.contains($0.rawValue) && k.unlocked.contains($0.rawValue)}
+        if !added.isEmpty {lastEvent="Recipe unlocked: "+added.map(\.title).joined(separator:", ")}
+    }
+    @discardableResult mutating func harvestKitchenPlot(_ id:Int)->Bool {
+        guard Self.gardenPlots.indices.contains(id),nearKitchenPlot==id,plotReady(id),let crop=kitchenPlot(id).crop else{return false}
+        var k=kitchen;k.pantry[crop.rawValue]=min(99,k.pantry[crop.rawValue,default:0]+crop.harvestYield)
+        k.harvested.insert(crop.rawValue);k.harvests+=1;k.plots[id]=KitchenPlot();kitchenGarden=k
+        playVisual("garden",target:gardenTile(id));lastEvent="Harvested \(crop.harvestYield) "+crop.title.lowercased()+". Ingredients stored in your kitchen."
+        unlockGardenRecipes();return true
+    }
+    func canCookGardenRecipe(_ recipe:GardenRecipe)->Bool {
+        kitchenGarden != nil && atGardenKitchen && kitchen.unlocked.contains(recipe.rawValue) &&
+        (!recipe.needsPower || !simulation.powerOut) && !simulation.waterOut &&
+        recipe.ingredients.allSatisfy{kitchen.pantry[$0.key.rawValue,default:0]>=$0.value} &&
+        simulation.stock["snacks",default:0]>=recipe.snacks && kitchen.plates[recipe.rawValue,default:0]<=10
+    }
+    @discardableResult mutating func cookGardenRecipe(_ recipe:GardenRecipe)->Bool {
+        guard canCookGardenRecipe(recipe) else{return false}
+        var k=kitchen
+        for (crop,count) in recipe.ingredients {k.pantry[crop.rawValue,default:0]-=count}
+        k.plates[recipe.rawValue,default:0]+=2;k.batches+=1;kitchenGarden=k
+        var s=simulation;s.stock["snacks",default:0]-=recipe.snacks;simulation=s
+        playVisual("breakfast",target:atBreakfastCounter ? groundTile(HotelService.breakfast.tile) : actorTile)
+        lastEvent="Cooked two portions of "+recipe.title.lowercased()+".";unlockGardenRecipes();return true
+    }
+    func canServeGardenDish(_ recipe:GardenRecipe,guestID:Int)->Bool {
+        atGardenKitchen && kitchen.plates[recipe.rawValue,default:0]>0 && kitchen.servedDay[guestID] != day &&
+        rooms.contains{$0.guest?.id==guestID} && (!breakfastOpen || !expansion.meals.contains(guestID))
+    }
+    @discardableResult mutating func serveGardenDish(_ recipe:GardenRecipe,guestID:Int)->Bool {
+        guard canServeGardenDish(recipe,guestID:guestID) else{return false}
+        var k=kitchen;k.plates[recipe.rawValue,default:0]-=1;k.servedDay[guestID]=day;kitchenGarden=k
+        var e=expansion;e.satisfaction[guestID]=min(100,e.satisfaction[guestID,default:50]+12)
+        if breakfastOpen {e.meals.insert(guestID)}
+        havenExpansion=e
+        cash+=recipe.price;var s=simulation;s.reputation=min(100,s.reputation+1);simulation=s
+        logMoney(recipe.price,category:"Garden kitchen",note:recipe.title)
+        if breakfastOpen {countHavenGoal("breakfast")}
+        playVisual("breakfast");lastEvent="Fresh "+recipe.title.lowercased()+" served. +\(recipe.price) coins; your guest loved the homegrown meal.";return true
     }
 }

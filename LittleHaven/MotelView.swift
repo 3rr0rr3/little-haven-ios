@@ -134,7 +134,7 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains("--ui-creature-portrait") { family = .mochi }
             if ProcessInfo.processInfo.arguments.contains("--ui-guest-dialogue") { talkingRoom=0 }
             if ProcessInfo.processInfo.arguments.contains("--ui-story-preview") { storyGuest=motel.receptionGuest }
-            for (argument,tab) in [("--ui-expansion-breakfast",HavenTab.breakfast),("--ui-expansion-design",.rooms),("--ui-expansion-journey",.journey),("--ui-expansion-journal",.journal),("--ui-expansion-goals",.goals)] {
+            for (argument,tab) in [("--ui-garden-plant",HavenTab.garden),("--ui-garden-harvest",.garden),("--ui-garden-kitchen",.garden),("--ui-expansion-breakfast",HavenTab.breakfast),("--ui-expansion-design",.rooms),("--ui-expansion-journey",.journey),("--ui-expansion-journal",.journal),("--ui-expansion-goals",.goals)] {
                 if ProcessInfo.processInfo.arguments.contains(argument) {havenTab=tab;showHavenLife=true}
             }
             if ProcessInfo.processInfo.arguments.contains("--ui-haven-neighbor") {havenTab = .neighbors;showHavenLife=true}
@@ -293,13 +293,18 @@ struct MotelView: View {
                 } else if motel.canCollectGuestFavour {
                     Button("Collect guest supplies") { stop();change { _ = $0.collectGuestFavour() } }
                         .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("collectGuestSupplies")
+                } else if motel.nearKitchenPlot != nil {
+                    Button("Tend garden plot") {stop();havenTab = .garden;showHavenLife=true}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("openKitchenGarden")
                 } else if let room=motel.nearbyHospitalityRoom {
                     Button("Talk to "+(room.guest?.name ?? "guest")) { stop();talkingRoom=room.id }
                         .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("talkToGuest")
                 } else if let discovery=motel.nearDiscovery {
                     Button(discovery.group=="fish" ? "Fish at the cove" : "Discover "+discovery.name) {stop();change{_=$0.findHavenDiscovery(discovery.id)};game.save()}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("collectDiscovery")
                 } else if motel.havenExpansion != nil,motel.atBreakfastCounter {
-                    Button("Breakfast counter") {stop();havenTab = .breakfast;showHavenLife=true}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("openBreakfast")
+                    HStack {
+                        Button("Breakfast counter") {stop();havenTab = .breakfast;showHavenLife=true}.accessibilityIdentifier("openBreakfast")
+                        Button("Garden kitchen") {stop();havenTab = .garden;showHavenLife=true}.accessibilityIdentifier("openGardenKitchen")
+                    }.buttonStyle(MotelButtonStyle())
                 } else if let service = motel.nearbyService {
                     Button(service.title + " / +\(service.reward) coins") {
                         stop(); change { _ = $0.performService(service) }

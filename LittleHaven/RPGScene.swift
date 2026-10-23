@@ -604,7 +604,34 @@ final class RPGScene: SKScene {
                 func block(_ rect:CGRect,_ color:UInt32,_ radius:CGFloat=1) {
                     let shape=SKShapeNode(rect:rect,cornerRadius:radius);shape.fillColor=UIColor(Color(hex:color));shape.strokeColor = .clear;node.addChild(shape)
                 }
-                if prop.kind>=5 {
+                if prop.kind==40 {
+                    block(CGRect(x:-8,y:-3,width:16,height:7),0x657E73,1)
+                    block(CGRect(x:-6,y:3,width:12,height:2),0xD8DDCF,1)
+                    let pan=SKShapeNode(ellipseOf:CGSize(width:8,height:4));pan.fillColor=UIColor(Color(hex:0x334F48));pan.strokeColor=UIColor(Color(hex:0xF3DDA5));pan.lineWidth=0.5
+                    pan.position=CGPoint(x:0,y:6);node.addChild(pan)
+                    block(CGRect(x:4,y:5,width:6,height:1),0x76624F,0)
+                } else if prop.kind>=20 {
+                    let code=prop.kind>=100 ? prop.kind-100 : prop.kind
+                    block(CGRect(x:-7,y:-4,width:14,height:9),0x9B7851,1)
+                    block(CGRect(x:-6,y:-3,width:12,height:7),prop.kind>=100 ? 0x624F3A : 0x81664A,1)
+                    if code>20 {
+                        let crop=(code-21)/4,stage=(code-21)%4
+                        for x in [-3,3] {
+                            block(CGRect(x:CGFloat(x),y:0,width:1,height:CGFloat(3+stage*2)),0x61844E,0)
+                            for side in [-1,1] {
+                                let leaf=SKShapeNode(ellipseOf:CGSize(width:CGFloat(3+stage),height:2))
+                                leaf.fillColor=UIColor(Color(hex:0x81A260));leaf.strokeColor = .clear
+                                leaf.position=CGPoint(x:CGFloat(x+side*2),y:CGFloat(2+stage));leaf.zRotation=CGFloat(side)*0.4
+                                node.addChild(leaf)
+                            }
+                            if stage==3 {
+                                let fruit=SKShapeNode(ellipseOf:CGSize(width:crop==2 ? 2 : 3,height:crop==2 ? 5 : 3))
+                                fruit.fillColor=UIColor(Color(hex:crop==1 ? 0xD97858 : crop==2 ? 0xE8A45D : crop==3 ? 0xD9B457 : 0x9BB66A));fruit.strokeColor = .clear
+                                fruit.position=CGPoint(x:CGFloat(x),y:4);node.addChild(fruit)
+                            }
+                        }
+                    }
+                } else if prop.kind>=5 {
                     if prop.kind==6 {
                         for x in [CGFloat(-22),CGFloat(-5)] {
                             block(CGRect(x:x,y:-8,width:15,height:29),0xF5E7C8,2)
@@ -675,7 +702,7 @@ final class RPGScene: SKScene {
     private func configureAmbient(night:Bool,nightVision:Bool,powerOut:Bool) {
         if ambientLayer.parent == nil {ambientLayer.zPosition=40000;world.addChild(ambientLayer)}
         ambientLayer.color=nightVision ? UIColor(red:0.16,green:0.75,blue:0.25,alpha:1) : .black
-        ambientLayer.alpha=nightVision ? 0.18 : powerOut ? 0.72 : night ? 0.5 : 0
+        ambientLayer.alpha=Motel.ambientOpacity(night:night,nightVision:nightVision,powerOut:powerOut)
         ambientLayer.position=followCamera.position
     }
     private func configureWeather(_ weather:HotelWeather) {
@@ -847,7 +874,7 @@ struct MotelRPGView: View {
         return RPGSceneView(mapID: mapID, revision: worldRevision, mapSize: CGSize(width: interior ? 144 : MotelGrounds.width*16, height: interior ? 144 : MotelGrounds.height*16), columns: 14, interior: interior, actors: actors, working: workProgress > 0,
                             workKind:motel.cleaningTarget == 0 ? "bed" : motel.cleaningTarget == 1 ? "trash" : "mop",
                             visual:motel.operationsState.visual,weather:motel.weather,cars:motel.parkedBikes,bikePositions:motel.bikeParking,day:motel.day,
-                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps+motel.expansionWorldProps) {
+                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps+motel.expansionWorldProps+motel.gardenWorldProps) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }
             if motel.worldState.place == .office { return AnyView(MotelOfficeCanvas(sceneryOnly: true, motel: motel, x: 0, y: 0)) }
             return AnyView(MotelGroundsCanvas(motel: motel, x: 0, y: 0, npcTick: 0, sceneryOnly: true, fullMap: true))
@@ -887,6 +914,24 @@ extension Motel {
             if item.id != "shell-moon" || simulation.hour>=19 {props.append(.init(id:item.id,tile:expansionWalkable(to:groundTile(item.tile)),kind:0))}
         }
 
+        return props
+    }
+}
+
+
+extension Motel {
+    var gardenWorldProps:[HavenWorldProp] {
+        guard visit==nil,worldState.place == .grounds else{return []}
+        var props=Self.gardenPlots.indices.map {id -> HavenWorldProp in
+            let plot=kitchenPlot(id)
+            let code:Int
+            if let crop=plot.crop {
+                let stage=plotReady(id) ? 3 : min(2,plot.growth)
+                code=21+(GardenCrop.allCases.firstIndex(of:crop) ?? 0)*4+stage+(plotWatered(id) ? 100 : 0)
+            } else {code=20}
+            return .init(id:"garden-plot-\(id)-\(code)",tile:gardenTile(id),kind:code)
+        }
+        props.append(.init(id:"garden-kitchen-hob",tile:groundTile(Tile(x:3,y:26)),kind:40))
         return props
     }
 }

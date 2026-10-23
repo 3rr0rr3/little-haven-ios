@@ -756,6 +756,37 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["managementOverview"].waitForExistence(timeout:5))
         capture(app,"Actionable hotel dashboard")
     }
+
+    func testGardenPlantWaterAndHarvestUnlock() {
+        let app=launch("--ui-garden-plant")
+        XCTAssertTrue(app.buttons["plantPlot0"].waitForExistence(timeout:10))
+        app.buttons["plantPlot0"].tap()
+        XCTAssertTrue(app.buttons["waterPlot0"].waitForExistence(timeout:5))
+        app.buttons["waterPlot0"].tap()
+        XCTAssertFalse(app.buttons["waterPlot0"].isEnabled)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("watered"))
+        capture(app,"Planting and watering a real garden plot")
+        app.terminate();app.launchArguments=["--ui-garden-harvest","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["harvestPlot0"].waitForExistence(timeout:10))
+        app.buttons["harvestPlot0"].tap()
+        XCTAssertFalse(app.buttons["harvestPlot0"].exists)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Sunshine salad"))
+        capture(app,"Harvest unlocks the garden salad recipe")
+    }
+    func testGardenCookingAndServingGuest() {
+        let app=launch("--ui-garden-kitchen")
+        XCTAssertTrue(app.buttons["cookRecipe_herbToast"].waitForExistence(timeout:10))
+        app.buttons["cookRecipe_herbToast"].tap()
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("two portions"))
+        let serve=app.buttons["serveRecipe_herbToast"]
+        if !serve.isHittable {app.swipeUp()}
+        XCTAssertTrue(serve.isEnabled)
+        serve.tap()
+        XCTAssertFalse(app.buttons["serveRecipe_herbToast"].isEnabled)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("+18 coins"))
+        capture(app,"Homegrown dish served to a hotel guest")
+    }
+
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

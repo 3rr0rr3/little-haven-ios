@@ -3,6 +3,7 @@ import SwiftUI
 struct NeighborhoodStoreView:View {
     @Binding var game:Game
     let shop:NeighborhoodShop
+    @State private var showGardenKitchen=false
     @Environment(\.dismiss) private var dismiss
     private var motel:Motel {game.motel ?? Motel()}
     private func change(_ action:(inout Motel)->Void) {var value=motel;action(&value);game.motel=value}
@@ -30,6 +31,7 @@ struct NeighborhoodStoreView:View {
                         }
                     }
                 } else if shop == .fish {
+                    Button("Garden kitchen & recipes") {showGardenKitchen=true}.accessibilityIdentifier("shopGardenKitchen")
                     ForEach(FishMeal.allCases) {meal in
                         HStack {
                             Label(meal.title,systemImage:"fish.fill");Spacer()
@@ -70,6 +72,7 @@ struct NeighborhoodStoreView:View {
                 }
             }.padding(24)
         }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x233E33)).tint(Color(hex:0xEFC977)).buttonStyle(.bordered).accessibilityIdentifier("neighborhoodShop")
+            .sheet(isPresented:$showGardenKitchen){HavenLifeView(game:$game,initialTab:.garden)}
     }
 }
 struct HomeDesignView:View {
@@ -1105,15 +1108,21 @@ struct WorkingCharacterArtwork:View {
     }
 }
 
+enum GardenSection:String,CaseIterable,Identifiable {
+    case grow="Grow",cook="Cook",pantry="Pantry"
+    var id:String {rawValue}
+}
 enum HavenTab:String,CaseIterable,Identifiable {
     case neighbors="Neighbors",identity="Identity",team="Team",creatures="Creatures",calendar="Calendar",consequences="Consequences"
-    case journey="Journey",rooms="Room design",breakfast="Breakfast",forecast="Weather",journal="Journal",goals="Daily goals"
+    case journey="Journey",rooms="Room design",breakfast="Breakfast",forecast="Weather",journal="Journal",goals="Daily goals",garden="Garden & kitchen"
     var id:String {rawValue}
 }
 struct HavenLifeView:View {
     @Binding var game:Game
     var initialTab:HavenTab = .neighbors
     @State private var tab:HavenTab = .neighbors
+    @State private var gardenSection:GardenSection = .grow
+    @State private var gardenCrop:GardenCrop = .basil
     @State private var feedback=""
     @Environment(\.dismiss) private var dismiss
     private var motel:Motel {game.motel ?? Motel()}
@@ -1137,6 +1146,7 @@ struct HavenLifeView:View {
                 ScrollView {
                     VStack(alignment:.leading,spacing:18) {
                         switch tab {
+                        case .garden:gardenKitchen
                         case .journey:journey
                         case .rooms:roomDesigns
                         case .breakfast:breakfastService
@@ -1156,7 +1166,7 @@ struct HavenLifeView:View {
             }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
                 .navigationTitle("Haven life").navigationBarTitleDisplayMode(.inline)
                 .toolbar {ToolbarItem(placement:.confirmationAction) {Button("Done") {dismiss()}}}
-                .tint(Color(hex:0xEFC977)).onAppear{tab=initialTab;if var value=game.motel {value.initializeExpansion();game.motel=value}}
+                .tint(Color(hex:0xEFC977)).onAppear{tab=initialTab;if var value=game.motel {value.initializeExpansion();value.initializeKitchenGarden();game.motel=value;gardenSection=value.atGardenKitchen ? .cook : .grow}}
                 .accessibilityElement(children:.contain)
         }
     }
@@ -1270,6 +1280,82 @@ struct HavenLifeView:View {
             }
             ForEach(motel.haven.completedActivities,id:\.self) {Text($0).font(.caption)}
         }.buttonStyle(.bordered)
+    }
+
+
+    private var gardenKitchen:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Garden to kitchen").font(.title2.bold())
+            Text("Grow fresh ingredients beside the motel, unlock dishes and serve your guests. Garden tools are by the pool; cooking is at the breakfast counter or Coral Catch.").font(.subheadline)
+            Picker("Garden section",selection:$gardenSection) {
+                ForEach(GardenSection.allCases) {section in Text(section.rawValue).tag(section)}
+            }.pickerStyle(.segmented).accessibilityIdentifier("gardenSection")
+            switch gardenSection {
+            case .grow:growGarden
+            case .cook:gardenRecipes
+            case .pantry:gardenPantry
+            }
+        }
+    }
+    private var growGarden:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Water once each day, then rest to grow. Rain waters plants for you. Dry plants wait safely; they do not disappear.").font(.caption)
+            if motel.simulation.waterOut {Label("Water outage: repair the supply before watering.",systemImage:"drop.triangle.fill").foregroundStyle(.orange)}
+            Picker("Seeds",selection:$gardenCrop) {
+                ForEach(GardenCrop.allCases) {crop in Text(crop.title+" / \(crop.seedCost)").tag(crop)}
+            }.accessibilityIdentifier("gardenSeeds")
+            ForEach(Motel.gardenPlots.indices,id:\.self) {id in
+                let plot=motel.kitchenPlot(id)
+                VStack(alignment:.leading,spacing:10) {
+                    Label("Plot \(id+1)",systemImage:plot.crop==nil ? "square.dashed" : motel.plotReady(id) ? "carrot.fill" : "leaf.fill").font(.headline)
+                    if let crop=plot.crop {
+                        Text(crop.title+" · "+(motel.plotReady(id) ? "Ready to harvest" : "\(plot.growth)/\(crop.days) growing nights")).font(.subheadline)
+                        ProgressView(value:Double(plot.growth),total:Double(crop.days)).tint(.mint)
+                        Text(motel.plotReady(id) ? "Harvest yields \(crop.harvestYield) ingredients." : motel.plotWatered(id) ? "Watered for today" : "Needs water before resting").font(.caption)
+                        Button("Water plot") {act{$0.waterKitchenPlot(id)}}.disabled(motel.nearKitchenPlot != id || motel.plotReady(id) || motel.plotWatered(id) || motel.simulation.waterOut).accessibilityIdentifier("waterPlot\(id)")
+                        Button("Harvest "+crop.title) {act{$0.harvestKitchenPlot(id)}}.disabled(motel.nearKitchenPlot != id || !motel.plotReady(id)).accessibilityIdentifier("harvestPlot\(id)")
+                    } else {
+                        Text("Empty soil · \(gardenCrop.days) watered nights to harvest").font(.caption)
+                        Button("Plant "+gardenCrop.title+" / \(gardenCrop.seedCost) coins") {act{$0.plantKitchenCrop(id,crop:gardenCrop)}}.disabled(motel.nearKitchenPlot != id || motel.cash<gardenCrop.seedCost).accessibilityIdentifier("plantPlot\(id)")
+                    }
+                    if motel.nearKitchenPlot != id {Text("Stand beside this plot to tend it.").font(.caption).foregroundStyle(.secondary)}
+                }.padding(16).frame(maxWidth:.infinity,alignment:.leading).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:14))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var gardenRecipes:some View {
+        VStack(alignment:.leading,spacing:16) {
+            if !motel.atGardenKitchen {Label("Visit the breakfast counter or Marina's counter to cook and serve.",systemImage:"location.fill").font(.caption)}
+            if motel.simulation.powerOut {Label("Power outage: hot dishes need electricity. Salad can still be prepared.",systemImage:"bolt.slash.fill").font(.caption).foregroundStyle(.orange)}
+            if motel.simulation.waterOut {Text("Restore the water supply before preparing food.").font(.caption).foregroundStyle(.orange)}
+            ForEach(GardenRecipe.allCases) {recipe in
+                let unlocked=motel.kitchen.unlocked.contains(recipe.rawValue)
+                let guest=motel.rooms.compactMap(\.guest).first{motel.canServeGardenDish(recipe,guestID:$0.id)}
+                VStack(alignment:.leading,spacing:10) {
+                    Label(recipe.title,systemImage:unlocked ? "fork.knife" : "lock.fill").font(.headline)
+                    Text(recipe.ingredientText.capitalized+" · makes 2 portions").font(.caption)
+                    Text(recipe.unlockHint).font(.caption).foregroundStyle(.secondary)
+                    if unlocked {
+                        Text("Ready: \(motel.kitchen.plates[recipe.rawValue,default:0]) · serve for \(recipe.price) coins").font(.caption.bold())
+                        Button("Cook "+recipe.title) {act{$0.cookGardenRecipe(recipe)}}.disabled(!motel.canCookGardenRecipe(recipe)).accessibilityIdentifier("cookRecipe_"+recipe.id)
+                        Button(guest.map{"Serve to "+$0.name} ?? "No guest waiting for this meal") {
+                            if let guest {act{$0.serveGardenDish(recipe,guestID:guest.id)}}
+                        }.disabled(guest==nil).accessibilityIdentifier("serveRecipe_"+recipe.id)
+                    } else {Text("Keep harvesting and cooking to unlock.").font(.caption)}
+                }.padding(16).frame(maxWidth:.infinity,alignment:.leading).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:14))
+            }
+            Text("Each guest buys one garden dish per day. A morning dish counts as their breakfast. Meals improve satisfaction and reputation; ingredients and portions are consumed.").font(.caption)
+        }.buttonStyle(.bordered)
+    }
+    private var gardenPantry:some View {
+        VStack(alignment:.leading,spacing:14) {
+            Label("Fresh pantry",systemImage:"basket.fill").font(.headline)
+            ForEach(GardenCrop.allCases) {crop in
+                HStack {Text(crop.title);Spacer();Text("\(motel.kitchen.pantry[crop.rawValue,default:0])").font(.headline.monospaced())}.padding(12).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:10))
+            }
+            Text("\(motel.kitchen.harvests) harvests · \(motel.kitchen.batches) batches cooked · \(motel.kitchen.unlocked.count)/\(GardenRecipe.allCases.count) recipes").font(.caption)
+            ForEach(GardenRecipe.allCases) {recipe in Text(recipe.title+": \(motel.kitchen.plates[recipe.rawValue,default:0]) portions").font(.caption)}
+        }
     }
 
     private var journey:some View {
