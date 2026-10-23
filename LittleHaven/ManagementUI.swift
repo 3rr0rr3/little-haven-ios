@@ -124,7 +124,7 @@ struct DialogueChoice: Identifiable {
 }
 struct RPGFrame: ViewModifier {
     func body(content: Content) -> some View {
-        content.padding(14).background(Color(hex:0x20372F))
+        content.padding(14).background(PaintedPanel(color:0x20372F))
             .overlay(Rectangle().stroke(Color(hex:0xE9C77D),lineWidth:2).allowsHitTesting(false))
             .overlay(Rectangle().inset(by:5).stroke(Color(hex:0xE9C77D).opacity(0.25),lineWidth:1).allowsHitTesting(false))
     }
@@ -1004,7 +1004,7 @@ struct HotelMiniGame:View {
                 else {misses += 1;message="Missed. Wait for the green zone."}
                 if hits>=3 {if !complete(){message="Need supplies and repair coins. Cancel, restock and try again.";hits=2}}
             }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("miniGameTap")
-        }.padding(24).foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
+        }.padding(24).foregroundStyle(Color(hex:0xF5E7C8)).background(PaintedPanel(color:0x172A25))
     }
 }
 
@@ -1167,7 +1167,7 @@ struct HavenLifeView:View {
                     }.padding(20)
                 }
                 if !feedback.isEmpty {Text(feedback).font(.caption).padding(.horizontal).accessibilityIdentifier("havenFeedback")}
-            }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
+            }.foregroundStyle(Color(hex:0xF5E7C8)).background(PaintedPanel(color:0x172A25))
                 .navigationTitle("Haven life").navigationBarTitleDisplayMode(.inline)
                 .toolbar {ToolbarItem(placement:.confirmationAction) {Button("Done") {dismiss()}}}
                 .tint(Color(hex:0xEFC977)).onAppear{tab=initialTab;if var value=game.motel {value.initializeExpansion();value.initializeKitchenGarden();if value.havenOccasions == nil {value.havenOccasions=HavenOccasions()};game.motel=value;gardenSection=value.atGardenKitchen ? .cook : .grow}}

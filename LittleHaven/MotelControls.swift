@@ -61,7 +61,7 @@ struct WorkActionButton: View {
             if cleaning && progress > 0 { ProgressView(value: progress).tint(Color(hex: 0x244234)).padding(.horizontal, 12) }
         }.frame(maxWidth: .infinity).frame(height: 91)
             .foregroundStyle(Color(hex: 0x203B32))
-            .background(Color(hex: 0xEFC977), in: RoundedRectangle(cornerRadius: 25))
+            .background(PaintedPanel(color:0xDCC08C).clipShape(RoundedRectangle(cornerRadius:25)))
             .opacity(enabled ? (held ? 0.8 : 1) : 0.42)
     }
     var body: some View {

@@ -22,7 +22,7 @@ struct WakeUpView: View {
                 .font(.body).foregroundStyle(.white.opacity(0.7)).multilineTextAlignment(.center)
             Button("Start my first shift", action: begin).buttonStyle(MotelButtonStyle()).accessibilityIdentifier("wakeUp")
         }.padding(28)
-        }.foregroundStyle(Color(hex: 0xF5E7C8)).frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(hex: 0x172A25))
+        }.foregroundStyle(Color(hex: 0xF5E7C8)).frame(maxWidth: .infinity, maxHeight: .infinity).background(PaintedPanel(color:0x172A25))
             .task { withAnimation(.easeInOut(duration: 1.5)) { awake = true } }
     }
 }
@@ -32,7 +32,7 @@ struct MotelButtonStyle: ButtonStyle {
         configuration.label.font(.system(size: 14, weight: .bold, design: .rounded))
             .frame(maxWidth: .infinity).padding(.vertical, 14).padding(.horizontal, 10)
             .foregroundStyle(Color(hex: subdued ? 0xF5E7C8 : 0x203B32))
-            .background(Color(hex: subdued ? 0x385348 : 0xEFC977), in: RoundedRectangle(cornerRadius: 14))
+            .background(PaintedPanel(color:subdued ? 0x385348 : 0xDCC08C).clipShape(RoundedRectangle(cornerRadius:14)))
             .opacity(configuration.isPressed ? 0.65 : 1)
     }
 }
@@ -103,7 +103,7 @@ struct MotelView: View {
                 return moved
             },reset:{change{$0.resetCreativeLayout()};game.save()})
         }
-        .foregroundStyle(cream).background(Color(hex: 0x172A25))
+        .foregroundStyle(cream).background(PaintedPanel(color:0x172A25))
         .overlay {
             if let police=motel.business.police,police.arrived {
                 ZStack(alignment:.bottom) {
@@ -1177,7 +1177,7 @@ struct GuestStoriesView: View {
                         if motel.storyBook.familyReunited {Label("Emilia's family reunited",systemImage:"heart.fill")}
                     }
                 }.padding(22)
-            }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
+            }.foregroundStyle(Color(hex:0xF5E7C8)).background(PaintedPanel(color:0x172A25))
                 .navigationTitle(guest?.storyID?.title ?? "Guest stories").navigationBarTitleDisplayMode(.inline)
                 .toolbar {ToolbarItem(placement:.confirmationAction) {Button("Done") {dismiss()}}}
                 .tint(Color(hex:0xEFC977)).accessibilityIdentifier("guestStorySheet")

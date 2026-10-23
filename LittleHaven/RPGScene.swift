@@ -98,7 +98,7 @@ private struct ActorArtwork: View {
                 ChaosArt.draw(context:&context,kind:actor.effect,stride:stride,color:actor.color,variant:actor.variant,facing:actor.facing)
             } else if actor.corralCreature > 0 {CorralCreatureArt.draw(context:&context,kind:actor.corralCreature,facing:actor.facing,walk:stride)}
             else if actor.creature {MochiArt.draw(context:&context,facing:actor.facing,walk:stride)}
-            else if actor.animal > 0 { CatArt.draw(context:&context,gray:actor.animal == 1,walk:stride) }
+            else if actor.animal > 0 { CatArt.draw(context:&context,gray:actor.animal == 1,walk:stride,facing:actor.facing) }
             else { PaperPerson.draw(context:&context,x:4,y:actor.cycling ? 7.5 : 9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:actor.cycling ? stride*0.4 : stride,expression:actor.expression,beachwear:actor.beachwear) }
             if actor.cycling && (actor.facing == 0 || actor.facing == 3) {
                 var handlebar=Path();handlebar.move(to:CGPoint(x:6,y:21));handlebar.addLine(to:CGPoint(x:18,y:21))
@@ -345,7 +345,7 @@ final class RPGScene: SKScene {
         let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.cycling)-\(actor.bikeColor)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)-\(actor.beachwear)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
-        renderer.scale = 3
+        renderer.scale = 4
         let texture = renderer.uiImage.map { SKTexture(image: $0) } ?? SKTexture()
         textures[key] = texture
         return texture

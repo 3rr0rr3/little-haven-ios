@@ -113,10 +113,10 @@ struct PaperPortrait: View {
     let variant: Int
     var body: some View {
         Canvas { context, size in
-            let scale = min(size.width / 18, size.height / 23)
-            context.translateBy(x: (size.width - 16 * scale) / 2, y: 6 * scale)
+            let scale = min(size.width / 24, size.height / 28)
+            context.translateBy(x: (size.width - 24 * scale) / 2, y: (size.height-28*scale)/2)
             context.scaleBy(x: scale, y: scale)
-            PaperPerson.draw(context: &context, x: 0, y: 0, color: color, variant: variant, facing: 0, walk: 0)
+            PaperPerson.draw(context: &context, x: 4, y: 9, color: color, variant: variant, facing: 0, walk: 0)
         }
     }
 }
@@ -125,6 +125,7 @@ struct PaperPortrait: View {
 enum PaperPerson {
     static func draw(context: inout GraphicsContext, x: Double, y: Double,
                      color: UInt32, variant: Int, facing: Int, walk: Double, expression: String = "", hands:Bool=true, kneeling:Bool=false, beachwear:Bool=false) {
+        if PaintedArt.person(context:&context,x:x,y:y,variant:variant,facing:facing,walk:walk,color:color,hands:hands,kneeling:kneeling,beachwear:beachwear) {return}
         if [7,8,9].contains(variant) { PersonalArt.draw(context: &context, x: x, y: y, variant: variant, facing: facing, walk: walk,shirt:color,hands:hands,kneeling:kneeling); return }
         let ink: UInt32 = 0x343333
         let seed = abs(variant)

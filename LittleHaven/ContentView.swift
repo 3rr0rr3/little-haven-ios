@@ -34,6 +34,11 @@ struct ContentView: View {
     private static func initialGame() -> Game {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
+        if args.contains("--ui-painted-check") {
+            let actors=PaintedArt.creatures+["player","hildarelys","samhil","tuki","chichu","chichi","guest-a","guest-b","guest-c","guest-d","guest-a-beach","guest-b-beach","guest-c-beach","guest-d-beach"]
+            for name in actors {for facing in 0..<4 {for step in [-1.0,0,1] {precondition(PaintedArt.frame(name,facing:facing,walk:step) != nil,"Missing painted sprite: "+name)}}}
+            for name in ["stone-a","stone-b","timber","lantern","bedding","fence-h","desk","sofa-front","sofa-back","washer","linen"] {precondition(PaintedArt.image("bh-"+name) != nil,"Missing scenery: "+name)}
+        }
         Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}
 
@@ -506,7 +511,7 @@ struct ContentView: View {
                 }
             }.padding(16)
         }
-        .foregroundStyle(cream).background(Color(hex:0x172A25))
+        .foregroundStyle(cream).background(PaintedPanel(color:0x172A25))
         .task(id:townDirection != nil) {
             guard townDirection != nil else{return}
             defer {game.save()}
@@ -616,7 +621,7 @@ struct ContentView: View {
                     }
                 }.frame(height: geometry.size.height < 700 ? 130 : 148).padding(.horizontal, 22)
             }.padding(.horizontal, 18).padding(.vertical, 10)
-            .foregroundStyle(cream).background(Color(hex: 0x172A25))
+            .foregroundStyle(cream).background(PaintedPanel(color:0x172A25))
         }
         .task(id: heldDirection) {
             guard let direction = heldDirection else { return }
@@ -830,7 +835,7 @@ struct GameOptionsView: View {
                     .overlay(RoundedRectangle(cornerRadius:16).stroke(Color(hex:0xC6DDC8),lineWidth:2))
                     .padding(18)
             }.navigationTitle("Options")
-                .background(Color(hex:0x172A25)).foregroundStyle(Color(hex:0xF5E7C8))
+                .background(PaintedPanel(color:0x172A25)).foregroundStyle(Color(hex:0xF5E7C8))
                 .toolbarBackground(Color(hex:0x172A25),for:.navigationBar).toolbarBackground(.visible,for:.navigationBar)
                 .toolbarColorScheme(.dark,for:.navigationBar)
                 .toolbar { Button("Done") { dismiss() } }

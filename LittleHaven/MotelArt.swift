@@ -65,9 +65,7 @@ enum InteriorArt {
         func block(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32){CozyScenery.block(context:&c,x:x,y:y,w:w,h:h,color:color,depth:0.6)}
         CozyScenery.interior(context:&c,width:144,height:144,floor:0xD0B99A,wall:Motel.themeColors[theme])
         // A motel sleeping zone, nightstand, luggage rack, work desk and wash nook.
-        block(29,30,38,36,0x896B50);block(32,33,32,30,0xF2E9D1)
-        block(33,43,30,19,Motel.themeColors[theme]);block(34,45,28,2,0xE7D9B7)
-        for x in [34.0,49] {block(x,34,12,8,0xFFF2D9)}
+        PaintedArt.draw("bed",in:CGRect(x:29,y:30,width:38,height:36),context:&c)
         block(17,36,12,14,0xA0825F);block(22,30,4,7,0xDCC384);block(19,27,10,5,0xF0DDA1)
         block(27,28,42,4,0x88684B)
         DecorArt.rug(&c,30,70,51,24,0xAD947C)

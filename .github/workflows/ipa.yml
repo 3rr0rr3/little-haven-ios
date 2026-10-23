@@ -36,6 +36,8 @@ jobs:
           name: Navigation-performance
           path: navigation-performance.json
           if-no-files-found: error
+      - name: Validate painted art resources
+        run: python3 scripts/validate_painted_art.py
       - name: Render character app icon
         run: python3 scripts/render_app_icon.py
       - name: Build iPhone app
@@ -135,6 +137,12 @@ jobs:
             xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch
             sleep 3
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-$MODE.png"
+          done
+          for MODE in basement family-home office-preview beach home-store home-exterior neighborhood motel-room; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch --ui-painted-check
+            sleep 3
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-$MODE.png"
           done
       - name: Preserve response previews for early visual review
         uses: actions/upload-artifact@v4

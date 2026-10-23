@@ -526,7 +526,7 @@ final class LittleHavenUITests: XCTestCase {
     }
     func testBasementCreatureFeedingAndPetting() {
         let app=XCUIApplication()
-        app.launchArguments=["--ui-basement","--ui-corral-0","--ui-testing"]
+        app.launchArguments=["--ui-basement","--ui-corral-0","--ui-testing","--ui-painted-check"]
         app.launch()
         XCTAssertTrue(app.buttons["Feed"].waitForExistence(timeout:10))
         app.buttons["Feed"].tap()
@@ -826,7 +826,7 @@ final class LittleHavenUITests: XCTestCase {
 
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = [fixture, "--ui-testing"]
+        app.launchArguments = [fixture, "--ui-testing", "--ui-painted-check"]
         app.launch()
         return app
     }
