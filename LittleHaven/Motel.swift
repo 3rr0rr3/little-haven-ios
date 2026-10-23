@@ -1384,8 +1384,8 @@ extension Motel {
         let count=max(1,rooms.count)
         let hygiene=rooms.reduce(0){$0 + ($1.dirty ? min(40,$1.health.cleanliness) : $1.health.cleanliness)}/count
         let repair=rooms.reduce(0){$0 + max(0,$1.health.condition-$1.health.faults.count*20)}/count
-        let safety=business.incident == nil && !simulation.powerOut && !simulation.waterOut ? 100 : 20
-        let service=min(100,simulation.reputation+min(20,business.workers.count*5))
+        let safety=operationsState.incident == nil && !simulation.powerOut && !simulation.waterOut ? 100 : 20
+        let service=min(100,simulation.reputation+min(20,operationsState.workers.count*5))
         return [hygiene,repair,safety,service].map{min(100,max(0,$0))}
     }
     var inspectionTotal:Int {inspectionScores.reduce(0,+)/4}
@@ -1444,7 +1444,7 @@ extension Motel {
         case 2:
             guard atOccasionDesk,!event.staffReady else{return false}
             // A small motel can host personally; a hired team lowers the preparation cost.
-            let cost=business.workers.isEmpty ? 15 : 5
+            let cost=operationsState.workers.isEmpty ? 15 : 5
             guard cash>=cost else{return false};cash-=cost;event.staffReady=true
             logMoney(-cost,category:"Celebration",note:"Hosting preparation")
         default:return false
@@ -1454,7 +1454,7 @@ extension Motel {
     }
     @discardableResult mutating func hostCelebration()->Bool {
         guard atOccasionDesk,var event=occasions.celebration,event.day==day,!event.completed,
-              event.decorated,event.catered,event.staffReady,business.incident==nil,
+              event.decorated,event.catered,event.staffReady,operationsState.incident==nil,
               rooms.contains(where:{$0.guest?.id==event.guestID}) else{return false}
         event.completed=true;var o=occasions;o.celebration=event;o.celebrations+=1;havenOccasions=o
         cash+=event.kind.fee;logMoney(event.kind.fee,category:"Celebration",note:event.kind.title)

@@ -147,6 +147,18 @@ jobs:
         run: |
           set -euo pipefail
           xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SIM_DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -skip-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -skip-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility -skip-testing:LittleHavenUITests/LittleHavenUITests/testPlayerPoolRescueAnimation -skip-testing:LittleHavenUITests/LittleHavenUITests/testGuestStoryChoiceAndSavedMemory -skip-testing:LittleHavenUITests/LittleHavenUITests/testLanternGuestStoryShow -skip-testing:LittleHavenUITests/LittleHavenUITests/testNeighborRelationshipAndFavor -skip-testing:LittleHavenUITests/LittleHavenUITests/testWeeklyActivityRoundsAndPrize -skip-testing:LittleHavenUITests/LittleHavenUITests/testCorralAdventureAndEmployeeRequest -skip-testing:LittleHavenUITests/LittleHavenUITests/testPetsFollowOutsideAndWaitIndependently -skip-testing:LittleHavenUITests/LittleHavenUITests/testInspectionsAndRivalry -skip-testing:LittleHavenUITests/LittleHavenUITests/testGuestCelebrationPreparationAndHosting -skip-testing:LittleHavenUITests/LittleHavenUITests/testGardenPlantWaterAndHarvestUnlock -skip-testing:LittleHavenUITests/LittleHavenUITests/testGardenCookingAndServingGuest -skip-testing:LittleHavenUITests/LittleHavenUITests/testManagementDashboardFiltersAndQuickActions -skip-testing:LittleHavenUITests/LittleHavenUITests/testManagementBoardSuppliesAndMiniGame -skip-testing:LittleHavenUITests/LittleHavenUITests/testBreakfastRushConsumesSuppliesAndRewardsGuests -skip-testing:LittleHavenUITests/LittleHavenUITests/testRoomDesignAndMilestoneUnlock -skip-testing:LittleHavenUITests/LittleHavenUITests/testDiscoveryCollectionCannotBeClaimedTwice -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+      - name: Publish tested candidate download without updating SideStore
+        if: ${{ success() && github.ref == 'refs/heads/codex/pokopia-scenery' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish_candidate.py
+      - name: Preserve public candidate verification
+        if: ${{ success() && github.ref == 'refs/heads/codex/pokopia-scenery' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Candidate-verification
+          path: candidate-verification.json
+          if-no-files-found: error
       - name: Capture chapter previews
         if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |

@@ -1326,8 +1326,8 @@ struct HavenLifeView:View {
                 celebrationTask(event,task:0,title:"Decorations / \(event.kind.decorCost) coins",done:event.decorated,enabled:motel.atOccasionDesk && motel.cash>=event.kind.decorCost)
                 celebrationTask(event,task:1,title:"Cater / \(event.kind.portions) cooked portions",done:event.catered,enabled:motel.atGardenKitchen && motel.kitchen.plates.values.reduce(0,+)>=event.kind.portions)
                 Text("Cook and pack dishes at the breakfast counter or Coral Catch. Portions are consumed.").font(.caption)
-                celebrationTask(event,task:2,title:"Prepare hosting / \(motel.business.workers.isEmpty ? 15 : 5) coins",done:event.staffReady,enabled:motel.atOccasionDesk && motel.cash >= (motel.business.workers.isEmpty ? 15 : 5))
-                Button("Host celebration") {act{$0.hostCelebration()}}.disabled(!motel.atOccasionDesk || !event.decorated || !event.catered || !event.staffReady || event.completed || motel.business.incident != nil).accessibilityIdentifier("hostCelebration")
+                celebrationTask(event,task:2,title:"Prepare hosting / \(motel.operationsState.workers.isEmpty ? 15 : 5) coins",done:event.staffReady,enabled:motel.atOccasionDesk && motel.cash >= (motel.operationsState.workers.isEmpty ? 15 : 5))
+                Button("Host celebration") {act{$0.hostCelebration()}}.disabled(!motel.atOccasionDesk || !event.decorated || !event.catered || !event.staffReady || event.completed || motel.operationsState.incident != nil).accessibilityIdentifier("hostCelebration")
             } else if let offer=motel.celebrationOffer {
                 Text(offer.guestName+" would like a "+offer.kind.title.lowercased()+". Payment: \(offer.kind.fee) coins.").font(.headline)
                 Text("Budget: \(offer.kind.decorCost) decorations + hosting + \(offer.kind.portions) garden meals.").font(.caption)
