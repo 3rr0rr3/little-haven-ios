@@ -11,7 +11,7 @@ from PIL import Image, ImageFilter, ImageChops, ImageDraw
 
 ROOT=Path(__file__).resolve().parents[1]
 CATALOG=ROOT/'LittleHaven/Assets.xcassets/Painted'
-ORIGINALS=ROOT/'ArtSources/PaintedV40'
+ORIGINALS=ROOT/'ArtSources/CelV41'
 source_list=Path(sys.argv[sys.argv.index('--source-list')+1]) if '--source-list' in sys.argv else None
 if source_list is not None:
     SOURCES=json.loads(source_list.read_text(encoding='utf-8'))
@@ -20,7 +20,7 @@ else:
     for source in SOURCES:source['path']=str(ORIGINALS/source['file'])
 CATALOG.mkdir(parents=True,exist_ok=True);ORIGINALS.mkdir(parents=True,exist_ok=True)
 (CATALOG/'Contents.json').write_text(json.dumps({'info':{'author':'xcode','version':1}}),encoding='utf-8')
-manifest={'version':40,'cell':[192,224],'directions':['front','left','right','back'],'frames':['idle','leftStep','rightStep'],'assets':[],'sources':[]}
+manifest={'version':41,'cell':[192,224],'directions':['front','left','right','back'],'frames':['idle','leftStep','rightStep'],'assets':[],'sources':[]}
 
 def save_asset(name,image):
     folder=CATALOG/(name+'.imageset');folder.mkdir(exist_ok=True)
@@ -121,7 +121,7 @@ for source in SOURCES:
         if name in ['player','guest-a','guest-b','guest-c','guest-d']:
             array=np.asarray(sheet);red=array[:,:,0].astype(float);green=array[:,:,1].astype(float);blue=array[:,:,2].astype(float)
             yy=np.indices(red.shape)[0]%224
-            fabric=(yy>98)&(yy<179)&(red>105)&(green>95)&(blue>65)&((red-blue)<65)&(abs(red-green)<30)&(abs(green-blue)<40)
+            fabric=(yy>(140 if name=='player' else 126))&(yy<201)&(red>105)&(green>95)&(blue>65)&((red-blue)<65)&(abs(red-green)<30)&(abs(green-blue)<40)
             # Keep the mask inside the central outfit; hands remain skin colored.
             xx=np.indices(red.shape)[1]%192;fabric &= (xx>52)&(xx<142)
             mask=Image.fromarray(np.where(fabric,array[:,:,3],0).astype('uint8'),'L').filter(ImageFilter.GaussianBlur(1))
@@ -130,6 +130,6 @@ for source in SOURCES:
         x=(preview_index%12)*100;y=(preview_index//12)*145;contact.paste(sample,(x+(95-sample.width)//2,y),sample);pen.text((x,y+112),name[:16],fill=(243,225,180));preview_index+=1
 
 (ORIGINALS/'prompts.json').write_text(json.dumps(manifest['sources'],indent=2),encoding='utf-8')
-(ROOT/'ArtSources/PaintedV40/manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
-contact.crop((0,0,1200,max(145,((preview_index+11)//12)*145))).save(ROOT/'ArtSources/PaintedV40/actor-contact-sheet.png')
+(ORIGINALS/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
+contact.crop((0,0,1200,max(145,((preview_index+11)//12)*145))).save(ORIGINALS/'actor-contact-sheet.png')
 print(json.dumps({'assets':len(manifest['assets']),'sources':len(SOURCES),'packed_bytes':sum((ROOT/a['path']).stat().st_size for a in manifest['assets'])}))

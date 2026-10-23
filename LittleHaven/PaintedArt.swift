@@ -45,7 +45,7 @@ enum PaintedArt {
     }
     static func finish(_ path:Path,bounds:CGRect,color:UInt32,context:inout GraphicsContext,wood:Bool=false) {
         var layer=context;layer.clip(to:path)
-        texture(wood ? "timber" : "plaster",in:bounds,context:&layer,unit:48,opacity:wood ? 0.38 : 0.24,blend:.softLight)
+        texture(wood ? "timber" : "plaster",in:bounds,context:&layer,unit:48,opacity:wood ? 0.16 : 0.08,blend:.softLight)
     }
     static func sunlight(context:inout GraphicsContext,bounds:CGRect) {
         var shade=context;shade.clip(to:Path(bounds))
@@ -99,8 +99,10 @@ enum PaintedArt {
             if working {
                 // The existing articulated arms and held tools are composited over this torso.
                 renderer.cgContext.setBlendMode(.clear)
-                renderer.cgContext.fill(CGRect(x:8,y:124,width:46,height:53))
-                renderer.cgContext.fill(CGRect(x:143,y:124,width:42,height:53))
+                let armY:Double = name == "player" ? 148 : 124
+                let armHeight:Double = name == "player" ? 50 : 53
+                renderer.cgContext.fill(CGRect(x:8,y:armY,width:46,height:armHeight))
+                renderer.cgContext.fill(CGRect(x:143,y:armY,width:42,height:armHeight))
             }
         }
         images.setObject(value,forKey:key,cost:192*224*4);return value
@@ -127,7 +129,7 @@ struct PaintedPanel:View {
         Canvas {context,size in
             let bounds=CGRect(origin:.zero,size:size)
             context.fill(Path(bounds),with:.color(Color(hex:color)))
-            PaintedArt.texture("plaster",in:bounds,context:&context,unit:180,opacity:0.18,blend:.softLight)
+            context.fill(Path(CGRect(x:0,y:max(0,size.height-3),width:size.width,height:3)),with:.color(Color.black.opacity(0.12)))
             context.fill(Path(CGRect(x:0,y:0,width:size.width,height:1)),with:.color(Color(hex:0xEDD5A0).opacity(0.28)))
         }.allowsHitTesting(false).accessibilityHidden(true)
     }

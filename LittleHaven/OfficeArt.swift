@@ -10,7 +10,10 @@ enum CozyScenery {
         let r=min(3,min(w,h)*0.22)
         let body=Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:r)
         context.fill(Path(roundedRect:CGRect(x:x+0.5,y:y+depth,width:w,height:h),cornerRadius:r),with:.color(tint(color,0.72)))
-        context.fill(body,with:.linearGradient(Gradient(colors:[tint(color,1.16),Color(hex:color),tint(color,0.91)]),startPoint:CGPoint(x:x,y:y),endPoint:CGPoint(x:x+w*0.5,y:y+h)))
+        context.fill(body,with:.color(Color(hex:color)))
+        var planes=context;planes.clip(to:body)
+        planes.fill(Path(CGRect(x:x+w*0.78,y:y,width:w*0.22,height:h)),with:.color(tint(color,0.88)))
+        planes.fill(Path(CGRect(x:x,y:y,width:w,height:min(1,h*0.12))),with:.color(tint(color,1.10)))
         PaintedArt.finish(body,bounds:CGRect(x:x,y:y,width:w,height:h),color:color,context:&context,wood:((color>>16)&255)>((color>>8)&255) && (color&255)<((color>>16)&255)*4/5)
         context.stroke(body,with:.color(Color.white.opacity(0.18)),lineWidth:0.35)
     }
