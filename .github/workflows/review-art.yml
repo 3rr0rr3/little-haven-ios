@@ -1,0 +1,45 @@
+name: Validate painted art simulator retry
+on:
+  push:
+    branches: ['codex/review-art-9e007d52']
+    paths: ['.github/workflows/review-art.yml', 'scripts/final_art_retry_review.py']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  review:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Verify exact tested game source and retry creative mode on a fresh simulator
+        run: |
+          set -euo pipefail
+          git diff --quiet 9e007d52cdcb16aeb9f5489a41929b62a1339e18 -- LittleHaven LittleHaven.xcodeproj LittleHavenUITests Tests
+          python3 scripts/render_app_icon.py
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath retry-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -resultBundlePath RetryResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test 2>&1 | tee art-retry.log
+      - name: Prepare isolated image review tools
+        if: always()
+        run: |
+          python3 -m venv /tmp/art-review-env
+          /tmp/art-review-env/bin/python -m pip install --quiet pillow
+      - name: Review actual test images and publish only after the exact retry passes
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: /tmp/art-review-env/bin/python scripts/final_art_retry_review.py
+      - name: Preserve verification and retry evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Painted-art-retry-verification
+          path: |
+            art-retry.log
+            RetryResults.xcresult
+            candidate-verification.json
+          if-no-files-found: ignore
