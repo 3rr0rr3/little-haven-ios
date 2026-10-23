@@ -240,11 +240,11 @@ func worldRules() {
 
     var walk = Motel()
     walk.initializeWorld()
-    require(walk.worldState.place == .office, "Start the shift inside the office")
+    require(walk.worldState.place  == .office, "Start the shift inside the office")
     require(!walk.chargeGuest(10, roomID: 0), "Cannot charge customers remotely")
     require(walk.receptionTools(), "Tap the office closet to collect tools from the desk")
     _ = walk.leaveReception()
-    require(walk.worldState.place == .grounds && walk.actorTile == Tile(x: 6, y: 10), "Office door leads onto the actual grounds")
+    require(walk.worldState.place  == .grounds && walk.actorTile == Tile(x: 6, y: 10), "Office door leads onto the actual grounds")
     let customer=walk.waitingTile(10)
     for _ in 0..<120 {
         if walk.actorTile.distance(to:customer)<=1 {break}
@@ -252,7 +252,7 @@ func worldRules() {
         guard let step=walk.groundNextStep(from:walk.actorTile,to:customer,avoiding:occupied.subtracting([customer])) else{fatalError("Customer waiting spot must be reachable")}
         walk.moveActor(dx:step.x-walk.actorTile.x,dy:step.y-walk.actorTile.y)
     }
-    require(walk.nearbyAction == .guest(10), "Walk beside the waiting guest to talk")
+    require(walk.nearbyAction  == .guest(10), "Walk beside the waiting guest to talk")
     require(!walk.chargeGuest(11, roomID: 0), "Cannot charge a different guest through the nearby interaction")
     require(walk.chargeGuest(10, roomID: 0) && walk.cash == 260, "Nearby payment assigns the room and charges exactly once")
     require(!walk.guestPresent(in: 0) && walk.worldState.travellers.count == 1, "Guest must walk to the room before appearing inside")
@@ -269,7 +269,7 @@ func worldRules() {
     require(walk.actorTile == approach, "Cannot walk through a waiting customer")
     walk.world!.player=Tile(x:5,y:10)
     walk.moveActor(dx: 1, dy: -1)
-    require(walk.worldState.place == .office, "Diagonal movement can reach an unobstructed doorway")
+    require(walk.worldState.place  == .office, "Diagonal movement can reach an unobstructed doorway")
     walk.world!.player = Tile(x: 4, y: 5)
     walk.moveActor(dx: 0, dy: -1)
     require(walk.actorTile == Tile(x:4,y:5), "Office desk collision blocks movement without teleporting the player")
@@ -347,7 +347,7 @@ func worldRules() {
     legacy.save(to: defaults)
     var migrated = Game.load(from: defaults).motel!
     migrated.initializeWorld()
-    require(migrated.cash == 333 && migrated.rooms.count == 3 && migrated.worldState.place == .office, "Existing motel saves keep their business and gain a walkable office")
+    require(migrated.cash == 333 && migrated.rooms.count == 3 && migrated.worldState.place  == .office, "Existing motel saves keep their business and gain a walkable office")
     defaults.removePersistentDomain(forName: "LittleHaven.WorldTests")
     print("PASS: grounds and entrance reachability, physical payments, guest paths, collisions, hands-on cleaning, object customization, construction, sleep, world checkpoints")
 }
@@ -451,10 +451,10 @@ func managementRules() {
     var manual = Motel()
     manual.initializeWorld(); _ = manual.checkIn(guestID:10,roomID:0)
     for _ in 0..<40 { manual.tickManagement() }
-    require(manual.operationsState.incident?.kind == .fire && !manual.resolveNearbyIncident(), "Incidents occur during a shift and require a physical response")
+    require(manual.operationsState.incident?.kind  == .fire && !manual.resolveNearbyIncident(), "Incidents occur during a shift and require a physical response")
     _ = manual.leaveReception()
     manual.world!.player = manual.operationsState.incident!.approach
-    require(manual.nearbyAction == .incident && manual.resolveNearbyIncident(), "Walking to the scene allows manual intervention")
+    require(manual.nearbyAction  == .incident && manual.resolveNearbyIncident(), "Walking to the scene allows manual intervention")
     require(!manual.resolveNearbyIncident(), "Resolved incidents cannot be claimed twice")
     let data = try! JSONEncoder().encode(staff)
     let saved = try! JSONDecoder().decode(Motel.self,from:data)
@@ -615,9 +615,9 @@ func expandedManagementRules() {
     hourly.advanceHotelHour();hourly.advanceHotelHour()
     require(hourly.rooms[0].guest==nil && hourly.rooms[0].dirty,"Hourly guest automatically checks out")
     var weekly=make()
-    let resident=weekly.waiting.first{$0.kind == .resident}!
+    let resident=weekly.waiting.first{$0.kind  == .resident}!
     require(weekly.checkIn(guestID:resident.id,roomID:0),"Weekly resident checks in")
-    require(weekly.rooms[0].nightsLeft==7 && weekly.simulation.contracts[resident.id]?.plan == .weekly,"Weekly discount and stay duration are real")
+    require(weekly.rooms[0].nightsLeft==7 && weekly.simulation.contracts[resident.id]?.plan  == .weekly,"Weekly discount and stay duration are real")
     var rates=make();let standard=rates.rate(for:rates.rooms[0])
     rates.setPrices(.premium,plan:.nightly)
     require(rates.rate(for:rates.rooms[0])>standard,"Pricing policy changes charged rates")
@@ -642,7 +642,7 @@ func expandedManagementRules() {
     night.toggleShadyOffers()
     require(night.checkIn(guestID:10,roomID:0) && night.simulation.heat>0,"Optional off-books night rentals have consequences")
     var identity=make()
-    let privateGuest=identity.waiting.first{$0.kind == .suspicious}!
+    let privateGuest=identity.waiting.first{$0.kind  == .suspicious}!
     require(!identity.checkIn(guestID:privateGuest.id,roomID:0),"Private cash guests need verified identity")
     identity.verifyGuest(privateGuest.id);let ethics=identity.simulation.ethical;identity.verifyGuest(privateGuest.id)
     require(identity.simulation.ethical==ethics,"Repeated identity checks cannot farm story points")
@@ -662,7 +662,7 @@ func expandedManagementRules() {
     let speed=staff.simulation.profiles[StaffRole.clerk.rawValue]!.speed
     require(staff.trainStaff(.clerk) && staff.simulation.profiles[StaffRole.clerk.rawValue]!.speed>speed,"Training improves employee stats")
     var quitting=make();_=quitting.hireEstablishedStaff(.cleaner);quitting.cash=0;_=quitting.nextDay();_=quitting.nextDay()
-    require(!quitting.operationsState.workers.contains{$0.role == .cleaner},"Staff can quit after two unpaid shifts")
+    require(!quitting.operationsState.workers.contains{$0.role  == .cleaner},"Staff can quit after two unpaid shifts")
     var events=make();_=events.checkIn(guestID:10,roomID:0)
     for kind in HotelIssueKind.allCases {
         events.injectIssue(kind,roomID:0)
@@ -699,9 +699,9 @@ func expandedManagementRules() {
     growth.toggleNightVision();require(growth.simulation.nightVision,"Night vision is a saved mode")
     require(growth.installFacility(.restaurant) && growth.installFacility(.pool),"Restaurant and staffed pool are real upgrades")
     var local=make();local.day=11;_=local.nextDay()
-    require(local.simulation.economy == .heatwave && local.weather == .sunny,"Local heatwaves affect the climate and AC events")
+    require(local.simulation.economy  == .heatwave && local.weather  == .sunny,"Local heatwaves affect the climate and AC events")
     local.day=8;_=local.nextDay()
-    require(local.simulation.economy == .factoryClosure && local.waiting.allSatisfy{$0.kind == .resident},"Factory closure changes the guest economy")
+    require(local.simulation.economy  == .factoryClosure && local.waiting.allSatisfy{$0.kind  == .resident},"Factory closure changes the guest economy")
     var noShow=make();var reservations=noShow.simulation
     reservations.reservations=[HotelReservation(id:999,guest:Motel.arrivals(day:4,count:1)[0],arrivalHour:9,noShow:true)]
     noShow.simulation=reservations;let feeMoney=noShow.cash;noShow.advanceHotelHour()
@@ -726,7 +726,7 @@ func reactiveGuestsAndStaffPosts() {
     for role in StaffRole.allCases { require(motel.hireEstablishedStaff(role),"Hire staff for lounge test") }
     for _ in 0..<90 { motel.tickManagement() }
     require(motel.operationsState.workers.allSatisfy { $0.tile == $0.role.home },"Idle employees return to their own work posts")
-    let cleaner=motel.operationsState.workers.firstIndex { $0.role == .cleaner }!
+    let cleaner=motel.operationsState.workers.firstIndex { $0.role  == .cleaner }!
     motel.rooms[0].dirty=true
     for _ in 0..<90 { motel.tickManagement() }
     require(!motel.rooms[0].dirty,"Employees leave their work posts when work appears")
@@ -800,7 +800,7 @@ func continuousStaffAndFamilyRoomRules() {
     for frame in 0..<360 {business.tickManagement(advanceClock:frame%MotelCadence.businessSteps==0)}
     require(!business.rooms[0].dirty,"Housekeeping completes actual room work")
     require(business.rooms[1].health.faults.isEmpty,"Maintenance reaches and repairs the actual room")
-    require(!business.simulation.issues.contains{$0.kind == .noise},"Security reaches and handles complaints")
+    require(!business.simulation.issues.contains{$0.kind  == .noise},"Security reaches and handles complaints")
     require((business.operationsState.washIncome ?? 0)>=35,"Valet reaches cars and earns wash income")
     var tired=Motel();tired.initializeWorld();tired.enableManagement();tired.cash=5000;_=tired.hireEstablishedStaff(.clerk)
     var profile=tired.simulation;profile.profiles[StaffRole.clerk.rawValue]!.fatigue=90;tired.simulation=profile
@@ -818,7 +818,7 @@ func familyHomeAndNeighborhoodRules() {
         require(MotelGrounds.nextStep(from:MotelGrounds.officeDoor,to:door,avoiding:[]) != nil,"Office connects to the house and every shop")
     }
     motel.world!.player=NeighborhoodShop.furniture.door
-    require(motel.nearbyAction == .shop(.furniture),"Furniture shop has a physical interaction")
+    require(motel.nearbyAction  == .shop(.furniture),"Furniture shop has a physical interaction")
     let initial=motel.cash
     require(!motel.buyHomeObject(.plant),"Shopping requires entering and reaching the counter")
     require(motel.enterShop(.furniture),"Furniture store is a walk-in interior")
@@ -874,12 +874,12 @@ func receptionAndCompanionRules() {
     motel.initializeWorld()
     require(motel.visiblePets.isEmpty,"Legacy saves keep pets at home, not in reception")
     motel.world!.player=Tile(x:3,y:3)
-    require(motel.nearbyAction == .computer,"The physical PC opens business management")
+    require(motel.nearbyAction  == .computer,"The physical PC opens business management")
     motel.world!.place = .house
     motel.world!.player=Tile(x:7,y:8)
     require(motel.nearbyAction != .homeDecor,"Decorating is not offered throughout the house")
     motel.world!.player=Tile(x:4,y:12)
-    require(motel.nearbyAction == .homeDecor && motel.homeBlocked(FamilyHome.workbench),"Workbench is solid and usable from beside it")
+    require(motel.nearbyAction  == .homeDecor && motel.homeBlocked(FamilyHome.workbench),"Workbench is solid and usable from beside it")
     motel.world!.player=Tile(x:9,y:12)
     motel.togglePet("chichu")
     let old=motel.actorTile, oldMap=motel.petMap
@@ -890,7 +890,7 @@ func receptionAndCompanionRules() {
     motel.world!.player=Tile(x:54,y:15)
     motel.updateCompanions(from:old,map:oldMap)
     require(motel.petState("chichu").map == "grounds" && !MotelGrounds.blocked(motel.petState("chichu").tile),"Pet follows a map transfer onto walkable ground")
-    require(motel.nearbyAction == .home,"A following pet does not hide the nearby doorway action")
+    require(motel.nearbyAction  == .home,"A following pet does not hide the nearby doorway action")
     motel.togglePet("chichu")
     let waiting=motel.petState("chichu").tile
     motel.world!.place = .office
@@ -991,7 +991,7 @@ func coastAndWalkInStoreRules() {
         }
         require(seen.contains(ShopLayout.counter) && seen.contains(ShopLayout.exit),"Displays leave a clear route to the counter and door")
         motel.world!.player=ShopLayout.counter
-        require(motel.canTrade(shop) && motel.nearbyAction == .shop(shop),"Counter enables the correct store inventory")
+        require(motel.canTrade(shop) && motel.nearbyAction  == .shop(shop),"Counter enables the correct store inventory")
         let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(motel))
         require(restored.currentShop==shop && restored.actorTile==ShopLayout.counter,"Checkpoint retains the active store")
         motel.world!.player=ShopLayout.exit
@@ -1023,7 +1023,7 @@ func coastAndWalkInStoreRules() {
     legacy.world!.pets=["chichu":PetCompanion(following:true,map:"grounds",tile:Tile(x:64,y:45)),"chichi":PetCompanion(following:false,map:"grounds",tile:Tile(x:66,y:45))]
     let oldPosition=legacy.actorTile
     legacy.reconcileInteriorSpawn();legacy.updateCompanions(from:oldPosition,map:"grounds")
-    require(legacy.worldState.place == .grounds && !MotelGrounds.blocked(legacy.actorTile),"An older seaside save loads onto nearby clear ground")
+    require(legacy.worldState.place  == .grounds && !MotelGrounds.blocked(legacy.actorTile),"An older seaside save loads onto nearby clear ground")
     require(!MotelGrounds.blocked(legacy.petState("chichu").tile),"A following pet is not left inside new water or decoration")
     require(!MotelGrounds.blocked(legacy.petState("chichi").tile) && !legacy.petState("chichi").following,"A waiting pet also migrates to nearby safe ground without changing its follow setting")
     let safe=legacy.actorTile;legacy.reconcileInteriorSpawn()
@@ -1040,13 +1040,13 @@ func barRules() {
     require(!game.orderBarDrink(.citrusSoda),"Drinks require reaching the bartender")
     game.world!.player=ShopLayout.counter
     require(game.orderBarDrink(.citrusSoda) && game.cash == 92 && game.worldState.barOrders == 1,"Bartender charges once and serves requested drink")
-    require(game.worldState.barDrink == .citrusSoda,"Served drink is recorded")
+    require(game.worldState.barDrink  == .citrusSoda,"Served drink is recorded")
     game.cash=0;require(!game.orderBarDrink(.houseCocktail) && game.cash == 0,"Unaffordable drinks do not overdraw")
     for tile in BarLayout.seats {require(game.shopBlocked(tile),"Seated patrons block their chair tile")}
     game.world!.player=Tile(x:7,y:10);game.moveActor(dx:-1,dy:-1)
     require(game.actorTile==Tile(x:7,y:10),"Cannot cut diagonally through patrons or tables")
     let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(game))
-    require(saved.currentShop == .bar && saved.worldState.barDrink == .citrusSoda,"Bar and drink order survive checkpoint")
+    require(saved.currentShop  == .bar && saved.worldState.barDrink  == .citrusSoda,"Bar and drink order survive checkpoint")
     game.world!.player=ShopLayout.exit;require(game.leaveShop() && game.actorTile == Tile(x:NeighborhoodShop.bar.door.x,y:NeighborhoodShop.bar.door.y+1),"Bar exit returns to its own road")
     print("PASS: bar entry, counter service, prices, patrons, furniture, checkpoints and exit")
 }
@@ -1159,7 +1159,7 @@ func basementSanctuaryRules() {
         require(!BasementLayout.blocked(BasementLayout.gate(id)),"Every gate has a clear visitor approach")
     }
     var game=Motel();game.initializeWorld();game.world!.place = .house;game.world!.player=Tile(x:2,y:13)
-    require(game.nearbyAction == .basement && game.enterBasement(),"Physical home stairs enter the basement")
+    require(game.nearbyAction  == .basement && game.enterBasement(),"Physical home stairs enter the basement")
     require(game.isAtBasement && game.actorTile == BasementLayout.arrival,"Basement arrival is safe")
     for id in 0..<8 {
         game.world!.player=BasementLayout.gate(id)
@@ -1190,7 +1190,7 @@ func restaurantAndBikeRules() {
     require(game.enterShop(.fish),"Enter fish restaurant")
     require(!game.orderFishMeal(.grilledFish),"Cannot order remotely")
     game.world!.player=ShopLayout.counter
-    require(game.orderFishMeal(.grilledFish) && game.cash == 482 && game.worldState.fishMeal == .grilledFish,"Chef serves a paid meal")
+    require(game.orderFishMeal(.grilledFish) && game.cash == 482 && game.worldState.fishMeal  == .grilledFish,"Chef serves a paid meal")
     game.world!.place = .grounds;game.world!.shop=nil;game.world!.player=Tile(x:15,y:32)
     require(game.mountNearbyBike() && game.isRidingBike,"Mount a character-sized bicycle")
     game.moveActor(dx:1,dy:0);require(game.actorTile == Tile(x:16,y:32),"Pedal with ordinary movement controls")
@@ -1259,7 +1259,7 @@ func creativeEmergencyAccessRules() {
     require(game.checkIn(guestID:10,roomID:0),"Establish an occupied motel")
     game.operations!.nextIncidentTick=0
     game.tickManagement()
-    require(game.operationsState.incident?.kind == .fire,"Emergency scheduling continues in creative layouts")
+    require(game.operationsState.incident?.kind  == .fire,"Emergency scheduling continues in creative layouts")
     let incident=game.operationsState.incident!
     require(!game.groundBlocked(incident.tile) && !game.groundBlocked(incident.approach),"Emergency participants and responders have reachable ground")
     var bikes=Motel();bikes.initializeWorld();bikes.world!.place = .grounds
@@ -1295,7 +1295,7 @@ func responseAndGuestVariationRules() {
         hotel.operations!.incident=nil;hotel.operations!.incidentsStarted=1;hotel.operations!.nextIncidentTick=0
         hotel.tickManagement()
         let event=hotel.operationsState.incident!
-        require(event.kind == .pool && event.guest != nil,"Pool selects an actual checked-in guest")
+        require(event.kind  == .pool && event.guest != nil,"Pool selects an actual checked-in guest")
         if let previous=victims.last {require(event.guest!.name != previous,"Pool does not repeatedly choose the same victim when others are available")}
         victims.append(event.guest!.name)
         hotel.world!.player=event.approach
@@ -1352,7 +1352,7 @@ func pursuitAndRandomFireRules() {
         motel.operations!.incident=nil;motel.operations!.incidentsStarted=0;motel.operations!.nextIncidentTick=0
         motel.tickManagement()
         let incident=motel.operationsState.incident!
-        require(incident.kind == .fire && incident.tile != previous,"Consecutive fires choose a different location")
+        require(incident.kind  == .fire && incident.tile != previous,"Consecutive fires choose a different location")
         require((2...37).contains(incident.tile.x) && (3...33).contains(incident.tile.y),"Fire stays around the motel")
         require(!motel.groundBlocked(incident.tile) && !motel.groundBlocked(incident.approach),"Fire and response position stay accessible")
         previous=incident.tile;locations.insert(incident.tile)
@@ -1438,7 +1438,7 @@ func guestStoryRules() {
     }
     var hotel=Motel();hotel.initializeWorld();hotel.cash=500
     hotel.prepareStoryArrivals()
-    require(hotel.waiting.first?.storyID == .musician,"First story arrival introduces Rowan")
+    require(hotel.waiting.first?.storyID  == .musician,"First story arrival introduces Rowan")
     let count=hotel.waiting.count;hotel.prepareStoryArrivals()
     require(hotel.waiting.count==count,"Repeated world initialization cannot duplicate story arrivals")
     let rowan=meet(.musician,day:1,hotel:&hotel)
@@ -1483,7 +1483,7 @@ func guestStoryRules() {
             require(story.chooseGuestStory(guest,choiceID:0),"All three chapters can be completed for "+id.name)
         }
         require(story.storyProgress(id).chapter==3 && !story.storyProgress(id).ending.isEmpty,"Completed stories retain their ending")
-        require(id == .reviewer ? story.storyBook.travelFeature : story.storyBook.familyReunited,"Choices unlock a lasting story outcome")
+        require(id  == .reviewer ? story.storyBook.travelFeature : story.storyBook.familyReunited,"Choices unlock a lasting story outcome")
     }
     var damaged=Motel();damaged.initializeWorld();damaged.cash=500
     let reviewer=meet(.reviewer,day:1,hotel:&damaged);_=damaged.chooseGuestStory(reviewer,choiceID:0)
@@ -1528,7 +1528,7 @@ func connectedHavenLifeRules() {
     require(!identity.chooseHavenIdentity(.boutique),"Boutique direction requires reputation and furniture")
     require(identity.chooseHavenIdentity(.lively),"A motel can choose a lively identity")
     identity.attractHavenGuests()
-    require(identity.waiting.contains{$0.kind == .party},"Identity changes the real guest mix")
+    require(identity.waiting.contains{$0.kind  == .party},"Identity changes the real guest mix")
     require(!identity.chooseHavenIdentity(.peaceful),"Identity choices have a daily cooldown")
     var employees=base();employees.guestsServed=20;_=employees.hire(.cleaner);_=employees.hire(.security)
     for day in 2...4 {employees.day=day;employees.settleHavenDay()}
@@ -1627,7 +1627,7 @@ func resortExpansionRules() {
     let savedRoutine=routine.expansion.routines[couple.id]!
     require(savedRoutine.tile != savedRoutine.previous,"Guest routine uses movement rather than teleporting")
     routine.operations!.weatherOverride = .rain
-    require(routine.guestRoutine(couple)== .shelter,"Rain moves routines to shelter")
+    require(routine.guestRoutine(couple) == .shelter,"Rain moves routines to shelter")
     routine.operations!.weatherOverride = .sunny
     var night=routine.simulation;night.hour=22;routine.simulation=night
     var e=routine.expansion;e.routines[couple.id]=HavenRoutineGuest(tile:routine.groundRoomDoor(0),previous:routine.groundRoomDoor(0),activity:.room);routine.havenExpansion=e
@@ -1654,7 +1654,7 @@ func resortExpansionRules() {
     collector.world!.player=Tile(x:6,y:10)
     require(!collector.findHavenDiscovery("shell-coral"),"Journal hints cannot collect distant objects")
     let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(hotel))
-    require(restored.expansion.designs[0]== .cozy && restored.expansion.tier==hotel.expansion.tier,"Design and progression survive saving")
+    require(restored.expansion.designs[0] == .cozy && restored.expansion.tier==hotel.expansion.tier,"Design and progression survive saving")
     let collection=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(collector))
     require(collection.expansion.discoveries.contains("shell-pearl"),"Discoveries survive saving")
     var object=try! JSONSerialization.jsonObject(with:JSONEncoder().encode(hotel)) as! [String:Any]

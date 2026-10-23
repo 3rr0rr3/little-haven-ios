@@ -1001,11 +1001,13 @@ struct HavenLifeView:View {
         NavigationStack {
             VStack(spacing:12) {
                 Text("DAY \(motel.day) · WEEKDAY \(motel.havenWeekday)/7 · \(motel.cash) COINS").font(.caption.monospaced())
-                ScrollView(.horizontal,showsIndicators:false) {
-                    HStack {ForEach(HavenTab.allCases) {item in
-                        Button(item.rawValue) {tab=item}.buttonStyle(.bordered)
-                            .tint(tab==item ? Color(hex:0xEFC977) : .gray).accessibilityIdentifier("havenTab_"+item.rawValue)
-                    }}.padding(.horizontal)
+                ScrollViewReader {proxy in
+                    ScrollView(.horizontal,showsIndicators:false) {
+                        HStack {ForEach(HavenTab.allCases) {item in
+                            Button(item.rawValue) {tab=item}.buttonStyle(.bordered)
+                                .tint(tab==item ? Color(hex:0xEFC977) : .gray).accessibilityIdentifier("havenTab_"+item.rawValue).id(item.id)
+                        }}.padding(.horizontal)
+                    }.onChange(of:tab) {_,value in proxy.scrollTo(value.id,anchor:.center)}
                 }
                 ScrollView {
                     VStack(alignment:.leading,spacing:18) {
