@@ -14,6 +14,14 @@ import AppKit
 extension Color {
     init(hex:UInt32) {self.init(red:Double((hex>>16)&255)/255,green:Double((hex>>8)&255)/255,blue:Double(hex&255)/255)}
 }
+enum PaintedArt {
+    static func person(context:inout GraphicsContext,x:Double,y:Double,variant:Int,facing:Int,walk:Double,color:UInt32,hands:Bool=true,kneeling:Bool=false,beachwear:Bool=false)->Bool {
+        let name=variant==7 ? "player" : variant==8 ? "hildarelys" : variant==9 ? "samhil" : ["guest-a","guest-b","guest-c","guest-d"][abs(variant)%4]
+        let path=CommandLine.arguments[3]+"/bh-"+name+".imageset/bh-"+name+".png"
+        guard let image=NSImage(contentsOfFile:path),let cg=image.cgImage(forProposedRect:nil,context:nil,hints:nil),let cell=cg.cropping(to:CGRect(x:0,y:max(0,min(3,facing))*224,width:192,height:224)) else{return false}
+        context.draw(Image(decorative:cell,scale:1),in:CGRect(x:x-4,y:y-9,width:24,height:28));return true
+    }
+}
 ''' + personal + '\n' + people + '\n' + uniform + r'''
 struct CharacterIcon:View {
     var body:some View {
@@ -22,11 +30,11 @@ struct CharacterIcon:View {
             context.fill(full,with:.linearGradient(Gradient(colors:[Color(hex:0x91B7A1),Color(hex:0x284C43)]),startPoint:.zero,endPoint:CGPoint(x:1024,y:1024)))
             context.fill(Path(roundedRect:CGRect(x:86,y:110,width:852,height:838),cornerRadius:120),with:.color(Color(hex:0xDCCAA0)))
             context.fill(Path(roundedRect:CGRect(x:118,y:142,width:788,height:758),cornerRadius:96),with:.linearGradient(Gradient(colors:[Color(hex:0xAECFC1),Color(hex:0x779C8B)]),startPoint:CGPoint(x:120,y:140),endPoint:CGPoint(x:900,y:900)))
-            context.draw(Text("LITTLE HAVEN").font(.system(size:66,weight:.black,design:.rounded)).foregroundColor(Color(hex:0x203F36)),at:CGPoint(x:512,y:212))
+            context.draw(Text("BRAINSTORM HAVEN").font(.system(size:58,weight:.black,design:.rounded)).foregroundColor(Color(hex:0x203F36)),at:CGPoint(x:512,y:212))
             // Use the exact in-game PersonalArt, not a redrawn or generated portrait.
             var character=context
-            character.translateBy(x:292,y:350)
-            character.scaleBy(x:27.5,y:27.5)
+            character.translateBy(x:292,y:400)
+            character.scaleBy(x:22,y:22)
             PersonalArt.draw(context:&character,x:0,y:5,variant:7,facing:0,walk:0,shirt:0xC7D0D4)
         }.frame(width:1024,height:1024)
     }
@@ -68,6 +76,6 @@ with tempfile.TemporaryDirectory() as folder:
     binary=Path(folder)/"render-icon"
     subprocess.run(["swiftc","-target",platform.machine()+"-apple-macosx13.0","-parse-as-library",str(program),"-o",str(binary)],check=True)
     target=root/"LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
-    subprocess.run([str(binary),str(target),str(root/"LittleHaven-character-turns.png")],check=True)
+    subprocess.run([str(binary),str(target),str(root/"LittleHaven-character-turns.png"),str(root/"LittleHaven/Assets.xcassets/Painted")],check=True)
     (root/"LittleHaven-app-icon.png").write_bytes(target.read_bytes())
     print("Rendered original player character into opaque 1024px app icon")
