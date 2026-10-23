@@ -1,0 +1,1154 @@
+{
+  "captured_source": "9e007d52cdcb16aeb9f5489a41929b62a1339e18",
+  "run": 40014871888,
+  "retry_run": "40022339322",
+  "retry_passed": true,
+  "screenshots": [
+    {
+      "index": 0,
+      "file": "retry/DE1C6F52-B714-4B73-AD06-5895199D08FF.png",
+      "preview": "frame-000.jpg"
+    },
+    {
+      "index": 1,
+      "file": "original/009FBA6E-2091-49CC-A384-DA7BD406C20E.png",
+      "preview": "frame-001.jpg"
+    },
+    {
+      "index": 2,
+      "file": "original/0CEA9906-4BD6-4D3E-8525-1224F1C11B48.png",
+      "preview": "frame-002.jpg"
+    },
+    {
+      "index": 3,
+      "file": "original/0D9B8709-32FC-4941-A434-651141D0C0AE.png",
+      "preview": "frame-003.jpg"
+    },
+    {
+      "index": 4,
+      "file": "original/0E707298-CD0D-4C1C-A6C1-CE1312839A22.png",
+      "preview": "frame-004.jpg"
+    },
+    {
+      "index": 5,
+      "file": "original/11A16125-6F7D-4F6D-87FC-586E2ECDAFC4.png",
+      "preview": "frame-005.jpg"
+    },
+    {
+      "index": 6,
+      "file": "original/169BF982-BF25-4EFA-94EE-10B59236199B.png",
+      "preview": "frame-006.jpg"
+    },
+    {
+      "index": 7,
+      "file": "original/1BA977B0-9260-4E25-A590-6667F24FE7A8.png",
+      "preview": "frame-007.jpg"
+    },
+    {
+      "index": 8,
+      "file": "original/1D7C4112-1E47-42F7-B6DC-7C76C194E308.png",
+      "preview": "frame-008.jpg"
+    },
+    {
+      "index": 9,
+      "file": "original/2122CA83-A0CB-44E9-AE9C-8D9F7B6AA94B.png",
+      "preview": "frame-009.jpg"
+    },
+    {
+      "index": 10,
+      "file": "original/24E1E091-3B81-4129-BB56-7A1AAE00E644.png",
+      "preview": "frame-010.jpg"
+    },
+    {
+      "index": 11,
+      "file": "original/26E953F8-E8D5-43E2-9D8A-F01B083D96BE.png",
+      "preview": "frame-011.jpg"
+    },
+    {
+      "index": 12,
+      "file": "original/3223838C-413C-4984-A89C-EF07D3E82405.png",
+      "preview": "frame-012.jpg"
+    },
+    {
+      "index": 13,
+      "file": "original/389F9203-2D61-4351-A617-C76A89FD8629.png",
+      "preview": "frame-013.jpg"
+    },
+    {
+      "index": 14,
+      "file": "original/3D396024-7FDA-4778-B73F-6C7FB77BA7E3.png",
+      "preview": "frame-014.jpg"
+    },
+    {
+      "index": 15,
+      "file": "original/41A1E0B0-F697-427C-BF92-1E7D577352C7.png",
+      "preview": "frame-015.jpg"
+    },
+    {
+      "index": 16,
+      "file": "original/46E65DF5-A677-43A7-A72D-BF63207B7724.png",
+      "preview": "frame-016.jpg"
+    },
+    {
+      "index": 17,
+      "file": "original/4DE15015-5F72-4632-9CA8-2B17C1F97168.png",
+      "preview": "frame-017.jpg"
+    },
+    {
+      "index": 18,
+      "file": "original/51E22CBA-3260-4680-880C-56705EBA858D.png",
+      "preview": "frame-018.jpg"
+    },
+    {
+      "index": 19,
+      "file": "original/5845DEDF-BFAB-48C1-88DB-7956772DE496.png",
+      "preview": "frame-019.jpg"
+    },
+    {
+      "index": 20,
+      "file": "original/600AA1D1-8FF8-466E-B6B1-5A8C78B10317.png",
+      "preview": "frame-020.jpg"
+    },
+    {
+      "index": 21,
+      "file": "original/613ED699-A09D-46D5-BE34-B7F3F1373F62.png",
+      "preview": "frame-021.jpg"
+    },
+    {
+      "index": 22,
+      "file": "original/6143A06D-DE47-4AEE-A7C2-162027AE47D8.png",
+      "preview": "frame-022.jpg"
+    },
+    {
+      "index": 23,
+      "file": "original/623B9777-A8F5-469E-9499-47958356DA1B.png",
+      "preview": "frame-023.jpg"
+    },
+    {
+      "index": 24,
+      "file": "original/651AB048-19B1-4797-BBA1-D4FDA2C231A2.png",
+      "preview": "frame-024.jpg"
+    },
+    {
+      "index": 25,
+      "file": "original/6601AB8E-FF81-491A-9AE6-1A0980A0BF79.png",
+      "preview": "frame-025.jpg"
+    },
+    {
+      "index": 26,
+      "file": "original/6687401F-EF1D-4FE2-B3AC-BA9BFC99F50D.png",
+      "preview": "frame-026.jpg"
+    },
+    {
+      "index": 27,
+      "file": "original/6F08B444-5E15-4BFE-9340-35CBE762E3C2.png",
+      "preview": "frame-027.jpg"
+    },
+    {
+      "index": 28,
+      "file": "original/784CB650-3517-417F-85F3-1F5BFCF161FC.png",
+      "preview": "frame-028.jpg"
+    },
+    {
+      "index": 29,
+      "file": "original/7A9AD7A9-CF3E-4796-B9C6-123C5B36A5F5.png",
+      "preview": "frame-029.jpg"
+    },
+    {
+      "index": 30,
+      "file": "original/7B5F83D5-2C7C-499F-9593-CE98486E66BF.png",
+      "preview": "frame-030.jpg"
+    },
+    {
+      "index": 31,
+      "file": "original/7E971230-7263-4301-B83E-AABE38F5EB14.png",
+      "preview": "frame-031.jpg"
+    },
+    {
+      "index": 32,
+      "file": "original/7E99ECAD-B22B-45FC-9013-BCB613406A0D.png",
+      "preview": "frame-032.jpg"
+    },
+    {
+      "index": 33,
+      "file": "original/82E94AE0-EFF4-40C6-BBEA-7AE5CF974BB8.png",
+      "preview": "frame-033.jpg"
+    },
+    {
+      "index": 34,
+      "file": "original/8DB0753F-9FE6-4DA6-87BB-1D71E381F697.png",
+      "preview": "frame-034.jpg"
+    },
+    {
+      "index": 35,
+      "file": "original/8FD64F57-D74D-4EA4-B76A-5D08B887C69F.png",
+      "preview": "frame-035.jpg"
+    },
+    {
+      "index": 36,
+      "file": "original/90DB1AFA-AD48-4B60-BC3B-B9E06EB40073.png",
+      "preview": "frame-036.jpg"
+    },
+    {
+      "index": 37,
+      "file": "original/9B966AEF-2140-424B-8B65-32013F6607B1.png",
+      "preview": "frame-037.jpg"
+    },
+    {
+      "index": 38,
+      "file": "original/9EDBD62D-D4CA-4789-9790-017F4B50B657.png",
+      "preview": "frame-038.jpg"
+    },
+    {
+      "index": 39,
+      "file": "original/A25CDAA0-7BC5-4701-8D76-5CB5DBE40FC7.png",
+      "preview": "frame-039.jpg"
+    },
+    {
+      "index": 40,
+      "file": "original/AD1B2439-3939-4361-B64A-3D2FB1B63537.png",
+      "preview": "frame-040.jpg"
+    },
+    {
+      "index": 41,
+      "file": "original/AF08F908-3DDA-4700-B902-964592F69138.png",
+      "preview": "frame-041.jpg"
+    },
+    {
+      "index": 42,
+      "file": "original/B1442ECA-9BCC-4EF4-81B4-A4DAA0975348.png",
+      "preview": "frame-042.jpg"
+    },
+    {
+      "index": 43,
+      "file": "original/BD07D6DD-CE47-4668-ABED-6957879081DE.png",
+      "preview": "frame-043.jpg"
+    },
+    {
+      "index": 44,
+      "file": "original/BD482D6C-FDA5-4C61-8951-476F2F55A0AD.png",
+      "preview": "frame-044.jpg"
+    },
+    {
+      "index": 45,
+      "file": "original/C269E783-8154-4035-9512-7D28CF11978E.png",
+      "preview": "frame-045.jpg"
+    },
+    {
+      "index": 46,
+      "file": "original/C69367AF-B227-4CE1-816C-F6A02E0E5FD5.png",
+      "preview": "frame-046.jpg"
+    },
+    {
+      "index": 47,
+      "file": "original/CAC38E86-067F-4F99-9680-9326E656E187.png",
+      "preview": "frame-047.jpg"
+    },
+    {
+      "index": 48,
+      "file": "original/CEFAB890-4962-4C73-B50C-0FACA929EED2.png",
+      "preview": "frame-048.jpg"
+    },
+    {
+      "index": 49,
+      "file": "original/CF4FF625-5DAD-4FF6-939B-34959ABEAE2A.png",
+      "preview": "frame-049.jpg"
+    },
+    {
+      "index": 50,
+      "file": "original/CF5151FC-A429-41B9-B5E6-8DEC3059FB57.png",
+      "preview": "frame-050.jpg"
+    },
+    {
+      "index": 51,
+      "file": "original/D49C1CE5-D6C3-4FE4-A298-05016E88CF8B.png",
+      "preview": "frame-051.jpg"
+    },
+    {
+      "index": 52,
+      "file": "original/E75BF14A-8840-4EA7-95FE-32FC31A70A1F.png",
+      "preview": "frame-052.jpg"
+    },
+    {
+      "index": 53,
+      "file": "original/E7CFC0D9-C0A4-4D76-9C10-71FC6D86A027.png",
+      "preview": "frame-053.jpg"
+    },
+    {
+      "index": 54,
+      "file": "original/E92725DA-D1B6-440F-8335-BCA03596CA77.png",
+      "preview": "frame-054.jpg"
+    },
+    {
+      "index": 55,
+      "file": "original/EAC284D8-767A-4B63-92B4-B3397C917C04.png",
+      "preview": "frame-055.jpg"
+    },
+    {
+      "index": 56,
+      "file": "original/F93151EB-F311-44D7-87DB-2D70514CE9DE.png",
+      "preview": "frame-056.jpg"
+    },
+    {
+      "index": 57,
+      "file": "original/FAFA9385-59A4-4960-B330-CA03283E51D0.png",
+      "preview": "frame-057.jpg"
+    },
+    {
+      "index": 58,
+      "file": "original/FB1FC35A-3175-465B-AA02-F764A5A51D13.png",
+      "preview": "frame-058.jpg"
+    },
+    {
+      "index": 59,
+      "file": "original/FB3919E3-0419-42B7-8BB8-9ABB55CC6911.png",
+      "preview": "frame-059.jpg"
+    },
+    {
+      "index": 60,
+      "file": "original/FB822B19-EB74-4593-8F15-2008CAF6227D.png",
+      "preview": "frame-060.jpg"
+    }
+  ],
+  "rejected_blank_captures": [],
+  "export_manifests": {
+    "retry/manifest.json": [
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "DE1C6F52-B714-4B73-AD06-5895199D08FF.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Creative mode physical object relocation_0_75E060EB-5F7E-4D2B-A2C6-2439D148734C.png",
+            "timestamp": 1792789125.241
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testCreativeEditorOpensAndMovesWasher()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher"
+      }
+    ],
+    "original/manifest.json": [
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "0E707298-CD0D-4C1C-A6C1-CE1312839A22.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Bartender serves drink in lively bar_0_48930F9D-E6D1-4DF2-9AAB-DA09D9A64BFF.png",
+            "timestamp": 1792786577.495
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testBarBartenderServesDrinks()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testBarBartenderServesDrinks"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "D49C1CE5-D6C3-4FE4-A298-05016E88CF8B.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Eight corral sanctuary and animal care_0_FC53B030-25CC-4271-B586-344563EE915C.png",
+            "timestamp": 1792786596.949
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testBasementCreatureFeedingAndPetting()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testBasementCreatureFeedingAndPetting"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "90DB1AFA-AD48-4B60-BC3B-B9E06EB40073.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Beach lounger sit stand and movement_0_F3B6DEB5-CB62-4623-995C-53F05ED89DD4.png",
+            "timestamp": 1792786616.062
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testBeachChairCanRelaxAndStand()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testBeachChairCanRelaxAndStand"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "FB1FC35A-3175-465B-AA02-F764A5A51D13.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Sunset Cove palms umbrellas loungers and sea_0_937A587D-17E0-4CAD-B1DD-9CA998AFB522.png",
+            "timestamp": 1792786662.487
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testBeachIsReachableAndDecorated()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testBeachIsReachableAndDecorated"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "7A9AD7A9-CF3E-4796-B9C6-123C5B36A5F5.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Morning breakfast service completed_0_4BC48006-11D6-451A-B174-F04BBFC9632D.png",
+            "timestamp": 1792786688.944
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testBreakfastRushConsumesSuppliesAndRewardsGuests()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testBreakfastRushConsumesSuppliesAndRewardsGuests"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "C269E783-8154-4035-9512-7D28CF11978E.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Car washed with animated foam and spray_0_D58BC53F-D263-41B5-9D12-86ADA050C65F.png",
+            "timestamp": 1792786705.058
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testCarWashPaysOnlyOnce()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testCarWashPaysOnlyOnce"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "CAC38E86-067F-4F99-9680-9326E656E187.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Caught while sneaking_0_0640BB18-27E0-4D1F-874A-A34604A32A93.png",
+            "timestamp": 1792786717.572
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testCaughtRestoresLastCheckpoint()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testCaughtRestoresLastCheckpoint"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "9B966AEF-2140-424B-8B65-32013F6607B1.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Clothing shop owned and equipped outfits_0_0A9F4AE4-ABE0-473A-A2E5-08ACFB6CAC52.png",
+            "timestamp": 1792786742.82
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testClothingShopBuysAndEquips()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testClothingShopBuysAndEquips"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "1BA977B0-9260-4E25-A590-6667F24FE7A8.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Employee personality and permanent wage raise_0_65987E8B-87A2-4C5D-9419-185CC68BAD4D.png",
+            "timestamp": 1792786771.486
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "26E953F8-E8D5-43E2-9D8A-F01B083D96BE.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Creature quest and unique ability_0_8B5CD222-2AE1-4F55-B791-8E23C77F18CF.png",
+            "timestamp": 1792786758.794
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testCorralAdventureAndEmployeeRequest()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testCorralAdventureAndEmployeeRequest"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "C07C921E-A757-41AF-A13B-EED0F3803D9F.mp4",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Screen Recording 2026-10-23 at 08.19.32 PM.mp4",
+            "timestamp": 1792786772.78
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testCreativeEditorOpensAndMovesWasher()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "82E94AE0-EFF4-40C6-BBEA-7AE5CF974BB8.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Reference creature companion_0_4A082813-8418-47BF-9E6F-41EFBA963885.png",
+            "timestamp": 1792786849.282
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testCreatureCanFollowAndStay()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testCreatureCanFollowAndStay"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "B1442ECA-9BCC-4EF4-81B4-A4DAA0975348.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Collection journal and physical beach discovery_0_7A9089D2-BD3A-4609-B973-CEEC0CB1904B.png",
+            "timestamp": 1792786866.329
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testDiscoveryCollectionCannotBeClaimedTwice()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testDiscoveryCollectionCannotBeClaimedTwice"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "FB3919E3-0419-42B7-8BB8-9ABB55CC6911.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Fish restaurant order and diners_0_8063CEFD-8542-457A-AA92-8C4087964CE3.png",
+            "timestamp": 1792786901.209
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testFishRestaurantServesMeal()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testFishRestaurantServesMeal"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "623B9777-A8F5-469E-9499-47958356DA1B.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Hidden toolbar retains joystick and restore button_0_50A79663-AD68-48B4-9605-751F734B6D4D.png",
+            "timestamp": 1792786923.254
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "2122CA83-A0CB-44E9-AE9C-8D9F7B6AA94B.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Reception guest interaction from behind counter_0_9CCBE2C5-4BF8-472D-A8A5-6A5FC6D42315.png",
+            "timestamp": 1792786915.825
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "AD1B2439-3939-4361-B64A-3D2FB1B63537.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Full screen visible joystick and release_0_BE8E6FAB-DE8B-4A5F-B22B-067D817A93C6.png",
+            "timestamp": 1792786947.01
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testFullscreenJoystickReleaseAndPause()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testFullscreenJoystickReleaseAndPause"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "41A1E0B0-F697-427C-BF92-1E7D577352C7.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Full screen setting and prologue menu_0_E601CB57-2F3F-494B-A1E3-57D37A93A9AD.png",
+            "timestamp": 1792786960.818
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testFullscreenPrologueJournalAndOptions()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testFullscreenPrologueJournalAndOptions"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "CF5151FC-A429-41B9-B5E6-8DEC3059FB57.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Homegrown dish served to a hotel guest_0_9A075F1A-F249-4AC6-8ECA-326A62B81B7F.png",
+            "timestamp": 1792786973.627
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testGardenCookingAndServingGuest()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testGardenCookingAndServingGuest"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "389F9203-2D61-4351-A617-C76A89FD8629.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Harvest unlocks the garden salad recipe_0_0502995F-5A35-4ACA-BE86-6ED24401B694.png",
+            "timestamp": 1792786996.846
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "6687401F-EF1D-4FE2-B3AC-BA9BFC99F50D.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Planting and watering a real garden plot_0_76C2AA88-B168-4C35-A480-58ABE719F877.png",
+            "timestamp": 1792786986.425
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testGardenPlantWaterAndHarvestUnlock()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testGardenPlantWaterAndHarvestUnlock"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "8FD64F57-D74D-4EA4-B76A-5D08B887C69F.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Celebration table and visiting friends in reception_0_661B4AC5-7512-4CBA-BFC5-4BBA8BA36BE0.png",
+            "timestamp": 1792787034.745
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "46E65DF5-A677-43A7-A72D-BF63207B7724.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Hosted guest celebration and lasting memory_0_F6860A10-FCDE-411D-AE58-46B2E67E981F.png",
+            "timestamp": 1792787032.22
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "7B5F83D5-2C7C-499F-9593-CE98486E66BF.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Guest celebration preparation checklist_0_98FF6AF6-191C-4D45-B381-907586591130.png",
+            "timestamp": 1792787010.931
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testGuestCelebrationPreparationAndHosting()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testGuestCelebrationPreparationAndHosting"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "3D396024-7FDA-4778-B73F-6C7FB77BA7E3.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Guest conversation and personal request_0_4D7F2F8C-6857-4466-B66B-C7E992C87CC7.png",
+            "timestamp": 1792787047.804
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testGuestConversationCanAcceptAPersonalRequest()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testGuestConversationCanAcceptAPersonalRequest"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "6F08B444-5E15-4BFE-9340-35CBE762E3C2.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Guest story choice and remembered promise_0_30A1ECCD-783F-4595-AB57-0455E4F813F3.png",
+            "timestamp": 1792787065.928
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testGuestStoryChoiceAndSavedMemory()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testGuestStoryChoiceAndSavedMemory"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "E92725DA-D1B6-440F-8335-BCA03596CA77.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Home stairs enter and leave basement_0_AEAC651E-672B-44C9-8F21-52BDFA5E12A2.png",
+            "timestamp": 1792787117.126
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testHomeBasementStairsReturnHome()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testHomeBasementStairsReturnHome"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "4DE15015-5F72-4632-9CA8-2B17C1F97168.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Home upgrades wallpaper flooring and furniture placement_0_778FC8A5-2FFD-4EDF-AE48-D42596B923E2.png",
+            "timestamp": 1792787146.727
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "CF4FF625-5DAD-4FF6-939B-34959ABEAE2A.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Furniture shop purchases paid from motel profits_0_3626D02F-063C-4072-9A9E-B7082F9B29F4.png",
+            "timestamp": 1792787135.363
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testHomeDesignerAndFurniturePurchase()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testHomeDesignerAndFurniturePurchase"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "1D7C4112-1E47-42F7-B6DC-7C76C194E308.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Coastal rivalry and cooperation_0_B05453C2-3EBD-404A-82FA-358128FB8FD3.png",
+            "timestamp": 1792787166.284
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "FAFA9385-59A4-4960-B330-CA03283E51D0.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Motel inspection checks and award_0_4A55A42A-CAFB-4F53-AE79-E13ABE871514.png",
+            "timestamp": 1792787156.472
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testInspectionsAndRivalry()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testInspectionsAndRivalry"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "600AA1D1-8FF8-466E-B6B1-5A8C78B10317.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Rowan playing at the Lantern Bar_0_5A8CA9A4-194A-42D4-A763-45FA40241B77.png",
+            "timestamp": 1792787179.211
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testLanternGuestStoryShow()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testLanternGuestStoryShow"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "651AB048-19B1-4797-BBA1-D4FDA2C231A2.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Management inventory and ongoing supply costs_0_C93E0C03-2DF5-4C32-A0DA-0AD2A4F3E8F5.png",
+            "timestamp": 1792787208.793
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testManagementBoardSuppliesAndMiniGame()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testManagementBoardSuppliesAndMiniGame"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "BD07D6DD-CE47-4668-ABED-6957879081DE.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Actionable hotel dashboard_0_6C57C960-9683-4103-AEA5-C67A31371343.png",
+            "timestamp": 1792787236.101
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "EAC284D8-767A-4B63-92B4-B3397C917C04.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Management room care filter_0_D7706CEE-4A32-4FE0-988D-EA64922A73BD.png",
+            "timestamp": 1792787225.691
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testManagementDashboardFiltersAndQuickActions()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testManagementDashboardFiltersAndQuickActions"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "009FBA6E-2091-49CC-A384-DA7BD406C20E.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Hourly nightly and weekly pricing_0_161C841F-1CEE-4C39-83B5-9B0F6654217F.png",
+            "timestamp": 1792787250.61
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "6601AB8E-FF81-491A-9AE6-1A0980A0BF79.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Night shift hotel grounds_0_795B98B1-87F4-446A-8101-1AF9969EA7B1.png",
+            "timestamp": 1792787245.946
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testManagementDayNightAndPricing()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testManagementDayNightAndPricing"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "169BF982-BF25-4EFA-94EE-10B59236199B.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Live grounds cameras and night vision_0_54030FA6-C008-4598-BF9D-733DBCB774EF.png",
+            "timestamp": 1792787272.2
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "A25CDAA0-7BC5-4701-8D76-5CB5DBE40FC7.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Actionable power and pest complaints_0_F406749E-92A6-4D03-BE6D-B4D8D90F31E7.png",
+            "timestamp": 1792787260.674
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testManagementUtilitiesAndCameras()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testManagementUtilitiesAndCameras"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "3223838C-413C-4984-A89C-EF07D3E82405.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Neighbor friendship and physical favor_0_0F75D15E-C1A1-44F3-B75B-FECA4BB4A683.png",
+            "timestamp": 1792787283.893
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testNeighborRelationshipAndFavor()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testNeighborRelationshipAndFavor"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "613ED699-A09D-46D5-BE34-B7F3F1373F62.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Physical furniture and paint interaction_0_FBC494F3-CD48-420E-8197-DC05AA90127C.png",
+            "timestamp": 1792787306.04
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testObjectCustomizationAndConstruction()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testObjectCustomizationAndConstruction"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "51E22CBA-3260-4680-880C-56705EBA858D.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Free office movement_0_32251EAB-5B47-4617-9048-52F3FABF0EE0.png",
+            "timestamp": 1792787329.624
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testOfficeWalkingStopsOnRelease()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testOfficeWalkingStopsOnRelease"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "11A16125-6F7D-4F6D-87FC-586E2ECDAFC4.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Emergency alert --ui-chaos-fight_0_83573069-C1F4-44C5-AD48-59B2E1F91964.png",
+            "timestamp": 1792787366.017
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "0D9B8709-32FC-4941-A434-651141D0C0AE.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Emergency alert --ui-chaos-pool_0_49377D0C-485B-4B8B-A95F-8F30A3BA04E6.png",
+            "timestamp": 1792787353.87
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "24E1E091-3B81-4129-BB56-7A1AAE00E644.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Emergency alert --ui-chaos-fire_0_7707F325-8109-46D0-BD87-D121CB77A84D.png",
+            "timestamp": 1792787341.693
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testOutdoorChaosCanBeHandled()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testOutdoorChaosCanBeHandled"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "C69367AF-B227-4CE1-816C-F6A02E0E5FD5.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Pawn shop sells carried items individually_0_06C0E76B-AA2D-4405-AB9C-4C7C1E983A76.png",
+            "timestamp": 1792787400.156
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testPawnShopRequiresExplicitSale()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testPawnShopRequiresExplicitSale"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "AF08F908-3DDA-4700-B902-964592F69138.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Chichi follows outside while Chichu waits near home_0_18406FDC-A2C6-4DB0-AC7F-FA146064318F.png",
+            "timestamp": 1792787419.527
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testPetsFollowOutsideAndWaitIndependently()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testPetsFollowOutsideAndWaitIndependently"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "BD482D6C-FDA5-4C61-8951-476F2F55A0AD.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "A room cleaned by walking to every task_0_02FDF102-4434-4C9B-B759-95FEA9831422.png",
+            "timestamp": 1792787440.17
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testPhysicalRoomCleaning()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testPhysicalRoomCleaning"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "0CEA9906-4BD6-4D3E-8525-1224F1C11B48.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Player helping rescued guest recover_0_F5AD2130-7BC2-4EEA-961F-718CA00CD7FA.png",
+            "timestamp": 1792787458.619
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "F93151EB-F311-44D7-87DB-2D70514CE9DE.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Player bringing guest to shore_0_3A292144-7B29-47C6-8B00-8519987D0A85.png",
+            "timestamp": 1792787455.587
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "5845DEDF-BFAB-48C1-88DB-7956772DE496.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Player swimming to actual guest_0_4C4EC501-E044-4C7E-A70E-27F95D0AFAB2.png",
+            "timestamp": 1792787453.124
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testPlayerPoolRescueAnimation()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testPlayerPoolRescueAnimation"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "FB822B19-EB74-4593-8F15-2008CAF6227D.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Mandatory police decision in fullscreen reception_0_D0472D29-6C6E-46B9-8153-A3069D8B603F.png",
+            "timestamp": 1792787486.599
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testPoliceFindsPlayerInFullscreenOffice()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testPoliceFindsPlayerInFullscreenOffice"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "6143A06D-DE47-4AEE-A7C2-162027AE47D8.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Police refuse bribe after a fatal emergency_0_89C537CE-651D-4687-9E0E-AD9EDC7F7772.png",
+            "timestamp": 1792787505.544
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testPoliceFineAndBribe()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testPoliceFineAndBribe"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "784CB650-3517-417F-85F3-1F5BFCF161FC.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Visible hiring panel_0_942DB5FC-1418-4EF8-9648-77AB1E8EA025.png",
+            "timestamp": 1792787525.621
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testProminentHiringButton()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testProminentHiringButton"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "7E971230-7263-4301-B83E-AABE38F5EB14.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Reception decisions and saved desk checkpoint_0_4540D0DF-FFE3-42E2-A5D3-343504280EAF.png",
+            "timestamp": 1792787573.402
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testReceptionDecisionsDoorAndSave()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testReceptionDecisionsDoorAndSave"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "CEFAB890-4962-4C73-B50C-0FACA929EED2.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Motel milestone and facility permit_0_A63A1CB7-0F23-4130-87C8-2B706BBB8184.png",
+            "timestamp": 1792787595.774
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "E7CFC0D9-C0A4-4D76-9C10-71FC6D86A027.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Guest-aware room design_0_ABF29A4F-ED20-477B-B941-7F9BFF31941E.png",
+            "timestamp": 1792787585.386
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testRoomDesignAndMilestoneUnlock()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testRoomDesignAndMilestoneUnlock"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "8DB0753F-9FE6-4DA6-87BB-1D71E381F697.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "New adventure starts from zero_0_27FFD307-B1A8-4A1A-B22A-AA62479FC860.png",
+            "timestamp": 1792787658.959
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testTitleOptionsContinueAndNewGame()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testTitleOptionsContinueAndNewGame"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "7E99ECAD-B22B-45FC-9013-BCB613406A0D.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Recognizable suitcase, watch and camera in the guest room_0_3D2A8357-00D8-4499-8149-C44F377D2E89.png",
+            "timestamp": 1792787688.423
+          },
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "E75BF14A-8840-4EA7-95FE-32FC31A70A1F.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Storm particles outside the hotel_0_CAD08C9D-B898-43CD-BDC7-6F5F2CD6588F.png",
+            "timestamp": 1792787681.051
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testWeatherAndAnimatedTheft()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testWeatherAndAnimatedTheft"
+      },
+      {
+        "attachments": [
+          {
+            "configurationName": "Test Scheme Action",
+            "deviceId": "DC4CD8B3-4457-4153-9087-A0D7A2F9BFD9",
+            "deviceName": "iPhone 16 Pro",
+            "exportedFileName": "9EDBD62D-D4CA-4789-9790-017F4B50B657.png",
+            "isAssociatedWithFailure": false,
+            "suggestedHumanReadableName": "Three-round neighborhood market_0_2201EBFC-8897-4417-BFFB-48ED631BF6FB.png",
+            "timestamp": 1792787705.338
+          }
+        ],
+        "testIdentifier": "LittleHavenUITests/testWeeklyActivityRoundsAndPrize()",
+        "testIdentifierURL": "test://com.apple.xcode/LittleHaven/LittleHavenUITests/LittleHavenUITests/testWeeklyActivityRoundsAndPrize"
+      }
+    ]
+  }
+}

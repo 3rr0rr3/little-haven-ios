@@ -1,0 +1,17 @@
+{
+  "source": "9e007d52cdcb16aeb9f5489a41929b62a1339e18",
+  "tooling_commit": "ebf8317ccabfea9e7dc8804e37c7a46d2b5afb0f",
+  "version": "40.0",
+  "build": "45",
+  "size": 21097038,
+  "sha256": "38291ba773a63075d0962ed69bf8058fa17b063c73df71119b1840bc021a7f8a",
+  "primary_run": 40014871888,
+  "primary_ui_passed": 52,
+  "retried_test": "testCreativeEditorOpensAndMovesWasher",
+  "retry_run": "40022339322",
+  "retry_passed": 1,
+  "unique_ui_tests_passed": 53,
+  "zip_verified": true,
+  "platform": "iPhoneOS",
+  "architecture": "arm64"
+}
