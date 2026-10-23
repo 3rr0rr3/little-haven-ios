@@ -14,5 +14,5 @@ with zipfile.ZipFile(io.BytesIO(data)) as archive:
         file=Path(name).name
         if file.startswith('LittleHaven-response-painted-') or file in ['LittleHaven-app-icon.png','LittleHaven-character-turns.png']:
             Path(file).write_bytes(archive.read(name))
-env=dict(os.environ,GITHUB_SHA='aedb814619a894574eb0ed32f579598e8e1ecf21')
+env=dict(os.environ,ART_SOURCE_SHA='aedb814619a894574eb0ed32f579598e8e1ecf21')
 subprocess.run(['python3','scripts/publish_art_previews.py'],env=env,check=True)

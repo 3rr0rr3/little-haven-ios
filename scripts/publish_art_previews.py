@@ -5,7 +5,7 @@ repo=os.environ['GITHUB_REPOSITORY'];source=os.environ['GITHUB_SHA'];token=os.en
 def api(path,data=None):
     request=urllib.request.Request('https://api.github.com/repos/'+repo+path,None if data is None else json.dumps(data).encode(),headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'})
     with urllib.request.urlopen(request,timeout=90) as response:return json.load(response)
-branch='codex/art-preview-'+source[:8]
+branch='codex/art-preview-'+('prior-' if os.environ.get('ART_SOURCE_SHA') else '')+source[:8]
 try:
     existing=api('/git/ref/heads/'+branch)
     commit=api('/git/commits/'+existing['object']['sha'])
@@ -26,5 +26,6 @@ for index,image in enumerate(images[:30]):
 assert entries,'No native screenshots to review'
 tree=api('/git/trees',{'base_tree':api('/git/commits/'+source)['tree']['sha'],'tree':entries})
 commit=api('/git/commits',{'message':'Native painted art review evidence [skip ci]','tree':tree['sha'],'parents':[source]})
+print(json.dumps({'source':source,'captured_source':os.environ.get('ART_SOURCE_SHA',source),'preview_commit':commit['sha'],'branch':branch,'images':len(entries)}),flush=True)
 api('/git/refs',{'ref':'refs/heads/'+branch,'sha':commit['sha']})
 print(json.dumps({'source':source,'preview_commit':commit['sha'],'branch':branch,'images':len(entries)}))
