@@ -626,7 +626,7 @@ struct ManagementHub:View {
                 }
             } label:{Image(systemName:"square.grid.2x2.fill").font(.title3).padding(12)}
                 .accessibilityLabel("All management sections").accessibilityIdentifier("managementSections")
-        }.accessibilityIdentifier("managementTabs")
+        }.accessibilityElement(children:.contain)
     }
     private var readyRooms:Int {motel.rooms.filter(\.available).count}
     private var attentionRooms:Int {motel.rooms.filter{$0.dirty || !$0.health.faults.isEmpty || $0.health.condition<60}.count}
