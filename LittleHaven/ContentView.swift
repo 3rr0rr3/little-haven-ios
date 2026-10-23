@@ -49,6 +49,7 @@ struct ContentView: View {
             if args.contains("--ui-occasion-host") || args.contains("--ui-occasion-decor") {
                 _=sample.motel!.acceptCelebration();_=sample.motel!.prepareCelebration(0);_=sample.motel!.prepareCelebration(2)
                 var o=sample.motel!.occasions;o.celebration!.catered=true;sample.motel!.havenOccasions=o
+                if args.contains("--ui-occasion-decor") {_=sample.motel!.hostCelebration()}
             }
             sample.save();return sample
         }

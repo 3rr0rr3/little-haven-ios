@@ -819,6 +819,9 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertFalse(host.isEnabled)
         XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("loved"))
         capture(app,"Hosted guest celebration and lasting memory")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:5))
+        capture(app,"Celebration table and visiting friends in reception")
     }
 
     private func launch(_ fixture: String) -> XCUIApplication {

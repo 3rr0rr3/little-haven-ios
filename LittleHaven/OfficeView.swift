@@ -76,6 +76,13 @@ struct OfficeReceptionView: View {
             result.append(RPGActor(id:"clerk-nora",tile:Tile(x:6,y:3),color:StaffRole.clerk.color,variant:204,name:"Nora"))
         }
         if let visitor { result.append(RPGActor(id:"reception-guest",tile:visitor.tile,color:visitor.guest.color,variant:visitor.guest.appearanceSeed,facing:visitor.phase == .leaving ? 0 : 3,name:visitor.guest.name,duration:0.3)) }
+        if let event=motel.occasions.celebration,event.day==motel.day,event.completed,
+           let guest=motel.rooms.compactMap(\.guest).first(where:{$0.id==event.guestID}) {
+            result.append(RPGActor(id:"celebration-host-guest",tile:Tile(x:5,y:9),color:guest.color,variant:guest.appearanceSeed,facing:0,expression:"cheerful"))
+            for index in 0..<2 {
+                result.append(RPGActor(id:"celebration-friend-\(index)",tile:Tile(x:index==0 ? 4 : 8,y:10),color:index==0 ? 0xB4A1C5 : 0xD8AC66,variant:530+index,facing:index==0 ? 2 : 1,expression:"cheerful"))
+            }
+        }
         return result + motel.petActors + motel.policeActors
     }
     var body: some View {
@@ -83,7 +90,7 @@ struct OfficeReceptionView: View {
             let scale = min(proxy.size.width / 240, proxy.size.height / 240)
             let origin = CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-office",revision:"office-28-\(motel.officeTheme)-\(motel.staffStations.contains(.clerk))",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,visual:receptionVisual,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme,clerkHired:motel.staffStations.contains(.clerk))) }
+                RPGSceneView(mapID:"family-office",revision:"office-28-\(motel.officeTheme)-\(motel.staffStations.contains(.clerk))",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,visual:receptionVisual,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut,lifeProps:motel.celebrationWorldProps) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme,clerkHired:motel.staffStations.contains(.clerk))) }
                 target(.player,"Front desk",OfficeReception.clerk,scale,origin)
                 target(.computer,"Reception computer",OfficeReception.computer,scale,origin)
                 ForEach(motel.visiblePets, id: \.key) { pet in
