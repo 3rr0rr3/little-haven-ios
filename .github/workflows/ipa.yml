@@ -21,6 +21,7 @@ jobs:
     timeout-minutes: 50
     permissions:
       contents: write
+      actions: read
     steps:
       - uses: actions/checkout@v4
       - name: Recover existing native art previews for review
