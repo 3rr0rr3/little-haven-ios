@@ -1,5 +1,17 @@
 import Foundation
 
+// SwiftUI may briefly provide a zero-height viewport while replacing a screen.
+// Never send an infinite or NaN scale/position into the SpriteKit camera.
+enum RPGViewport {
+    static func cameraScale(mapWidth:Double,mapHeight:Double,viewportWidth:Double,viewportHeight:Double,columns:Double,interior:Bool)->Double? {
+        let values=[mapWidth,mapHeight,viewportWidth,viewportHeight,columns]
+        guard values.allSatisfy({$0.isFinite && $0>0}) else{return nil}
+        let scale=interior ? max(mapWidth/viewportWidth,mapHeight/viewportHeight) : 16*columns/viewportWidth
+        guard scale.isFinite,scale>0,(viewportWidth*scale).isFinite,(viewportHeight*scale).isFinite else{return nil}
+        return scale
+    }
+}
+
 private final class GroundsMemo<Key: Equatable, Value>: @unchecked Sendable {
     private let lock = NSLock()
     private var entry: (Key, Value)?

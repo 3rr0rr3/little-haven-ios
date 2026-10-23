@@ -774,8 +774,8 @@ final class RPGScene: SKScene {
         weatherLayer.childNode(withName:"cloudShade")?.position=followCamera.position
     }
     private func layoutCamera(jump: Bool) {
-        guard let view, view.bounds.width > 0, dimensions.width > 0 else { return }
-        let zoom = indoors ? max(dimensions.width / view.bounds.width, dimensions.height / view.bounds.height) : 16 * visibleColumns / view.bounds.width
+        guard let view,let scale=RPGViewport.cameraScale(mapWidth:Double(dimensions.width),mapHeight:Double(dimensions.height),viewportWidth:Double(view.bounds.width),viewportHeight:Double(view.bounds.height),columns:Double(visibleColumns),interior:indoors) else { return }
+        let zoom=CGFloat(scale)
         followCamera.setScale(zoom)
         let viewport = CGSize(width: view.bounds.width * zoom, height: view.bounds.height * zoom)
         let cx = indoors ? dimensions.width / 2 : max(viewport.width / 2, min(playerTarget.x, dimensions.width - viewport.width / 2))

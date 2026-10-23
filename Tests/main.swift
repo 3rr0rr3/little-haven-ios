@@ -1796,3 +1796,26 @@ func occasionRules() {
     print("PASS: inspections, weekly rivalry and cooperation, celebrations, real catering, once-only rewards, missed promises and old saves")
 }
 occasionRules()
+
+func firstChapterStartupRules() {
+    let previous=Motel.randomizeGuestArrivals
+    defer {Motel.randomizeGuestArrivals=previous}
+    Motel.randomizeGuestArrivals=true
+    for _ in 0..<20 {
+        var game=Game();game.coins=545;game.wakeUp()
+        game.motel!.reconcileInteriorSpawn();game.motel!.enableManagement()
+        for _ in 0..<20 {game.motel!.tickWorld()}
+        require(game.motel!.world != nil && game.motel!.managementEnabled,"First chapter prepares the real office and management")
+        let restored=try! JSONDecoder().decode(Game.self,from:JSONEncoder().encode(game))
+        require(restored.motel?.managementEnabled == true,"First chapter checkpoint survives restoring")
+    }
+    func scale(_ w:Double,_ h:Double,_ indoor:Bool=true)->Double? {
+        RPGViewport.cameraScale(mapWidth:240,mapHeight:240,viewportWidth:w,viewportHeight:h,columns:14,interior:indoor)
+    }
+    require(scale(390,0)==nil && scale(0,844)==nil,"A collapsed transition view must not create an infinite camera scale")
+    require(scale(390,0,false)==nil && scale(0,844,false)==nil,"Outdoor transitions also wait for a real viewport")
+    require(scale(.nan,844)==nil && scale(390,.infinity)==nil && scale(390,-1)==nil,"Invalid viewport dimensions are rejected")
+    require(scale(390,844)==240.0/390.0 && scale(390,844,false)==224.0/390.0,"Ready camera layouts keep the existing indoor and outdoor zoom")
+    print("PASS: production first-chapter startup, normal guests, initial ticks, checkpoint restoration and finite transition camera")
+}
+firstChapterStartupRules()

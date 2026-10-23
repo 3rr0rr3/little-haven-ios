@@ -3,6 +3,31 @@ import XCTest
 final class LittleHavenUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
+    func testProductionWakeUpStartsFirstChapter() {
+        for touch in [false,true] {
+            let app=XCUIApplication()
+            // Intentionally omit --ui-testing: normal randomized arrivals and
+            // management initialization must run as they do on the phone.
+            app.launchArguments=["--ui-wake"]+(touch ? ["--ui-touch"] : [])
+            app.launch()
+            let wake=app.buttons["wakeUp"]
+            XCTAssertTrue(wake.waitForExistence(timeout:15))
+            if !wake.isHittable {app.swipeUp()}
+            wake.tap()
+            XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:30),app.debugDescription)
+            Thread.sleep(forTimeInterval:3)
+            XCTAssertEqual(app.state,.runningForeground)
+            capture(app,touch ? "First chapter production touch mode" : "First chapter production standard mode")
+            app.terminate()
+            app.launchArguments=["--ui-title"]
+            app.launch()
+            XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:15))
+            app.buttons["CONTINUE GAME"].tap()
+            XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:20),"The first-shift save must also open after relaunch")
+            app.terminate()
+        }
+    }
+
     func testHoldReleaseCollisionAndSave() {
         let app = launch("--ui-fresh")
         let map = app.otherElements["townMap"]
