@@ -1114,6 +1114,7 @@ enum GardenSection:String,CaseIterable,Identifiable {
 }
 enum HavenTab:String,CaseIterable,Identifiable {
     case neighbors="Neighbors",identity="Identity",team="Team",creatures="Creatures",calendar="Calendar",consequences="Consequences"
+    case inspections="Inspections",rival="Rival motel",celebrations="Celebrations"
     case journey="Journey",rooms="Room design",breakfast="Breakfast",forecast="Weather",journal="Journal",goals="Daily goals",garden="Garden & kitchen"
     var id:String {rawValue}
 }
@@ -1146,6 +1147,9 @@ struct HavenLifeView:View {
                 ScrollView {
                     VStack(alignment:.leading,spacing:18) {
                         switch tab {
+                        case .inspections:inspectionPanel
+                        case .rival:rivalPanel
+                        case .celebrations:celebrationPanel
                         case .garden:gardenKitchen
                         case .journey:journey
                         case .rooms:roomDesigns
@@ -1166,7 +1170,7 @@ struct HavenLifeView:View {
             }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
                 .navigationTitle("Haven life").navigationBarTitleDisplayMode(.inline)
                 .toolbar {ToolbarItem(placement:.confirmationAction) {Button("Done") {dismiss()}}}
-                .tint(Color(hex:0xEFC977)).onAppear{tab=initialTab;if var value=game.motel {value.initializeExpansion();value.initializeKitchenGarden();game.motel=value;gardenSection=value.atGardenKitchen ? .cook : .grow}}
+                .tint(Color(hex:0xEFC977)).onAppear{tab=initialTab;if var value=game.motel {value.initializeExpansion();value.initializeKitchenGarden();if value.havenOccasions == nil {value.havenOccasions=HavenOccasions()};game.motel=value;gardenSection=value.atGardenKitchen ? .cook : .grow}}
                 .accessibilityElement(children:.contain)
         }
     }
@@ -1282,6 +1286,64 @@ struct HavenLifeView:View {
         }.buttonStyle(.bordered)
     }
 
+
+
+    private var inspectionPanel:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Label("Coastal motel inspections",systemImage:"checkmark.seal.fill").font(.title2.bold())
+            Text("Book from reception for 20 coins, once every seven days. Pass with 75 overall and at least 60 in every check. A pass pays 60 coins and improves reputation; 90 earns gold.")
+            ForEach(Array(zip(["Hygiene · clean dirty rooms","Maintenance · repair faults","Safety · restore utilities and resolve emergencies","Hospitality · reputation and employees"],motel.inspectionScores).enumerated()),id:\.offset) {_,item in
+                VStack(alignment:.leading) {Text(item.0);ProgressView(value:Double(item.1),total:100);Text("\(item.1)/100").font(.caption)}
+            }
+            Text("Live score: \(motel.inspectionTotal)/100").font(.headline)
+            Text("Last award: "+motel.occasions.award)
+            ForEach(motel.occasions.inspectionNotes,id:\.self) {Text($0).font(.caption)}
+            Button("Request inspection / 20 coins") {act{$0.requestHavenInspection()}}.disabled(!motel.canRequestInspection).accessibilityIdentifier("requestInspection")
+            if !motel.atOccasionDesk {Text("Visit your reception office to book.").font(.caption)}
+            if motel.occasions.inspectionDay>0 {Text("Next booking: day \(motel.occasions.inspectionDay+7)").font(.caption)}
+        }.buttonStyle(.bordered)
+    }
+    private var rivalPanel:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Label("Seabreeze Lodge",systemImage:"building.2.fill").font(.title2.bold())
+            Text("Owner Mara runs the neighboring coastal motel. Each completed week compares your upkeep, service and inspection award with Seabreeze. Winning earns 50 coins and reputation. Falling behind costs one reputation point.")
+            Text("Week \(motel.occasionWeek) · your appeal \(motel.rivalAppeal)/100").font(.headline)
+            Text("Previous Seabreeze score: \(motel.occasions.rivalScore) · your wins: \(motel.occasions.wins)")
+            Button("Promote your service / 30 coins") {act{$0.rivalCampaign(cooperate:false)}}.disabled(!motel.atOccasionDesk || motel.cash<30 || motel.occasions.campaignWeek==motel.occasionWeek).accessibilityIdentifier("rivalCampaign")
+            Text("+10 appeal in this week's comparison. Cleanliness and fair service still matter.").font(.caption)
+            Button("Partner with Mara / 25 coins") {act{$0.rivalCampaign(cooperate:true)}}.disabled(!motel.atOccasionDesk || motel.cash<25 || motel.occasions.allianceWeek==motel.occasionWeek).accessibilityIdentifier("rivalPartner")
+            Text("A joint coastal promotion returns 45 coins and one referral at week's end if your queue has space. You can cooperate while competing. Book at reception.").font(.caption)
+            occasionMemories
+        }.buttonStyle(.bordered)
+    }
+    private var celebrationPanel:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Label("Guest celebrations",systemImage:"gift.fill").font(.title2.bold())
+            Text("Birthdays, anniversaries and weddings are offered by staying guests. Accept at reception, decorate, bring cooked garden dishes, and prepare hosting before resting. Unfinished promises disappoint guests.")
+            if let event=motel.occasions.celebration {
+                Text(event.guestName+" · "+event.kind.title).font(.headline)
+                Text("Today · payment \(event.kind.fee) coins · "+(event.completed ? "Hosted successfully" : "Preparation in progress"))
+                celebrationTask(event,task:0,title:"Decorations / \(event.kind.decorCost) coins",done:event.decorated,enabled:motel.atOccasionDesk && motel.cash>=event.kind.decorCost)
+                celebrationTask(event,task:1,title:"Cater / \(event.kind.portions) cooked portions",done:event.catered,enabled:motel.atGardenKitchen && motel.kitchen.plates.values.reduce(0,+)>=event.kind.portions)
+                Text("Cook and pack dishes at the breakfast counter or Coral Catch. Portions are consumed.").font(.caption)
+                celebrationTask(event,task:2,title:"Prepare hosting / \(motel.business.workers.isEmpty ? 15 : 5) coins",done:event.staffReady,enabled:motel.atOccasionDesk && motel.cash >= (motel.business.workers.isEmpty ? 15 : 5))
+                Button("Host celebration") {act{$0.hostCelebration()}}.disabled(!motel.atOccasionDesk || !event.decorated || !event.catered || !event.staffReady || event.completed || motel.business.incident != nil).accessibilityIdentifier("hostCelebration")
+            } else if let offer=motel.celebrationOffer {
+                Text(offer.guestName+" would like a "+offer.kind.title.lowercased()+". Payment: \(offer.kind.fee) coins.").font(.headline)
+                Text("Budget: \(offer.kind.decorCost) decorations + hosting + \(offer.kind.portions) garden meals.").font(.caption)
+                Button("Accept today's celebration") {act{$0.acceptCelebration()}}.disabled(!motel.atOccasionDesk).accessibilityIdentifier("acceptCelebration")
+            } else {Text("Welcome a staying guest to receive a new celebration offer. One booking per day.")}
+            Text("Hosted: \(motel.occasions.celebrations) · missed promises: \(motel.occasions.missed)").font(.caption)
+            occasionMemories
+        }.buttonStyle(.bordered)
+    }
+    private func celebrationTask(_ event:CelebrationBooking,task:Int,title:String,done:Bool,enabled:Bool)->some View {
+        Button {act{$0.prepareCelebration(task)}} label:{Label(title,systemImage:done ? "checkmark.circle.fill" : "circle")}
+            .disabled(done || event.completed || !enabled).accessibilityIdentifier("celebrationTask\(task)")
+    }
+    private var occasionMemories:some View {
+        VStack(alignment:.leading,spacing:8) {ForEach(Array(motel.occasions.notes.enumerated()),id:\.offset) {_,note in Text(note).font(.caption)}}
+    }
 
     private var gardenKitchen:some View {
         VStack(alignment:.leading,spacing:16) {

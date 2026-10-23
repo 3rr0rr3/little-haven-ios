@@ -648,7 +648,7 @@ final class LittleHavenUITests: XCTestCase {
         capture(app,"Rowan playing at the Lantern Bar")
         app.buttons["shopCounter"].tap()
         XCTAssertFalse(app.buttons["startLanternShow"].exists)
-        XCTAssertTrue(app.staticTexts["Rowan's live set · promise kept"].exists)
+        XCTAssertTrue(app.staticTexts["Rowan's live set Â· promise kept"].exists)
     }
     func testNeighborRelationshipAndFavor() {
         let app=launch("--ui-haven-neighbor")
@@ -785,6 +785,40 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertFalse(app.buttons["serveRecipe_herbToast"].isEnabled)
         XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("+18 coins"))
         capture(app,"Homegrown dish served to a hotel guest")
+    }
+
+
+    func testInspectionsAndRivalry() {
+        let app=launch("--ui-occasion-inspection")
+        let inspect=app.buttons["requestInspection"]
+        XCTAssertTrue(inspect.waitForExistence(timeout:10))
+        if !inspect.isHittable {app.swipeUp()}
+        inspect.tap()
+        XCTAssertFalse(inspect.isEnabled)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("coins"))
+        capture(app,"Motel inspection checks and award")
+        app.terminate();app.launchArguments=["--ui-occasion-rival","--ui-testing"];app.launch()
+        let partner=app.buttons["rivalPartner"]
+        XCTAssertTrue(partner.waitForExistence(timeout:10));if !partner.isHittable {app.swipeUp()};partner.tap()
+        XCTAssertFalse(partner.isEnabled)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Seabreeze"))
+        capture(app,"Coastal rivalry and cooperation")
+    }
+    func testGuestCelebrationPreparationAndHosting() {
+        let app=launch("--ui-occasion-celebration")
+        let accept=app.buttons["acceptCelebration"]
+        XCTAssertTrue(accept.waitForExistence(timeout:10));if !accept.isHittable {app.swipeUp()};accept.tap()
+        let decorate=app.buttons["celebrationTask0"]
+        XCTAssertTrue(decorate.waitForExistence(timeout:5));if !decorate.isHittable {app.swipeUp()};decorate.tap()
+        XCTAssertFalse(decorate.isEnabled)
+        XCTAssertFalse(app.buttons["hostCelebration"].isEnabled)
+        capture(app,"Guest celebration preparation checklist")
+        app.terminate();app.launchArguments=["--ui-occasion-host","--ui-testing"];app.launch()
+        let host=app.buttons["hostCelebration"]
+        XCTAssertTrue(host.waitForExistence(timeout:10));if !host.isHittable {app.swipeUp()};host.tap()
+        XCTAssertFalse(host.isEnabled)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("loved"))
+        capture(app,"Hosted guest celebration and lasting memory")
     }
 
     private func launch(_ fixture: String) -> XCUIApplication {

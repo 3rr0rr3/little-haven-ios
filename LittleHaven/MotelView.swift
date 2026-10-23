@@ -134,7 +134,7 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains("--ui-creature-portrait") { family = .mochi }
             if ProcessInfo.processInfo.arguments.contains("--ui-guest-dialogue") { talkingRoom=0 }
             if ProcessInfo.processInfo.arguments.contains("--ui-story-preview") { storyGuest=motel.receptionGuest }
-            for (argument,tab) in [("--ui-garden-plant",HavenTab.garden),("--ui-garden-harvest",.garden),("--ui-garden-kitchen",.garden),("--ui-expansion-breakfast",HavenTab.breakfast),("--ui-expansion-design",.rooms),("--ui-expansion-journey",.journey),("--ui-expansion-journal",.journal),("--ui-expansion-goals",.goals)] {
+            for (argument,tab) in [("--ui-occasion-inspection",HavenTab.inspections),("--ui-occasion-rival",.rival),("--ui-occasion-celebration",.celebrations),("--ui-occasion-host",.celebrations),("--ui-garden-plant",HavenTab.garden),("--ui-garden-harvest",.garden),("--ui-garden-kitchen",.garden),("--ui-expansion-breakfast",HavenTab.breakfast),("--ui-expansion-design",.rooms),("--ui-expansion-journey",.journey),("--ui-expansion-journal",.journal),("--ui-expansion-goals",.goals)] {
                 if ProcessInfo.processInfo.arguments.contains(argument) {havenTab=tab;showHavenLife=true}
             }
             if ProcessInfo.processInfo.arguments.contains("--ui-haven-neighbor") {havenTab = .neighbors;showHavenLife=true}

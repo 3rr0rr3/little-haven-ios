@@ -71,6 +71,7 @@ struct Motel: Codable {
     var havenLife: HavenLife?
     var havenExpansion:HavenExpansion?
     var kitchenGarden:KitchenGarden?
+    var havenOccasions:HavenOccasions?
     var household: FamilyHome { home ?? FamilyHome() }
     var expansionCost: Int { 250 + (rooms.count - 3) * 150 }
     var occupancy: Int { rooms.filter { $0.guest != nil }.count }
@@ -170,6 +171,7 @@ struct Motel: Codable {
     }
     @discardableResult mutating func nextDay() -> Bool {
         guard !caught, (visit == nil || managementEnabled), business.police == nil else { return false }
+        settleOccasionEvening()
         prepareGardenNight()
         day += 1
         settleGardenMorning()
@@ -195,6 +197,7 @@ struct Motel: Codable {
         settleHavenDay()
         attractHavenGuests()
         refreshExpansionDay()
+        settleOccasionMorning()
         if let oldVisit=visit,oldVisit.sneaking,rooms.first(where:{$0.id==oldVisit.roomID})?.guest==nil {
             var empty=RoomVisit(roomID:oldVisit.roomID,sneaking:false)
             empty.player=oldVisit.player;empty.facing=oldVisit.facing;empty.pocket=oldVisit.pocket;empty.loot=oldVisit.loot
@@ -1335,5 +1338,152 @@ extension Motel {
         logMoney(recipe.price,category:"Garden kitchen",note:recipe.title)
         if breakfastOpen {countHavenGoal("breakfast")}
         playVisual("breakfast");lastEvent="Fresh "+recipe.title.lowercased()+" served. +\(recipe.price) coins; your guest loved the homegrown meal.";return true
+    }
+}
+
+
+enum GuestCelebration:String,Codable,CaseIterable,Identifiable {
+    case birthday,anniversary,wedding
+    var id:String {rawValue}
+    var title:String {rawValue.capitalized}
+    var fee:Int {self == .wedding ? 180 : self == .anniversary ? 110 : 80}
+    var decorCost:Int {self == .wedding ? 45 : 20}
+    var portions:Int {self == .wedding ? 3 : 2}
+}
+struct CelebrationBooking:Codable {
+    var guestID:Int
+    var guestName:String
+    var kind:GuestCelebration
+    var day:Int
+    var decorated=false
+    var catered=false
+    var staffReady=false
+    var completed=false
+}
+struct HavenOccasions:Codable {
+    var inspectionDay=0
+    var inspectionScore=0
+    var award="Not inspected"
+    var inspectionNotes:[String]=[]
+    var rivalWeek=0
+    var rivalScore=50
+    var wins=0
+    var allianceWeek=0
+    var campaignWeek=0
+    var celebration:CelebrationBooking?
+    var offersDay=0
+    var celebrations=0
+    var missed=0
+    var notes:[String]=[]
+}
+extension Motel {
+    var occasions:HavenOccasions {havenOccasions ?? HavenOccasions()}
+    var occasionWeek:Int {(max(1,day)-1)/7+1}
+    var atOccasionDesk:Bool {worldState.place == .office && visit == nil && !caught && business.police == nil}
+    var inspectionScores:[Int] {
+        let count=max(1,rooms.count)
+        let hygiene=rooms.reduce(0){$0 + ($1.dirty ? min(40,$1.health.cleanliness) : $1.health.cleanliness)}/count
+        let repair=rooms.reduce(0){$0 + max(0,$1.health.condition-$1.health.faults.count*20)}/count
+        let safety=business.incident == nil && !simulation.powerOut && !simulation.waterOut ? 100 : 20
+        let service=min(100,simulation.reputation+min(20,business.workers.count*5))
+        return [hygiene,repair,safety,service].map{min(100,max(0,$0))}
+    }
+    var inspectionTotal:Int {inspectionScores.reduce(0,+)/4}
+    var canRequestInspection:Bool {atOccasionDesk && cash>=20 && (occasions.inspectionDay==0 || day-occasions.inspectionDay>=7)}
+    mutating func occasionNote(_ text:String) {
+        var o=occasions;o.notes=Array(([text]+o.notes).prefix(12));havenOccasions=o;lastEvent=text
+    }
+    @discardableResult mutating func requestHavenInspection()->Bool {
+        guard canRequestInspection else{return false}
+        let scores=inspectionScores,score=inspectionTotal
+        var o=occasions;o.inspectionDay=day;o.inspectionScore=score
+        o.inspectionNotes=zip(["Hygiene","Maintenance","Safety","Hospitality"],scores).map{"\($0.0): \($0.1)/100"}
+        let passed=score>=75 && scores.allSatisfy{$0>=60}
+        o.award=passed ? (score>=90 ? "Gold coastal hospitality" : "Approved coastal motel") : "Improvements required"
+        havenOccasions=o;cash-=20
+        var state=simulation;state.reputation=min(100,max(0,state.reputation+(passed ? 4 : -2)));simulation=state
+        if passed {cash+=60}
+        logMoney(passed ? 40 : -20,category:"Inspection",note:o.award)
+        occasionNote(o.award+(passed ? ": +60 coins. Your award improves next week's appeal." : ". Fix the lowest checks; return in seven days."));return true
+    }
+    var rivalAppeal:Int {min(100,max(0,inspectionTotal+(occasions.inspectionScore>=75 ? 5 : 0)+(occasions.campaignWeek==occasionWeek ? 10 : 0)))}
+    @discardableResult mutating func rivalCampaign(cooperate:Bool)->Bool {
+        guard atOccasionDesk,cash >= (cooperate ? 25 : 30) else{return false}
+        var o=occasions
+        if cooperate {guard o.allianceWeek != occasionWeek else{return false};o.allianceWeek=occasionWeek}
+        else {guard o.campaignWeek != occasionWeek else{return false};o.campaignWeek=occasionWeek}
+        let cost=cooperate ? 25 : 30;cash-=cost;havenOccasions=o
+        logMoney(-cost,category:"Seabreeze Lodge",note:cooperate ? "Joint coastal promotion" : "Service campaign")
+        occasionNote(cooperate ? "Seabreeze Lodge agreed to a joint promotion. Receive a referral and 45 coins at week's end." : "Your service campaign is live: +10 appeal for this week's comparison.");return true
+    }
+    var celebrationOffer:CelebrationBooking? {
+        guard occasions.offersDay != day,occasions.celebration == nil,
+              let guest=rooms.compactMap(\.guest).sorted(by:{$0.id<$1.id}).first else{return nil}
+        return CelebrationBooking(guestID:guest.id,guestName:guest.name,kind:GuestCelebration.allCases[(max(0,guest.id)%3+day%3)%3],day:day)
+    }
+    @discardableResult mutating func acceptCelebration()->Bool {
+        guard atOccasionDesk,let offer=celebrationOffer else{return false}
+        var o=occasions;o.celebration=offer;o.offersDay=day;havenOccasions=o
+        occasionNote(offer.guestName+" booked a "+offer.kind.title.lowercased()+". Prepare it before resting tonight.");return true
+    }
+    @discardableResult mutating func prepareCelebration(_ task:Int)->Bool {
+        guard var event=occasions.celebration,event.day==day,!event.completed,!caught else{return false}
+        switch task {
+        case 0:
+            guard atOccasionDesk,!event.decorated,cash>=event.kind.decorCost else{return false}
+            cash-=event.kind.decorCost;event.decorated=true
+            logMoney(-event.kind.decorCost,category:"Celebration",note:"Reusable hall setup and flowers")
+        case 1:
+            guard atGardenKitchen,!event.catered else{return false}
+            guard kitchen.plates.values.reduce(0,+)>=event.kind.portions else{return false}
+            var k=kitchen,remaining=event.kind.portions
+            for recipe in GardenRecipe.allCases {
+                let take=min(remaining,k.plates[recipe.rawValue,default:0]);k.plates[recipe.rawValue,default:0]-=take;remaining-=take
+            }
+            kitchenGarden=k;event.catered=true
+        case 2:
+            guard atOccasionDesk,!event.staffReady else{return false}
+            // A small motel can host personally; a hired team lowers the preparation cost.
+            let cost=business.workers.isEmpty ? 15 : 5
+            guard cash>=cost else{return false};cash-=cost;event.staffReady=true
+            logMoney(-cost,category:"Celebration",note:"Hosting preparation")
+        default:return false
+        }
+        var o=occasions;o.celebration=event;havenOccasions=o
+        occasionNote("Celebration preparation complete. Finish the checklist, then host at reception.");return true
+    }
+    @discardableResult mutating func hostCelebration()->Bool {
+        guard atOccasionDesk,var event=occasions.celebration,event.day==day,!event.completed,
+              event.decorated,event.catered,event.staffReady,business.incident==nil,
+              rooms.contains(where:{$0.guest?.id==event.guestID}) else{return false}
+        event.completed=true;var o=occasions;o.celebration=event;o.celebrations+=1;havenOccasions=o
+        cash+=event.kind.fee;logMoney(event.kind.fee,category:"Celebration",note:event.kind.title)
+        var e=expansion;e.satisfaction[event.guestID]=min(100,e.satisfaction[event.guestID,default:50]+25);havenExpansion=e
+        var state=simulation;state.reputation=min(100,state.reputation+3);simulation=state
+        playVisual("breakfast");occasionNote(event.guestName+" loved the "+event.kind.title.lowercased()+"! +\(event.kind.fee) coins and a lasting celebration memory.");return true
+    }
+    mutating func settleOccasionEvening() {
+        guard var o=havenOccasions,let event=o.celebration,event.day<=day else{return}
+        if !event.completed {
+            o.missed+=1;havenOccasions=o
+            var e=expansion;e.satisfaction[event.guestID]=max(0,e.satisfaction[event.guestID,default:50]-15);havenExpansion=e
+            occasionNote("The promised "+event.kind.title.lowercased()+" was missed. Your guest was disappointed.")
+        }
+        o=occasions;o.celebration=nil;havenOccasions=o
+    }
+    mutating func settleOccasionMorning() {
+        guard var o=havenOccasions else{return}
+        let finishedWeek=occasionWeek-1
+        guard finishedWeek>0,o.rivalWeek<finishedWeek else{return}
+        // Compare the completed week before clearing its one-week campaign.
+        let appeal=min(100,inspectionTotal+(o.inspectionScore>=75 ? 5 : 0)+(o.campaignWeek==finishedWeek ? 10 : 0))
+        let rival=55+(finishedWeek*13)%31;o.rivalWeek=finishedWeek;o.rivalScore=rival
+        let won=appeal>=rival;if won {o.wins+=1}
+        let allied=o.allianceWeek==finishedWeek;havenOccasions=o
+        let reward=(won ? 50 : 0)+(allied ? 45 : 0);cash+=reward
+        if reward>0 {logMoney(reward,category:"Coastal rivalry",note:"Weekly comparison and referrals")}
+        if allied,waiting.count<10 {waiting += Self.arrivals(day:day+1000,count:1)}
+        var state=simulation;state.reputation=min(100,max(0,state.reputation+(won ? 2 : -1)));simulation=state
+        occasionNote("Week \(finishedWeek): Haven \(appeal), Seabreeze \(rival). "+(won ? "You won the service award!" : "Seabreeze led this week; improve your weakest inspection check.")+" +\(reward) coins.")
     }
 }

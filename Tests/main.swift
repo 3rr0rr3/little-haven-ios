@@ -1750,3 +1750,46 @@ func kitchenGardenRules() {
     print("PASS: growing and rain, real overnight progress, recipe unlocks, ingredient accounting, guest meal rewards, creative plot relocation, old saves and outage visibility")
 }
 kitchenGardenRules()
+
+
+func occasionRules() {
+    func base()->Motel {
+        var m=Motel();m.initializeWorld();m.enableManagement();m.initializeExpansion();m.initializeKitchenGarden()
+        m.havenOccasions=HavenOccasions();m.world!.place = .office;m.cash=1000
+        m.rooms[0].guest=MotelGuest(id:601,name:"Celebrating guest",nights:3,color:0x91B7A1,story:"Birthday",category:.traveler);m.rooms[0].nightsLeft=3
+        return m
+    }
+    var m=base();let before=m.cash
+    require(m.requestHavenInspection(),"A prepared motel can book an inspection")
+    require(m.cash==before+40 && m.occasions.inspectionScore>=75,"Passing inspections charge their fee and pay the award")
+    require(!m.requestHavenInspection(),"Inspection rewards cannot be repeated within seven days")
+    var poor=base();for i in poor.rooms.indices {poor.rooms[i].dirty=true;var h=poor.rooms[i].health;h.condition=0;poor.rooms[i].hospitality=h}
+    require(poor.requestHavenInspection() && poor.occasions.award=="Improvements required","Neglected rooms fail inspection")
+    require(m.rivalCampaign(cooperate:false) && !m.rivalCampaign(cooperate:false),"One campaign per week")
+    require(m.rivalCampaign(cooperate:true) && !m.rivalCampaign(cooperate:true),"One partnership per week")
+    m.day=8;let weekly=m.cash;m.settleOccasionMorning()
+    require(m.cash>=weekly+45 && m.occasions.rivalWeek==1,"A weekly partnership pays its promised referral reward")
+    let settled=m.cash;m.settleOccasionMorning();require(m.cash==settled,"Weekly prizes cannot be replayed")
+    m=base();require(m.acceptCelebration() && !m.acceptCelebration(),"Only one celebration may be booked")
+    require(!m.hostCelebration(),"Unprepared celebrations cannot be hosted")
+    require(m.prepareCelebration(0) && !m.prepareCelebration(0),"Decorations are charged once")
+    require(m.prepareCelebration(2),"Solo owners can prepare hosting")
+    m.world!.place = .grounds;m.world!.player=m.groundTile(HotelService.breakfast.tile)
+    require(!m.prepareCelebration(1),"Catering requires real cooked portions")
+    var k=m.kitchen;k.plates["herbToast"]=4;m.kitchenGarden=k
+    let portions=m.occasions.celebration!.kind.portions
+    require(m.prepareCelebration(1) && m.kitchen.plates["herbToast"]==4-portions,"Catering consumes the required portions")
+    m.world!.place = .office;let fee=m.occasions.celebration!.kind.fee,payment=m.cash
+    require(m.hostCelebration() && m.cash==payment+fee && !m.hostCelebration(),"A finished celebration pays exactly once")
+    m.settleOccasionEvening();require(m.occasions.missed==0,"Completed celebrations do not cause disappointment")
+    var missed=base();_=missed.acceptCelebration();missed.settleOccasionEvening()
+    require(missed.occasions.missed==1 && missed.expansion.satisfaction[601]==35,"A missed promise reduces guest satisfaction")
+    missed.settleOccasionEvening();require(missed.occasions.missed==1,"Missed promises settle only once")
+    var away=base();away.world!.place = .grounds;require(!away.requestHavenInspection() && !away.acceptCelebration() && !away.rivalCampaign(cooperate:true),"Bookings require the physical reception office")
+    let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(m))
+    require(saved.occasions.celebrations==1 && saved.occasions.inspectionDay==m.occasions.inspectionDay,"Occasion progress survives reloading")
+    var object=try! JSONSerialization.jsonObject(with:JSONEncoder().encode(m)) as! [String:Any];object.removeValue(forKey:"havenOccasions")
+    require((try! JSONDecoder().decode(Motel.self,from:JSONSerialization.data(withJSONObject:object))).havenOccasions==nil,"Pre-occasion saves remain compatible")
+    print("PASS: inspections, weekly rivalry and cooperation, celebrations, real catering, once-only rewards, missed promises and old saves")
+}
+occasionRules()
