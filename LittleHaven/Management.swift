@@ -1416,7 +1416,7 @@ extension Motel {
     }
     var nearbyHospitalityRoom:MotelRoom? {
         guard !caught,visit == nil,worldState.place == .grounds else {return nil}
-        return rooms.first {$0.id/9 == viewingFloor && $0.guest != nil && actorTile.distance(to:groundRoomDoor($0.id))<=1}
+        return rooms.first {$0.id/9 == viewingFloor && $0.guest != nil && actorTile.distance(to:expansion.routines[$0.guest?.id ?? -1]?.tile ?? groundRoomDoor($0.id))<=1}
     }
     func canOfferGuestFavour(_ roomID:Int)->Bool {
         guard nearbyHospitalityRoom?.id == roomID,let guest=rooms.first(where:{$0.id==roomID})?.guest else {return false}

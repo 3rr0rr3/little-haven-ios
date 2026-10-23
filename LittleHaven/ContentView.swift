@@ -53,7 +53,7 @@ struct ContentView: View {
                 let guests=Motel.arrivals(day:1,count:3,randomize:false)
                 for i in 0..<3 {sample.motel!.rooms[i].guest=guests[i];sample.motel!.rooms[i].nightsLeft=2}
                 var sim=sample.motel!.simulation;sim.hour=14;sample.motel!.simulation=sim
-                for _ in 0..<70 {sample.motel!.tickWorld()}
+                for _ in 0..<120 {sample.motel!.tickWorld()}
                 sample.motel!.world!.player=Tile(x:57,y:50)
             }
             sample.save();return sample

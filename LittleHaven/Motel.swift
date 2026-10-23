@@ -875,7 +875,7 @@ enum HavenRoomDesign:String,Codable,CaseIterable,Identifiable {
     var title:String {rawValue.capitalized}
     var cost:Int {self == .classic ? 0 : 75}
 }
-enum HavenRoutine:String,Codable {case room,breakfast,beach,bar,walk,shelter}
+enum HavenRoutine:String,Codable {case room,breakfast,beach,bar,walk,shelter,complaint}
 struct HavenRoutineGuest:Codable {
     var tile:Tile
     var previous:Tile
@@ -1013,6 +1013,7 @@ extension Motel {
         let hour=simulation.hour
         if hour>=21 || hour<8 {return .room}
         if hour<11 {return .breakfast}
+        if expansion.satisfaction[guest.id,default:50]<35 {return .complaint}
         if weather != .sunny {return .shelter}
         if hour<12 {return .walk}
         if hour<18 {return .beach}
@@ -1033,6 +1034,7 @@ extension Motel {
         let tile:Tile
         switch guestRoutine(guest) {
         case .room:return groundRoomDoor(room.id)
+        case .complaint:tile=Tile(x:10,y:12)
         case .breakfast,.shelter:tile=Tile(x:3+id,y:29)
         case .beach:tile=simulation.economy == .heatwave ? Tile(x:9,y:17+id) : Tile(x:57+id*2,y:50)
         case .bar:tile=Tile(x:65-id,y:17)

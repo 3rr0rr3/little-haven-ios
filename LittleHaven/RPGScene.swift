@@ -322,6 +322,11 @@ final class RPGScene: SKScene {
             bag.fillColor=UIColor(Color(hex:0xB58B63));bag.strokeColor=UIColor(Color(hex:0x69523E));bag.lineWidth=0.6
             bag.position=CGPoint(x:8,y:-8);detail.addChild(bag)
         }
+        if actor.expression=="cheerful" && !moving && actor.routine != "breakfast" && actor.routine != "bar" {
+            let hand=SKShapeNode(circleOfRadius:2);hand.fillColor=UIColor(Color(hex:0xD9B18C));hand.strokeColor = .clear
+            hand.position=CGPoint(x:8,y:-2);detail.addChild(hand)
+            if !UIAccessibility.isReduceMotionEnabled {hand.run(.repeatForever(.sequence([.wait(forDuration:3),.moveBy(x:0,y:6,duration:0.4),.moveBy(x:-2,y:0,duration:0.2),.moveBy(x:2,y:0,duration:0.2),.moveBy(x:0,y:-6,duration:0.4)])))}
+        }
         if actor.celebrating {
             let star=SKShapeNode(circleOfRadius:1.6);star.fillColor=UIColor(Color(hex:0xEFC977));star.strokeColor = .clear
             star.position=CGPoint(x:8,y:10);detail.addChild(star)

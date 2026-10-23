@@ -769,7 +769,8 @@ struct ManagementHub:View {
                     Text("\(facility.cost) coins / reputation \(facility.requiredRep)").font(.caption)
                     if motel.simulation.facilities.contains(facility) {Text("Operational").foregroundStyle(.mint)}
                     else {
-                        Button("Develop / \(facility.cost)") {_=perform{$0.installFacility(facility)}}.buttonStyle(.bordered).disabled(motel.cash<facility.cost || motel.simulation.reputation<facility.requiredRep).accessibilityIdentifier("develop_"+facility.rawValue)
+                        if !motel.journeyAllows(facility) {Text("Unlock: "+Motel.journeyNames[motel.facilityJourneyTier(facility)]+" milestone in Haven life").font(.caption).foregroundStyle(.orange)}
+                        Button("Develop / \(facility.cost)") {_=perform{$0.installFacility(facility)}}.buttonStyle(.bordered).disabled(!motel.journeyAllows(facility) || motel.cash<facility.cost || motel.simulation.reputation<facility.requiredRep).accessibilityIdentifier("develop_"+facility.rawValue)
                     }
                 }
             }

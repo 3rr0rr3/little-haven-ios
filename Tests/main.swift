@@ -1626,6 +1626,9 @@ func resortExpansionRules() {
     require(!routine.groundBlocked(routine.routineDestination(couple,room:routine.rooms[0])),"Guest routines route to a real walkable destination")
     let savedRoutine=routine.expansion.routines[couple.id]!
     require(savedRoutine.tile != savedRoutine.previous,"Guest routine uses movement rather than teleporting")
+    var unhappy=routine.expansion;unhappy.satisfaction[couple.id]=20;routine.havenExpansion=unhappy
+    require(routine.guestRoutine(couple) == .complaint,"Unhappy guests change their behavior and seek help")
+    unhappy.satisfaction[couple.id]=70;routine.havenExpansion=unhappy
     routine.operations!.weatherOverride = .rain
     require(routine.guestRoutine(couple) == .shelter,"Rain moves routines to shelter")
     routine.operations!.weatherOverride = .sunny
