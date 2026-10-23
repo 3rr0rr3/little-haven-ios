@@ -58,7 +58,7 @@ struct FamilyHouseView:View {
             .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
     }
     private func target(_ item:OfficeTap,_ label:String,_ tile:Tile,_ scale:CGFloat,_ origin:CGPoint)->some View {
-        Button {if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).contentShape(Rectangle())}.buttonStyle(.plain).frame(width:max(44,24*scale),height:max(44,26*scale)).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+CGFloat(tile.y*16+5)*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
+        Button {if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).contentShape(Rectangle())}.buttonStyle(.plain).frame(width:max(item == .hildarelys ? 60 : 44,24*scale),height:max(item == .hildarelys ? 60 : 44,26*scale)).contentShape(Rectangle()).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+CGFloat(tile.y*16+5)*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
     }
 }
 struct OfficeReceptionView: View {

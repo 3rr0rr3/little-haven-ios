@@ -5,14 +5,19 @@ alpha cleanup, atlas slicing, fixed scale/baseline alignment and catalog output.
 Generated originals and exact prompts are retained outside the app resources.
 """
 from pathlib import Path
-import json, shutil, hashlib
+import json, shutil, hashlib, sys
 import numpy as np
 from PIL import Image, ImageFilter, ImageChops, ImageDraw
 
 ROOT=Path(__file__).resolve().parents[1]
-SOURCES=json.loads((ROOT.parent/'painted_sources.json').read_text(encoding='utf-8'))
 CATALOG=ROOT/'LittleHaven/Assets.xcassets/Painted'
 ORIGINALS=ROOT/'ArtSources/PaintedV40'
+source_list=ROOT.parent/'painted_sources.json'
+if source_list.exists() and '--saved-sources' not in sys.argv:
+    SOURCES=json.loads(source_list.read_text(encoding='utf-8'))
+else:
+    SOURCES=json.loads((ORIGINALS/'prompts.json').read_text(encoding='utf-8'))
+    for source in SOURCES:source['path']=str(ORIGINALS/source['file'])
 CATALOG.mkdir(parents=True,exist_ok=True);ORIGINALS.mkdir(parents=True,exist_ok=True)
 (CATALOG/'Contents.json').write_text(json.dumps({'info':{'author':'xcode','version':1}}),encoding='utf-8')
 manifest={'version':40,'cell':[192,224],'directions':['front','left','right','back'],'frames':['idle','leftStep','rightStep'],'assets':[],'sources':[]}
@@ -57,7 +62,8 @@ furniture=['sofa-front','sofa-back','desk','bed','nightstand','vending','washer'
 contact=Image.new('RGB',(1200,1200),(56,64,53));pen=ImageDraw.Draw(contact);preview_index=0
 for source in SOURCES:
     original=Path(source['path']);name=source['name'].replace('-fixed','').replace('-painted','')
-    shutil.copy2(original,ORIGINALS/(source['name']+'.png'))
+    target=ORIGINALS/(source['name']+'.png')
+    if original.resolve()!=target.resolve():shutil.copy2(original,target)
     source_record={k:v for k,v in source.items() if k!='path'};source_record['file']=source['name']+'.png';manifest['sources'].append(source_record)
     image=Image.open(original).convert('RGBA');w,h=image.size
     if source['kind']=='materials':

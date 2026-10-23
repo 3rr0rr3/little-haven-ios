@@ -23,6 +23,12 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - name: Recover existing native art previews for review
+        if: github.ref == 'refs/heads/codex/pokopia-scenery'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/recover_art_previews.py
       - name: Test prologue, motel economy, stealth and checkpoint rules
         run: |
           set -euo pipefail
@@ -44,7 +50,7 @@ jobs:
         run: |
           set -euo pipefail
           xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath device-build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
-      - name: Test creative relocation and saved layout after app restart
+      - name: Test family, bicycle and desk touch regressions first
         timeout-minutes: 24
         run: |
           set -euo pipefail
@@ -52,7 +58,7 @@ jobs:
           echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility -only-testing:LittleHavenUITests/LittleHavenUITests/testPlayerPoolRescueAnimation -only-testing:LittleHavenUITests/LittleHavenUITests/testGuestStoryChoiceAndSavedMemory -only-testing:LittleHavenUITests/LittleHavenUITests/testLanternGuestStoryShow -only-testing:LittleHavenUITests/LittleHavenUITests/testNeighborRelationshipAndFavor -only-testing:LittleHavenUITests/LittleHavenUITests/testWeeklyActivityRoundsAndPrize -only-testing:LittleHavenUITests/LittleHavenUITests/testCorralAdventureAndEmployeeRequest -only-testing:LittleHavenUITests/LittleHavenUITests/testPetsFollowOutsideAndWaitIndependently -only-testing:LittleHavenUITests/LittleHavenUITests/testInspectionsAndRivalry -only-testing:LittleHavenUITests/LittleHavenUITests/testGuestCelebrationPreparationAndHosting -only-testing:LittleHavenUITests/LittleHavenUITests/testGardenPlantWaterAndHarvestUnlock -only-testing:LittleHavenUITests/LittleHavenUITests/testGardenCookingAndServingGuest -only-testing:LittleHavenUITests/LittleHavenUITests/testManagementDashboardFiltersAndQuickActions -only-testing:LittleHavenUITests/LittleHavenUITests/testManagementBoardSuppliesAndMiniGame -only-testing:LittleHavenUITests/LittleHavenUITests/testBreakfastRushConsumesSuppliesAndRewardsGuests -only-testing:LittleHavenUITests/LittleHavenUITests/testRoomDesignAndMilestoneUnlock -only-testing:LittleHavenUITests/LittleHavenUITests/testDiscoveryCollectionCannotBeClaimedTwice -resultBundlePath CreativeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -only-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -only-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -resultBundlePath CreativeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
       - name: Preserve focused failure diagnostics immediately
         if: failure()
         uses: actions/upload-artifact@v4
@@ -84,67 +90,22 @@ jobs:
             LittleHaven-unsigned.ipa
             LittleHaven-unsigned.ipa.sha256
           if-no-files-found: error
-      - name: Capture player emergency response stages
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+      - name: Capture painted scenes and publish visual review evidence
+        if: ${{ always() && env.SIM_DEVICE != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          for SPEC in pool:1.8 pool:3.8; do
-            MODE=${SPEC%:*}
-            TIME=${SPEC#*:}
-            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
-            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-action-response-$MODE" --ui-testing --ui-touch --ui-response-time "$TIME"
-            sleep 9
-            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-$MODE-$TIME.png"
-          done
-          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
-          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-entrance-flow --ui-testing --ui-touch
-          sleep 3
-          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-response-entrance-flow.png
-          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
-          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-story --ui-story-preview --ui-testing --ui-touch
-          sleep 3
-          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-response-story-choice.png
-          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
-          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-story-bar --ui-story-playing --ui-testing --ui-touch
-          sleep 3
-          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-response-story-music.png
-          for MODE in neighbor calendar team glimmer; do
-            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
-            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-haven-$MODE" --ui-testing --ui-touch
-            sleep 3
-            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-haven-$MODE.png"
-          done
-          for MODE in inspection rival celebration host decor; do
-            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
-            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-occasion-$MODE" --ui-testing --ui-touch
-            sleep 3
-            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-occasion-$MODE.png"
-          done
-          for MODE in breakfast design journey journal routines; do
-            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
-            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-expansion-$MODE" --ui-testing --ui-touch
-            sleep 3
-            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-expansion-$MODE.png"
-          done
-          for MODE in management-dashboard beach-outfits beach-outfits-street; do
-            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
-            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch
-            sleep 3
-            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-$MODE.png"
-          done
-          for MODE in garden-plant garden-harvest garden-kitchen garden-world outage-day outage-night; do
-            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
-            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch
-            sleep 3
-            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-$MODE.png"
-          done
           for MODE in basement family-home office-preview beach home-store home-exterior neighborhood motel-room; do
             xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
             xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch --ui-painted-check
-            sleep 3
+            sleep 5
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-$MODE.png"
           done
+          xcrun xcresulttool export attachments --path CreativeResults.xcresult --output-path /tmp/art-ui-diagnostics || true
+          python3 scripts/publish_art_previews.py
       - name: Preserve response previews for early visual review
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Response-previews
@@ -154,7 +115,7 @@ jobs:
         timeout-minutes: 24
         run: |
           set -euo pipefail
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SIM_DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -skip-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -skip-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility -skip-testing:LittleHavenUITests/LittleHavenUITests/testPlayerPoolRescueAnimation -skip-testing:LittleHavenUITests/LittleHavenUITests/testGuestStoryChoiceAndSavedMemory -skip-testing:LittleHavenUITests/LittleHavenUITests/testLanternGuestStoryShow -skip-testing:LittleHavenUITests/LittleHavenUITests/testNeighborRelationshipAndFavor -skip-testing:LittleHavenUITests/LittleHavenUITests/testWeeklyActivityRoundsAndPrize -skip-testing:LittleHavenUITests/LittleHavenUITests/testCorralAdventureAndEmployeeRequest -skip-testing:LittleHavenUITests/LittleHavenUITests/testPetsFollowOutsideAndWaitIndependently -skip-testing:LittleHavenUITests/LittleHavenUITests/testInspectionsAndRivalry -skip-testing:LittleHavenUITests/LittleHavenUITests/testGuestCelebrationPreparationAndHosting -skip-testing:LittleHavenUITests/LittleHavenUITests/testGardenPlantWaterAndHarvestUnlock -skip-testing:LittleHavenUITests/LittleHavenUITests/testGardenCookingAndServingGuest -skip-testing:LittleHavenUITests/LittleHavenUITests/testManagementDashboardFiltersAndQuickActions -skip-testing:LittleHavenUITests/LittleHavenUITests/testManagementBoardSuppliesAndMiniGame -skip-testing:LittleHavenUITests/LittleHavenUITests/testBreakfastRushConsumesSuppliesAndRewardsGuests -skip-testing:LittleHavenUITests/LittleHavenUITests/testRoomDesignAndMilestoneUnlock -skip-testing:LittleHavenUITests/LittleHavenUITests/testDiscoveryCollectionCannotBeClaimedTwice -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SIM_DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -skip-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -skip-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -skip-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
       - name: Publish tested candidate download without updating SideStore
         if: ${{ success() && github.ref == 'refs/heads/codex/pokopia-scenery' }}
         env:
@@ -168,7 +129,7 @@ jobs:
           path: candidate-verification.json
           if-no-files-found: error
       - name: Capture chapter previews
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           DEVICE="$SIM_DEVICE"
@@ -262,7 +223,7 @@ jobs:
             xcrun simctl io "$DEVICE" screenshot "LittleHaven-$MODE.png"
           done
       - name: Capture beach shops and animated television
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           for MODE in beach motel-room; do
@@ -296,7 +257,7 @@ jobs:
           kill -KILL "$TV_RECORD_PID" 2>/dev/null || true
           wait "$TV_RECORD_PID" || true
       - name: Capture bar and storefronts
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           for MODE in bar bar-exterior; do
@@ -306,7 +267,7 @@ jobs:
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
           done
       - name: Capture residential area and physical facilities
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           for MODE in neighbors chair facilities; do
@@ -331,7 +292,7 @@ jobs:
           kill -KILL "$PUMP_VIDEO_PID" 2>/dev/null || true
           wait "$PUMP_VIDEO_PID" || true
       - name: Capture full screen touch mode and laundry
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
@@ -355,7 +316,7 @@ jobs:
           sleep 2
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-small-room-items.png
       - name: Capture basement and all eight residents
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
@@ -369,7 +330,7 @@ jobs:
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-corral-$ID.png"
           done
       - name: Capture restaurant bikes and corner stairs
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           for MODE in fish fish-exterior bike bike-riding home-stairs; do
@@ -383,7 +344,7 @@ jobs:
           sleep 1
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-checkin-desk.png
       - name: Capture creative layout and subtle full-screen controls
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           for MODE in creative creative-moved; do
@@ -397,7 +358,7 @@ jobs:
           sleep 3
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-creative-editor.png
       - name: Capture guest interaction
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
@@ -405,7 +366,7 @@ jobs:
           sleep 2
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-guest-conversation.png
       - name: Capture management simulation
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           DEVICE="$SIM_DEVICE"

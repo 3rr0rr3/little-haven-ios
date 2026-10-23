@@ -72,6 +72,8 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
         app.buttons["Watch together"].tap()
         app.buttons["office_hildarelys"].tap()
+        capture(app,"Art QA family interaction target")
+        print("ART FAMILY TARGET: "+app.debugDescription)
         XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
         app.buttons["Give her a kiss"].tap()
         app.buttons["office_player"].tap()
@@ -206,6 +208,8 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["Close interaction"].tap()
         XCTAssertTrue(app.buttons["openStaff"].exists)
         app.buttons["receptionDesk"].tap()
+        capture(app,"Art QA desk interaction target")
+        print("ART DESK TARGET: "+app.debugDescription)
         app.buttons["deskRooms"].tap()
         app.buttons["deskUpgrade_0"].tap()
         XCTAssertTrue(cash(app).contains("710"))
@@ -543,6 +547,8 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["Walk east"].tap()
         capture(app,"Character riding bicycle")
         app.buttons["dismountBike"].tap()
+        capture(app,"Art QA parked bicycle interaction target")
+        print("ART BIKE TARGET: "+app.debugDescription)
         XCTAssertTrue(app.buttons["rideBike"].waitForExistence(timeout:3))
     }
     func testFishRestaurantServesMeal() {

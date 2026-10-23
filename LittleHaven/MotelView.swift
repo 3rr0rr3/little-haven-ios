@@ -31,6 +31,7 @@ struct MotelButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.font(.system(size: 14, weight: .bold, design: .rounded))
             .frame(maxWidth: .infinity).padding(.vertical, 14).padding(.horizontal, 10)
+            .contentShape(RoundedRectangle(cornerRadius:14))
             .foregroundStyle(Color(hex: subdued ? 0xF5E7C8 : 0x203B32))
             .background(PaintedPanel(color:subdued ? 0x385348 : 0xDCC08C).clipShape(RoundedRectangle(cornerRadius:14)))
             .opacity(configuration.isPressed ? 0.65 : 1)

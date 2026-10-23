@@ -1,0 +1,30 @@
+"""Publish native visual review evidence, never an untested IPA."""
+import base64,hashlib,json,os,subprocess,urllib.request,urllib.error
+from pathlib import Path
+repo=os.environ['GITHUB_REPOSITORY'];source=os.environ['GITHUB_SHA'];token=os.environ['GH_TOKEN']
+def api(path,data=None):
+    request=urllib.request.Request('https://api.github.com/repos/'+repo+path,None if data is None else json.dumps(data).encode(),headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'})
+    with urllib.request.urlopen(request,timeout=90) as response:return json.load(response)
+branch='codex/art-preview-'+source[:8]
+try:
+    existing=api('/git/ref/heads/'+branch)
+    commit=api('/git/commits/'+existing['object']['sha'])
+    assert commit['parents'][0]['sha']==source
+    print(json.dumps({'source':source,'preview_commit':commit['sha'],'branch':branch,'reused':True}))
+    raise SystemExit(0)
+except urllib.error.HTTPError as error:
+    if error.code!=404:raise
+entries=[]
+images=list(Path('.').glob('LittleHaven-response-painted-*.png'))+list(Path('.').glob('LittleHaven-character-turns.png'))+list(Path('.').glob('LittleHaven-app-icon.png'))+list(Path('/tmp/art-ui-diagnostics').rglob('*.png'))
+for index,image in enumerate(images[:30]):
+    target=Path('/tmp')/('art-review-'+str(index)+'.png')
+    subprocess.run(['sips','-Z','1100',str(image),'--out',str(target)],check=True,stdout=subprocess.DEVNULL)
+    data=target.read_bytes();blob=api('/git/blobs',{'content':base64.b64encode(data).decode(),'encoding':'base64'})
+    assert blob['sha']==hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+    name=image.name if image.name.startswith('LittleHaven') else 'diagnostic-'+str(index)+'.png'
+    entries.append({'path':'previews/art-review/'+name,'mode':'100644','type':'blob','sha':blob['sha']})
+assert entries,'No native screenshots to review'
+tree=api('/git/trees',{'base_tree':api('/git/commits/'+source)['tree']['sha'],'tree':entries})
+commit=api('/git/commits',{'message':'Native painted art review evidence [skip ci]','tree':tree['sha'],'parents':[source]})
+api('/git/refs',{'ref':'refs/heads/'+branch,'sha':commit['sha']})
+print(json.dumps({'source':source,'preview_commit':commit['sha'],'branch':branch,'images':len(entries)}))
