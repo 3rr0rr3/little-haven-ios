@@ -1499,3 +1499,90 @@ func guestStoryRules() {
     print("PASS: branching returning guests, real discounts, show promises, repeated reward prevention, persistent endings, care consequences and old saves")
 }
 guestStoryRules()
+
+func connectedHavenLifeRules() {
+    func base()->Motel {
+        var hotel=Motel();hotel.initializeWorld();hotel.enableManagement();hotel.initializeHavenLife()
+        hotel.cash=5000;hotel.operations!.nextIncidentTick=100000
+        return hotel
+    }
+    func standByNeighbor(_ id:Int,_ hotel:inout Motel) {
+        hotel.visit=nil;hotel.world!.place = .grounds
+        hotel.world!.neighborPositions=[id:hotel.groundTile(ResidentialLayout.doors[id])]
+        hotel.world!.player=hotel.groundTile(ResidentialLayout.doors[id])
+    }
+    var neighbors=base();standByNeighbor(0,&neighbors)
+    require(neighbors.neighborAction(0,choice:0) && !neighbors.neighborAction(0,choice:0),"Neighbor chat improves friendship once daily")
+    require(neighbors.neighborAction(0,choice:1),"A physical neighbor can offer an errand")
+    require(!neighbors.collectNeighborParcels(),"Parcels cannot be collected remotely")
+    neighbors.world!.place = .shop;neighbors.world!.shop = .furniture;neighbors.world!.player=ShopLayout.counter
+    require(neighbors.collectNeighborParcels() && !neighbors.collectNeighborParcels(),"Otis hands over each parcel once")
+    standByNeighbor(0,&neighbors);let coins=neighbors.cash
+    require(neighbors.neighborAction(0,choice:2) && neighbors.cash==coins+20,"Delivering a real parcel earns a favor reward")
+    require(!neighbors.neighborAction(0,choice:2),"Delivered parcels cannot be redeemed again")
+    require(neighbors.neighborAction(0,choice:3),"Friends can be invited home")
+    neighbors.world!.place = .house;neighbors.world!.player=neighbors.homeNeighborTile(0)
+    require(neighbors.homeNeighborIDs==[0] && neighbors.welcomeHomeNeighbor(0),"Invited neighbors physically visit and can be welcomed")
+    require(!neighbors.welcomeHomeNeighbor(0),"Home visit friendship cannot be farmed")
+    var identity=base()
+    require(!identity.chooseHavenIdentity(.boutique),"Boutique direction requires reputation and furniture")
+    require(identity.chooseHavenIdentity(.lively),"A motel can choose a lively identity")
+    identity.attractHavenGuests()
+    require(identity.waiting.contains{$0.kind == .party},"Identity changes the real guest mix")
+    require(!identity.chooseHavenIdentity(.peaceful),"Identity choices have a daily cooldown")
+    var employees=base();employees.guestsServed=20;_=employees.hire(.cleaner);_=employees.hire(.security)
+    for day in 2...4 {employees.day=day;employees.settleHavenDay()}
+    require(employees.haven.employees[StaffRole.security.rawValue]?.requestDay==4,"Experienced staff ask for a raise")
+    let wage=employees.scheduledWage(.security)
+    require(employees.supportHavenEmployee(.security,choice:1) && employees.scheduledWage(.security)==wage+2,"Accepted raises affect actual payroll")
+    require(!employees.supportHavenEmployee(.security,choice:1),"Raise requests cannot be accepted twice")
+    let fatigue=employees.simulation.profiles[StaffRole.security.rawValue]!.fatigue
+    require(employees.supportHavenEmployee(.security,choice:0) && employees.simulation.profiles[StaffRole.security.rawValue]!.fatigue<=fatigue,"Paid breaks support staff")
+    require(!employees.supportHavenEmployee(.security,choice:0),"Paid breaks have a daily cooldown")
+    employees.day=5;employees.settleHavenDay()
+    require(employees.haven.employees[StaffRole.security.rawValue]!.level==2,"Employees level up after four shifts")
+    var creatures=base()
+    for id in 0..<8 {
+        creatures.world!.place = .basement;creatures.world!.player=BasementLayout.gate(id)
+        require(creatures.startCreatureAdventure(id),"Each corral offers a unique quest")
+        require(!creatures.finishCreatureAdventure(id),"A quest cannot be completed without its keepsake")
+        creatures.world!.place = .grounds;creatures.world!.player=creatures.adventureTile(id)
+        require(creatures.collectAdventureFind(),"Each keepsake can be found at its physical site")
+        creatures.world!.place = .basement;creatures.world!.player=BasementLayout.gate(id)
+        require(creatures.finishCreatureAdventure(id) && !creatures.finishCreatureAdventure(id),"Each corral ability unlocks once")
+    }
+    let snacks=creatures.simulation.stock["snacks",default:0]
+    creatures.day=2;creatures.settleHavenDay()
+    require(creatures.simulation.stock["snacks",default:0]==snacks+2,"Shrek's unlocked ability supplies real snacks")
+    let after=creatures.simulation.stock;creatures.settleHavenDay()
+    require(creatures.simulation.stock==after,"Creature morning rewards settle once daily")
+    creatures.world!.place = .grounds;creatures.world!.player=Tile(x:45,y:17)
+    creatures.world!.pets=["mochi":PetCompanion(following:true,map:"grounds",tile:Tile(x:44,y:17))]
+    let pouch=creatures.cash
+    require(creatures.exploreWithPet() && creatures.cash==pouch+12 && !creatures.exploreWithPet(),"Following pets find a bounded daily discovery")
+    for activity in HavenActivity.allCases {
+        var hotel=base();hotel.day=activity.weekday
+        hotel.world!.place = .grounds;hotel.world!.player=hotel.groundNearestWalkable(to:hotel.groundTile(activity.location))
+        require(hotel.startHavenActivity(),"Each weekly activity is playable on its calendar day")
+        require(!hotel.startHavenActivity(),"Entry costs cannot be charged twice")
+        for _ in 0..<3 {require(hotel.playHavenActivity(choice:0),"Activity rounds advance at the physical location")}
+        require(hotel.haven.activity?.finished==true && !hotel.playHavenActivity(choice:0),"Activity prizes cannot be replayed")
+    }
+    var neglect=base();var health=neglect.rooms[0].health;health.faults=[.pipe];neglect.rooms[0].hospitality=health
+    neglect.day=2;neglect.settleHavenDay();let debt=neglect.simulation.billDebt
+    neglect.day=3;neglect.settleHavenDay()
+    require(neglect.simulation.billDebt==debt+15 && neglect.haven.cancellations==1,"Ignored damage adds real bills and cancels a booking")
+    require(neglect.repairRoom(0),"Damage can be repaired using normal tools and stock")
+    neglect.day=4;neglect.settleHavenDay()
+    require(neglect.haven.neglectedDays[0]==0,"Repairing a room stops its neglect chain")
+    var promises=base();standByNeighbor(1,&promises);_=promises.neighborAction(1,choice:1)
+    promises.day=4;promises.settleHavenDay()
+    require(!promises.neighborState(1).favorPending && promises.neighborState(1).friendship == -2,"Overdue neighbor promises have lasting consequences")
+    let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(creatures))
+    require(restored.haven.adventures.count==8 && restored.haven.petFindDays==creatures.haven.petFindDays,"All creature quests and rewards survive reloading")
+    var object=try! JSONSerialization.jsonObject(with:JSONEncoder().encode(base())) as! [String:Any]
+    object.removeValue(forKey:"havenLife")
+    require((try! JSONDecoder().decode(Motel.self,from:JSONSerialization.data(withJSONObject:object))).havenLife==nil,"Older saves remain compatible with Haven life")
+    print("PASS: neighbor friendships and visits, identity guest mix, employee pay and growth, eight creature quests, pet discoveries, four weekly games, damage bills, cancellations and saved consequences")
+}
+connectedHavenLifeRules()

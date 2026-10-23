@@ -93,7 +93,7 @@ extension Motel {
     static let homeDecorObstacles=[RPGRegion(x:1,y:2,width:3,height:2),RPGRegion(x:2,y:5,width:2,height:2),RPGRegion(x:3,y:12,width:1,height:1)]
 
     func homeBlocked(_ tile:Tile)->Bool {
-        tile == FamilyHome.workbench || tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || (10...13).contains(tile.x) && (3...5).contains(tile.y) || (10...13).contains(tile.x) && (9...10).contains(tile.y) || Self.homeDecorObstacles.contains{$0.contains(tile)} || household.placed.contains{$0.tile == tile && $0.kind != .rug}
+        homeNeighborIDs.contains(where:{homeNeighborTile($0)==tile}) || tile == FamilyHome.workbench || tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || (10...13).contains(tile.x) && (3...5).contains(tile.y) || (10...13).contains(tile.x) && (9...10).contains(tile.y) || Self.homeDecorObstacles.contains{$0.contains(tile)} || household.placed.contains{$0.tile == tile && $0.kind != .rug}
     }
     @discardableResult mutating func buyHomeObject(_ kind:HomeObject)->Bool {
         guard canTrade(.furniture),cash>=kind.price else{return false}
@@ -1067,13 +1067,16 @@ extension Motel {
     }
     func scheduledWage(_ role:StaffRole)->Int {
         guard managementEnabled else{return role.wage}
-        return (simulation.profiles[role.rawValue]?.nightShift ?? false) ? role.wage*3/2 : role.wage
+        let wage=role.wage+(havenLife?.employees[role.rawValue]?.raiseBonus ?? 0)
+        return (simulation.profiles[role.rawValue]?.nightShift ?? false) ? wage*3/2 : wage
     }
     func workerCanWork(_ worker:MotelWorker,tick:Int)->Bool {
         let profile=simulation.profiles[worker.role.rawValue] ?? StaffProfile.make(worker.role)
         if profile.loyalty<=0 {return false}
         if isNight && !profile.nightShift {return false}
-        let cadence=max(1,4-profile.speed/30)+(profile.fatigue>=75 ? 1 : 0)
+        let friend=havenLife?.employees[worker.role.rawValue]?.friend
+        let supported=friend.map{key in operationsState.workers.contains{$0.role.rawValue==key && $0.active}} ?? false
+        let cadence=max(1,4-profile.speed/30+(profile.fatigue>=75 ? 1 : 0)-(supported && profile.loyalty>=80 ? 1 : 0))
         return tick % cadence==0
     }
     mutating func scheduleNight(_ role:StaffRole) { guard managementEnabled else{return};var s=simulation;var p=s.profiles[role.rawValue] ?? StaffProfile.make(role);p.nightShift.toggle();s.profiles[role.rawValue]=p;simulation=s;lastEvent="Shift schedule updated. Night shifts cost 50% more." }

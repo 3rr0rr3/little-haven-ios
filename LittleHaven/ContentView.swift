@@ -36,6 +36,29 @@ struct ContentView: View {
         let args = ProcessInfo.processInfo.arguments
         Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}
+        if args.contains(where:{$0.hasPrefix("--ui-haven-")}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeHavenLife()
+            sample.motel!.cash=5000;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.world!.place = .grounds
+            sample.motel!.world!.neighborPositions=[0:Tile(x:47,y:9)]
+            sample.motel!.world!.player=Tile(x:47,y:10)
+            if args.contains("--ui-haven-calendar") {sample.motel!.world!.player=sample.motel!.groundNearestWalkable(to:HavenActivity.market.location)}
+            if args.contains("--ui-haven-creature") {
+                sample.motel!.world!.place = .basement;sample.motel!.world!.player=BasementLayout.gate(0)
+            }
+            if args.contains("--ui-haven-glimmer") {
+                sample.motel!.world!.place = .basement;sample.motel!.world!.player=BasementLayout.gate(0)
+                _=sample.motel!.startCreatureAdventure(0)
+                sample.motel!.world!.place = .grounds;sample.motel!.world!.player=sample.motel!.adventureTile(0)
+            }
+            if args.contains("--ui-haven-team") {
+                sample.motel!.guestsServed=20;_=sample.motel!.hire(.cleaner);_=sample.motel!.hire(.security)
+                var state=sample.motel!.haven
+                state.employees[StaffRole.security.rawValue]=HavenEmployee(experience:3,requestDay:4)
+                sample.motel!.havenLife=state;sample.motel!.day=4
+            }
+            sample.save();return sample
+        }
         if args.contains("--ui-police-pursuit") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.cash=500;sample.motel!.world!.place = .office

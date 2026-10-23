@@ -13,6 +13,10 @@ struct NeighborhoodStoreView:View {
                 Text("\(motel.cash) COINS").font(.headline.monospaced()).foregroundStyle(Color(hex:0xEFC977))
                 Text(shop.keeperName+" / "+shop.detail)
                 if shop == .furniture {
+                    if (0..<3).contains(where:{motel.neighborState($0).favorPending && !motel.neighborState($0).parcel}) {
+                        Button("Collect neighbor parcels") {change{_=$0.collectNeighborParcels()};game.save()}
+                            .disabled(!motel.canTrade(.furniture)).accessibilityIdentifier("collectNeighborParcels")
+                    }
                     ForEach(HomeObject.allCases) {kind in
                         HStack {HomeItemIcon(kind:kind).frame(width:46,height:46);Text(kind.title);Spacer();Button("Buy / \(kind.price)"){change{_=$0.buyHomeObject(kind)}}.disabled(motel.cash<kind.price).accessibilityIdentifier("buy_home_"+kind.rawValue)}
                     }
@@ -513,6 +517,7 @@ struct ManagementHub:View {
     @State private var tab:ManagementTab = .rooms
     @State private var feedback=""
     @State private var mini:HotelMiniRequest?
+    @State private var showHavenLife=false
     private var motel:Motel {game.motel ?? Motel()}
     private let gold=Color(hex:0xEFC977)
     var body:some View {
@@ -528,6 +533,7 @@ struct ManagementHub:View {
                         .font(.caption.bold()).foregroundStyle(.orange).accessibilityIdentifier("managementEmergency")
                 }
                 if motel.business.police != nil {Button("Police case needs attention - return to grounds"){dismiss()}.font(.caption.bold()).foregroundStyle(.orange)}
+                Button("Community & activities") {showHavenLife=true}.accessibilityIdentifier("managementHavenLife")
                 Text(motel.simulation.news).font(.caption).frame(maxWidth:.infinity,alignment:.leading).padding(.horizontal).accessibilityIdentifier("managementNews")
                 ScrollView(.horizontal,showsIndicators:false) {
                     HStack(spacing:8) {
@@ -558,6 +564,7 @@ struct ManagementHub:View {
                 Text("The hotel keeps running while this board is open.").font(.system(size:10)).foregroundStyle(.secondary).padding(.bottom,6)
             }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
                 .navigationTitle("Hotel management").navigationBarTitleDisplayMode(.inline)
+                .sheet(isPresented:$showHavenLife) {HavenLifeView(game:$game)}
                 .toolbar {ToolbarItem(placement:.topBarTrailing) {Button("Done") {dismiss()}.accessibilityIdentifier("closeManagement")}}
         }.tint(gold).presentationBackground(Color(hex:0x172A25))
             .onAppear {
@@ -970,5 +977,173 @@ struct WorkingCharacterArtwork:View {
                 arm(20,25,24,29,28,31);arm(28,25,33,29,40,31)
             }
         }.frame(width:48,height:48)
+    }
+}
+
+enum HavenTab:String,CaseIterable,Identifiable {
+    case neighbors="Neighbors",identity="Identity",team="Team",creatures="Creatures",calendar="Calendar",consequences="Consequences"
+    var id:String {rawValue}
+}
+struct HavenLifeView:View {
+    @Binding var game:Game
+    var initialTab:HavenTab = .neighbors
+    @State private var tab:HavenTab = .neighbors
+    @State private var feedback=""
+    @Environment(\.dismiss) private var dismiss
+    private var motel:Motel {game.motel ?? Motel()}
+    private func act(_ action:(inout Motel)->Bool) {
+        guard var value=game.motel else{return}
+        if action(&value) {feedback=value.lastEvent;game.motel=value;game.save()}
+        else {feedback="Meet the location, cost or daily requirement shown below first."}
+    }
+    var body:some View {
+        NavigationStack {
+            VStack(spacing:12) {
+                Text("DAY \(motel.day) · WEEKDAY \(motel.havenWeekday)/7 · \(motel.cash) COINS").font(.caption.monospaced())
+                ScrollView(.horizontal,showsIndicators:false) {
+                    HStack {ForEach(HavenTab.allCases) {item in
+                        Button(item.rawValue) {tab=item}.buttonStyle(.bordered)
+                            .tint(tab==item ? Color(hex:0xEFC977) : .gray).accessibilityIdentifier("havenTab_"+item.rawValue)
+                    }}.padding(.horizontal)
+                }
+                ScrollView {
+                    VStack(alignment:.leading,spacing:18) {
+                        switch tab {
+                        case .neighbors:neighbors
+                        case .identity:identity
+                        case .team:team
+                        case .creatures:creatures
+                        case .calendar:calendar
+                        case .consequences:consequences
+                        }
+                    }.padding(20)
+                }
+                if !feedback.isEmpty {Text(feedback).font(.caption).padding(.horizontal).accessibilityIdentifier("havenFeedback")}
+            }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
+                .navigationTitle("Haven life").navigationBarTitleDisplayMode(.inline)
+                .toolbar {ToolbarItem(placement:.confirmationAction) {Button("Done") {dismiss()}}}
+                .tint(Color(hex:0xEFC977)).onAppear{tab=initialTab}
+                .accessibilityIdentifier("havenLife")
+        }
+    }
+    private var neighbors:some View {
+        VStack(alignment:.leading,spacing:18) {
+            Text("Meet your neighbors outside their homes. Keep promises, make peace after noisy nights, and invite friends over. At 4 friendship they send a small daily gift.").font(.subheadline)
+            ForEach(0..<3,id:\.self) {id in
+                let n=motel.neighborState(id)
+                VStack(alignment:.leading,spacing:8) {
+                    Text(ResidentialLayout.names[id]+" · friendship \(n.friendship)").font(.headline)
+                    Text(id==0 ? "Nora loves peaceful evenings and thoughtful favors." : id==1 ? "Ben enjoys celebrations and repairing things." : "Elena values kindness and visiting friends.").font(.caption)
+                    if n.favorPending {Text(n.parcel ? "Parcel collected. Bring it back here." : "Collect the parcel from Otis at Willow Home.").font(.caption)}
+                    Button("Chat") {act{$0.neighborAction(id,choice:0)}}
+                        .disabled(motel.nearHavenNeighbor != id || n.chattedDay==motel.day).accessibilityIdentifier("neighborChat\(id)")
+                    Button(n.favorPending ? "Deliver parcel / +20 coins" : "Offer a favor") {act{$0.neighborAction(id,choice:n.favorPending ? 2 : 1)}}
+                        .disabled(motel.nearHavenNeighbor != id || (n.favorPending && !n.parcel) || (!n.favorPending && n.favorDay==motel.day)).accessibilityIdentifier("neighborFavor\(id)")
+                    Button("Invite home · needs 3 friendship") {act{$0.neighborAction(id,choice:3)}}
+                        .disabled(motel.nearHavenNeighbor != id || n.friendship<3 || n.invitedDay==motel.day).accessibilityIdentifier("neighborInvite\(id)")
+                    Button("Make peace / 15 coins") {act{$0.neighborAction(id,choice:4)}}
+                        .disabled(motel.nearHavenNeighbor != id || motel.cash<15 || n.chattedDay==motel.day)
+                    if n.invitedDay==motel.day {Text("Visiting your home today. Walk over and welcome them.").font(.caption)}
+                }.padding(14).frame(maxWidth:.infinity,alignment:.leading).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var identity:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Reputation: \(motel.simulation.reputation)/100").font(.title2.bold())
+            Text("Your direction changes tomorrow's guest mix. Honest service and good room care protect your reputation. You can change direction once per day.")
+            ForEach(HavenIdentity.allCases) {identity in
+                VStack(alignment:.leading,spacing:8) {
+                    Text(identity.title).font(.headline);Text(identity.detail).font(.caption)
+                    Button(motel.haven.identity==identity ? "Current direction" : "Choose this direction") {act{$0.chooseHavenIdentity(identity)}}
+                        .disabled(motel.haven.identity==identity || motel.haven.identityDay==motel.day ||
+                            (identity == .boutique && (motel.simulation.reputation<60 || motel.rooms.reduce(0,{$0+$1.furniture})<3)))
+                        .accessibilityIdentifier("havenIdentity_"+identity.rawValue)
+                }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var team:some View {
+        VStack(alignment:.leading,spacing:18) {
+            Text("Good shifts earn experience. Every 4 shifts improve skill and speed. Happy colleagues become friends and work faster together; exhausted workers can make mistakes.").font(.subheadline)
+            if motel.operationsState.workers.isEmpty {Text("Hire your first employee at the reception PC after unlocking recruitment.")}
+            ForEach(motel.operationsState.workers) {worker in
+                let role=worker.role
+                let employee=motel.haven.employees[role.rawValue] ?? HavenEmployee()
+                let profile=motel.simulation.profiles[role.rawValue] ?? StaffProfile.make(role)
+                VStack(alignment:.leading,spacing:8) {
+                    Text(role.name+" · "+role.title).font(.headline)
+                    Text(motel.employeePersonality(role)).font(.caption)
+                    Text("Level \(employee.level) · experience \(employee.experience) · loyalty \(profile.loyalty) · fatigue \(profile.fatigue)").font(.caption)
+                    Text("Wage: \(motel.scheduledWage(role))/day").font(.caption)
+                    if let friend=employee.friend,let friendRole=StaffRole(rawValue:friend) {Text("Work friend: "+friendRole.name).font(.caption)}
+                    Button("Paid break / 10 coins") {act{$0.supportHavenEmployee(role,choice:0)}}
+                        .disabled(motel.cash<10 || employee.supportDay==motel.day).accessibilityIdentifier("employeeBreak_"+role.rawValue)
+                    if employee.requestDay>employee.decisionDay {
+                        Text("I'd like a raise for my work here.").font(.caption)
+                        Button("Accept permanent +2/day raise") {act{$0.supportHavenEmployee(role,choice:1)}}.accessibilityIdentifier("employeeRaise_"+role.rawValue)
+                        Button("Decline · loyalty -12") {act{$0.supportHavenEmployee(role,choice:2)}}
+                    }
+                }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var creatures:some View {
+        VStack(alignment:.leading,spacing:18) {
+            Text("Visit each corral to begin a quest. Find its golden glimmer, then return the keepsake to unlock a unique ability. Chichu, Chichi and Tuki can also discover supplies once daily while following you outside the motel.")
+            ForEach(0..<8,id:\.self) {id in
+                let quest=motel.adventure(id)
+                VStack(alignment:.leading,spacing:8) {
+                    Text(BasementLayout.titles[id]).font(.headline)
+                    Text(Motel.adventureClues[id].capitalized+".").font(.caption)
+                    Text(Motel.creatureAbilities[id]).font(.caption)
+                    if quest.completed {Label("Ability unlocked",systemImage:"checkmark.circle.fill")}
+                    else {
+                        Button(quest.found ? "Return keepsake / +15 coins" : quest.accepted ? "Search for the golden glimmer" : "Accept adventure") {
+                            act{quest.found ? $0.finishCreatureAdventure(id) : $0.startCreatureAdventure(id)}
+                        }.disabled(motel.nearbyCorral != id || (quest.accepted && !quest.found))
+                            .accessibilityIdentifier("creatureAdventure\(id)")
+                    }
+                }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var calendar:some View {
+        VStack(alignment:.leading,spacing:18) {
+            Text("A repeating seven-day calendar").font(.headline)
+            Text("Bring coins and any required snacks. Visit the activity's physical location and finish three rounds before resting. Prizes can be collected once per event.")
+            ForEach(HavenActivity.allCases) {kind in
+                VStack(alignment:.leading,spacing:8) {
+                    Text("Day \(kind.weekday) · "+kind.title).font(.headline)
+                    Text("At "+kind.locationName+" · entry \(kind.cost) coins, \(kind.snacks) snacks").font(.caption)
+                    if motel.todaysActivity==kind {
+                        if let run=motel.haven.activity,run.day==motel.day {
+                            if run.finished {Text("Complete · score \(run.score)")}
+                            else {
+                                Text(kind.rounds[run.round]).font(.headline)
+                                ForEach(0..<2,id:\.self) {choice in
+                                    Button(kind.options[run.round][choice]) {act{$0.playHavenActivity(choice:choice)}}
+                                        .disabled(!motel.nearHavenActivity).accessibilityIdentifier("activityChoice\(choice)")
+                                }
+                            }
+                        } else {
+                            Button("Prepare and enter") {act{$0.startHavenActivity()}}
+                                .disabled(!motel.nearHavenActivity || motel.cash<kind.cost || motel.simulation.stock["snacks",default:0]<kind.snacks)
+                                .accessibilityIdentifier("startHavenActivity")
+                        }
+                    }
+                }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+            ForEach(motel.haven.completedActivities,id:\.self) {Text($0).font(.caption)}
+        }.buttonStyle(.bordered)
+    }
+    private var consequences:some View {
+        VStack(alignment:.leading,spacing:14) {
+            Text("Canceled bookings: \(motel.haven.cancellations)").font(.headline)
+            Text("Two neglected days can cause damage bills, lost condition and cancellations. Repair faults and keep rooms clean to stop the damage. Neighbor promises expire after three days.")
+            Text("Recent memories").font(.headline)
+            if motel.haven.notes.isEmpty {Text("Your decisions will be recorded here.")}
+            ForEach(Array(motel.haven.notes.enumerated()),id:\.offset) { _,note in Text(note).font(.caption).padding(.vertical,4)}
+        }
     }
 }

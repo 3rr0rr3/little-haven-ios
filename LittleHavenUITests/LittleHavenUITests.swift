@@ -648,6 +648,44 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertFalse(app.buttons["startLanternShow"].exists)
         XCTAssertTrue(app.staticTexts["Rowan's live set · promise kept"].exists)
     }
+    func testNeighborRelationshipAndFavor() {
+        let app=launch("--ui-haven-neighbor")
+        XCTAssertTrue(app.buttons["neighborChat0"].waitForExistence(timeout:10))
+        app.buttons["neighborChat0"].tap()
+        XCTAssertFalse(app.buttons["neighborChat0"].isEnabled)
+        app.buttons["neighborFavor0"].tap()
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Willow Home"))
+        XCTAssertFalse(app.buttons["neighborFavor0"].isEnabled,"Delivery requires physically collecting the parcel")
+        capture(app,"Neighbor friendship and physical favor")
+    }
+    func testWeeklyActivityRoundsAndPrize() {
+        let app=launch("--ui-haven-calendar")
+        XCTAssertTrue(app.buttons["startHavenActivity"].waitForExistence(timeout:10))
+        app.buttons["startHavenActivity"].tap()
+        for _ in 0..<3 {
+            XCTAssertTrue(app.buttons["activityChoice0"].waitForExistence(timeout:3))
+            app.buttons["activityChoice0"].tap()
+        }
+        XCTAssertFalse(app.buttons["activityChoice0"].exists)
+        XCTAssertFalse(app.buttons["startHavenActivity"].exists)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Activity complete"))
+        capture(app,"Three-round neighborhood market")
+    }
+    func testCorralAdventureAndEmployeeRequest() {
+        let app=launch("--ui-haven-creature")
+        XCTAssertTrue(app.buttons["Adventure & ability"].waitForExistence(timeout:10))
+        app.buttons["Adventure & ability"].tap()
+        XCTAssertTrue(app.buttons["creatureAdventure0"].waitForExistence(timeout:5))
+        app.buttons["creatureAdventure0"].tap()
+        XCTAssertFalse(app.buttons["creatureAdventure0"].isEnabled)
+        capture(app,"Creature quest and unique ability")
+        app.terminate();app.launchArguments=["--ui-haven-team","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["employeeRaise_security"].waitForExistence(timeout:10))
+        app.buttons["employeeRaise_security"].tap()
+        XCTAssertFalse(app.buttons["employeeRaise_security"].exists)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("+2/day"))
+        capture(app,"Employee personality and permanent wage raise")
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

@@ -54,6 +54,7 @@ struct RPGSceneView: UIViewRepresentable {
     var powerOut = false
     var pumpFault = false
     var pumpPosition=Tile(x:10,y:21)
+    var lifeProps:[HavenWorldProp] = []
     let scenery: () -> AnyView
 
     func makeUIView(context: Context) -> SKView {
@@ -72,7 +73,7 @@ struct RPGSceneView: UIViewRepresentable {
         scene.configure(mapID: mapID, revision: revision, mapSize: mapSize,
                         columns: columns, interior: interior, actors: actors,
                         working: working, workKind: workKind, visual: visual,
-                        weather:weather,cars:cars,bikePositions:bikePositions,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,pumpPosition:pumpPosition,scenery: scenery)
+                        weather:weather,cars:cars,bikePositions:bikePositions,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,pumpPosition:pumpPosition,lifeProps:lifeProps,scenery: scenery)
     }
     static func dismantleUIView(_ view: SKView, coordinator: ()) {
         view.scene?.removeAllActions()
@@ -142,7 +143,7 @@ final class RPGScene: SKScene {
     @MainActor func configure(mapID: String, revision newRevision: String,
                              mapSize: CGSize, columns: CGFloat, interior: Bool,
                              actors: [RPGActor], working: Bool, workKind:String,
-                             visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],bikePositions:[Int:Tile],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,pumpFault:Bool,pumpPosition:Tile,
+                             visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],bikePositions:[Int:Tile],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,pumpFault:Bool,pumpPosition:Tile,lifeProps:[HavenWorldProp],
                              scenery: () -> AnyView) {
         let changedMap = worldID != mapID
         dimensions = mapSize
@@ -171,6 +172,7 @@ final class RPGScene: SKScene {
         configurePumpFault(active:mapID == "grounds" && pumpFault,at:pumpPosition)
         configureAmbient(night:night && !interior,nightVision:nightVision,powerOut:powerOut)
         configureWeather(interior ? .sunny : weather)
+        configureLifeProps(lifeProps)
         if !interior { configureCars(cars,day:day,positions:bikePositions) }
         if let visual, visual.map == mapID, visual.id != visualSeen || visual.map != visualMapSeen {
             visualSeen = visual.id; visualMapSeen = visual.map
@@ -550,6 +552,40 @@ final class RPGScene: SKScene {
         },.removeFromParent()]))
     }
 
+    @MainActor private func configureLifeProps(_ props:[HavenWorldProp]) {
+        let ids=Set(props.map{"life-"+$0.id})
+        for child in world.children where child.name?.hasPrefix("life-") == true && !ids.contains(child.name!) {child.removeFromParent()}
+        for prop in props {
+            let name="life-"+prop.id
+            let node:SKNode
+            if let existing=world.childNode(withName:name) {node=existing}
+            else {
+                node=SKNode();node.name=name;node.zPosition=20
+                func block(_ rect:CGRect,_ color:UInt32,_ radius:CGFloat=1) {
+                    let shape=SKShapeNode(rect:rect,cornerRadius:radius);shape.fillColor=UIColor(Color(hex:color));shape.strokeColor = .clear;node.addChild(shape)
+                }
+                if prop.kind==0 {
+                    let glimmer=SKShapeNode(circleOfRadius:3);glimmer.fillColor=UIColor(Color(hex:0xF3D77A));glimmer.strokeColor = .white
+                    glimmer.run(.repeatForever(.sequence([.fadeAlpha(to:0.4,duration:0.8),.fadeAlpha(to:1,duration:0.8)])))
+                    node.addChild(glimmer)
+                } else if prop.kind==2 {
+                    block(CGRect(x:-1,y:0,width:2,height:19),0x8E704A)
+                    block(CGRect(x:0,y:15,width:13,height:1),0x455E5D)
+                    block(CGRect(x:11,y:1,width:1,height:14),0xD6DCD2)
+                    block(CGRect(x:9,y:1,width:4,height:4),0xD97E68,2)
+                } else {
+                    block(CGRect(x:-10,y:0,width:20,height:5),0x876347)
+                    block(CGRect(x:-9,y:-4,width:2,height:5),0x69523E)
+                    block(CGRect(x:7,y:-4,width:2,height:5),0x69523E)
+                    block(CGRect(x:-11,y:10,width:22,height:4),prop.kind==4 ? 0xD89777 : 0x91B7A1,2)
+                    for index in 0..<3 {block(CGRect(x:CGFloat(-8+index*6),y:5,width:4,height:5),prop.kind==3 ? 0xD9B76C : 0xC98D7F,2)}
+                }
+                world.addChild(node)
+            }
+            node.position=CGPoint(x:CGFloat(prop.tile.x*16+8),y:-CGFloat(prop.tile.y*16+8))
+        }
+    }
+
     @MainActor private func configureCars(_ cars:[HotelCar],day:Int,positions:[Int:Tile]) {
         let ids=Set(cars.map { "car:\($0.id)" })
         for node in world.children where node.name?.hasPrefix("car:") == true && !ids.contains(node.name!) { node.removeFromParent() }
@@ -751,7 +787,7 @@ struct MotelRPGView: View {
         return RPGSceneView(mapID: mapID, revision: worldRevision, mapSize: CGSize(width: interior ? 144 : MotelGrounds.width*16, height: interior ? 144 : MotelGrounds.height*16), columns: 14, interior: interior, actors: actors, working: workProgress > 0,
                             workKind:motel.cleaningTarget == 0 ? "bed" : motel.cleaningTarget == 1 ? "trash" : "mop",
                             visual:motel.operationsState.visual,weather:motel.weather,cars:motel.parkedBikes,bikePositions:motel.bikeParking,day:motel.day,
-                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),pumpPosition:motel.groundTile(Tile(x:10,y:21))) {
+                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }
             if motel.worldState.place == .office { return AnyView(MotelOfficeCanvas(sceneryOnly: true, motel: motel, x: 0, y: 0)) }
             return AnyView(MotelGroundsCanvas(motel: motel, x: 0, y: 0, npcTick: 0, sceneryOnly: true, fullMap: true))

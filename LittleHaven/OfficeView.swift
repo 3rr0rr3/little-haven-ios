@@ -37,7 +37,7 @@ struct FamilyHouseView:View {
         RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You"),
         RPGActor(id:"hildarelys",tile:motel.reception.hildarelys,color:0x292A2C,variant:8,facing:motel.reception.tick%12<6 ? 2 : 1,name:"Hildarelys",duration:0.65),
         RPGActor(id:"samhil",tile:OfficeReception.samhil,color:0xD88BAA,variant:9,facing:3,name:"Samhil",displayScale:0.8),
-        ] + motel.petActors + motel.policeActors}
+        ] + motel.havenHomeActors + motel.petActors + motel.policeActors}
     var body:some View {
         GeometryReader {proxy in
             let scale=min(proxy.size.width/240,proxy.size.height/240)
@@ -209,5 +209,13 @@ private struct LanternMusicProp:View {
                 }
             }
         }
+    }
+}
+
+extension Motel {
+    var havenHomeActors:[RPGActor] {
+        guard isAtHome else{return []}
+        return homeNeighborIDs.map{id in RPGActor(id:"home-neighbor-\(id)",tile:homeNeighborTile(id),
+            color:Self.themeColors[(id+1)%4],variant:610+id,facing:0)}
     }
 }

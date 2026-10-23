@@ -72,6 +72,10 @@ struct MotelView: View {
     @State private var talkingRoom: Int?
     @State private var storyGuest: MotelGuest?
     @State private var showStoryJournal = false
+    @State private var showHavenLife=false
+    @State private var havenTab:HavenTab = .neighbors
+    @State private var lifeAfterPause=false
+    @State private var journalAfterPause=false
     private var motel: Motel { game.motel ?? Motel() }
     private var mapIdentity: String {motel.petMap}
     private let cream = Color(hex: 0xF5E7C8)
@@ -83,7 +87,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { storyGuest != nil || showStoryJournal || motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { showHavenLife || lifeAfterPause || journalAfterPause || storyGuest != nil || showStoryJournal || motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         Group {
@@ -130,6 +134,11 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains("--ui-creature-portrait") { family = .mochi }
             if ProcessInfo.processInfo.arguments.contains("--ui-guest-dialogue") { talkingRoom=0 }
             if ProcessInfo.processInfo.arguments.contains("--ui-story-preview") { storyGuest=motel.receptionGuest }
+            if ProcessInfo.processInfo.arguments.contains("--ui-haven-neighbor") {havenTab = .neighbors;showHavenLife=true}
+            if ProcessInfo.processInfo.arguments.contains("--ui-haven-team") {havenTab = .team;showHavenLife=true}
+            if ProcessInfo.processInfo.arguments.contains("--ui-haven-calendar") {havenTab = .calendar;showHavenLife=true}
+            if ProcessInfo.processInfo.arguments.contains("--ui-haven-creature") {corral=0}
+
             if ProcessInfo.processInfo.arguments.contains("--ui-police") { showPolice = true }
             if ProcessInfo.processInfo.arguments.contains("--ui-hiring") { panel = .staff }
             if ProcessInfo.processInfo.arguments.contains(where:{$0.hasPrefix("--ui-management-") && $0 != "--ui-management-night"}) {showManagement=true}
@@ -221,6 +230,7 @@ struct MotelView: View {
         .onChange(of: scenePhase) { _, phase in if phase != .active { stop() } }
         .onDisappear { stop() }
         .sheet(item:$storyGuest) { guest in GuestStoriesView(game:$game,guest:guest) }
+        .sheet(isPresented:$showHavenLife) {HavenLifeView(game:$game,initialTab:havenTab)}
         .sheet(isPresented:$showStoryJournal) { GuestStoriesView(game:$game) }
         .sheet(item:$neighborhood) { shop in NeighborhoodStoreView(game:$game,shop:shop) }
         .sheet(isPresented:$showHome) { HomeDesignView(game:$game) }
@@ -230,7 +240,10 @@ struct MotelView: View {
         .sheet(isPresented: $showMap) {
             MotelPocketMap(motel: motel).presentationDetents([.large]).presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showPause) { pauseSheet.presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
+        .sheet(isPresented: $showPause,onDismiss:{
+            if lifeAfterPause {lifeAfterPause=false;showHavenLife=true}
+            if journalAfterPause {journalAfterPause=false;showStoryJournal=true}
+        }) { pauseSheet.presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
 
     }
 
@@ -239,6 +252,21 @@ struct MotelView: View {
         ZStack {
                 if motel.isRidingBike {
                     Button("Dismount bike") {stop();change{_=$0.dismountBike()}}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("dismountBike")
+                } else if let visitor=motel.homeNeighborIDs.first(where:{motel.isAtHome && motel.actorTile.distance(to:motel.homeNeighborTile($0))<=2 && motel.neighborState($0).welcomedDay != motel.day}) {
+                    Button("Welcome "+ResidentialLayout.names[visitor]) {stop();change{_=$0.welcomeHomeNeighbor(visitor)};game.save()}
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("welcomeHomeNeighbor")
+                } else if motel.nearbyAdventureFind != nil {
+                    Button("Collect the golden keepsake") {stop();change{_=$0.collectAdventureFind()};game.save()}
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("collectAdventureFind")
+                } else if let id=motel.nearHavenNeighbor {
+                    Button("Talk to "+ResidentialLayout.names[id]) {stop();havenTab = .neighbors;showHavenLife=true}
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("talkHavenNeighbor")
+                } else if motel.nearHavenActivity {
+                    Button(motel.todaysActivity?.title ?? "Weekly activity") {stop();havenTab = .calendar;showHavenLife=true}
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("openHavenActivity")
+                } else if let pet=motel.exploringPet {
+                    Button("Explore with "+motel.companionName(pet)) {stop();change{_=$0.exploreWithPet()};game.save()}
+                        .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("exploreWithPet")
                 } else if motel.nearbyBike != nil {
                     Button("Ride bike") {stop();change{_=$0.mountNearbyBike()}}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("rideBike")
                 } else if motel.isRelaxing {
@@ -505,7 +533,8 @@ struct MotelView: View {
                 } else if let id=corral {
                     GameDialogue(speaker:BasementLayout.titles[id],text:motel.corralCare(id).fedDay == motel.day ? "Fresh food and water are ready. Your friend looks content in its own cozy corral." : "Your friend wanders around its decorated corral and watches you from the fence.",portrait:AnyView(CorralCreaturePortrait(kind:id+1)),choices:[
                         DialogueChoice(title:motel.corralCare(id).fedDay == motel.day ? "Fed today" : "Feed",action:{change{_=$0.careForCorral(id,feed:true)};corral=nil}),
-                        DialogueChoice(title:"Pet",action:{change{_=$0.careForCorral(id,feed:false)};corral=nil})
+                        DialogueChoice(title:"Pet",action:{change{_=$0.careForCorral(id,feed:false)};corral=nil}),
+                        DialogueChoice(title:"Adventure & ability",action:{corral=nil;havenTab = .creatures;showHavenLife=true})
                     ]) {corral=nil}.padding(12)
                 } else if let family {
                     GameDialogue(speaker:familyTitle,text:familyMessage,portrait:familyPortrait(family),choices:familyChoices(family)) { self.family = nil }.padding(12)
@@ -803,7 +832,8 @@ struct MotelView: View {
             Text("Getting caught while stealing means loading your latest checkpoint. Changes since that save will be lost.").font(.subheadline).foregroundStyle(.secondary)
             Button("Back to the Airb&b") { showPause = false }.buttonStyle(MotelButtonStyle())
             Button("Load last save") { showPause = false; confirmRestore = true }.buttonStyle(MotelButtonStyle(subdued: true))
-            Button("Guest stories") { showPause=false;showStoryJournal=true }.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("guestStoriesJournal")
+            Button("Haven life & weekly activities") {havenTab = .neighbors;lifeAfterPause=true;showPause=false}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("openHavenLife")
+            Button("Guest stories") { journalAfterPause=true;showPause=false }.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("guestStoriesJournal")
             Button("Options") { showOptions = true }.buttonStyle(MotelButtonStyle(subdued:true))
             Button("Save & return to title") { stop(); game.save(); showPause = false; returnToTitle() }.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("backToTitle")
         }.padding(24).foregroundStyle(cream).presentationBackground(Color(hex: 0x172A25))

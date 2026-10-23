@@ -43,14 +43,14 @@ jobs:
           set -euo pipefail
           xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath device-build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
       - name: Test creative relocation and saved layout after app restart
-        timeout-minutes: 16
+        timeout-minutes: 20
         run: |
           set -euo pipefail
           DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
           echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility -only-testing:LittleHavenUITests/LittleHavenUITests/testPlayerPoolRescueAnimation -only-testing:LittleHavenUITests/LittleHavenUITests/testGuestStoryChoiceAndSavedMemory -only-testing:LittleHavenUITests/LittleHavenUITests/testLanternGuestStoryShow -resultBundlePath CreativeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility -only-testing:LittleHavenUITests/LittleHavenUITests/testPlayerPoolRescueAnimation -only-testing:LittleHavenUITests/LittleHavenUITests/testGuestStoryChoiceAndSavedMemory -only-testing:LittleHavenUITests/LittleHavenUITests/testLanternGuestStoryShow -only-testing:LittleHavenUITests/LittleHavenUITests/testNeighborRelationshipAndFavor -only-testing:LittleHavenUITests/LittleHavenUITests/testWeeklyActivityRoundsAndPrize -only-testing:LittleHavenUITests/LittleHavenUITests/testCorralAdventureAndEmployeeRequest -resultBundlePath CreativeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
       - name: Verify and package IPA
         run: |
           set -euo pipefail
@@ -99,6 +99,12 @@ jobs:
           xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-story-bar --ui-story-playing --ui-testing --ui-touch
           sleep 3
           xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-response-story-music.png
+          for MODE in neighbor calendar team glimmer; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-haven-$MODE" --ui-testing --ui-touch
+            sleep 3
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-haven-$MODE.png"
+          done
       - name: Preserve response previews for early visual review
         uses: actions/upload-artifact@v4
         with:
@@ -109,7 +115,7 @@ jobs:
         timeout-minutes: 24
         run: |
           set -euo pipefail
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SIM_DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -skip-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -skip-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility -skip-testing:LittleHavenUITests/LittleHavenUITests/testPlayerPoolRescueAnimation -skip-testing:LittleHavenUITests/LittleHavenUITests/testGuestStoryChoiceAndSavedMemory -skip-testing:LittleHavenUITests/LittleHavenUITests/testLanternGuestStoryShow -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SIM_DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -skip-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -skip-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenCounterGuestAndToolbarVisibility -skip-testing:LittleHavenUITests/LittleHavenUITests/testPlayerPoolRescueAnimation -skip-testing:LittleHavenUITests/LittleHavenUITests/testGuestStoryChoiceAndSavedMemory -skip-testing:LittleHavenUITests/LittleHavenUITests/testLanternGuestStoryShow -skip-testing:LittleHavenUITests/LittleHavenUITests/testNeighborRelationshipAndFavor -skip-testing:LittleHavenUITests/LittleHavenUITests/testWeeklyActivityRoundsAndPrize -skip-testing:LittleHavenUITests/LittleHavenUITests/testCorralAdventureAndEmployeeRequest -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
       - name: Capture chapter previews
         if: ${{ success() && env.SIM_DEVICE != '' }}
         run: |
