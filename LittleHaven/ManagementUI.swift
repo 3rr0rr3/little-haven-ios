@@ -502,9 +502,20 @@ enum BicycleArt {
 
 
 
+enum RoomBoardFilter:String,CaseIterable,Identifiable {
+    case all="All",ready="Ready",occupied="Occupied",attention="Needs care"
+    var id:String {rawValue}
+}
 enum ManagementTab:String,CaseIterable,Identifiable {
+    case overview="Today"
     case rooms="Rooms",desk="Desk",guests="Guests",team="Team",supplies="Supplies",events="Events",growth="Growth",cameras="Cameras",story="Story",books="Books"
     var id:String {rawValue}
+    var symbol:String {switch self {
+    case .overview:return "square.grid.2x2.fill";case .rooms:return "bed.double.fill";case .desk:return "bell.fill"
+    case .guests:return "person.crop.circle";case .team:return "person.2.fill";case .supplies:return "shippingbox.fill"
+    case .events:return "exclamationmark.bubble.fill";case .growth:return "chart.line.uptrend.xyaxis";case .cameras:return "video.fill"
+    case .story:return "book.fill";case .books:return "banknote.fill"
+    }}
 }
 struct HotelMiniRequest:Identifiable {
     let roomID:Int
@@ -514,7 +525,9 @@ struct HotelMiniRequest:Identifiable {
 struct ManagementHub:View {
     @Binding var game:Game
     @Environment(\.dismiss) private var dismiss
-    @State private var tab:ManagementTab = .rooms
+    @State private var tab:ManagementTab = .overview
+    @State private var roomFilter:RoomBoardFilter = .all
+    @State private var roomSearch=""
     @State private var feedback=""
     @State private var mini:HotelMiniRequest?
     @State private var showHavenLife=false
@@ -523,30 +536,17 @@ struct ManagementHub:View {
     var body:some View {
         NavigationStack {
             VStack(spacing:10) {
-                HStack {
-                    Text("DAY \(motel.day)  \(motel.clockLabel)").font(.caption.monospaced().bold())
-                    Spacer()
-                    Text("\(motel.cash) coins  /  REP \(motel.simulation.reputation)").font(.caption.bold()).foregroundStyle(gold)
-                }.padding(.horizontal)
+                boardHeader
                 if let incident=motel.operationsState.incident {
-                    Button("EMERGENCY: \(incident.kind.title) / \(incident.remaining)s - return to grounds") {dismiss()}
-                        .font(.caption.bold()).foregroundStyle(.orange).accessibilityIdentifier("managementEmergency")
+                    Button {dismiss()} label:{
+                        Label("\(incident.kind.title) · \(incident.remaining)s · Return to grounds",systemImage:"exclamationmark.triangle.fill").font(.subheadline.bold()).padding(12).frame(maxWidth:.infinity).background(Color(hex:0x934936),in:RoundedRectangle(cornerRadius:12))
+                    }.buttonStyle(.plain).padding(.horizontal).accessibilityIdentifier("managementEmergency")
                 }
-                if motel.business.police != nil {Button("Police case needs attention - return to grounds"){dismiss()}.font(.caption.bold()).foregroundStyle(.orange)}
-                Button("Community & activities") {showHavenLife=true}.accessibilityIdentifier("managementHavenLife")
-                Text(motel.simulation.news).font(.caption).frame(maxWidth:.infinity,alignment:.leading).padding(.horizontal).accessibilityIdentifier("managementNews")
-                ScrollView(.horizontal,showsIndicators:false) {
-                    HStack(spacing:8) {
-                        ForEach(ManagementTab.allCases) { item in
-                            Button(item.rawValue) {tab=item}.font(.caption.bold()).padding(9)
-                                .background(tab==item ? gold.opacity(0.3) : Color.white.opacity(0.08),in:Capsule())
-                                .accessibilityIdentifier("manageTab_"+item.id)
-                        }
-                    }.padding(.horizontal)
-                }.accessibilityIdentifier("managementTabs")
+                boardNavigation
                 ScrollView {
                     VStack(alignment:.leading,spacing:16) {
                         switch tab {
+                        case .overview:overviewPanel
                         case .rooms:roomsPanel
                         case .desk:deskPanel
                         case .guests:guestsPanel
@@ -560,19 +560,21 @@ struct ManagementHub:View {
                         }
                     }.padding()
                 }
-                if !feedback.isEmpty {Text(feedback).font(.caption).foregroundStyle(gold).padding(.horizontal).accessibilityIdentifier("managementFeedback")}
+                if !feedback.isEmpty {Label(feedback,systemImage:"info.circle.fill").font(.subheadline).foregroundStyle(gold).padding(12).frame(maxWidth:.infinity,alignment:.leading).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12)).padding(.horizontal).accessibilityIdentifier("managementFeedback")}
                 Text("The hotel keeps running while this board is open.").font(.system(size:10)).foregroundStyle(.secondary).padding(.bottom,6)
-            }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
+            }.foregroundStyle(Color(hex:0xF5E7C8)).background(LinearGradient(colors:[Color(hex:0x143C37),Color(hex:0x102823)],startPoint:.topLeading,endPoint:.bottomTrailing))
                 .navigationTitle("Hotel management").navigationBarTitleDisplayMode(.inline)
                 .sheet(isPresented:$showHavenLife) {HavenLifeView(game:$game)}
                 .toolbar {ToolbarItem(placement:.topBarTrailing) {Button("Done") {dismiss()}.accessibilityIdentifier("closeManagement")}}
         }.tint(gold).presentationBackground(Color(hex:0x172A25))
             .onAppear {
                 let args=ProcessInfo.processInfo.arguments
+                if args.contains("--ui-management") || args.contains("--ui-management-night") {tab = .rooms}
                 if args.contains("--ui-management-cameras") {tab = .cameras}
                 if args.contains("--ui-management-events") {tab = .events}
                 if args.contains("--ui-management-desk") {tab = .desk}
                 if args.contains("--ui-management-growth") {tab = .growth}
+                if args.contains("--ui-management-dashboard") {tab = .overview}
             }
             .sheet(item:$mini) { request in
                 HotelMiniGame(repairing:request.repairing,outfit:FamilyHome.outfitColors[motel.household.outfit]) {
@@ -583,21 +585,139 @@ struct ManagementHub:View {
             }
     }
     private func card<Content:View>(@ViewBuilder _ content:()->Content)->some View {
-        VStack(alignment:.leading,spacing:9,content:content).padding(12).frame(maxWidth:.infinity,alignment:.leading)
-            .background(Color.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+        VStack(alignment:.leading,spacing:12,content:content).padding(16).frame(maxWidth:.infinity,alignment:.leading)
+            .background(LinearGradient(colors:[Color(hex:0x254E46),Color(hex:0x1C3F39)],startPoint:.topLeading,endPoint:.bottomTrailing),in:RoundedRectangle(cornerRadius:18))
+            .overlay(RoundedRectangle(cornerRadius:18).stroke(.white.opacity(0.09),lineWidth:1))
     }
+
+    private var boardHeader:some View {
+        HStack(spacing:12) {
+            Image(systemName:"building.2.crop.circle.fill").font(.title).foregroundStyle(gold)
+            VStack(alignment:.leading,spacing:3) {
+                Text("BRAINSTORM HAVEN").font(.caption.weight(.heavy)).tracking(1.2)
+                Text("Day \(motel.day) · \(motel.clockLabel)").font(.caption).foregroundStyle(.white.opacity(0.65))
+            }
+            Spacer()
+            VStack(alignment:.trailing,spacing:3) {
+                Label(motel.cash.formatted(),systemImage:"circle.circle.fill").font(.headline).foregroundStyle(gold)
+                Text("Reputation \(motel.simulation.reputation)/100").font(.caption).foregroundStyle(.white.opacity(0.65))
+            }
+        }.padding(.horizontal,18).padding(.vertical,8)
+    }
+    private var boardNavigation:some View {
+        HStack(spacing:0) {
+            ScrollViewReader {proxy in
+                ScrollView(.horizontal,showsIndicators:false) {
+                    HStack(spacing:8) {
+                        ForEach(ManagementTab.allCases) {item in
+                            Button {tab=item} label:{
+                                Label(item.rawValue,systemImage:item.symbol).font(.subheadline.weight(.semibold)).padding(.horizontal,14).padding(.vertical,11)
+                                    .background(tab==item ? gold : Color.white.opacity(0.07),in:RoundedRectangle(cornerRadius:12))
+                                    .foregroundStyle(tab==item ? Color(hex:0x173A36) : Color(hex:0xD8E8DB))
+                            }.buttonStyle(.plain).id(item.id).accessibilityIdentifier("manageTab_"+item.id)
+                                .accessibilityValue(tab==item ? "Selected" : "")
+                        }
+                    }.padding(.horizontal,16)
+                }.onChange(of:tab) {_,value in proxy.scrollTo(value.id,anchor:.center)}
+            }
+            Menu {
+                ForEach(ManagementTab.allCases) {item in
+                    Button {tab=item} label:{Label(item.rawValue,systemImage:item.symbol)}.accessibilityIdentifier("manageSection_"+item.id)
+                }
+            } label:{Image(systemName:"square.grid.2x2.fill").font(.title3).padding(12)}
+                .accessibilityLabel("All management sections").accessibilityIdentifier("managementSections")
+        }.accessibilityIdentifier("managementTabs")
+    }
+    private var readyRooms:Int {motel.rooms.filter(\.available).count}
+    private var attentionRooms:Int {motel.rooms.filter{$0.dirty || !$0.health.faults.isEmpty || $0.health.condition<60}.count}
+    private var lowSupplies:[Supply] {Supply.allCases.filter{motel.simulation.stock[$0.rawValue,default:0]<3}}
+    private func metric(_ title:String,value:String,symbol:String,tint:UInt32)->some View {
+        VStack(alignment:.leading,spacing:10) {
+            HStack {Image(systemName:symbol).foregroundStyle(Color(hex:tint));Spacer();Text(title).font(.caption.weight(.semibold))}
+            Text(value).font(.system(.title2,design:.rounded,weight:.bold)).minimumScaleFactor(0.6).lineLimit(1)
+        }.foregroundStyle(Color(hex:0x173A36)).padding(16).frame(maxWidth:.infinity,alignment:.leading)
+            .background(Color(hex:0xF3E9D3),in:RoundedRectangle(cornerRadius:18))
+    }
+    private var overviewPanel:some View {
+        VStack(alignment:.leading,spacing:20) {
+            HStack(alignment:.firstTextBaseline) {
+                VStack(alignment:.leading,spacing:5) {Text("Your hotel, at a glance").font(.title2.bold()).accessibilityIdentifier("managementOverview");Text("Start with what needs you today.").font(.subheadline).foregroundStyle(.white.opacity(0.65))}
+                Spacer()
+            }
+            LazyVGrid(columns:[GridItem(.flexible()),GridItem(.flexible())],spacing:12) {
+                metric("Occupied",value:"\(motel.occupancy) / \(motel.rooms.count)",symbol:"bed.double.fill",tint:0x467F7E)
+                metric("Ready rooms",value:"\(readyRooms)",symbol:"checkmark.seal.fill",tint:0x577B53)
+                metric("Arrivals",value:"\(motel.waiting.count)",symbol:"person.crop.circle.badge.plus",tint:0xAA7852)
+                metric("Daily wages",value:"\(motel.operationsState.workers.reduce(0,{$0+motel.scheduledWage($1.role)}))",symbol:"person.2.fill",tint:0x8C718D)
+            }
+            VStack(alignment:.leading,spacing:12) {
+                Text("Needs attention").font(.headline)
+                if motel.operationsState.incident==nil && motel.simulation.issues.isEmpty && attentionRooms==0 && lowSupplies.isEmpty && !motel.simulation.powerOut && !motel.simulation.waterOut && motel.business.police==nil {
+                    Label("Everything is running smoothly",systemImage:"checkmark.circle.fill").foregroundStyle(.mint).font(.subheadline)
+                }
+                if motel.operationsState.incident != nil {dashboardAction("Respond to emergency",detail:"Return to the grounds now",symbol:"flame.fill",urgent:true,id:"quickEmergency"){dismiss()}}
+                if motel.business.police != nil {dashboardAction("Officer needs you",detail:"Return to resolve the police case",symbol:"exclamationmark.shield.fill",urgent:true,id:"quickPolice"){dismiss()}}
+                if motel.simulation.powerOut || motel.simulation.waterOut {dashboardAction("Restore utilities",detail:"Power or water is offline",symbol:"bolt.slash.fill",urgent:true,id:"quickUtilities"){tab = .events}}
+                if !motel.simulation.issues.isEmpty {dashboardAction("\(motel.simulation.issues.count) guest requests",detail:"Review deadlines and respond",symbol:"exclamationmark.bubble.fill",urgent:true,id:"quickEvents"){tab = .events}}
+                if attentionRooms>0 {dashboardAction("\(attentionRooms) rooms need care",detail:"Clean rooms or repair faults",symbol:"sparkles",id:"quickAttention"){roomFilter = .attention;tab = .rooms}}
+                if !lowSupplies.isEmpty {dashboardAction("Restock essentials",detail:lowSupplies.map(\.title).joined(separator:", "),symbol:"shippingbox.fill",id:"quickSupplies"){tab = .supplies}}
+            }.padding(16).frame(maxWidth:.infinity,alignment:.leading).background(Color.white.opacity(0.045),in:RoundedRectangle(cornerRadius:18))
+            Text("Quick actions").font(.headline)
+            LazyVGrid(columns:[GridItem(.flexible()),GridItem(.flexible())],spacing:12) {
+                dashboardAction("Front desk",detail:"Assign arriving guests",symbol:"bell.fill",id:"quickDesk"){tab = .desk}
+                dashboardAction("Rooms",detail:"View availability",symbol:"bed.double.fill",id:"quickRooms"){roomFilter = .all;tab = .rooms}
+                dashboardAction("Team",detail:"Shifts and training",symbol:"person.2.fill",id:"quickTeam"){tab = .team}
+                dashboardAction("Haven life",detail:"Goals, meals and discoveries",symbol:"leaf.fill",id:"managementHavenLife"){showHavenLife=true}
+            }
+            card {
+                Label("Today's update",systemImage:"newspaper.fill").font(.headline)
+                Text(motel.simulation.news).font(.subheadline).foregroundStyle(.white.opacity(0.75)).accessibilityIdentifier("managementNews")
+                if motel.simulation.billDebt+motel.simulation.loanDebt>0 {
+                    Button("Review bills and loans") {tab = .books}.buttonStyle(.bordered)
+                }
+            }
+        }
+    }
+    private func dashboardAction(_ title:String,detail:String,symbol:String,urgent:Bool=false,id:String,action:@escaping()->Void)->some View {
+        Button(action:action) {
+            HStack(alignment:.top,spacing:10) {
+                Image(systemName:symbol).font(.title3).frame(width:23).foregroundStyle(urgent ? Color(hex:0xF2A78D) : gold)
+                VStack(alignment:.leading,spacing:5) {Text(title).font(.subheadline.weight(.semibold));Text(detail).font(.caption).foregroundStyle(.white.opacity(0.62))}
+                Spacer(minLength:0)
+                Image(systemName:"chevron.right").font(.caption.weight(.bold)).foregroundStyle(.white.opacity(0.4))
+            }.frame(maxWidth:.infinity,alignment:.leading).padding(14)
+                .background(urgent ? Color(hex:0x754D3E).opacity(0.45) : Color.white.opacity(0.06),in:RoundedRectangle(cornerRadius:14))
+        }.buttonStyle(.plain).accessibilityIdentifier(id)
+    }
+    private var filteredRooms:[MotelRoom] {
+        motel.rooms.filter {room in
+            let matches=roomSearch.isEmpty || "\(room.number)".contains(roomSearch) || (room.guest?.name.localizedCaseInsensitiveContains(roomSearch) ?? false)
+            switch roomFilter {
+            case .all:return matches
+            case .ready:return matches && room.available
+            case .occupied:return matches && room.guest != nil
+            case .attention:return matches && (room.dirty || !room.health.faults.isEmpty || room.health.condition<60)
+            }
+        }
+    }
+
     private var roomsPanel:some View {
         VStack(alignment:.leading,spacing:14) {
-            Text("Room condition controls availability, comfort, complaints and reviews. Suites unlock at reputation 60.").font(.caption)
-            ForEach(motel.rooms) {room in roomCard(room)}
+            Text("Find the right room").font(.title2.bold())
+            TextField("Search room number or guest",text:$roomSearch).textFieldStyle(.plain).padding(13).background(.white.opacity(0.08),in:RoundedRectangle(cornerRadius:12)).submitLabel(.done).autocorrectionDisabled().textInputAutocapitalization(.never).accessibilityIdentifier("roomSearch")
+            Picker("Room status",selection:$roomFilter) {ForEach(RoomBoardFilter.allCases) {value in Text(value.rawValue).tag(value)}}.pickerStyle(.segmented).accessibilityIdentifier("roomStatusFilter")
+            Text("\(filteredRooms.count) rooms · \(readyRooms) ready to book").font(.caption).foregroundStyle(.white.opacity(0.65)).accessibilityIdentifier("roomResultCount")
+            if filteredRooms.isEmpty {Label("No rooms match this filter",systemImage:"magnifyingglass").padding(.vertical,25)}
+            ForEach(filteredRooms) {room in roomCard(room)}
         }
     }
     private func roomCard(_ room:MotelRoom)->some View {
         card {
             HStack {
-                RoomIllustration(theme:room.theme,level:room.furniture,office:false).frame(width:70,height:70)
+                RoomIllustration(theme:room.theme,level:room.furniture,office:false).frame(width:48,height:48).clipShape(RoundedRectangle(cornerRadius:10))
                 VStack(alignment:.leading,spacing:4) {
-                    Text("ROOM \(room.number) / \(room.health.kind.title)").font(.headline)
+                    Text("Room \(room.number)").font(.title3.bold())
+                    Text(room.health.kind.title+" · "+(room.guest != nil ? "Occupied" : room.available ? "Ready" : "Needs care")).font(.caption.weight(.semibold)).foregroundStyle(room.available ? .mint : gold)
                     Text(room.guest.map { $0.name+" / "+$0.kind.title } ?? (room.available ? "Ready for assignment" : "Needs attention")).font(.caption)
                     Text("\(motel.rate(for:room)) / night").font(.caption.bold()).foregroundStyle(gold)
                 }
@@ -608,16 +728,17 @@ struct ManagementHub:View {
             ProgressView(value:Double(room.health.condition)/100).tint(gold)
             if !room.health.faults.isEmpty {Text(room.health.faults.map(\.title).sorted().joined(separator:", ")).font(.caption).foregroundStyle(.orange)}
             HStack {
-                Button("Clean mini-game") {mini=HotelMiniRequest(roomID:room.id,repairing:false)}.accessibilityIdentifier("miniClean_\(room.id)")
+                Button("Clean room") {mini=HotelMiniRequest(roomID:room.id,repairing:false)}.accessibilityIdentifier("miniClean_\(room.id)")
                 Button("Repair / pests") {mini=HotelMiniRequest(roomID:room.id,repairing:true)}.accessibilityIdentifier("miniRepair_\(room.id)")
             }.font(.caption.bold()).buttonStyle(.bordered)
+            DisclosureGroup("Room options & upgrades") {
             if room.guest == nil {
                 Menu("Change room type") {
                     ForEach(RoomKind.allCases) { kind in
                         Button("\(kind.title) / \(kind.cost)") {_=perform{$0.changeRoomKind(room.id,kind:kind)}}.disabled(kind==room.health.kind || motel.cash<kind.cost || kind == .suite && motel.simulation.reputation<60)
                     }
                 }
-                Menu("Install meaningful upgrade") {
+                Menu("Add a room upgrade") {
                     ForEach(RoomUpgrade.allCases) { upgrade in
                         Button("\(upgrade.title) / \(upgrade.cost)") {_=perform{$0.buyRoomUpgrade(room.id,upgrade:upgrade)}}.disabled(room.health.upgrades.contains(upgrade)||motel.cash<upgrade.cost)
                     }
@@ -626,6 +747,8 @@ struct ManagementHub:View {
             ForEach(Array(room.health.upgrades).sorted{$0.rawValue<$1.rawValue}) {upgrade in
                 Text("? \(upgrade.title): \(upgrade.benefit)").font(.caption2)
             }
+            }.font(.subheadline)
+
         }
     }
     private var deskPanel:some View {
@@ -831,11 +954,12 @@ struct ManagementHub:View {
         }
     }
     private func change(_ action:(inout Motel)->Void) {
-        guard var current=game.motel else{return};action(&current);game.motel=current;feedback=current.lastEvent
+        guard var current=game.motel else{return};action(&current);game.motel=current;feedback=current.lastEvent;game.save()
     }
     @discardableResult private func perform(_ action:(inout Motel)->Bool)->Bool {
         guard var current=game.motel else{return false};let result=action(&current);game.motel=current
-        feedback=result ? "Changes applied." : "Unavailable. Check coins, supplies, room occupancy and unlock requirements."
+        feedback=result ? current.lastEvent : "Not available yet. Check the cost, supplies and requirements shown on this card."
+        if result {game.save()}
         return result
     }
 }

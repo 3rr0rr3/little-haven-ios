@@ -1174,3 +1174,10 @@ extension Motel {
         logMoney(20,category:"Optional goal",note:goalTitle(key));expansionNote("Daily goal complete! +20 coins and one repair part.");return true
     }
 }
+
+
+extension Motel {
+    func guestUsesBeachwear(at tile:Tile)->Bool {
+        visit==nil && worldState.place == .grounds && tile.y>=42 && BeachLayout.contains(tile) && !BeachLayout.water(tile)
+    }
+}

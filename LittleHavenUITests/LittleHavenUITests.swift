@@ -272,10 +272,12 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertFalse(app.buttons["openManagement"].exists)
         app.buttons["office_computer"].tap()
         XCTAssertTrue(app.buttons["miniClean_1"].waitForExistence(timeout:5))
+        if !app.buttons["miniClean_1"].isHittable {app.swipeUp()}
         app.buttons["miniClean_1"].tap()
         XCTAssertTrue(app.buttons["miniGameTap"].waitForExistence(timeout:3))
         app.buttons["Cancel"].tap()
-        app.buttons["manageTab_Supplies"].tap()
+        app.buttons["managementSections"].tap()
+        app.buttons["manageSection_Supplies"].tap()
         XCTAssertTrue(app.buttons["buy_toiletries"].waitForExistence(timeout:3))
         app.buttons["buy_toiletries"].tap()
         XCTAssertTrue(app.staticTexts["In stock: 16"].exists)
@@ -732,6 +734,28 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Walk east"].waitForExistence(timeout:10),"Collected discovery survives loading and controls remain available")
     }
 
+
+    func testManagementDashboardFiltersAndQuickActions() {
+        let app=launch("--ui-management-dashboard")
+        XCTAssertTrue(app.staticTexts["managementOverview"].waitForExistence(timeout:10))
+        let attention=app.buttons["quickAttention"]
+        if !attention.isHittable {app.swipeUp()}
+        XCTAssertTrue(attention.exists)
+        attention.tap()
+        XCTAssertTrue(app.segmentedControls["roomStatusFilter"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["miniClean_1"].exists)
+        XCTAssertFalse(app.buttons["miniClean_0"].exists,"Needs-care filter excludes the healthy occupied room")
+        capture(app,"Management room care filter")
+        app.buttons["managementSections"].tap()
+        app.buttons["manageSection_Supplies"].tap()
+        XCTAssertTrue(app.buttons["buy_toiletries"].waitForExistence(timeout:5))
+        app.buttons["buy_toiletries"].tap()
+        XCTAssertTrue(app.staticTexts["In stock: 16"].exists)
+        app.buttons["managementSections"].tap()
+        app.buttons["manageSection_Today"].tap()
+        XCTAssertTrue(app.staticTexts["managementOverview"].waitForExistence(timeout:5))
+        capture(app,"Actionable hotel dashboard")
+    }
     private func launch(_ fixture: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [fixture, "--ui-testing"]

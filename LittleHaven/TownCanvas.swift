@@ -124,7 +124,7 @@ struct PaperPortrait: View {
 // Layered geometric paper shapes: round heads, wide eyes, mitten hands and short coats.
 enum PaperPerson {
     static func draw(context: inout GraphicsContext, x: Double, y: Double,
-                     color: UInt32, variant: Int, facing: Int, walk: Double, expression: String = "", hands:Bool=true, kneeling:Bool=false) {
+                     color: UInt32, variant: Int, facing: Int, walk: Double, expression: String = "", hands:Bool=true, kneeling:Bool=false, beachwear:Bool=false) {
         if [7,8,9].contains(variant) { PersonalArt.draw(context: &context, x: x, y: y, variant: variant, facing: facing, walk: walk,shirt:color,hands:hands,kneeling:kneeling); return }
         let ink: UInt32 = 0x343333
         let seed = abs(variant)
@@ -155,18 +155,35 @@ enum PaperPerson {
         if facing == 1 || facing == 2 {
             context.translateBy(x:x+8,y:0);context.scaleBy(x:0.72,y:1);context.translateBy(x:-x-8,y:0)
         }
-        box(3.7, 12, 4.1, 3.1 + walk * 0.4, 0x3D4754)
-        box(8.2, 12, 4.1, 3.1 - walk * 0.4, 0x3D4754)
-        oval(2.8, 14 + walk * 0.4, 5.2, 1.8, 0x302F30)
-        oval(8, 14 - walk * 0.4, 5.2, 1.8, 0x302F30)
+        box(3.7, 12, 4.1, 3.1 + walk * 0.4, beachwear ? skin : 0x3D4754)
+        box(8.2, 12, 4.1, 3.1 - walk * 0.4, beachwear ? skin : 0x3D4754)
+        oval(2.8, 14 + walk * 0.4, 5.2, 1.8, beachwear ? 0x9D7752 : 0x302F30)
+        oval(8, 14 - walk * 0.4, 5.2, 1.8, beachwear ? 0x9D7752 : 0x302F30)
         var coat = Path()
         coat.move(to: CGPoint(x: x + 4, y: y + 5 - bob))
         coat.addQuadCurve(to: CGPoint(x: x + 1.8, y: y + 13 - bob), control: CGPoint(x: x + 1, y: y + 8 - bob))
         coat.addQuadCurve(to: CGPoint(x: x + 14.2, y: y + 13 - bob), control: CGPoint(x: x + 8, y: y + 15 - bob))
         coat.addQuadCurve(to: CGPoint(x: x + 12, y: y + 5 - bob), control: CGPoint(x: x + 15, y: y + 8 - bob))
         coat.closeSubpath()
-        shape(coat, color)
-        if facing == 0 {
+        shape(coat, beachwear ? skin : color)
+        if beachwear {
+            let swim:UInt32=[UInt32(0xE99478),0x67B6A2,0xE3BF68,0xA698C4][seed%4]
+            box(2.8,10.8,10.4,3.1,swim)
+            line([CGPoint(x:3,y:11.2),CGPoint(x:13,y:11.2)],0xFFF0CB,0.55)
+            if seed%3==0 {
+                if facing==3 {box(3.2,5.7,9.6,5.4,color)}
+                else {box(3.2,5.7,3.1,5.4,color);box(9.7,5.7,3.1,5.4,color)}
+                for (fx,fy) in [(4.5,7.0),(11.2,9.0)] {oval(fx,fy,1.3,1.3,0xFFF0CB,false)}
+            } else if seed%3==1 {
+                box(3.7,7.3,8.6,2.4,swim)
+                line([CGPoint(x:4.4,y:7.3),CGPoint(x:5,y:5.2)],swim,0.8)
+                line([CGPoint(x:11.6,y:7.3),CGPoint(x:11,y:5.2)],swim,0.8)
+            } else {
+                box(4.2,5.7,7.6,5.1,color)
+                box(4.3,8.3,7.4,1,0xFFF0CB)
+            }
+            if facing==0 {line([CGPoint(x:8,y:11.8),CGPoint(x:8,y:13.7)],ink,0.2)}
+        } else if facing == 0 {
             if seed % 3 == 0 { box(3, 8, 10, 1.3, 0xEEE3BA) }
             if seed % 3 == 1 { box(4, 7, 2, 5, 0x445B69) }
             if seed % 4 == 0 { box(10, 10, 3, 3, 0xBD975F) }

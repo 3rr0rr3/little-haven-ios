@@ -37,6 +37,29 @@ struct ContentView: View {
         Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}
 
+
+        if args.contains("--ui-beach-outfits") || args.contains("--ui-beach-outfits-street") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeExpansion()
+            sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:54,y:48)
+            var sim=sample.motel!.simulation;sim.hour=14;sample.motel!.simulation=sim
+            let guests=Motel.arrivals(day:1,count:3,randomize:false)
+            var life=sample.motel!.expansion
+            for i in 0..<3 {
+                sample.motel!.rooms[i].guest=guests[i];sample.motel!.rooms[i].nightsLeft=2
+                let tile=Tile(x:53+i,y:49)
+                life.routines[guests[i].id]=HavenRoutineGuest(tile:tile,previous:tile,activity:.beach)
+            }
+            sample.motel!.havenExpansion=life
+            if args.contains("--ui-beach-outfits-street") {
+                sample.motel!.world!.player=Tile(x:54,y:36)
+                var state=sample.motel!.expansion
+                for i in 0..<3 {let tile=Tile(x:53+i,y:37);state.routines[guests[i].id]=HavenRoutineGuest(tile:tile,previous:tile,activity:.walk)}
+                sample.motel!.havenExpansion=state
+            }
+            sample.save();return sample
+        }
+
         if args.contains(where:{$0.hasPrefix("--ui-expansion-")}) {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeExpansion()
             sample.motel!.cash=5000;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000

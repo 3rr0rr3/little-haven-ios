@@ -1666,3 +1666,17 @@ func resortExpansionRules() {
     print("PASS: routines and room presence, room-aware bookings, breakfast inventory and queue, weather prevention, milestone gates, discoveries, optional goals and old saves")
 }
 resortExpansionRules()
+
+
+func beachWardrobeRules() {
+    var hotel=Motel();hotel.initializeWorld();hotel.world!.place = .grounds
+    require(hotel.guestUsesBeachwear(at:Tile(x:54,y:49)),"Guests switch to beach clothing on dry sand")
+    require(!hotel.guestUsesBeachwear(at:Tile(x:54,y:37)),"Guests return to normal clothing away from the beach")
+    require(!hotel.guestUsesBeachwear(at:Tile(x:65,y:49)),"Deep water is not a clothing changing location")
+    hotel.world!.place = .office
+    require(!hotel.guestUsesBeachwear(at:Tile(x:54,y:49)),"Interior guests keep their regular clothing")
+    hotel.world!.place = .grounds;hotel.visit=RoomVisit(roomID:0,sneaking:false)
+    require(!hotel.guestUsesBeachwear(at:Tile(x:54,y:49)),"Room visits never inherit an outdoor outfit")
+    print("PASS: beach clothing boundaries and return to everyday outfits")
+}
+beachWardrobeRules()
