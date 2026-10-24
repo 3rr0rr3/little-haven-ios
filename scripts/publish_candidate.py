@@ -33,6 +33,8 @@ def blob(path, content):
 blob('downloads/BrainstormHaven-45.ipa', data)
 verification = {'source':source, 'version':'45.0', 'build':'50', 'size':len(data), 'sha256':digest}
 blob('downloads/BrainstormHaven-45-verification.json', json.dumps(verification, indent=2).encode())
+for report in sorted(Path('.').glob('ReleaseStartup-*-report.json')):
+    blob('verification/v45/' + report.name, report.read_bytes())
 for image in sorted(Path('.').glob('LittleHaven-response-painted-*.png')):
     reduced = Path('/tmp') / (image.stem+'.jpg')
     subprocess.run(['sips','-s','format','jpeg','-s','formatOptions','90','-Z','1100',str(image),'--out',str(reduced)],check=True,stdout=subprocess.DEVNULL)
