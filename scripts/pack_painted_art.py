@@ -75,7 +75,8 @@ for source in SOURCES:
     if source['kind']=='materials':
         for i,label in enumerate(materials):
             # Source sheets can contain a thin divider between material cells.
-            # Exclude that atlas border when slicing; it must not become a
+            # Exclude the divider consistently from all sixteen material cells;
+            # the source atlas border must not become a
             # repeated black grid through sand, grass or water in the game.
             tile=image.crop((round(i%4*w/4)+2,round(i//4*h/4)+2,round((i%4+1)*w/4)-2,round((i//4+1)*h/4)-2)).resize((256,256),Image.Resampling.LANCZOS)
             save_asset('bh-'+label,tile)
