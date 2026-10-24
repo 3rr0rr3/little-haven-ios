@@ -195,6 +195,7 @@ private struct CompatibleOfficeActor: View {
             ZStack {
                 if actor.action.isEmpty {
                     ActorArtwork(actor:actor,stride:stride).scaleEffect(actor.displayScale)
+                        .offset(y:(actor.animal > 0 || actor.creature) ? 11*(1-actor.displayScale) : 0)
                 } else {
                     WorkingCharacterArtwork(kind:actor.action,frame:phase*3,color:actor.color,variant:actor.variant,facing:actor.facing)
                 }
