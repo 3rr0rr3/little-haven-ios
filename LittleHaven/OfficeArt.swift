@@ -24,8 +24,18 @@ enum CozyScenery {
     }
     static func ground(context:inout GraphicsContext,x:Double,y:Double,kind:Int,seed:Int) {
         let rect=CGRect(x:x,y:y,width:16,height:16)
+        if kind==2 {
+            // Asphalt is a continuous surface, not the old pebble-path atlas.
+            context.fill(Path(rect),with:.color(Color(hex:0x626E71)))
+            for i in 0..<4 {
+                let dx=Double(abs(seed*17+i*43)%149)/10+0.4
+                let dy=Double(abs(seed*29+i*61)%149)/10+0.4
+                context.fill(Path(ellipseIn:CGRect(x:x+dx,y:y+dy,width:0.22,height:0.16)),with:.color(Color(hex:0xBDC5BF).opacity(0.13)))
+            }
+            return
+        }
         guard kind==1 else {
-            PaintedArt.texture(kind==2 ? "road" : "grass",in:rect,context:&context,unit:64)
+            PaintedArt.texture("grass",in:rect,context:&context,unit:64)
             return
         }
         // Small paving courses share world coordinates across tile boundaries.

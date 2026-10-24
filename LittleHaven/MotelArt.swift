@@ -246,7 +246,10 @@ struct MotelGroundsCanvas: View, Animatable {
                     let homePath=(54...55).contains(col) && (14...17).contains(row)
                     let paved = residentialPath || homePath || RPGMaps.hotelSidewalk(Tile(x:col,y:row)) || ((43...70).contains(col) && (29...31).contains(row))
                     CozyScenery.ground(context:&context,x:px,y:py,kind:road ? 2 : paved ? 1 : 0,seed:col*17+row*31)
-                    if road && row == 36 && col % 3 != 0 { rect(px+2,py+7,12,2,0xF8E8A0) }
+                    // Painted road markings stop at the two existing junctions.
+                    if road && row == 36 && col % 3 != 0 && !(40...42).contains(col) {rect(px+2,py+7,12,2,0xF8E8A0)}
+                    if road && row == 19 && col > 42 && col % 3 != 0 {rect(px+2,py+7,12,2,0xF8E8A0)}
+                    if road && col == 41 && row % 3 != 0 && !(18...20).contains(row) && !(35...37).contains(row) {rect(px+7,py+2,2,12,0xF8E8A0)}
                     if !BeachLayout.contains(Tile(x:col,y:row)) && (col == 0 || col == MotelGrounds.width - 1 || row == 0 || row == MotelGrounds.height - 1) {
                         CozyScenery.tree(context:&context,x:px,y:py)
                     }
