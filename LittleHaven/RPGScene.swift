@@ -56,6 +56,7 @@ struct RPGSceneView: UIViewRepresentable {
     var nightVision = false
     var powerOut = false
     var pumpFault = false
+    var poolOffset=Tile(x:0,y:0)
     var pumpPosition=Tile(x:10,y:21)
     var lifeProps:[HavenWorldProp] = []
     let scenery: () -> AnyView
@@ -110,7 +111,7 @@ struct RPGSceneView: UIViewRepresentable {
         scene.configure(mapID: mapID, revision: revision, mapSize: mapSize,
                         columns: columns, interior: interior, actors: actors,
                         working: working, workKind: workKind, visual: visual,
-                        weather:weather,cars:cars,bikePositions:bikePositions,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,pumpPosition:pumpPosition,lifeProps:lifeProps,scenery: scenery)
+                        weather:weather,cars:cars,bikePositions:bikePositions,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,pumpPosition:pumpPosition,poolOffset:poolOffset,lifeProps:lifeProps,scenery: scenery)
         }
     }
     static func dismantleUIView(_ view: SKView, coordinator: Coordinator) {
@@ -291,7 +292,7 @@ final class RPGScene: SKScene {
     @MainActor func configure(mapID: String, revision newRevision: String,
                              mapSize: CGSize, columns: CGFloat, interior: Bool,
                              actors: [RPGActor], working: Bool, workKind:String,
-                             visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],bikePositions:[Int:Tile],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,pumpFault:Bool,pumpPosition:Tile,lifeProps:[HavenWorldProp],
+                             visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],bikePositions:[Int:Tile],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,pumpFault:Bool,pumpPosition:Tile,poolOffset:Tile,lifeProps:[HavenWorldProp],
                              scenery: () -> AnyView) {
         StartupTrace.stage("spritekit_configure_"+mapID)
         let changedMap = worldID != mapID
@@ -317,6 +318,7 @@ final class RPGScene: SKScene {
             worldID = mapID
             revision = newRevision
         }
+        configureWater(mapID:mapID,poolOffset:poolOffset)
         configureHomeTV(mapID:mapID)
         configurePumpFault(active:mapID == "grounds" && pumpFault,at:pumpPosition)
         configureAmbient(night:night && !interior,nightVision:nightVision,powerOut:powerOut)
@@ -500,6 +502,64 @@ final class RPGScene: SKScene {
 
 
     // Native scene animation: no SwiftUI timer, map rerender or per-frame textures.
+    // Bounded, reusable animated nodes. No image generation, map rasterization,
+    // collision work or SwiftUI state updates happen on water animation frames.
+    private func configureWater(mapID:String,poolOffset:Tile) {
+        guard mapID=="grounds" || mapID=="town" else {
+            world.childNode(withName:"living-water")?.removeFromParent();return
+        }
+        let key="\(mapID)-\(poolOffset.x)-\(poolOffset.y)-\(UIAccessibility.isReduceMotionEnabled)"
+        if let old=world.childNode(withName:"living-water"),old.userData?["key"] as? String==key {return}
+        world.childNode(withName:"living-water")?.removeFromParent()
+        let root=SKNode();root.name="living-water";root.zPosition = -9999
+        root.userData=NSMutableDictionary(dictionary:["key":key]);world.addChild(root)
+        let pool=mapID=="town" ? CGRect(x:227,y:211,width:58,height:42) : CGRect(x:51+poolOffset.x*16,y:291+poolOffset.y*16,width:107,height:75)
+        func surface(_ shape:Path)->SKCropNode {
+            var flip=CGAffineTransform(scaleX:1,y:-1)
+            let crop=SKCropNode(),mask=SKShapeNode(path:shape.cgPath.copy(using:&flip)!)
+            mask.fillColor = .white;mask.strokeColor = .clear;crop.maskNode=mask;root.addChild(crop);return crop
+        }
+        func ripple(_ parent:SKNode,x:Double,y:Double,width:Double,index:Int) {
+            let curve=CGMutablePath();curve.move(to:CGPoint(x:0,y:0))
+            curve.addQuadCurve(to:CGPoint(x:width,y:0.2),control:CGPoint(x:width*0.46,y:1.8))
+            let wave=SKShapeNode(path:curve);wave.strokeColor=UIColor(red:0.84,green:0.97,blue:0.92,alpha:1)
+            wave.lineWidth=index%3==0 ? 0.65 : 0.4;wave.lineCap = .round
+            wave.position=CGPoint(x:x,y:-y);wave.alpha=0.12;parent.addChild(wave)
+            guard !UIAccessibility.isReduceMotionEnabled else{return}
+            let duration=3.2+Double(index%5)*0.37,origin=wave.position
+            let reset=SKAction.run { [weak wave] in wave?.position=origin;wave?.xScale=0.72;wave?.alpha=0 }
+            wave.run(.repeatForever(.sequence([reset,.wait(forDuration:Double(index%7)*0.21),.group([
+                .moveBy(x:2.5,y:1.2,duration:duration),.scaleX(to:1.12,duration:duration),
+                .sequence([.fadeAlpha(to:0.34,duration:duration*0.42),.fadeOut(withDuration:duration*0.58)])
+            ])])))
+        }
+        let poolSurface=surface(Path(roundedRect:pool.insetBy(dx:1,dy:1),cornerRadius:4))
+        for i in 0..<12 {
+            ripple(poolSurface,x:pool.minX+4+Double((i*29)%max(1,Int(pool.width-22))),y:pool.minY+5+Double((i*17)%max(1,Int(pool.height-10))),width:8+Double(i%4)*2,index:i)
+        }
+        if mapID=="grounds" {
+            let sea=surface(BeachArt.waterShape())
+            for i in 0..<36 {
+                let y=681+Double((i*47)%336),row=min(63,Int(y/16))
+                let x=Double(BeachLayout.shoreline(row)*16)+12+Double((i*31)%135)
+                ripple(sea,x:x,y:y,width:12+Double(i%5)*3,index:i)
+            }
+            for i in 0..<3 {
+                var flip=CGAffineTransform(scaleX:1,y:-1)
+                let foam=SKShapeNode(path:BeachArt.coastline().cgPath.copy(using:&flip)!)
+                foam.strokeColor=UIColor(red:0.94,green:0.98,blue:0.9,alpha:1)
+                foam.lineWidth=0.8+Double(i)*0.25;foam.lineCap = .round;foam.alpha=0.18
+                foam.position.x=CGFloat(3+i*4);sea.addChild(foam)
+                guard !UIAccessibility.isReduceMotionEnabled else{continue}
+                let reset=SKAction.run { [weak foam] in foam?.position.x=13;foam?.alpha=0 }
+                foam.run(.repeatForever(.sequence([reset,.wait(forDuration:Double(i)*1.5),.group([
+                    .moveBy(x:-12,y:0,duration:4.6),
+                    .sequence([.fadeAlpha(to:0.48,duration:2.1),.fadeOut(withDuration:2.5)])
+                ])])))
+            }
+        }
+    }
+
     private func configurePumpFault(active:Bool,at tile:Tile) {
         if !active {world.childNode(withName:"pool-pump-fault")?.removeFromParent();return}
         if let existing=world.childNode(withName:"pool-pump-fault") {existing.position=CGPoint(x:tile.x*16+8,y:-(tile.y*16+15));return}
@@ -1036,7 +1096,7 @@ struct MotelRPGView: View {
         return RPGSceneView(mapID: mapID, revision: worldRevision, mapSize: CGSize(width: interior ? 144 : MotelGrounds.width*16, height: interior ? 144 : MotelGrounds.height*16), columns: 14, interior: interior, actors: actors, working: workProgress > 0,
                             workKind:motel.cleaningTarget == 0 ? "bed" : motel.cleaningTarget == 1 ? "trash" : "mop",
                             visual:motel.operationsState.visual,weather:motel.weather,cars:motel.parkedBikes,bikePositions:motel.bikeParking,day:motel.day,
-                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps+motel.expansionWorldProps+motel.gardenWorldProps+motel.celebrationWorldProps) {
+                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),poolOffset:motel.creativeOffset("pool"),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps+motel.expansionWorldProps+motel.gardenWorldProps+motel.celebrationWorldProps) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }
             if motel.worldState.place == .office { return AnyView(MotelOfficeCanvas(sceneryOnly: true, motel: motel, x: 0, y: 0)) }
             return AnyView(MotelGroundsCanvas(motel: motel, x: 0, y: 0, npcTick: 0, sceneryOnly: true, fullMap: true))

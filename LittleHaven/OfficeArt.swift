@@ -23,8 +23,28 @@ enum CozyScenery {
         shade.fill(Path(ellipseIn:CGRect(x:-1,y:-1,width:2,height:2)),with:.color(Color(hex:0x425C42).opacity(0.18)))
     }
     static func ground(context:inout GraphicsContext,x:Double,y:Double,kind:Int,seed:Int) {
-        let material=kind==1 ? "stone-a" : kind==2 ? "road" : "grass"
-        PaintedArt.texture(material,in:CGRect(x:x,y:y,width:16,height:16),context:&context,unit:64)
+        let rect=CGRect(x:x,y:y,width:16,height:16)
+        guard kind==1 else {
+            PaintedArt.texture(kind==2 ? "road" : "grass",in:rect,context:&context,unit:64)
+            return
+        }
+        // Small paving courses share world coordinates across tile boundaries.
+        // Quiet mortar and variation replace the oversized weed-filled atlas.
+        var paving=context;paving.clip(to:Path(rect))
+        paving.fill(Path(rect),with:.color(Color(hex:0xB7AA8D)))
+        for row in Int(floor(y/8))...Int(floor((y+16)/8)) {
+            let stagger=row%2==0 ? 0.0 : 6.5
+            for col in Int(floor((x-stagger)/13))...Int(floor((x+16-stagger)/13)) {
+                let hash=abs(row*73+col*137)
+                let stone=CGRect(x:Double(col)*13+stagger+0.45,y:Double(row)*8+0.45,width:12.1,height:7.1)
+                let outline=Path(roundedRect:stone,cornerRadius:1.15)
+                paving.fill(outline,with:.color(Color(hex:[UInt32(0xD9CBA9),0xD4C5A3,0xDECFAD,0xD0C3A6,0xD8C9AA][hash%5])))
+                paving.stroke(outline,with:.color(Color(hex:0x8C806A).opacity(0.38)),lineWidth:0.35)
+                var edge=Path();edge.move(to:CGPoint(x:stone.minX+1.6,y:stone.minY+0.6))
+                edge.addLine(to:CGPoint(x:stone.maxX-1.6,y:stone.minY+0.6))
+                paving.stroke(edge,with:.color(Color(hex:0xF2E5C7).opacity(0.45)),lineWidth:0.4)
+            }
+        }
     }
 
     static func tree(context:inout GraphicsContext,x:Double,y:Double) {
@@ -137,15 +157,13 @@ enum CozyScenery {
         shadow(context:&context,x:x,y:y+h-3,w:w+5,h:10)
         block(context:&context,x:x,y:y,w:w,h:h,color:0xE9E2CD,depth:2)
         let water=Path(roundedRect:CGRect(x:x+4,y:y+4,width:w-8,height:h-8),cornerRadius:5)
-        context.fill(water,with:.color(Color(hex:0xA3D9D0)))
-        var paintedWater=context;paintedWater.clip(to:water)
-        PaintedArt.texture("water",in:CGRect(x:x+4,y:y+4,width:w-8,height:h-8),context:&paintedWater,unit:64,opacity:0.8)
-        context.stroke(water,with:.color(Color(hex:0x639D9B).opacity(0.4)),lineWidth:1)
-        for i in 0..<5 {
-            let xx=x+10+Double(i%3)*(w-26)/3,yy=y+13+Double(i/3)*(h-22)/2
-            var wave=Path();wave.move(to:CGPoint(x:xx,y:yy));wave.addQuadCurve(to:CGPoint(x:xx+12,y:yy),control:CGPoint(x:xx+6,y:yy+1.5))
-            context.stroke(wave,with:.color(Color.white.opacity(0.5)),style:StrokeStyle(lineWidth:0.7,lineCap:.round))
-        }
+        let bounds=CGRect(x:x+4,y:y+4,width:w-8,height:h-8)
+        context.fill(water,with:.linearGradient(Gradient(colors:[Color(hex:0x88D3CD),Color(hex:0x55B5BD),Color(hex:0x3B9FAA)]),startPoint:CGPoint(x:x,y:y),endPoint:CGPoint(x:x+w,y:y+h)))
+        var reflection=context;reflection.clip(to:water)
+        reflection.fill(Path(ellipseIn:bounds.insetBy(dx:8,dy:12)),with:.color(Color(hex:0xB2ECE0).opacity(0.14)))
+        context.stroke(water,with:.color(Color(hex:0x397E87).opacity(0.42)),lineWidth:0.7)
+        // Motion is a small SpriteKit overlay, never a full-map redraw.
+
     }
 }
 
@@ -573,29 +591,28 @@ enum ShopKeeperArt {
 }
 
 enum BeachArt {
-    static func draw(context c:inout GraphicsContext,motel:Motel?=nil) {
-        for row in stride(from:40,to:64,by:2) {for col in stride(from:0,to:39,by:2) {CozyScenery.tree(context:&c,x:Double(col*16),y:Double(row*16+8))}}
-        let sand=CGRect(x:640,y:640,width:512,height:384)
-        c.fill(Path(sand),with:.color(Color(hex:0xEBDBB1)))
-        PaintedArt.texture("sand",in:sand,context:&c,unit:96)
+    static func coastline()->Path {
         var coast=Path();coast.move(to:CGPoint(x:Double(BeachLayout.shoreline(42)*16),y:672))
         for row in 42..<MotelGrounds.height {
             let x=Double(BeachLayout.shoreline(row)*16),next=Double(BeachLayout.shoreline(row+1)*16),y=Double(row*16)
             coast.addQuadCurve(to:CGPoint(x:(x+next)/2,y:y+16),control:CGPoint(x:x,y:y+8))
         }
-        var water=coast
+        return coast
+    }
+    static func waterShape()->Path {
+        var water=coastline()
         water.addLine(to:CGPoint(x:1152,y:1024));water.addLine(to:CGPoint(x:1152,y:672));water.closeSubpath()
-        c.fill(water,with:.color(Color(hex:0xA3DCD5)))
-        var paintedWater=c;paintedWater.clip(to:water);PaintedArt.texture("water",in:sand,context:&paintedWater,unit:96,opacity:0.70)
-        c.stroke(coast,with:.color(Color(hex:0xDCEBDD)),style:StrokeStyle(lineWidth:8,lineCap:.round,lineJoin:.round))
-        c.stroke(coast,with:.color(Color(hex:0xFFF3D8)),style:StrokeStyle(lineWidth:2.5,lineCap:.round,lineJoin:.round))
-        for row in 42..<MotelGrounds.height {
-            let x=Double(BeachLayout.shoreline(row)*16),y=Double(row*16)
-            for i in 0..<3 {
-                var wave=Path();wave.move(to:CGPoint(x:x+20+Double(i*43),y:y+7));wave.addQuadCurve(to:CGPoint(x:x+36+Double(i*43),y:y+7),control:CGPoint(x:x+28+Double(i*43),y:y+9))
-                c.stroke(wave,with:.color(Color.white.opacity(0.45)),style:StrokeStyle(lineWidth:1,lineCap:.round))
-            }
-        }
+        return water
+    }
+    static func draw(context c:inout GraphicsContext,motel:Motel?=nil) {
+        for row in stride(from:40,to:64,by:2) {for col in stride(from:0,to:39,by:2) {CozyScenery.tree(context:&c,x:Double(col*16),y:Double(row*16+8))}}
+        let sand=CGRect(x:640,y:640,width:512,height:384)
+        c.fill(Path(sand),with:.color(Color(hex:0xEBDBB1)))
+        PaintedArt.texture("sand",in:sand,context:&c,unit:96)
+        let coast=coastline(),water=waterShape()
+        c.fill(water,with:.linearGradient(Gradient(colors:[Color(hex:0x8ED6CB),Color(hex:0x55B7BC),Color(hex:0x328DA6)]),startPoint:CGPoint(x:940,y:800),endPoint:CGPoint(x:1152,y:800)))
+        c.stroke(coast,with:.color(Color(hex:0xB7DCD0).opacity(0.7)),style:StrokeStyle(lineWidth:7,lineCap:.round,lineJoin:.round))
+        c.stroke(coast,with:.color(Color(hex:0xF4EBD2).opacity(0.8)),style:StrokeStyle(lineWidth:1.3,lineCap:.round,lineJoin:.round))
         for col in 40..<58 {CozyScenery.block(context:&c,x:Double(col*16),y:641,w:15.8,h:13,color:0xBC9C75,depth:0.6)}
         for (id,tile) in BeachLayout.palms.enumerated() {
             let saved=c,d=motel?.creativeOffset("palm-\(id)") ?? Tile(x:0,y:0)

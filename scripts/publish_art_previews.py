@@ -24,6 +24,13 @@ for index,image in enumerate(images[:30]):
     name=image.stem+'.jpg' if image.name.startswith('LittleHaven') else 'diagnostic-'+str(index)+'.jpg'
     entries.append({'path':'previews/art-review/'+name,'mode':'100644','type':'blob','sha':blob['sha']})
 assert entries,'No native screenshots to review'
+motion=Path('LittleHaven-water-motion.mp4')
+if motion.exists():
+    data=motion.read_bytes()
+    result=api('/git/blobs',{'content':base64.b64encode(data).decode(),'encoding':'base64'})
+    assert result['sha']==hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+    entries.append({'path':'previews/art-review/LittleHaven-water-motion.mp4','mode':'100644','type':'blob','sha':result['sha']})
+
 tree=api('/git/trees',{'base_tree':api('/git/commits/'+source)['tree']['sha'],'tree':entries})
 commit=api('/git/commits',{'message':'Native painted art review evidence [skip ci]','tree':tree['sha'],'parents':[source]})
 print(json.dumps({'source':source,'captured_source':os.environ.get('ART_SOURCE_SHA',source),'preview_commit':commit['sha'],'branch':branch,'images':len(entries)}),flush=True)

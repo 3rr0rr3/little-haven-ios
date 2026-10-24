@@ -119,7 +119,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          for MODE in basement family-home office-preview beach home-store home-exterior neighborhood motel-room bar fish creative; do
+          for MODE in basement family-home office-preview beach water-pool home-store home-exterior neighborhood motel-room bar fish creative; do
             xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
             xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch --ui-painted-check
             sleep 5
@@ -131,6 +131,14 @@ jobs:
             sleep 7
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-action-$MODE.png"
           done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-beach --ui-testing --ui-touch
+          sleep 4
+          xcrun simctl io "$SIM_DEVICE" recordVideo --codec=h264 LittleHaven-water-motion.mp4 &
+          WATER_VIDEO_PID=$!
+          sleep 8
+          kill -INT "$WATER_VIDEO_PID"
+          wait "$WATER_VIDEO_PID"
           xcrun xcresulttool export attachments --path CreativeResults.xcresult --output-path /tmp/art-ui-diagnostics || true
           python3 scripts/publish_art_previews.py
       - name: Preserve response previews for early visual review
@@ -138,7 +146,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Response-previews
-          path: LittleHaven-response-*.png
+          path: |
+            LittleHaven-response-*.png
+            LittleHaven-water-motion.mp4
           if-no-files-found: error
       - name: Test controls, motel management and game-over recovery
         timeout-minutes: 24

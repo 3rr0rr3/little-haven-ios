@@ -283,10 +283,10 @@ struct ContentView: View {
             sample.motel!.operations!.nextIncidentTick=10000
             sample.save();return sample
         }
-        if args.contains("--ui-beach") {
+        if args.contains("--ui-beach") || args.contains("--ui-water-pool") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.cash=2500;sample.motel!.waiting=[]
-            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:57,y:50)
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=args.contains("--ui-water-pool") ? Tile(x:10,y:20) : Tile(x:57,y:50)
             sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
             for _ in 0..<20 {sample.motel!.tickWorld()}
             sample.save();return sample
