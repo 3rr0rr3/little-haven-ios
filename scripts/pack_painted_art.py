@@ -74,7 +74,10 @@ for source in SOURCES:
     image=Image.open(original).convert('RGBA');w,h=image.size
     if source['kind']=='materials':
         for i,label in enumerate(materials):
-            tile=image.crop((round(i%4*w/4),round(i//4*h/4),round((i%4+1)*w/4),round((i//4+1)*h/4))).resize((256,256),Image.Resampling.LANCZOS)
+            # Source sheets can contain a thin divider between material cells.
+            # Exclude that atlas border when slicing; it must not become a
+            # repeated black grid through sand, grass or water in the game.
+            tile=image.crop((round(i%4*w/4)+2,round(i//4*h/4)+2,round((i%4+1)*w/4)-2,round((i//4+1)*h/4)-2)).resize((256,256),Image.Resampling.LANCZOS)
             save_asset('bh-'+label,tile)
     elif source['kind'] in ['props','furniture','fixtures','equipment','facades']:
         labels=props if source['kind']=='props' else fixtures if source['kind']=='fixtures' else equipment if source['kind']=='equipment' else facades if source['kind']=='facades' else furniture

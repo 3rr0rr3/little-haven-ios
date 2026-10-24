@@ -1894,7 +1894,7 @@
         256,
         256
       ],
-      "sha256": "3d095eb7ca681421c3838f980384ca95d4d11f8c5a1039316d9aa39719f6667a"
+      "sha256": "73751485a0b5c6423f53525a3d32e90255515262dc9b726c9bf8fffaf95eddc9"
     },
     {
       "name": "bh-stone-b",
@@ -1903,7 +1903,7 @@
         256,
         256
       ],
-      "sha256": "363eb31b9bc635b53a298c0ad5440e0d7e0b40866de7689e3c611fb6510717f5"
+      "sha256": "ea0fdbfa166c618f3bb2d35fcc6cb52813619ffecfab1d4acae149c42202dcf3"
     },
     {
       "name": "bh-stone-c",
@@ -1912,7 +1912,7 @@
         256,
         256
       ],
-      "sha256": "6878b4922a6b487b1282a947dfb1c752e38fb012eee3c51abe1096a18eb96ca2"
+      "sha256": "01727240b5ed6f733ff1b744c51fbfcc522fe6e459db5bd407788e9ce907b6f3"
     },
     {
       "name": "bh-stone-d",
@@ -1921,7 +1921,7 @@
         256,
         256
       ],
-      "sha256": "b6167c4d4b3466dffb2000eec1d5be14fd7d3a0b3ed62931231bebec06dbcbe7"
+      "sha256": "9bd51a1c4023b9fe2a188e33baf7433286c31a005e27fb6a4179dc2140eaa29a"
     },
     {
       "name": "bh-grass",
@@ -1930,7 +1930,7 @@
         256,
         256
       ],
-      "sha256": "b240226eddfb80ee02b4507dff2a3f1ff1f6a6c93dd005550c671a1ef606553f"
+      "sha256": "8acbb5328c3ec37a6e8d1e824276e9f73ff541396ec41522f91efdb3fbae6789"
     },
     {
       "name": "bh-sand",
@@ -1939,7 +1939,7 @@
         256,
         256
       ],
-      "sha256": "59c0941a632dacc6b0fbabfafc4a0a360059d9e1521942499c4948ba23ad5d02"
+      "sha256": "ba210938cc607ca84b7d2b2d2418ef210fb188990b340337db2b21db7f457cd5"
     },
     {
       "name": "bh-water",
@@ -1948,7 +1948,7 @@
         256,
         256
       ],
-      "sha256": "e916c63467801ee5b5ea4645e1b109299acc7048a5ee70f7c14ecc8c6340d735"
+      "sha256": "8d93ea62aff2727089155d6f0aa4449337e7249ba26ec379784e3408edc3019d"
     },
     {
       "name": "bh-earth",
@@ -1957,7 +1957,7 @@
         256,
         256
       ],
-      "sha256": "81179c3649ca389865fa142bb345f01acde90aaa9c3d1a1b27689da3db95ed6a"
+      "sha256": "1c12772730067f4357202d654ccd58aeb18ce74f77a0fbc6efab3cf5a1e9b512"
     },
     {
       "name": "bh-oak",
@@ -1966,7 +1966,7 @@
         256,
         256
       ],
-      "sha256": "29fabe5ccc552eaed6f098190c575cc40639ecf2e21bdb6d87aeeb9546c42ccf"
+      "sha256": "eaec92fc1883f9ccba15927b4915f30f23ad58881c664a5dbd9fa648b1c3c40d"
     },
     {
       "name": "bh-walnut",
@@ -1975,7 +1975,7 @@
         256,
         256
       ],
-      "sha256": "5db12c8622ac913f175794aae8ef31005db712a6145878c29cddb8dfd80794f2"
+      "sha256": "89ed633cb3d260c46bfd8797214f30fc453d39b18fbf471afd3c2622fe88ce60"
     },
     {
       "name": "bh-plaster",
@@ -1984,7 +1984,7 @@
         256,
         256
       ],
-      "sha256": "6cf46c48bd9648f4cacb1a22fec5b0b2a905ebb074b0199ba7ce9d6c194439c3"
+      "sha256": "46fb465818a614d2b75152e6be450ddd50e133064da9d2aca644cc26c709953e"
     },
     {
       "name": "bh-roof",
@@ -1993,7 +1993,7 @@
         256,
         256
       ],
-      "sha256": "1dd9224fb7d82d62a04477891fc381e79804467cd240afa92b90d56b097816fd"
+      "sha256": "60135731bb87cfe8d5609fa4bdc7385de530cbbed45471777b8d7eeecc8cc9d2"
     },
     {
       "name": "bh-road",
@@ -2002,7 +2002,7 @@
         256,
         256
       ],
-      "sha256": "93355d0be1d50268dbf713c92f86a69fe889aebc51b55619a944c6ca459baa49"
+      "sha256": "35e85aeac80d9bf06451d6cf8c74849bbed00766d66023aa62a00546776d75cb"
     },
     {
       "name": "bh-moss",
@@ -2011,7 +2011,7 @@
         256,
         256
       ],
-      "sha256": "888a9cae327bcaf56a400c85152ad997889593baf9a327b465d050bbbb87fe73"
+      "sha256": "759373314c39763a106e951a2e1c9c6d321034bce6aeff12d8520b77e7ad87da"
     },
     {
       "name": "bh-straw",
@@ -2020,7 +2020,7 @@
         256,
         256
       ],
-      "sha256": "34522fc190da1e7638f14d3f63bc348ecfb0ca30b9698e7b05f4ea9338e4f20f"
+      "sha256": "de4e3174db814db9e693891bfa79d0c548bd0a033f7ce6aa2f2f0d366af6f3ea"
     },
     {
       "name": "bh-timber",
@@ -2029,7 +2029,7 @@
         256,
         256
       ],
-      "sha256": "652af834174dea8125c61df8cfa44ff1c074b05b809f2cfdeeff6f0a7dbc06b4"
+      "sha256": "696d72eba1512a9a195dfec6275d875572efc6c94b5f9c8e2b0a66ddb1f341b8"
     },
     {
       "name": "bh-fence-h",
