@@ -102,12 +102,48 @@ struct MotelView: View {
         StartupTrace.stage("hotel_content_constructed")
         return content
     }
-    private var hotelContent: some View {
-        Group {
-            if motel.caught { gameOver }
-            else if fullscreenTouch { fullscreenWorld }
-            else { worldScreen }
+    // Erase each small modifier group before building the next one. Erasing only
+    // the final hotelContent still constructed the entire nested value on the
+    // wake-button call stack (the final stage reported by the physical phone).
+    // Keep these calls out of line in optimized builds as well as Debug builds.
+    private var hotelContent: AnyView {
+        var content=AnyView(MotelScreenSection(makeContent:makeHotelScreen))
+        StartupTrace.stage("hotel_screen_deferred")
+        content=hotelChrome(content)
+        StartupTrace.stage("hotelChrome_constructed")
+        content=hotelStartupTasks(content)
+        StartupTrace.stage("hotelStartupTasks_constructed")
+        content=hotelMovementTasks(content)
+        StartupTrace.stage("hotelMovementTasks_constructed")
+        content=hotelSimulationTasks(content)
+        StartupTrace.stage("hotelSimulationTasks_constructed")
+        content=hotelObservers(content)
+        StartupTrace.stage("hotelObservers_constructed")
+        content=hotelSheets(content)
+        StartupTrace.stage("hotelSheets_constructed")
+        return content
+    }
+
+    @inline(never) private func makeHotelScreen() -> AnyView {
+        StartupTrace.stage("hotel_screen_begin")
+        if motel.caught {
+            StartupTrace.stage("hotel_game_over_begin")
+            return AnyView(gameOver)
         }
+        if fullscreenTouch {
+            StartupTrace.stage("hotel_fullscreen_begin")
+            let screen=AnyView(fullscreenWorld)
+            StartupTrace.stage("hotel_fullscreen_constructed")
+            return screen
+        }
+        StartupTrace.stage("hotel_standard_begin")
+        let screen=AnyView(worldScreen)
+        StartupTrace.stage("hotel_standard_constructed")
+        return screen
+    }
+
+    @inline(never) private func hotelChrome(_ content:AnyView) -> AnyView {
+        AnyView(content
         .sheet(isPresented:$showCreative) {
             CreativeModeView(motel:motel,move:{id,tile in
                 var moved=false
@@ -134,6 +170,11 @@ struct MotelView: View {
             }.allowsHitTesting(false)
         }
         .transaction { if testingUI { $0.disablesAnimations = true } }
+        )
+    }
+
+    @inline(never) private func hotelStartupTasks(_ content:AnyView) -> AnyView {
+        AnyView(content
         .task {
             StartupTrace.stage("hotel_initialization_begin")
             change { $0.reconcileInteriorSpawn(); if !testingUI || ProcessInfo.processInfo.arguments.contains("--ui-management") { $0.enableManagement() } }
@@ -168,6 +209,11 @@ struct MotelView: View {
             do {try await Task.sleep(for:.seconds(10))} catch {return}
             StartupTrace.finish("hotel_stable",ifID:attempt)
         }
+        )
+    }
+
+    @inline(never) private func hotelMovementTasks(_ content:AnyView) -> AnyView {
+        AnyView(content
         .task(id:joystickDirection != nil) {
             guard fullscreenTouch,joystickDirection != nil else{return}
             let clock=ContinuousClock()
@@ -198,6 +244,11 @@ struct MotelView: View {
                 nextStep=max(nextStep+interval,clock.now+interval/4)
             }
         }
+        )
+    }
+
+    @inline(never) private func hotelSimulationTasks(_ content:AnyView) -> AnyView {
+        AnyView(content
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             var ticks = 0
@@ -238,6 +289,11 @@ struct MotelView: View {
             try? await Task.sleep(for: .seconds(3))
             if !Task.isCancelled && toast == text { toast = nil }
         }
+        )
+    }
+
+    @inline(never) private func hotelObservers(_ content:AnyView) -> AnyView {
+        AnyView(content
         .onChange(of: motel.business.police?.arrived) { _, arrived in
             if arrived == true {
                 stop();panel=nil;family=nil;talkingRoom=nil;corral=nil
@@ -253,6 +309,11 @@ struct MotelView: View {
         .onChange(of: paused) { _, value in if value { stop() } }
         .onChange(of: scenePhase) { _, phase in if phase != .active { stop() } }
         .onDisappear { stop() }
+        )
+    }
+
+    @inline(never) private func hotelSheets(_ content:AnyView) -> AnyView {
+        AnyView(content
         .sheet(item:$storyGuest) { guest in GuestStoriesView(game:$game,guest:guest) }
         .sheet(isPresented:$showHavenLife) {HavenLifeView(game:$game,initialTab:havenTab)}
         .sheet(isPresented:$showStoryJournal) { GuestStoriesView(game:$game) }
@@ -268,9 +329,8 @@ struct MotelView: View {
             if lifeAfterPause {lifeAfterPause=false;showHavenLife=true}
             if journalAfterPause {journalAfterPause=false;showStoryJournal=true}
         }) { pauseSheet.presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
-
+        )
     }
-
 
     private var nearbyTouchActions:some View {
         ZStack {
@@ -347,7 +407,7 @@ struct MotelView: View {
     }
     private var fullscreenWorld:some View {
         ZStack {
-            scene.ignoresSafeArea()
+            deferredScene.ignoresSafeArea()
                 .environment(\.worldTouch,interactAtTouch)
             VStack(spacing:8) {
                 if hideFullscreenToolbar {
@@ -443,7 +503,7 @@ struct MotelView: View {
                         .font(.system(size:11,weight:.heavy)).frame(maxWidth:.infinity).padding(9).background(Color(hex:0x6A3D3D))
                 }.accessibilityIdentifier("policeAlarm")
             }
-            scene
+            deferredScene
                 .clipShape(RoundedRectangle(cornerRadius: 20))
                 .overlay(RoundedRectangle(cornerRadius: 20).stroke(cream.opacity(0.18), lineWidth: 1))
                 // Notifications must not participate in the map's layout or move its touch targets.
@@ -596,6 +656,15 @@ struct MotelView: View {
                 } else if let panel {
                     interactionPanel(panel).modifier(RPGFrame()).padding(12)
                 }
+    }
+
+    private var deferredScene: some View {
+        MotelScreenSection {
+            StartupTrace.stage("hotel_map_begin")
+            let map=AnyView(scene)
+            StartupTrace.stage("hotel_map_constructed")
+            return map
+        }
     }
 
     @ViewBuilder private var scene: some View {
@@ -1204,4 +1273,11 @@ struct GuestStoriesView: View {
                 .tint(Color(hex:0xEFC977)).accessibilityIdentifier("guestStorySheet")
         }
     }
+}
+
+// A fixed-size, non-generic boundary between hotel chrome and its active screen.
+// SwiftUI evaluates the closure only when this child's body is requested.
+private struct MotelScreenSection: View {
+    let makeContent: () -> AnyView
+    var body: AnyView { makeContent() }
 }
