@@ -23,7 +23,7 @@ enum Town {
     static let door = Tile(x: 15, y: 7)
     static let neighbors: [Neighbor] = [
         .init(id: 0, name: "Milo", role: "Gardener", tile: .init(x: 8, y: 17), gift: 65, color: 0xDD9567, greeting: "New roots take a little help. Are you the traveler hoping to buy the empty cottage?", reply: "Here's 65 coins from my flower stall. Plant something beautiful when you move in!"),
-        .init(id: 1, name: "June", role: "Baker", tile: .init(x: 4, y: 9), gift: 80, color: 0xE7B7C8, greeting: "A home is where the bread smells best. What brings you to Little Haven?", reply: "Take 80 coins. When you get your keys, I'll bring the first loaf."),
+        .init(id: 1, name: "June", role: "Baker", tile: .init(x: 4, y: 9), gift: 80, color: 0xE7B7C8, greeting: "A home is where the bread smells best. What brings you to Brainstorm Haven?", reply: "Take 80 coins. When you get your keys, I'll bring the first loaf."),
         .init(id: 2, name: "Theo", role: "Fisher", tile: .init(x: 14, y: 17), gift: 70, color: 0x71A8C9, greeting: "The pond is quiet today. Sit a while. What's on your mind?", reply: "I saved 70 coins from yesterday's catch. Your dream sounds worth sharing."),
         .init(id: 3, name: "Fern", role: "Librarian", tile: .init(x: 8, y: 5), gift: 90, color: 0xA998C8, greeting: "Every good story needs a place to begin. Have you found yours?", reply: "90 coins for your next chapter. You can borrow a book for the new shelf, too."),
         .init(id: 4, name: "Otis", role: "Carpenter", tile: .init(x: 4, y: 15), gift: 100, color: 0xC98559, greeting: "That little cottage has solid beams. Built them myself, years ago.", reply: "Let me put 100 coins toward it. A house deserves someone who cares."),

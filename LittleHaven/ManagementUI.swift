@@ -3,6 +3,7 @@ import SwiftUI
 struct NeighborhoodStoreView:View {
     @Binding var game:Game
     let shop:NeighborhoodShop
+    @State private var showGardenKitchen=false
     @Environment(\.dismiss) private var dismiss
     private var motel:Motel {game.motel ?? Motel()}
     private func change(_ action:(inout Motel)->Void) {var value=motel;action(&value);game.motel=value}
@@ -11,12 +12,16 @@ struct NeighborhoodStoreView:View {
             VStack(alignment:.leading,spacing:18) {
                 HStack {Text(shop.title).font(.largeTitle.bold());Spacer();Button("Close"){dismiss()}}
                 Text("\(motel.cash) COINS").font(.headline.monospaced()).foregroundStyle(Color(hex:0xEFC977))
-                Text(shop.detail)
+                Text(shop.keeperName+" / "+shop.detail)
                 if shop == .furniture {
+                    if (0..<3).contains(where:{motel.neighborState($0).favorPending && !motel.neighborState($0).parcel}) {
+                        Button("Collect neighbor parcels") {change{_=$0.collectNeighborParcels()};game.save()}
+                            .disabled(!motel.canTrade(.furniture)).accessibilityIdentifier("collectNeighborParcels")
+                    }
                     ForEach(HomeObject.allCases) {kind in
                         HStack {HomeItemIcon(kind:kind).frame(width:46,height:46);Text(kind.title);Spacer();Button("Buy / \(kind.price)"){change{_=$0.buyHomeObject(kind)}}.disabled(motel.cash<kind.price).accessibilityIdentifier("buy_home_"+kind.rawValue)}
                     }
-                    Text("Walk north to your house, enter and choose DECORATE to place purchases.").font(.caption)
+                    Text("Take your purchases home and use the workbench to place them.").font(.caption)
                 } else if shop == .clothing {
                     ForEach(FamilyHome.outfitNames.indices,id:\.self) {index in
                         HStack {
@@ -25,6 +30,39 @@ struct NeighborhoodStoreView:View {
                             Button(motel.household.outfit == index ? "Wearing" : motel.household.outfits.contains(index) ? "Wear" : "Buy / 80") {change{_=$0.wearOutfit(index)}}.disabled(motel.household.outfit == index || (!motel.household.outfits.contains(index) && motel.cash<80)).accessibilityIdentifier("outfit_\(index)")
                         }
                     }
+                } else if shop == .fish {
+                    Button("Garden kitchen & recipes") {showGardenKitchen=true}.accessibilityIdentifier("shopGardenKitchen")
+                    ForEach(FishMeal.allCases) {meal in
+                        HStack {
+                            Label(meal.title,systemImage:"fish.fill");Spacer()
+                            Button("Order / \(meal.price)") {change{_=$0.orderFishMeal(meal)}}
+                                .disabled(!motel.canTrade(.fish) || motel.cash<meal.price)
+                                .accessibilityIdentifier("orderMeal_"+meal.rawValue)
+                        }
+                    }
+                    if let meal=motel.worldState.fishMeal {Label("Marina served: "+meal.title,systemImage:"checkmark.circle.fill")}
+                    Text("Fresh fish from the coast, shared tables and warm conversation.").font(.caption)
+                } else if shop == .bar {
+                    if motel.lanternShowAvailable {
+                        Text("Rowan is ready to play today.").font(.headline)
+                        Button("Start Rowan's set / +60 coins") {
+                            change {_=$0.startLanternShow()};game.save();dismiss()
+                        }.disabled(!motel.canTrade(.bar)).accessibilityIdentifier("startLanternShow")
+                    } else if motel.storyBook.performedDay == motel.day {
+                        Label("Rowan's live set · promise kept",systemImage:"music.note")
+                    }
+                    ForEach(BarDrink.allCases) {drink in
+                        HStack {
+                            Label(drink.title,systemImage:"wineglass.fill");Spacer()
+                            Button("Order / \(drink.price)") {change{_=$0.orderBarDrink(drink)}}
+                                .disabled(!motel.canTrade(.bar) || motel.cash<drink.price)
+                                .accessibilityIdentifier("orderDrink_"+drink.rawValue)
+                        }
+                    }
+                    if let drink=motel.worldState.barDrink {
+                        Label("Jules served: "+drink.title,systemImage:"checkmark.circle.fill").foregroundStyle(Color(hex:0xA8D7BA))
+                    }
+                    Text("Music, warm lights and good company. Take a seat and enjoy the evening.").font(.caption)
                 } else {
                     if motel.household.stolen.isEmpty {Text("Your bag is empty. No belongings have been sold automatically.")}
                     ForEach(RoomVisit.lootNames.indices,id:\.self) {item in
@@ -34,6 +72,7 @@ struct NeighborhoodStoreView:View {
                 }
             }.padding(24)
         }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x233E33)).tint(Color(hex:0xEFC977)).buttonStyle(.bordered).accessibilityIdentifier("neighborhoodShop")
+            .sheet(isPresented:$showGardenKitchen){HavenLifeView(game:$game,initialTab:.garden)}
     }
 }
 struct HomeDesignView:View {
@@ -85,7 +124,7 @@ struct DialogueChoice: Identifiable {
 }
 struct RPGFrame: ViewModifier {
     func body(content: Content) -> some View {
-        content.padding(14).background(Color(hex:0x20372F))
+        content.padding(14).background(PaintedPanel(color:0x20372F))
             .overlay(Rectangle().stroke(Color(hex:0xE9C77D),lineWidth:2).allowsHitTesting(false))
             .overlay(Rectangle().inset(by:5).stroke(Color(hex:0xE9C77D).opacity(0.25),lineWidth:1).allowsHitTesting(false))
     }
@@ -95,13 +134,14 @@ struct GameDialogue: View {
     let text: String
     let portrait: AnyView
     let choices: [DialogueChoice]
+    var dismissible=true
     let close: () -> Void
     var body: some View {
         VStack(alignment:.leading,spacing:12) {
             HStack {
                 Text(speaker.uppercased()).font(.system(size:13,weight:.black,design:.monospaced)).tracking(1).foregroundStyle(Color(hex:0xF2CE7F))
                 Spacer()
-                Button("Back",action:close).font(.system(size:11,weight:.bold,design:.monospaced)).foregroundStyle(Color(hex:0xE9DAB9))
+                if dismissible {Button("Back",action:close).font(.system(size:11,weight:.bold,design:.monospaced)).foregroundStyle(Color(hex:0xE9DAB9))}
             }
             HStack(alignment:.top,spacing:12) {
                 portrait.frame(width:64,height:76).background(Color(hex:0x344E40)).overlay(Rectangle().stroke(Color(hex:0xC4A96F),lineWidth:1))
@@ -130,7 +170,7 @@ struct StaffPanel: View {
     var body: some View {
         ScrollView { VStack(alignment:.leading,spacing:14) {
             Text("HIRE EMPLOYEES").font(.headline).foregroundStyle(Color(hex:0xEFC977))
-            Text("First shift included. Wages are paid each morning. Unpaid staff rest until the next paid shift.").font(.caption)
+            Text("Unlock employees by checking in guests. Each hire adds their own work station. First shift included; wages are paid each morning.").font(.caption)
             ForEach(StaffRole.allCases) { role in
                 let worker = motel.operationsState.workers.first { $0.role == role }
                 HStack(alignment:.top,spacing:10) {
@@ -140,7 +180,7 @@ struct StaffPanel: View {
                         Text(role.duty).font(.caption)
                         Text("\(role.wage) coins/day").font(.caption.monospaced()).foregroundStyle(Color(hex:0xEFC977))
                         if let worker { Text(worker.active ? (worker.status ?? "On duty") : "Off duty: unpaid shift").font(.caption.bold()) }
-                        else { Button("Hire \(role.name) / \(role.hireCost)") { hire(role) }.buttonStyle(MotelButtonStyle()).disabled(motel.cash < role.hireCost).accessibilityIdentifier("hire_"+role.rawValue) }
+                        else { Text(motel.hiringProgress(role)).font(.caption).foregroundStyle(Color(hex:0xEFC977)); Button("Hire \(role.name) / \(role.hireCost)") { hire(role) }.buttonStyle(MotelButtonStyle()).disabled(!motel.hiringUnlocked(role) || motel.cash < role.hireCost).accessibilityIdentifier("hire_"+role.rawValue) }
                     }
                 }
             }
@@ -199,19 +239,25 @@ enum ChaosArt {
             context.stroke(path,with:.color(Color(hex:tint)),lineWidth:width)
         }
         if kind == 1 {
-            // Flames stretch, sparks rise and smoke drifts independently.
+            // Smoke is behind the flames, with a broad hot base and three distinct tongues.
             for i in 0..<4 {
-                let x=2+Double(i)*4.5
-                let sway=sin(phase+Double(i))*2.5
-                var flame=Path()
-                flame.move(to:CGPoint(x:x,y:26))
-                flame.addQuadCurve(to:CGPoint(x:x+4+sway,y:3+Double(i%2)*5),control:CGPoint(x:x-3,y:15))
-                flame.addQuadCurve(to:CGPoint(x:x+8,y:26),control:CGPoint(x:x+13,y:14))
-                context.fill(flame,with:.color(Color(hex:i%2 == 0 ? 0xE96D38 : 0xF8C74F)))
-                oval(x+2,18,4,8,0xFFE7A0)
-                let rise=(stride*2+Double(i)*3).truncatingRemainder(dividingBy:16)
-                oval(x+sin(phase)*2,14-rise,5+rise/4,4+rise/4,0x79776E)
-                oval(x+3,20-rise,1.2,1.8,0xFFD879)
+                let rise=(stride*1.4+Double(i)*4).truncatingRemainder(dividingBy:18)
+                var smoke=context;smoke.opacity=0.22+rise/80
+                smoke.fill(Path(ellipseIn:CGRect(x:5+Double(i)*3+sin(phase)*2,y:12-rise/2,width:5+rise/3,height:4+rise/3)),with:.color(Color(hex:0x746B60)))
+            }
+            for i in 0..<3 {
+                let x=1+Double(i)*7,sway=sin(phase+Double(i)*1.7)*2
+                let top=4+Double(i%2)*3+cos(phase)*1.5
+                var flame=Path();flame.move(to:CGPoint(x:x,y:26))
+                flame.addCurve(to:CGPoint(x:x+4+sway,y:top),control1:CGPoint(x:x-3,y:19),control2:CGPoint(x:x+7,y:15))
+                flame.addCurve(to:CGPoint(x:x+8,y:26),control1:CGPoint(x:x+3,y:14),control2:CGPoint(x:x+12,y:20))
+                flame.closeSubpath()
+                context.fill(flame,with:.linearGradient(Gradient(colors:[Color(hex:0xED7230),Color(hex:0xFFC448)]),startPoint:CGPoint(x:x,y:6),endPoint:CGPoint(x:x,y:26)))
+                var core=Path();core.move(to:CGPoint(x:x+1,y:26))
+                core.addQuadCurve(to:CGPoint(x:x+5+sway/2,y:15),control:CGPoint(x:x+2,y:21))
+                core.addQuadCurve(to:CGPoint(x:x+7,y:26),control:CGPoint(x:x+9,y:24));core.closeSubpath()
+                context.fill(core,with:.color(Color(hex:0xFFF0AE)))
+                oval(x+4+sway,10-(stride+Double(i)*2).truncatingRemainder(dividingBy:8),0.8,1.4,0xFFCF68)
             }
         } else if kind == 2 {
             // Render the same guest, then submerge the lower body. Identity survives the event.
@@ -274,6 +320,7 @@ enum RoomObjectArt {
     static func draw(context: inout GraphicsContext, index:Int, x:Double, y:Double, scale:Double = 1) {
         var c=context
         c.translateBy(x:x,y:y); c.scaleBy(x:scale,y:scale)
+        if PaintedArt.draw(index==0 ? "suitcase" : index==1 ? "watch" : "camera",in:CGRect(x:0,y:0,width:16,height:16),context:&c,fit:true) {return}
         func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32,_ radius:Double = 1) {
             c.fill(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:radius),with:.color(Color(hex:color)))
         }
@@ -324,7 +371,13 @@ struct HotelActionArtwork: View {
                     oval(x+k*2,y+travel*2,1.5,3,0xAEE2E9)
                 }
             }
-            if kind.hasPrefix("steal-") {
+            if kind == "checkin" {
+                box(18,25,22,18,0xEFE0B8)
+                for i in 0..<3 {box(21,29+Double(i*4),12,1,0x9E947D)}
+                oval(42,25+swing*2,6,6,0xE2C069)
+                line(CGPoint(x:44,y:30+swing*2),CGPoint(x:48,y:39+swing*2),0xE2C069,2)
+                box(46,36+swing*2,5,2,0xE2C069)
+            } else if kind.hasPrefix("steal-") {
                 RoomObjectArt.draw(context:&context,index:Int(kind.suffix(1)) ?? 0,x:22,y:22,scale:1.4)
             } else if kind == "carwash" || kind == "extinguish" {
                 box(8,35,9,10,0xD17451); box(10,33,5,3,0xC9DFD7)
@@ -411,48 +464,62 @@ struct HotelActionArtwork: View {
 struct HotelCarArtwork: View {
     let color:UInt32
     let dirty:Bool
-    var model = 0
-    var body: some View {
-        Canvas { context,_ in
-            func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ tint:UInt32,_ radius:Double = 2) {
-                context.fill(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:radius),with:.color(Color(hex:tint)))
-            }
-            let suv = model % 3 == 1
-            let pickup = model % 3 == 2
-            box(5,8,38,18,0x303D42,5)
-            box(2,7,8,6,0x293137); box(38,7,8,6,0x293137)
-            box(2,24,8,6,0x293137); box(38,24,8,6,0x293137)
-            box(3,5,42,22,color,5); box(12,8,22,14,0x344F64,4)
-            box(14,9,18,4,0x9FC8CE); box(14,18,18,3,0x83A8B5)
-            box(34,7,7,18,color); box(4,8,5,3,0xFFF1BE); box(4,21,5,3,0xFFF1BE)
-            box(40,8,3,3,0xD77364); box(40,21,3,3,0xD77364)
-            box(10,15,2,4,0xD5D9C5); box(35,15,2,4,0xD5D9C5)
-            // Recognizable sedan, SUV and pickup silhouettes with glass, panels and hardware.
-            box(12,7,suv ? 24 : 19,17,0x344F64,3)
-            box(14,8,suv ? 20 : 15,6,0xA8D1D5,2)
-            box(14,17,suv ? 20 : 15,5,0x7AA6B8,2)
-            box(13,14,suv ? 22 : 17,2,color)
-            box(22,7,1,17,0x263F4A,0)
-            box(9,4,5,2,color); box(9,26,5,2,color)
-            box(3,13,2,8,0x3A4547,1)
-            for slat in 0..<4 { box(3,14+Double(slat)*1.7,2,0.6,0xB8C4C2,0) }
-            box(2,16,1,3,0xF1E9CF,0); box(43,15,2,4,0xF1E9CF,0)
-            box(6,6,3,1,0xF1D49A,0); box(6,25,3,1,0xF1D49A,0)
-            box(31,7,2,1,0xD6DBCC,0); box(31,24,2,1,0xD6DBCC,0)
-            if suv { box(13,6,22,1,0xCDD3C9,0); box(13,25,22,1,0xCDD3C9,0) }
-            if pickup {
-                box(30,7,12,18,color,2); box(32,9,8,14,0x4C5756,1)
-                for rib in 0..<4 { box(33+Double(rib)*2,10,0.6,12,0x78807A,0) }
-            }
-            if dirty { for i in 0..<7 { box(6+Double(i*5),12+Double(i%3)*4,4,3,0x927A58) } }
-        }.frame(width:48,height:34)
+    var model=0
+    var body:some View {
+        Canvas {c,_ in BicycleArt.draw(context:&c,color:color,facing:2,pedal:0,dirty:dirty)}
+            .frame(width:24,height:16)
+    }
+}
+enum BicycleArt {
+    static func draw(context:inout GraphicsContext,color:UInt32,facing:Int,pedal:Double,dirty:Bool=false) {
+        var c=context
+        func line(_ points:[CGPoint],_ tint:UInt32,_ width:Double=1) {
+            var p=Path();p.addLines(points);c.stroke(p,with:.color(Color(hex:tint)),style:StrokeStyle(lineWidth:width,lineCap:.round,lineJoin:.round))
+        }
+        func wheel(_ x:Double,_ y:Double,_ w:Double,_ h:Double) {
+            let r=CGRect(x:x,y:y,width:w,height:h)
+            c.stroke(Path(ellipseIn:r),with:.color(Color(hex:0x283D40)),lineWidth:1.4)
+            c.stroke(Path(ellipseIn:r.insetBy(dx:1,dy:1)),with:.color(Color(hex:0xC3CCBE)),lineWidth:0.55)
+            line([CGPoint(x:x+w/2,y:y),CGPoint(x:x+w/2,y:y+h)],0xA9B8B1,0.45)
+            line([CGPoint(x:x,y:y+h/2),CGPoint(x:x+w,y:y+h/2)],0xA9B8B1,0.45)
+        }
+        if facing == 0 || facing == 3 {
+            wheel(9,0,6,7);wheel(9,9,6,7)
+            line([CGPoint(x:12,y:4),CGPoint(x:12,y:12)],color,2)
+            line([CGPoint(x:7,y:4),CGPoint(x:17,y:4)],0x3E4F4D,1.4)
+            line([CGPoint(x:9,y:9),CGPoint(x:15,y:9)],0x604D3C,2)
+            line([CGPoint(x:8,y:11+pedal),CGPoint(x:16,y:11-pedal)],0x6D7C77,1)
+        } else {
+            if facing == 1 {c.translateBy(x:24,y:0);c.scaleBy(x:-1,y:1)}
+            wheel(1,6,8,8);wheel(15,6,8,8)
+            line([CGPoint(x:5,y:10),CGPoint(x:10,y:4),CGPoint(x:13,y:11),CGPoint(x:5,y:10)],color,1.2)
+            line([CGPoint(x:10,y:4),CGPoint(x:18,y:4),CGPoint(x:13,y:11),CGPoint(x:10,y:4)],color,1.2)
+            line([CGPoint(x:18,y:3),CGPoint(x:19,y:10)],color,1.3)
+            line([CGPoint(x:16,y:2),CGPoint(x:19,y:2),CGPoint(x:20,y:4)],0x334842,1.3)
+            line([CGPoint(x:8,y:3),CGPoint(x:12,y:3)],0x584D3E,2)
+            line([CGPoint(x:11,y:11),CGPoint(x:15,y:11+pedal)],0x8B9B93,1)
+            line([CGPoint(x:14,y:11+pedal),CGPoint(x:17,y:11+pedal)],0x3B4B46,1)
+        }
+        if dirty {line([CGPoint(x:5,y:13),CGPoint(x:8,y:13)],0x9A825F,1)}
     }
 }
 
 
+
+enum RoomBoardFilter:String,CaseIterable,Identifiable {
+    case all="All",ready="Ready",occupied="Occupied",attention="Needs care"
+    var id:String {rawValue}
+}
 enum ManagementTab:String,CaseIterable,Identifiable {
+    case overview="Today"
     case rooms="Rooms",desk="Desk",guests="Guests",team="Team",supplies="Supplies",events="Events",growth="Growth",cameras="Cameras",story="Story",books="Books"
     var id:String {rawValue}
+    var symbol:String {switch self {
+    case .overview:return "square.grid.2x2.fill";case .rooms:return "bed.double.fill";case .desk:return "bell.fill"
+    case .guests:return "person.crop.circle";case .team:return "person.2.fill";case .supplies:return "shippingbox.fill"
+    case .events:return "exclamationmark.bubble.fill";case .growth:return "chart.line.uptrend.xyaxis";case .cameras:return "video.fill"
+    case .story:return "book.fill";case .books:return "banknote.fill"
+    }}
 }
 struct HotelMiniRequest:Identifiable {
     let roomID:Int
@@ -462,37 +529,28 @@ struct HotelMiniRequest:Identifiable {
 struct ManagementHub:View {
     @Binding var game:Game
     @Environment(\.dismiss) private var dismiss
-    @State private var tab:ManagementTab = .rooms
+    @State private var tab:ManagementTab = .overview
+    @State private var roomFilter:RoomBoardFilter = .all
+    @State private var roomSearch=""
     @State private var feedback=""
     @State private var mini:HotelMiniRequest?
+    @State private var showHavenLife=false
     private var motel:Motel {game.motel ?? Motel()}
     private let gold=Color(hex:0xEFC977)
     var body:some View {
         NavigationStack {
             VStack(spacing:10) {
-                HStack {
-                    Text("DAY \(motel.day)  \(motel.clockLabel)").font(.caption.monospaced().bold())
-                    Spacer()
-                    Text("\(motel.cash) coins  /  REP \(motel.simulation.reputation)").font(.caption.bold()).foregroundStyle(gold)
-                }.padding(.horizontal)
+                boardHeader
                 if let incident=motel.operationsState.incident {
-                    Button("EMERGENCY: \(incident.kind.title) / \(incident.remaining)s - return to grounds") {dismiss()}
-                        .font(.caption.bold()).foregroundStyle(.orange).accessibilityIdentifier("managementEmergency")
+                    Button {dismiss()} label:{
+                        Label("\(incident.kind.title) · \(incident.remaining)s · Return to grounds",systemImage:"exclamationmark.triangle.fill").font(.subheadline.bold()).padding(12).frame(maxWidth:.infinity).background(Color(hex:0x934936),in:RoundedRectangle(cornerRadius:12))
+                    }.buttonStyle(.plain).padding(.horizontal).accessibilityIdentifier("managementEmergency")
                 }
-                if motel.business.police != nil {Button("Police case needs attention - return to grounds"){dismiss()}.font(.caption.bold()).foregroundStyle(.orange)}
-                Text(motel.simulation.news).font(.caption).frame(maxWidth:.infinity,alignment:.leading).padding(.horizontal).accessibilityIdentifier("managementNews")
-                ScrollView(.horizontal,showsIndicators:false) {
-                    HStack(spacing:8) {
-                        ForEach(ManagementTab.allCases) { item in
-                            Button(item.rawValue) {tab=item}.font(.caption.bold()).padding(9)
-                                .background(tab==item ? gold.opacity(0.3) : Color.white.opacity(0.08),in:Capsule())
-                                .accessibilityIdentifier("manageTab_"+item.id)
-                        }
-                    }.padding(.horizontal)
-                }.accessibilityIdentifier("managementTabs")
+                boardNavigation
                 ScrollView {
                     VStack(alignment:.leading,spacing:16) {
                         switch tab {
+                        case .overview:overviewPanel
                         case .rooms:roomsPanel
                         case .desk:deskPanel
                         case .guests:guestsPanel
@@ -506,21 +564,24 @@ struct ManagementHub:View {
                         }
                     }.padding()
                 }
-                if !feedback.isEmpty {Text(feedback).font(.caption).foregroundStyle(gold).padding(.horizontal).accessibilityIdentifier("managementFeedback")}
+                if !feedback.isEmpty {Label(feedback,systemImage:"info.circle.fill").font(.subheadline).foregroundStyle(gold).padding(12).frame(maxWidth:.infinity,alignment:.leading).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12)).padding(.horizontal).accessibilityIdentifier("managementFeedback")}
                 Text("The hotel keeps running while this board is open.").font(.system(size:10)).foregroundStyle(.secondary).padding(.bottom,6)
-            }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
+            }.foregroundStyle(Color(hex:0xF5E7C8)).background(LinearGradient(colors:[Color(hex:0x143C37),Color(hex:0x102823)],startPoint:.topLeading,endPoint:.bottomTrailing))
                 .navigationTitle("Hotel management").navigationBarTitleDisplayMode(.inline)
+                .sheet(isPresented:$showHavenLife) {HavenLifeView(game:$game)}
                 .toolbar {ToolbarItem(placement:.topBarTrailing) {Button("Done") {dismiss()}.accessibilityIdentifier("closeManagement")}}
         }.tint(gold).presentationBackground(Color(hex:0x172A25))
             .onAppear {
                 let args=ProcessInfo.processInfo.arguments
+                if args.contains("--ui-management") || args.contains("--ui-management-night") {tab = .rooms}
                 if args.contains("--ui-management-cameras") {tab = .cameras}
                 if args.contains("--ui-management-events") {tab = .events}
                 if args.contains("--ui-management-desk") {tab = .desk}
                 if args.contains("--ui-management-growth") {tab = .growth}
+                if args.contains("--ui-management-dashboard") {tab = .overview}
             }
             .sheet(item:$mini) { request in
-                HotelMiniGame(repairing:request.repairing) {
+                HotelMiniGame(repairing:request.repairing,outfit:FamilyHome.outfitColors[motel.household.outfit]) {
                     let result=perform { request.repairing ? $0.repairRoom(request.roomID) : $0.managerClean(request.roomID) }
                     if result {mini=nil}
                     return result
@@ -528,21 +589,139 @@ struct ManagementHub:View {
             }
     }
     private func card<Content:View>(@ViewBuilder _ content:()->Content)->some View {
-        VStack(alignment:.leading,spacing:9,content:content).padding(12).frame(maxWidth:.infinity,alignment:.leading)
-            .background(Color.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+        VStack(alignment:.leading,spacing:12,content:content).padding(16).frame(maxWidth:.infinity,alignment:.leading)
+            .background(LinearGradient(colors:[Color(hex:0x254E46),Color(hex:0x1C3F39)],startPoint:.topLeading,endPoint:.bottomTrailing),in:RoundedRectangle(cornerRadius:18))
+            .overlay(RoundedRectangle(cornerRadius:18).stroke(.white.opacity(0.09),lineWidth:1))
     }
+
+    private var boardHeader:some View {
+        HStack(spacing:12) {
+            Image(systemName:"building.2.crop.circle.fill").font(.title).foregroundStyle(gold)
+            VStack(alignment:.leading,spacing:3) {
+                Text("BRAINSTORM HAVEN").font(.caption.weight(.heavy)).tracking(1.2)
+                Text("Day \(motel.day) · \(motel.clockLabel)").font(.caption).foregroundStyle(.white.opacity(0.65))
+            }
+            Spacer()
+            VStack(alignment:.trailing,spacing:3) {
+                Label(motel.cash.formatted(),systemImage:"circle.circle.fill").font(.headline).foregroundStyle(gold)
+                Text("Reputation \(motel.simulation.reputation)/100").font(.caption).foregroundStyle(.white.opacity(0.65))
+            }
+        }.padding(.horizontal,18).padding(.vertical,8)
+    }
+    private var boardNavigation:some View {
+        HStack(spacing:0) {
+            ScrollViewReader {proxy in
+                ScrollView(.horizontal,showsIndicators:false) {
+                    HStack(spacing:8) {
+                        ForEach(ManagementTab.allCases) {item in
+                            Button {tab=item} label:{
+                                Label(item.rawValue,systemImage:item.symbol).font(.subheadline.weight(.semibold)).padding(.horizontal,14).padding(.vertical,11)
+                                    .background(tab==item ? gold : Color.white.opacity(0.07),in:RoundedRectangle(cornerRadius:12))
+                                    .foregroundStyle(tab==item ? Color(hex:0x173A36) : Color(hex:0xD8E8DB))
+                            }.buttonStyle(.plain).id(item.id).accessibilityIdentifier("manageTab_"+item.id)
+                                .accessibilityValue(tab==item ? "Selected" : "")
+                        }
+                    }.padding(.horizontal,16)
+                }.onChange(of:tab) {_,value in proxy.scrollTo(value.id,anchor:.center)}
+            }
+            Menu {
+                ForEach(ManagementTab.allCases) {item in
+                    Button {tab=item} label:{Label(item.rawValue,systemImage:item.symbol)}.accessibilityIdentifier("manageSection_"+item.id)
+                }
+            } label:{Image(systemName:"square.grid.2x2.fill").font(.title3).padding(12)}
+                .accessibilityLabel("All management sections").accessibilityIdentifier("managementSections")
+        }.accessibilityElement(children:.contain)
+    }
+    private var readyRooms:Int {motel.rooms.filter(\.available).count}
+    private var attentionRooms:Int {motel.rooms.filter{$0.dirty || !$0.health.faults.isEmpty || $0.health.condition<60}.count}
+    private var lowSupplies:[Supply] {Supply.allCases.filter{motel.simulation.stock[$0.rawValue,default:0]<3}}
+    private func metric(_ title:String,value:String,symbol:String,tint:UInt32)->some View {
+        VStack(alignment:.leading,spacing:10) {
+            HStack {Image(systemName:symbol).foregroundStyle(Color(hex:tint));Spacer();Text(title).font(.caption.weight(.semibold))}
+            Text(value).font(.system(.title2,design:.rounded,weight:.bold)).minimumScaleFactor(0.6).lineLimit(1)
+        }.foregroundStyle(Color(hex:0x173A36)).padding(16).frame(maxWidth:.infinity,alignment:.leading)
+            .background(Color(hex:0xF3E9D3),in:RoundedRectangle(cornerRadius:18))
+    }
+    private var overviewPanel:some View {
+        VStack(alignment:.leading,spacing:20) {
+            HStack(alignment:.firstTextBaseline) {
+                VStack(alignment:.leading,spacing:5) {Text("Your hotel, at a glance").font(.title2.bold()).accessibilityIdentifier("managementOverview");Text("Start with what needs you today.").font(.subheadline).foregroundStyle(.white.opacity(0.65))}
+                Spacer()
+            }
+            LazyVGrid(columns:[GridItem(.flexible()),GridItem(.flexible())],spacing:12) {
+                metric("Occupied",value:"\(motel.occupancy) / \(motel.rooms.count)",symbol:"bed.double.fill",tint:0x467F7E)
+                metric("Ready rooms",value:"\(readyRooms)",symbol:"checkmark.seal.fill",tint:0x577B53)
+                metric("Arrivals",value:"\(motel.waiting.count)",symbol:"person.crop.circle.badge.plus",tint:0xAA7852)
+                metric("Daily wages",value:"\(motel.operationsState.workers.reduce(0,{$0+motel.scheduledWage($1.role)}))",symbol:"person.2.fill",tint:0x8C718D)
+            }
+            VStack(alignment:.leading,spacing:12) {
+                Text("Needs attention").font(.headline)
+                if motel.operationsState.incident==nil && motel.simulation.issues.isEmpty && attentionRooms==0 && lowSupplies.isEmpty && !motel.simulation.powerOut && !motel.simulation.waterOut && motel.business.police==nil {
+                    Label("Everything is running smoothly",systemImage:"checkmark.circle.fill").foregroundStyle(.mint).font(.subheadline)
+                }
+                if motel.operationsState.incident != nil {dashboardAction("Respond to emergency",detail:"Return to the grounds now",symbol:"flame.fill",urgent:true,id:"quickEmergency"){dismiss()}}
+                if motel.business.police != nil {dashboardAction("Officer needs you",detail:"Return to resolve the police case",symbol:"exclamationmark.shield.fill",urgent:true,id:"quickPolice"){dismiss()}}
+                if motel.simulation.powerOut || motel.simulation.waterOut {dashboardAction("Restore utilities",detail:"Power or water is offline",symbol:"bolt.slash.fill",urgent:true,id:"quickUtilities"){tab = .events}}
+                if !motel.simulation.issues.isEmpty {dashboardAction("\(motel.simulation.issues.count) guest requests",detail:"Review deadlines and respond",symbol:"exclamationmark.bubble.fill",urgent:true,id:"quickEvents"){tab = .events}}
+                if attentionRooms>0 {dashboardAction("\(attentionRooms) rooms need care",detail:"Clean rooms or repair faults",symbol:"sparkles",id:"quickAttention"){roomFilter = .attention;tab = .rooms}}
+                if !lowSupplies.isEmpty {dashboardAction("Restock essentials",detail:lowSupplies.map(\.title).joined(separator:", "),symbol:"shippingbox.fill",id:"quickSupplies"){tab = .supplies}}
+            }.padding(16).frame(maxWidth:.infinity,alignment:.leading).background(Color.white.opacity(0.045),in:RoundedRectangle(cornerRadius:18))
+            Text("Quick actions").font(.headline)
+            LazyVGrid(columns:[GridItem(.flexible()),GridItem(.flexible())],spacing:12) {
+                dashboardAction("Front desk",detail:"Assign arriving guests",symbol:"bell.fill",id:"quickDesk"){tab = .desk}
+                dashboardAction("Rooms",detail:"View availability",symbol:"bed.double.fill",id:"quickRooms"){roomFilter = .all;tab = .rooms}
+                dashboardAction("Team",detail:"Shifts and training",symbol:"person.2.fill",id:"quickTeam"){tab = .team}
+                dashboardAction("Haven life",detail:"Goals, meals and discoveries",symbol:"leaf.fill",id:"managementHavenLife"){showHavenLife=true}
+            }
+            card {
+                Label("Today's update",systemImage:"newspaper.fill").font(.headline)
+                Text(motel.simulation.news).font(.subheadline).foregroundStyle(.white.opacity(0.75)).accessibilityIdentifier("managementNews")
+                if motel.simulation.billDebt+motel.simulation.loanDebt>0 {
+                    Button("Review bills and loans") {tab = .books}.buttonStyle(.bordered)
+                }
+            }
+        }
+    }
+    private func dashboardAction(_ title:String,detail:String,symbol:String,urgent:Bool=false,id:String,action:@escaping()->Void)->some View {
+        Button(action:action) {
+            HStack(alignment:.top,spacing:10) {
+                Image(systemName:symbol).font(.title3).frame(width:23).foregroundStyle(urgent ? Color(hex:0xF2A78D) : gold)
+                VStack(alignment:.leading,spacing:5) {Text(title).font(.subheadline.weight(.semibold));Text(detail).font(.caption).foregroundStyle(.white.opacity(0.62))}
+                Spacer(minLength:0)
+                Image(systemName:"chevron.right").font(.caption.weight(.bold)).foregroundStyle(.white.opacity(0.4))
+            }.frame(maxWidth:.infinity,alignment:.leading).padding(14)
+                .background(urgent ? Color(hex:0x754D3E).opacity(0.45) : Color.white.opacity(0.06),in:RoundedRectangle(cornerRadius:14))
+        }.buttonStyle(.plain).accessibilityIdentifier(id)
+    }
+    private var filteredRooms:[MotelRoom] {
+        motel.rooms.filter {room in
+            let matches=roomSearch.isEmpty || "\(room.number)".contains(roomSearch) || (room.guest?.name.localizedCaseInsensitiveContains(roomSearch) ?? false)
+            switch roomFilter {
+            case .all:return matches
+            case .ready:return matches && room.available
+            case .occupied:return matches && room.guest != nil
+            case .attention:return matches && (room.dirty || !room.health.faults.isEmpty || room.health.condition<60)
+            }
+        }
+    }
+
     private var roomsPanel:some View {
         VStack(alignment:.leading,spacing:14) {
-            Text("Room condition controls availability, comfort, complaints and reviews. Suites unlock at reputation 60.").font(.caption)
-            ForEach(motel.rooms) {room in roomCard(room)}
+            Text("Find the right room").font(.title2.bold())
+            TextField("Search room number or guest",text:$roomSearch).textFieldStyle(.plain).padding(13).background(.white.opacity(0.08),in:RoundedRectangle(cornerRadius:12)).submitLabel(.done).autocorrectionDisabled().textInputAutocapitalization(.never).accessibilityIdentifier("roomSearch")
+            Picker("Room status",selection:$roomFilter) {ForEach(RoomBoardFilter.allCases) {value in Text(value.rawValue).tag(value)}}.pickerStyle(.segmented).accessibilityIdentifier("roomStatusFilter")
+            Text("\(filteredRooms.count) rooms · \(readyRooms) ready to book").font(.caption).foregroundStyle(.white.opacity(0.65)).accessibilityIdentifier("roomResultCount")
+            if filteredRooms.isEmpty {Label("No rooms match this filter",systemImage:"magnifyingglass").padding(.vertical,25)}
+            ForEach(filteredRooms) {room in roomCard(room)}
         }
     }
     private func roomCard(_ room:MotelRoom)->some View {
         card {
             HStack {
-                RoomIllustration(theme:room.theme,level:room.furniture,office:false).frame(width:70,height:70)
+                RoomIllustration(theme:room.theme,level:room.furniture,office:false).frame(width:48,height:48).clipShape(RoundedRectangle(cornerRadius:10))
                 VStack(alignment:.leading,spacing:4) {
-                    Text("ROOM \(room.number) / \(room.health.kind.title)").font(.headline)
+                    Text("Room \(room.number)").font(.title3.bold())
+                    Text(room.health.kind.title+" · "+(room.guest != nil ? "Occupied" : room.available ? "Ready" : "Needs care")).font(.caption.weight(.semibold)).foregroundStyle(room.available ? .mint : gold)
                     Text(room.guest.map { $0.name+" / "+$0.kind.title } ?? (room.available ? "Ready for assignment" : "Needs attention")).font(.caption)
                     Text("\(motel.rate(for:room)) / night").font(.caption.bold()).foregroundStyle(gold)
                 }
@@ -553,16 +732,17 @@ struct ManagementHub:View {
             ProgressView(value:Double(room.health.condition)/100).tint(gold)
             if !room.health.faults.isEmpty {Text(room.health.faults.map(\.title).sorted().joined(separator:", ")).font(.caption).foregroundStyle(.orange)}
             HStack {
-                Button("Clean mini-game") {mini=HotelMiniRequest(roomID:room.id,repairing:false)}.accessibilityIdentifier("miniClean_\(room.id)")
+                Button("Clean room") {mini=HotelMiniRequest(roomID:room.id,repairing:false)}.accessibilityIdentifier("miniClean_\(room.id)")
                 Button("Repair / pests") {mini=HotelMiniRequest(roomID:room.id,repairing:true)}.accessibilityIdentifier("miniRepair_\(room.id)")
             }.font(.caption.bold()).buttonStyle(.bordered)
+            DisclosureGroup("Room options & upgrades") {
             if room.guest == nil {
                 Menu("Change room type") {
                     ForEach(RoomKind.allCases) { kind in
                         Button("\(kind.title) / \(kind.cost)") {_=perform{$0.changeRoomKind(room.id,kind:kind)}}.disabled(kind==room.health.kind || motel.cash<kind.cost || kind == .suite && motel.simulation.reputation<60)
                     }
                 }
-                Menu("Install meaningful upgrade") {
+                Menu("Add a room upgrade") {
                     ForEach(RoomUpgrade.allCases) { upgrade in
                         Button("\(upgrade.title) / \(upgrade.cost)") {_=perform{$0.buyRoomUpgrade(room.id,upgrade:upgrade)}}.disabled(room.health.upgrades.contains(upgrade)||motel.cash<upgrade.cost)
                     }
@@ -571,6 +751,8 @@ struct ManagementHub:View {
             ForEach(Array(room.health.upgrades).sorted{$0.rawValue<$1.rawValue}) {upgrade in
                 Text("? \(upgrade.title): \(upgrade.benefit)").font(.caption2)
             }
+            }.font(.subheadline)
+
         }
     }
     private var deskPanel:some View {
@@ -645,7 +827,8 @@ struct ManagementHub:View {
                             Button("Dismiss") {change{$0.dismissStaff(role)}}
                         }.font(.caption).buttonStyle(.bordered)
                     } else {
-                        Button("Hire \(role.name) / \(role.hireCost)") {_=perform{$0.hire(role)}}.buttonStyle(.bordered).disabled(motel.cash<role.hireCost).accessibilityIdentifier("manageHire_"+role.rawValue)
+                        Text(motel.hiringProgress(role)).font(.caption).foregroundStyle(gold)
+                        Button("Hire \(role.name) / \(role.hireCost)") {_=perform{$0.hire(role)}}.buttonStyle(.bordered).disabled(!motel.hiringUnlocked(role) || motel.cash<role.hireCost).accessibilityIdentifier("manageHire_"+role.rawValue)
                     }
                 }
             }
@@ -713,7 +896,8 @@ struct ManagementHub:View {
                     Text("\(facility.cost) coins / reputation \(facility.requiredRep)").font(.caption)
                     if motel.simulation.facilities.contains(facility) {Text("Operational").foregroundStyle(.mint)}
                     else {
-                        Button("Develop / \(facility.cost)") {_=perform{$0.installFacility(facility)}}.buttonStyle(.bordered).disabled(motel.cash<facility.cost || motel.simulation.reputation<facility.requiredRep).accessibilityIdentifier("develop_"+facility.rawValue)
+                        if !motel.journeyAllows(facility) {Text("Unlock: "+Motel.journeyNames[motel.facilityJourneyTier(facility)]+" milestone in Haven life").font(.caption).foregroundStyle(.orange)}
+                        Button("Develop / \(facility.cost)") {_=perform{$0.installFacility(facility)}}.buttonStyle(.bordered).disabled(!motel.journeyAllows(facility) || motel.cash<facility.cost || motel.simulation.reputation<facility.requiredRep).accessibilityIdentifier("develop_"+facility.rawValue)
                     }
                 }
             }
@@ -774,16 +958,18 @@ struct ManagementHub:View {
         }
     }
     private func change(_ action:(inout Motel)->Void) {
-        guard var current=game.motel else{return};action(&current);game.motel=current;feedback=current.lastEvent
+        guard var current=game.motel else{return};action(&current);game.motel=current;feedback=current.lastEvent;game.save()
     }
     @discardableResult private func perform(_ action:(inout Motel)->Bool)->Bool {
         guard var current=game.motel else{return false};let result=action(&current);game.motel=current
-        feedback=result ? "Changes applied." : "Unavailable. Check coins, supplies, room occupancy and unlock requirements."
+        feedback=result ? current.lastEvent : "Not available yet. Check the cost, supplies and requirements shown on this card."
+        if result {game.save()}
         return result
     }
 }
 struct HotelMiniGame:View {
     let repairing:Bool
+    var outfit:UInt32 = 0x6AACA3
     let complete:()->Bool
     @Environment(\.dismiss) private var dismiss
     @State private var started=Date()
@@ -798,7 +984,8 @@ struct HotelMiniGame:View {
                 let elapsed=timeline.date.timeIntervalSince(started)
                 let phase=elapsed.truncatingRemainder(dividingBy:1.6)/1.6
                 VStack {
-                    HotelActionArtwork(kind:repairing ? "repair" : "mop",frame:Int(elapsed*8)%8).frame(width:130,height:100)
+                    WorkingCharacterArtwork(kind:repairing ? "repair" : "mop",frame:Int(elapsed*12)%12,color:outfit)
+                        .scaleEffect(2.2).frame(width:150,height:110)
                     GeometryReader {geometry in
                         ZStack(alignment:.leading) {
                             Capsule().fill(Color.white.opacity(0.1))
@@ -818,6 +1005,528 @@ struct HotelMiniGame:View {
                 else {misses += 1;message="Missed. Wait for the green zone."}
                 if hits>=3 {if !complete(){message="Need supplies and repair coins. Cancel, restock and try again.";hits=2}}
             }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("miniGameTap")
-        }.padding(24).foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x172A25))
+        }.padding(24).foregroundStyle(Color(hex:0xF5E7C8)).background(PaintedPanel(color:0x172A25))
+    }
+}
+
+/// Original character art with articulated shoulders, elbows, wrists and held tools.
+struct WorkingCharacterArtwork:View {
+    let kind:String
+    let frame:Int
+    var color:UInt32=0xC7D0D4
+    var variant=7
+    var facing=2
+    var body:some View {
+        Canvas { c,_ in
+            let wave=sin(Double(frame) * .pi/6)
+            let press=(1-cos(Double(frame) * .pi/3))/2
+            let skin:UInt32=variant == 7 ? 0xE3B38E : [UInt32(0xF0C9A0),0xD6A477,0xA87350,0x734A37,0xE9B693][abs(variant)%5]
+            if facing == 1 {c.translateBy(x:48,y:0);c.scaleBy(x:-1,y:1)}
+            func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ tint:UInt32) {
+                c.fill(Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:tint)))
+            }
+            func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ tint:UInt32) {
+                let p=Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:1)
+                c.fill(p,with:.color(Color(hex:tint)));c.stroke(p,with:.color(Color(hex:0x36443D)),lineWidth:0.35)
+            }
+            func line(_ points:[CGPoint],_ tint:UInt32,_ width:Double) {
+                var p=Path()
+                for (i,v) in points.enumerated(){if i==0 {p.move(to:v)} else {p.addLine(to:v)}}
+                c.stroke(p,with:.color(Color(hex:tint)),style:StrokeStyle(lineWidth:width,lineCap:.round,lineJoin:.round))
+            }
+            func arm(_ sx:Double,_ sy:Double,_ ex:Double,_ ey:Double,_ hx:Double,_ hy:Double) {
+                line([CGPoint(x:sx,y:sy),CGPoint(x:ex,y:ey),CGPoint(x:hx,y:hy)],0x393733,3.1)
+                line([CGPoint(x:sx,y:sy),CGPoint(x:ex,y:ey)],color,2.7)
+                line([CGPoint(x:ex,y:ey),CGPoint(x:hx,y:hy)],skin,2.5)
+                oval(hx-1.5,hy-1.5,3,3,skin)
+            }
+            let bodyX=kind == "cpr" ? 17.0+press*0.5 : 16.0
+            let bodyY=kind == "cpr" ? 21.0+press*0.7 : 19.0
+            PaperPerson.draw(context:&c,x:bodyX,y:bodyY,color:color,variant:variant,
+                facing:kind == "calm" || kind == "swim" ? 0 : 2,walk:0,hands:false,kneeling:kind == "cpr" || kind == "swim")
+            switch kind {
+            case "extinguish":
+                PaintedArt.draw("extinguisher",in:CGRect(x:26,y:23,width:10,height:15),context:&c,fit:true)
+                line([CGPoint(x:27,y:24),CGPoint(x:33,y:24+press*0.7)],0x343D3D,1.2)
+                var hose=Path();hose.move(to:CGPoint(x:32,y:26))
+                hose.addCurve(to:CGPoint(x:37,y:25+wave),control1:CGPoint(x:38,y:36),control2:CGPoint(x:40,y:29))
+                c.stroke(hose,with:.color(Color(hex:0x303B39)),style:StrokeStyle(lineWidth:1.3,lineCap:.round))
+                arm(20,25,23,27,29,24.7+press*0.5);arm(28,25,31,28,36,25+wave)
+                line([CGPoint(x:36,y:25+wave),CGPoint(x:40,y:23+wave)],0x303B39,2)
+            case "swim","rescue":
+                arm(20,25,16-wave*3,28,13-wave*2,31+wave*3)
+                arm(28,25,32+wave*3,28,35+wave*2,31-wave*3)
+                for side in [13.0,34] {
+                    c.stroke(Path(ellipseIn:CGRect(x:side-4,y:32+wave,width:8,height:2)),with:.color(.white.opacity(0.65)),lineWidth:0.6)
+                }
+            case "cpr":
+                arm(21,27,32,29+press,45,33+press*1.5)
+                arm(29,27,37,29+press,45.5,33+press*1.5)
+                oval(43.5,32+press*1.5,4,2.2,skin)
+            case "calm":
+                arm(20,25,15,25-wave,11,21-wave);arm(28,25,33,25-wave,37,21-wave)
+                box(9.5,17-wave,3,5,skin);box(35.5,17-wave,3,5,skin)
+            case "repair","build":
+                box(34,31,10,7,0x75857C)
+                let tip=CGPoint(x:38,y:32),handle=CGPoint(x:31+wave*3,y:25-wave)
+                line([handle,tip],0xCBD3CE,1.8)
+                c.stroke(Path(ellipseIn:CGRect(x:36.4,y:30.4,width:3.2,height:3.2)),with:.color(Color(hex:0xD5DBD6)),lineWidth:1)
+                arm(20,25,25,29,34,34);arm(28,25,30,27,handle.x,handle.y)
+            case "pest":
+                box(27,29,6,9,0xD3B46F);box(29,26,2,3,0x4B6457)
+                line([CGPoint(x:30,y:27),CGPoint(x:37,y:28+wave)],0x485B50,1.1)
+                arm(20,25,24,29,29,28);arm(28,25,33,29,36,28+wave)
+                for i in 0..<5 {let t=Double((frame+i)%12)/12;oval(37+t*9,29+t*6,0.8+t,0.8+t,0xD7DCC2)}
+            case "mop","carwash":
+                let head=CGPoint(x:35+wave*5,y:40)
+                line([CGPoint(x:28,y:24),head],0xB7986A,1.5);oval(head.x-5,head.y-1,10,3,0xB9D1BD)
+                for i in 0..<4 {line([CGPoint(x:head.x-4+Double(i)*2,y:40),CGPoint(x:head.x-4+Double(i)*2,y:42)],0xDAE1CF,0.6)}
+                arm(20,25,23,29,29+wave,29);arm(28,25,30,29,32+wave*2,33)
+            case "garden":
+                box(31,29,8,7,0x8EAA70);line([CGPoint(x:38,y:31),CGPoint(x:43,y:29)],0x8EAA70,2)
+                arm(20,25,25,29,32,29);arm(28,25,31,27,35,28)
+                for i in 0..<4 {oval(42+Double(i),31+Double((frame+i)%6),0.7,1.4,0xD5E8D5)}
+            case "paint":
+                let ry=28+wave*4
+                line([CGPoint(x:31,y:35),CGPoint(x:37,y:ry)],0xB39262,1.4)
+                box(34,ry-3,8,3,0xB0C7A4);arm(28,25,30,29,32,32);arm(20,25,22,29,24,32)
+            case "bed","laundry":
+                var sheet=Path();sheet.move(to:CGPoint(x:27,y:28-wave))
+                sheet.addQuadCurve(to:CGPoint(x:43,y:28+wave),control:CGPoint(x:35,y:24-wave*3))
+                sheet.addLine(to:CGPoint(x:43,y:36));sheet.addLine(to:CGPoint(x:27,y:36));sheet.closeSubpath()
+                c.fill(sheet,with:.color(Color(hex:0xF0EBD8)));c.stroke(sheet,with:.color(Color(hex:0xADBBA6)),lineWidth:0.5)
+                arm(20,25,23,28,27,28-wave);arm(28,25,35,27,42,28+wave)
+            case "trash","luggage":
+                box(34,32-wave*2,8,9,kind == "trash" ? 0x46584C : 0xAA7856)
+                line([CGPoint(x:36,y:32-wave*2),CGPoint(x:36,y:30-wave*2),CGPoint(x:40,y:30-wave*2),CGPoint(x:40,y:32-wave*2)],0x33453C,1)
+                arm(28,25,32,28,38,30-wave*2);arm(20,25,19,28,19,31)
+            default:
+                box(27,31,16,1.5,0xB18C60);box(32,27,4,4,0xEEE1C4);oval(38,28,5,3,0xCEAB6E)
+                arm(20,25,24,29,28,31);arm(28,25,33,29,40,31)
+            }
+        }.frame(width:48,height:48)
+    }
+}
+
+enum GardenSection:String,CaseIterable,Identifiable {
+    case grow="Grow",cook="Cook",pantry="Pantry"
+    var id:String {rawValue}
+}
+enum HavenTab:String,CaseIterable,Identifiable {
+    case neighbors="Neighbors",identity="Identity",team="Team",creatures="Creatures",calendar="Calendar",consequences="Consequences"
+    case inspections="Inspections",rival="Rival motel",celebrations="Celebrations"
+    case journey="Journey",rooms="Room design",breakfast="Breakfast",forecast="Weather",journal="Journal",goals="Daily goals",garden="Garden & kitchen"
+    var id:String {rawValue}
+}
+struct HavenLifeView:View {
+    @Binding var game:Game
+    var initialTab:HavenTab = .neighbors
+    @State private var tab:HavenTab = .neighbors
+    @State private var gardenSection:GardenSection = .grow
+    @State private var gardenCrop:GardenCrop = .basil
+    @State private var feedback=""
+    @Environment(\.dismiss) private var dismiss
+    private var motel:Motel {game.motel ?? Motel()}
+    private func act(_ action:(inout Motel)->Bool) {
+        guard var value=game.motel else{return}
+        if action(&value) {feedback=value.lastEvent;game.motel=value;game.save()}
+        else {feedback="Meet the location, cost or daily requirement shown below first."}
+    }
+    var body:some View {
+        NavigationStack {
+            VStack(spacing:12) {
+                Text("DAY \(motel.day) · WEEKDAY \(motel.havenWeekday)/7 · \(motel.cash) COINS").font(.caption.monospaced())
+                ScrollViewReader {proxy in
+                    ScrollView(.horizontal,showsIndicators:false) {
+                        HStack {ForEach(HavenTab.allCases) {item in
+                            Button(item.rawValue) {tab=item}.buttonStyle(.bordered)
+                                .tint(tab==item ? Color(hex:0xEFC977) : .gray).accessibilityIdentifier("havenTab_"+item.rawValue).id(item.id)
+                        }}.padding(.horizontal)
+                    }.onChange(of:tab) {_,value in proxy.scrollTo(value.id,anchor:.center)}
+                }
+                ScrollView {
+                    VStack(alignment:.leading,spacing:18) {
+                        switch tab {
+                        case .inspections:inspectionPanel
+                        case .rival:rivalPanel
+                        case .celebrations:celebrationPanel
+                        case .garden:gardenKitchen
+                        case .journey:journey
+                        case .rooms:roomDesigns
+                        case .breakfast:breakfastService
+                        case .forecast:forecast
+                        case .journal:journal
+                        case .goals:dailyGoals
+                        case .neighbors:neighbors
+                        case .identity:identity
+                        case .team:team
+                        case .creatures:creatures
+                        case .calendar:calendar
+                        case .consequences:consequences
+                        }
+                    }.padding(20)
+                }
+                if !feedback.isEmpty {Text(feedback).font(.caption).padding(.horizontal).accessibilityIdentifier("havenFeedback")}
+            }.foregroundStyle(Color(hex:0xF5E7C8)).background(PaintedPanel(color:0x172A25))
+                .navigationTitle("Haven life").navigationBarTitleDisplayMode(.inline)
+                .toolbar {ToolbarItem(placement:.confirmationAction) {Button("Done") {dismiss()}}}
+                .tint(Color(hex:0xEFC977)).onAppear{tab=initialTab;if var value=game.motel {value.initializeExpansion();value.initializeKitchenGarden();if value.havenOccasions == nil {value.havenOccasions=HavenOccasions()};game.motel=value;gardenSection=value.atGardenKitchen ? .cook : .grow}}
+                .accessibilityElement(children:.contain)
+        }
+    }
+    private var neighbors:some View {
+        VStack(alignment:.leading,spacing:18) {
+            Text("Meet your neighbors outside their homes. Keep promises, make peace after noisy nights, and invite friends over. At 4 friendship they send a small daily gift.").font(.subheadline)
+            ForEach(0..<3,id:\.self) {id in
+                let n=motel.neighborState(id)
+                VStack(alignment:.leading,spacing:8) {
+                    Text(ResidentialLayout.names[id]+" · friendship \(n.friendship)").font(.headline)
+                    Text(id==0 ? "Nora loves peaceful evenings and thoughtful favors." : id==1 ? "Ben enjoys celebrations and repairing things." : "Elena values kindness and visiting friends.").font(.caption)
+                    if n.favorPending {Text(n.parcel ? "Parcel collected. Bring it back here." : "Collect the parcel from Otis at Willow Home.").font(.caption)}
+                    Button("Chat") {act{$0.neighborAction(id,choice:0)}}
+                        .disabled(motel.nearHavenNeighbor != id || n.chattedDay==motel.day).accessibilityIdentifier("neighborChat\(id)")
+                    Button(n.favorPending ? "Deliver parcel / +20 coins" : "Offer a favor") {act{$0.neighborAction(id,choice:n.favorPending ? 2 : 1)}}
+                        .disabled(motel.nearHavenNeighbor != id || (n.favorPending && !n.parcel) || (!n.favorPending && n.favorDay==motel.day)).accessibilityIdentifier("neighborFavor\(id)")
+                    Button("Invite home · needs 3 friendship") {act{$0.neighborAction(id,choice:3)}}
+                        .disabled(motel.nearHavenNeighbor != id || n.friendship<3 || n.invitedDay==motel.day).accessibilityIdentifier("neighborInvite\(id)")
+                    Button("Make peace / 15 coins") {act{$0.neighborAction(id,choice:4)}}
+                        .disabled(motel.nearHavenNeighbor != id || motel.cash<15 || n.chattedDay==motel.day)
+                    if n.invitedDay==motel.day {Text("Visiting your home today. Walk over and welcome them.").font(.caption)}
+                }.padding(14).frame(maxWidth:.infinity,alignment:.leading).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var identity:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Reputation: \(motel.simulation.reputation)/100").font(.title2.bold())
+            Text("Your direction changes tomorrow's guest mix. Honest service and good room care protect your reputation. You can change direction once per day.")
+            ForEach(HavenIdentity.allCases) {identity in
+                VStack(alignment:.leading,spacing:8) {
+                    Text(identity.title).font(.headline);Text(identity.detail).font(.caption)
+                    Button(motel.haven.identity==identity ? "Current direction" : "Choose this direction") {act{$0.chooseHavenIdentity(identity)}}
+                        .disabled(motel.haven.identity==identity || motel.haven.identityDay==motel.day ||
+                            (identity == .boutique && (motel.simulation.reputation<60 || motel.rooms.reduce(0,{$0+$1.furniture})<3)))
+                        .accessibilityIdentifier("havenIdentity_"+identity.rawValue)
+                }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var team:some View {
+        VStack(alignment:.leading,spacing:18) {
+            Text("Good shifts earn experience. Every 4 shifts improve skill and speed. Happy colleagues become friends and work faster together; exhausted workers can make mistakes.").font(.subheadline)
+            if motel.operationsState.workers.isEmpty {Text("Hire your first employee at the reception PC after unlocking recruitment.")}
+            ForEach(motel.operationsState.workers) {worker in
+                let role=worker.role
+                let employee=motel.haven.employees[role.rawValue] ?? HavenEmployee()
+                let profile=motel.simulation.profiles[role.rawValue] ?? StaffProfile.make(role)
+                VStack(alignment:.leading,spacing:8) {
+                    Text(role.name+" · "+role.title).font(.headline)
+                    Text(motel.employeePersonality(role)).font(.caption)
+                    Text("Level \(employee.level) · experience \(employee.experience) · loyalty \(profile.loyalty) · fatigue \(profile.fatigue)").font(.caption)
+                    Text("Wage: \(motel.scheduledWage(role))/day").font(.caption)
+                    if let friend=employee.friend,let friendRole=StaffRole(rawValue:friend) {Text("Work friend: "+friendRole.name).font(.caption)}
+                    Button("Paid break / 10 coins") {act{$0.supportHavenEmployee(role,choice:0)}}
+                        .disabled(motel.cash<10 || employee.supportDay==motel.day).accessibilityIdentifier("employeeBreak_"+role.rawValue)
+                    if employee.requestDay>employee.decisionDay {
+                        Text("I'd like a raise for my work here.").font(.caption)
+                        Button("Accept permanent +2/day raise") {act{$0.supportHavenEmployee(role,choice:1)}}.accessibilityIdentifier("employeeRaise_"+role.rawValue)
+                        Button("Decline · loyalty -12") {act{$0.supportHavenEmployee(role,choice:2)}}
+                    }
+                }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var creatures:some View {
+        VStack(alignment:.leading,spacing:18) {
+            Text("Visit each corral to begin a quest. Find its golden glimmer, then return the keepsake to unlock a unique ability. Chichu, Chichi and Tuki can also discover supplies once daily while following you outside the motel.")
+            ForEach(0..<8,id:\.self) {id in
+                let quest=motel.adventure(id)
+                VStack(alignment:.leading,spacing:8) {
+                    Text(BasementLayout.titles[id]).font(.headline)
+                    Text(Motel.adventureClues[id].capitalized+".").font(.caption)
+                    Text(Motel.creatureAbilities[id]).font(.caption)
+                    if quest.completed {Label("Ability unlocked",systemImage:"checkmark.circle.fill")}
+                    else {
+                        Button(quest.found ? "Return keepsake / +15 coins" : quest.accepted ? "Search for the golden glimmer" : "Accept adventure") {
+                            act{quest.found ? $0.finishCreatureAdventure(id) : $0.startCreatureAdventure(id)}
+                        }.disabled(motel.nearbyCorral != id || (quest.accepted && !quest.found))
+                            .accessibilityIdentifier("creatureAdventure\(id)")
+                    }
+                }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var calendar:some View {
+        VStack(alignment:.leading,spacing:18) {
+            Text("A repeating seven-day calendar").font(.headline)
+            Text("Bring coins and any required snacks. Visit the activity's physical location and finish three rounds before resting. Prizes can be collected once per event.")
+            ForEach(HavenActivity.allCases) {kind in
+                VStack(alignment:.leading,spacing:8) {
+                    Text("Day \(kind.weekday) · "+kind.title).font(.headline)
+                    Text("At "+kind.locationName+" · entry \(kind.cost) coins, \(kind.snacks) snacks").font(.caption)
+                    if motel.todaysActivity==kind {
+                        if let run=motel.haven.activity,run.day==motel.day {
+                            if run.finished {Text("Complete · score \(run.score)")}
+                            else {
+                                Text(kind.rounds[run.round]).font(.headline)
+                                ForEach(0..<2,id:\.self) {choice in
+                                    Button(kind.options[run.round][choice]) {act{$0.playHavenActivity(choice:choice)}}
+                                        .disabled(!motel.nearHavenActivity).accessibilityIdentifier("activityChoice\(choice)")
+                                }
+                            }
+                        } else {
+                            Button("Prepare and enter") {act{$0.startHavenActivity()}}
+                                .disabled(!motel.nearHavenActivity || motel.cash<kind.cost || motel.simulation.stock["snacks",default:0]<kind.snacks)
+                                .accessibilityIdentifier("startHavenActivity")
+                        }
+                    }
+                }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+            ForEach(motel.haven.completedActivities,id:\.self) {Text($0).font(.caption)}
+        }.buttonStyle(.bordered)
+    }
+
+
+
+    private var inspectionPanel:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Label("Coastal motel inspections",systemImage:"checkmark.seal.fill").font(.title2.bold())
+            Text("Book from reception for 20 coins, once every seven days. Pass with 75 overall and at least 60 in every check. A pass pays 60 coins and improves reputation; 90 earns gold.")
+            ForEach(Array(zip(["Hygiene · clean dirty rooms","Maintenance · repair faults","Safety · restore utilities and resolve emergencies","Hospitality · reputation and employees"],motel.inspectionScores).enumerated()),id:\.offset) {_,item in
+                VStack(alignment:.leading) {Text(item.0);ProgressView(value:Double(item.1),total:100);Text("\(item.1)/100").font(.caption)}
+            }
+            Text("Live score: \(motel.inspectionTotal)/100").font(.headline)
+            Text("Last award: "+motel.occasions.award)
+            ForEach(motel.occasions.inspectionNotes,id:\.self) {Text($0).font(.caption)}
+            Button("Request inspection / 20 coins") {act{$0.requestHavenInspection()}}.disabled(!motel.canRequestInspection).accessibilityIdentifier("requestInspection")
+            if !motel.atOccasionDesk {Text("Visit your reception office to book.").font(.caption)}
+            if motel.occasions.inspectionDay>0 {Text("Next booking: day \(motel.occasions.inspectionDay+7)").font(.caption)}
+        }.buttonStyle(.bordered)
+    }
+    private var rivalPanel:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Label("Seabreeze Lodge",systemImage:"building.2.fill").font(.title2.bold())
+            Text("Owner Mara runs the neighboring coastal motel. Each completed week compares your upkeep, service and inspection award with Seabreeze. Winning earns 50 coins and reputation. Falling behind costs one reputation point.")
+            Text("Week \(motel.occasionWeek) · your appeal \(motel.rivalAppeal)/100").font(.headline)
+            Text("Previous Seabreeze score: \(motel.occasions.rivalScore) · your wins: \(motel.occasions.wins)")
+            Button("Promote your service / 30 coins") {act{$0.rivalCampaign(cooperate:false)}}.disabled(!motel.atOccasionDesk || motel.cash<30 || motel.occasions.campaignWeek==motel.occasionWeek).accessibilityIdentifier("rivalCampaign")
+            Text("+10 appeal in this week's comparison. Cleanliness and fair service still matter.").font(.caption)
+            Button("Partner with Mara / 25 coins") {act{$0.rivalCampaign(cooperate:true)}}.disabled(!motel.atOccasionDesk || motel.cash<25 || motel.occasions.allianceWeek==motel.occasionWeek).accessibilityIdentifier("rivalPartner")
+            Text("A joint coastal promotion returns 45 coins and one referral at week's end if your queue has space. You can cooperate while competing. Book at reception.").font(.caption)
+            occasionMemories
+        }.buttonStyle(.bordered)
+    }
+    private var celebrationPanel:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Label("Guest celebrations",systemImage:"gift.fill").font(.title2.bold())
+            Text("Birthdays, anniversaries and weddings are offered by staying guests. Accept at reception, decorate, bring cooked garden dishes, and prepare hosting before resting. Unfinished promises disappoint guests.")
+            if let event=motel.occasions.celebration {
+                Text(event.guestName+" · "+event.kind.title).font(.headline)
+                Text("Today · payment \(event.kind.fee) coins · "+(event.completed ? "Hosted successfully" : "Preparation in progress"))
+                celebrationTask(event,task:0,title:"Decorations / \(event.kind.decorCost) coins",done:event.decorated,enabled:motel.atOccasionDesk && motel.cash>=event.kind.decorCost)
+                celebrationTask(event,task:1,title:"Cater / \(event.kind.portions) cooked portions",done:event.catered,enabled:motel.atGardenKitchen && motel.kitchen.plates.values.reduce(0,+)>=event.kind.portions)
+                Text("Cook and pack dishes at the breakfast counter or Coral Catch. Portions are consumed.").font(.caption)
+                celebrationTask(event,task:2,title:"Prepare hosting / \(motel.operationsState.workers.isEmpty ? 15 : 5) coins",done:event.staffReady,enabled:motel.atOccasionDesk && motel.cash >= (motel.operationsState.workers.isEmpty ? 15 : 5))
+                Button("Host celebration") {act{$0.hostCelebration()}}.disabled(!motel.atOccasionDesk || !event.decorated || !event.catered || !event.staffReady || event.completed || motel.operationsState.incident != nil).accessibilityIdentifier("hostCelebration")
+            } else if let offer=motel.celebrationOffer {
+                Text(offer.guestName+" would like a "+offer.kind.title.lowercased()+". Payment: \(offer.kind.fee) coins.").font(.headline)
+                Text("Budget: \(offer.kind.decorCost) decorations + hosting + \(offer.kind.portions) garden meals.").font(.caption)
+                Button("Accept today's celebration") {act{$0.acceptCelebration()}}.disabled(!motel.atOccasionDesk).accessibilityIdentifier("acceptCelebration")
+            } else {Text("Welcome a staying guest to receive a new celebration offer. One booking per day.")}
+            Text("Hosted: \(motel.occasions.celebrations) · missed promises: \(motel.occasions.missed)").font(.caption)
+            occasionMemories
+        }.buttonStyle(.bordered)
+    }
+    private func celebrationTask(_ event:CelebrationBooking,task:Int,title:String,done:Bool,enabled:Bool)->some View {
+        Button {act{$0.prepareCelebration(task)}} label:{Label(title,systemImage:done ? "checkmark.circle.fill" : "circle")}
+            .disabled(done || event.completed || !enabled).accessibilityIdentifier("celebrationTask\(task)")
+    }
+    private var occasionMemories:some View {
+        VStack(alignment:.leading,spacing:8) {ForEach(Array(motel.occasions.notes.enumerated()),id:\.offset) {_,note in Text(note).font(.caption)}}
+    }
+
+    private var gardenKitchen:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Garden to kitchen").font(.title2.bold())
+            Text("Grow fresh ingredients beside the motel, unlock dishes and serve your guests. Garden tools are by the pool; cooking is at the breakfast counter or Coral Catch.").font(.subheadline)
+            Picker("Garden section",selection:$gardenSection) {
+                ForEach(GardenSection.allCases) {section in Text(section.rawValue).tag(section)}
+            }.pickerStyle(.segmented).accessibilityIdentifier("gardenSection")
+            switch gardenSection {
+            case .grow:growGarden
+            case .cook:gardenRecipes
+            case .pantry:gardenPantry
+            }
+        }
+    }
+    private var growGarden:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Water once each day, then rest to grow. Rain waters plants for you. Dry plants wait safely; they do not disappear.").font(.caption)
+            if motel.simulation.waterOut {Label("Water outage: repair the supply before watering.",systemImage:"drop.triangle.fill").foregroundStyle(.orange)}
+            Picker("Seeds",selection:$gardenCrop) {
+                ForEach(GardenCrop.allCases) {crop in Text(crop.title+" / \(crop.seedCost)").tag(crop)}
+            }.accessibilityIdentifier("gardenSeeds")
+            ForEach(Motel.gardenPlots.indices,id:\.self) {id in
+                let plot=motel.kitchenPlot(id)
+                VStack(alignment:.leading,spacing:10) {
+                    Label("Plot \(id+1)",systemImage:plot.crop==nil ? "square.dashed" : motel.plotReady(id) ? "carrot.fill" : "leaf.fill").font(.headline)
+                    if let crop=plot.crop {
+                        Text(crop.title+" · "+(motel.plotReady(id) ? "Ready to harvest" : "\(plot.growth)/\(crop.days) growing nights")).font(.subheadline)
+                        ProgressView(value:Double(plot.growth),total:Double(crop.days)).tint(.mint)
+                        Text(motel.plotReady(id) ? "Harvest yields \(crop.harvestYield) ingredients." : motel.plotWatered(id) ? "Watered for today" : "Needs water before resting").font(.caption)
+                        Button("Water plot") {act{$0.waterKitchenPlot(id)}}.disabled(motel.nearKitchenPlot != id || motel.plotReady(id) || motel.plotWatered(id) || motel.simulation.waterOut).accessibilityIdentifier("waterPlot\(id)")
+                        Button("Harvest "+crop.title) {act{$0.harvestKitchenPlot(id)}}.disabled(motel.nearKitchenPlot != id || !motel.plotReady(id)).accessibilityIdentifier("harvestPlot\(id)")
+                    } else {
+                        Text("Empty soil · \(gardenCrop.days) watered nights to harvest").font(.caption)
+                        Button("Plant "+gardenCrop.title+" / \(gardenCrop.seedCost) coins") {act{$0.plantKitchenCrop(id,crop:gardenCrop)}}.disabled(motel.nearKitchenPlot != id || motel.cash<gardenCrop.seedCost).accessibilityIdentifier("plantPlot\(id)")
+                    }
+                    if motel.nearKitchenPlot != id {Text("Stand beside this plot to tend it.").font(.caption).foregroundStyle(.secondary)}
+                }.padding(16).frame(maxWidth:.infinity,alignment:.leading).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:14))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var gardenRecipes:some View {
+        VStack(alignment:.leading,spacing:16) {
+            if !motel.atGardenKitchen {Label("Visit the breakfast counter or Marina's counter to cook and serve.",systemImage:"location.fill").font(.caption)}
+            if motel.simulation.powerOut {Label("Power outage: hot dishes need electricity. Salad can still be prepared.",systemImage:"bolt.slash.fill").font(.caption).foregroundStyle(.orange)}
+            if motel.simulation.waterOut {Text("Restore the water supply before preparing food.").font(.caption).foregroundStyle(.orange)}
+            ForEach(GardenRecipe.allCases) {recipe in
+                let unlocked=motel.kitchen.unlocked.contains(recipe.rawValue)
+                let guest=motel.rooms.compactMap(\.guest).first{motel.canServeGardenDish(recipe,guestID:$0.id)}
+                VStack(alignment:.leading,spacing:10) {
+                    Label(recipe.title,systemImage:unlocked ? "fork.knife" : "lock.fill").font(.headline)
+                    Text(recipe.ingredientText.capitalized+" · makes 2 portions").font(.caption)
+                    Text(recipe.unlockHint).font(.caption).foregroundStyle(.secondary)
+                    if unlocked {
+                        Text("Ready: \(motel.kitchen.plates[recipe.rawValue,default:0]) · serve for \(recipe.price) coins").font(.caption.bold())
+                        Button("Cook "+recipe.title) {act{$0.cookGardenRecipe(recipe)}}.disabled(!motel.canCookGardenRecipe(recipe)).accessibilityIdentifier("cookRecipe_"+recipe.id)
+                        Button(guest.map{"Serve to "+$0.name} ?? "No guest waiting for this meal") {
+                            if let guest {act{$0.serveGardenDish(recipe,guestID:guest.id)}}
+                        }.disabled(guest==nil).accessibilityIdentifier("serveRecipe_"+recipe.id)
+                    } else {Text("Keep harvesting and cooking to unlock.").font(.caption)}
+                }.padding(16).frame(maxWidth:.infinity,alignment:.leading).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:14))
+            }
+            Text("Each guest buys one garden dish per day. A morning dish counts as their breakfast. Meals improve satisfaction and reputation; ingredients and portions are consumed.").font(.caption)
+        }.buttonStyle(.bordered)
+    }
+    private var gardenPantry:some View {
+        VStack(alignment:.leading,spacing:14) {
+            Label("Fresh pantry",systemImage:"basket.fill").font(.headline)
+            ForEach(GardenCrop.allCases) {crop in
+                HStack {Text(crop.title);Spacer();Text("\(motel.kitchen.pantry[crop.rawValue,default:0])").font(.headline.monospaced())}.padding(12).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:10))
+            }
+            Text("\(motel.kitchen.harvests) harvests · \(motel.kitchen.batches) batches cooked · \(motel.kitchen.unlocked.count)/\(GardenRecipe.allCases.count) recipes").font(.caption)
+            ForEach(GardenRecipe.allCases) {recipe in Text(recipe.title+": \(motel.kitchen.plates[recipe.rawValue,default:0]) portions").font(.caption)}
+        }
+    }
+
+    private var journey:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text(Motel.journeyNames[motel.expansion.tier]).font(.title2.bold())
+            Text(motel.journeyRequirement)
+            Text("Guests served: \(motel.guestsServed) · rooms: \(motel.rooms.count) · reputation: \(motel.simulation.reputation)").font(.caption)
+            Button("Claim next milestone") {act{$0.advanceJourney()}}
+                .disabled(!motel.canAdvanceJourney).accessibilityIdentifier("claimJourney")
+            Text("Welcoming motel unlocks the pool permit. Coastal retreat unlocks the restaurant permit. Famous coastal resort unlocks upper-floor construction. Existing facilities remain yours.").font(.subheadline)
+            Text("Daily life").font(.headline)
+            Text("Guests eat breakfast, carry luggage between destinations, visit the beach or pool in clear weather, meet near the bar in the evening and return to their rooms at night. Bad weather brings them to shelter.")
+            ForEach(motel.rooms.filter{$0.guest != nil}) {room in
+                if let guest=room.guest {
+                    VStack(alignment:.leading,spacing:4) {
+                        Text(guest.name+" · "+guest.holiday.title).font(.headline)
+                        Text("Now: "+motel.guestRoutine(guest).rawValue+" · satisfaction \(motel.expansion.satisfaction[guest.id,default:50])/100").font(.caption)
+                    }
+                }
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var roomDesigns:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Design for your guests").font(.title2.bold())
+            Text("Couples like cozy decor and good beds; families value sleeping space and a fridge; business travelers prefer desks, soundproofing and Wi-Fi. Each match adds 4 coins per night and improves satisfaction. Changes require a vacant room.")
+            ForEach(motel.rooms) {room in
+                VStack(alignment:.leading,spacing:10) {
+                    Text("Room \(room.number) · "+motel.roomDesign(room).title).font(.headline)
+                    if let guest=room.guest {
+                        Text(guest.holiday.title+" · "+guest.holiday.need).font(.caption)
+                        Text("Match \(motel.roomMatch(guest,room))/4 · nightly bonus +\(motel.designPremium(guest,room))").font(.caption)
+                    }
+                    ForEach(HavenRoomDesign.allCases) {design in
+                        Button(design.title+(design == .classic ? " / restore" : " / \(design.cost) coins")) {act{$0.designHavenRoom(room.id,design)}}
+                            .disabled(room.guest != nil || motel.roomDesign(room)==design || motel.cash<design.cost)
+                            .accessibilityIdentifier("design_\(room.id)_"+design.rawValue)
+                    }
+                }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var breakfastService:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("The morning rush").font(.title2.bold())
+            Text("Open 08:00–11:59 at the breakfast counter. Cook three portions using 3 snacks and 6 coins. Serve each guest once for 12 coins and happier reviews. Fresh food expires at noon. A hired receptionist helps serve prepared food.")
+            Text("Fresh portions: \(motel.expansion.buffet) · waiting: \(motel.breakfastQueue.count)").font(.headline)
+            if !motel.atBreakfastCounter {Text("Walk to the breakfast counter to cook and serve.").font(.caption)}
+            Button("Cook three breakfasts / 6 coins + 3 snacks") {act{$0.cookHavenBreakfast()}}
+                .disabled(!motel.atBreakfastCounter || !motel.breakfastOpen || motel.cash<6 || motel.simulation.stock["snacks",default:0]<3 || motel.expansion.buffet>9)
+                .accessibilityIdentifier("cookBreakfast")
+            Button("Serve next guest / +12 coins") {act{$0.serveHavenBreakfast()}}
+                .disabled(!motel.atBreakfastCounter || motel.expansion.buffet==0 || motel.breakfastQueue.isEmpty)
+                .accessibilityIdentifier("serveBreakfast")
+            ForEach(motel.breakfastQueue) {guest in Text(guest.name+" · "+guest.holiday.title).font(.caption)}
+            Text("Stock: \(motel.simulation.stock["snacks",default:0]) snacks").font(.caption)
+        }.buttonStyle(.bordered)
+    }
+    private var forecast:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Today: "+motel.weather.title).font(.title2.bold())
+            Text(motel.weatherAdvice)
+            Text("Tomorrow: "+motel.nextWeather.title).font(.headline)
+            Text("Weather is forecast for the whole day. Unprepared storms can damage a drain at noon. Heatwaves draw guests to the pool and make broken AC more upsetting.")
+            Button(motel.expansion.preparedDay==motel.day ? "Prepared for today" : "Secure equipment / 10 coins + 2 parts") {act{$0.prepareHavenWeather()}}
+                .disabled(motel.expansion.preparedDay==motel.day || motel.cash<10 || motel.simulation.stock["parts",default:0]<2)
+                .accessibilityIdentifier("prepareWeather")
+        }.buttonStyle(.bordered)
+    }
+    private var journal:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Discoveries \(motel.expansion.discoveries.count)/\(Motel.discoveries.count)").font(.title2.bold())
+            Text("Explore on foot, fish at the cove, visit the weekly market and bring a following pet. Market treasures cost 30 coins and appear in your reception display. Other discoveries earn 5 coins; fish also add food supplies.")
+            ForEach(Motel.discoveries) {item in
+                VStack(alignment:.leading,spacing:8) {
+                    Text((motel.expansion.discoveries.contains(item.id) ? "✓ " : "◇ ")+item.name).font(.headline)
+                    Text(item.hint).font(.caption)
+                    if !motel.expansion.discoveries.contains(item.id) {
+                        Button(item.group=="fish" ? "Cast fishing line" : item.group=="furniture" ? "Buy market treasure / 30 coins" : "Collect discovery") {act{$0.findHavenDiscovery(item.id)}}
+                            .disabled(!motel.canFindDiscovery(item)).accessibilityIdentifier("discovery_"+item.id)
+                    }
+                }.padding(12).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+        }.buttonStyle(.bordered)
+    }
+    private var dailyGoals:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Text("Three optional goals").font(.title2.bold())
+            Text("No penalty for skipping a goal. Today's rewards are 20 coins and one repair part each. A new set arrives tomorrow.")
+            ForEach(motel.goalKeys,id:\.self) {key in
+                VStack(alignment:.leading,spacing:8) {
+                    Text(motel.goalTitle(key)).font(.headline)
+                    Text("\(min(motel.goalTarget(key),motel.expansion.daily[key,default:0]))/\(motel.goalTarget(key))").font(.caption)
+                    Button(motel.expansion.claimedGoals.contains(key) ? "Reward collected" : "Collect reward") {act{$0.claimHavenGoal(key)}}
+                        .disabled(motel.expansion.claimedGoals.contains(key) || motel.expansion.daily[key,default:0]<motel.goalTarget(key))
+                        .accessibilityIdentifier("goal_"+key)
+                }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12))
+            }
+            ForEach(Array(motel.expansion.notes.enumerated()),id:\.offset) {_,note in Text(note).font(.caption)}
+        }.buttonStyle(.bordered)
+    }
+
+    private var consequences:some View {
+        VStack(alignment:.leading,spacing:14) {
+            Text("Canceled bookings: \(motel.haven.cancellations)").font(.headline)
+            Text("Two neglected days can cause damage bills, lost condition and cancellations. Repair faults and keep rooms clean to stop the damage. Neighbor promises expire after three days.")
+            Text("Recent memories").font(.headline)
+            if motel.haven.notes.isEmpty {Text("Your decisions will be recorded here.")}
+            ForEach(Array(motel.haven.notes.enumerated()),id:\.offset) { _,note in Text(note).font(.caption).padding(.vertical,4)}
+        }
     }
 }

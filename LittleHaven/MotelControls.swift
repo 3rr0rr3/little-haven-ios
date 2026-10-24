@@ -61,7 +61,7 @@ struct WorkActionButton: View {
             if cleaning && progress > 0 { ProgressView(value: progress).tint(Color(hex: 0x244234)).padding(.horizontal, 12) }
         }.frame(maxWidth: .infinity).frame(height: 91)
             .foregroundStyle(Color(hex: 0x203B32))
-            .background(Color(hex: 0xEFC977), in: RoundedRectangle(cornerRadius: 25))
+            .background(PaintedPanel(color:0xDCC08C).clipShape(RoundedRectangle(cornerRadius:25)))
             .opacity(enabled ? (held ? 0.8 : 1) : 0.42)
     }
     var body: some View {
@@ -80,5 +80,36 @@ struct WorkActionButton: View {
                 Button(action: action) { label }.disabled(!enabled)
             }
         }
+    }
+}
+
+
+// The touch surface is confined to this visible stick. Map gestures never steer.
+struct FullscreenJoystick: View {
+    let diagonals:Bool
+    let direction:(Tile?)->Void
+    @GestureState private var offset=CGSize.zero
+    private var vector:Tile? {
+        ThumbstickInput.direction(dx:Double(offset.width),dy:Double(offset.height),diagonals:diagonals)
+    }
+    var body:some View {
+        ZStack {
+            Circle().fill(Color(hex:0x203D32).opacity(offset == .zero ? 0.06 : 0.18))
+            Circle().stroke(Color(hex:0xF5E7C8).opacity(offset == .zero ? 0.10 : 0.28),lineWidth:2).padding(6)
+            Circle().fill(Color(hex:0x9ABD9E).opacity(offset == .zero ? 0.12 : 0.38)).frame(width:48,height:48)
+                .shadow(color:.black.opacity(0.25),radius:3,y:3)
+                .offset(offset).allowsHitTesting(false)
+        }.frame(width:128,height:128).contentShape(Circle())
+            .gesture(DragGesture(minimumDistance:0).updating($offset) {value,state,_ in
+                let distance=hypot(value.translation.width,value.translation.height)
+                let ratio=distance>38 ? 38/distance : 1
+                state=CGSize(width:value.translation.width*ratio,height:value.translation.height*ratio)
+            })
+            .onChange(of:vector) {_,value in direction(value)}
+            .onDisappear {direction(nil)}
+            .accessibilityElement(children:.ignore)
+            .accessibilityLabel("Movement joystick")
+            .accessibilityHint("Move the stick to walk. Release to stop.")
+            .accessibilityIdentifier("fullscreenJoystick")
     }
 }

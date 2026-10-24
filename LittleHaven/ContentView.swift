@@ -9,6 +9,9 @@ struct ContentView: View {
     @State private var game = ContentView.initialGame()
     @State private var playing = ContentView.bypassTitle
     @State private var sessionID = UUID()
+    @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
+    @State private var townDirection:Tile?
+    @State private var showTownOptions=false
     @AppStorage("littlehaven.hints") private var showHints = true
     private static var bypassTitle: Bool {
         #if DEBUG
@@ -31,9 +34,274 @@ struct ContentView: View {
     private static func initialGame() -> Game {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
+        if args.contains("--ui-painted-check") {
+            for name in ["stone-a","stone-b","timber","lantern","bedding","fence-h","desk","sofa-front","sofa-back","washer","linen","tv-frame","bath-sink","clothes-rack","extinguisher"] {precondition(PaintedArt.image("bh-"+name) != nil,"Missing scenery: "+name)}
+        }
+        Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
+        if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.removeObject(forKey:"littlehaven.compatibleOffice")}
+        if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}
+
+
+
+
+        if args.contains(where:{$0.hasPrefix("--ui-occasion-")}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeExpansion();sample.motel!.initializeKitchenGarden()
+            sample.motel!.cash=500;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.havenOccasions=HavenOccasions();sample.motel!.world!.place = .office;sample.motel!.world!.player=Tile(x:4,y:5)
+            var reputation=sample.motel!.simulation;reputation.reputation=80;sample.motel!.simulation=reputation
+            sample.motel!.rooms[0].guest=Motel.arrivals(day:1,count:1,randomize:false)[0];sample.motel!.rooms[0].nightsLeft=3
+            if args.contains("--ui-occasion-host") || args.contains("--ui-occasion-decor") {
+                _=sample.motel!.acceptCelebration();_=sample.motel!.prepareCelebration(0);_=sample.motel!.prepareCelebration(2)
+                var o=sample.motel!.occasions;o.celebration!.catered=true;sample.motel!.havenOccasions=o
+                if args.contains("--ui-occasion-decor") {_=sample.motel!.hostCelebration()}
+            }
+            sample.save();return sample
+        }
+
+        if args.contains(where:{$0.hasPrefix("--ui-garden-") || $0.hasPrefix("--ui-outage-")}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeExpansion();sample.motel!.initializeKitchenGarden()
+            sample.motel!.cash=500;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:2,y:17)
+            var k=sample.motel!.kitchen
+            if args.contains("--ui-garden-harvest") {
+                k.plots[0]=KitchenPlot(crop:.tomato,growth:2,wateredDay:1);k.harvested=["carrot"];k.harvests=1
+            }
+            if args.contains("--ui-garden-world") {
+                k.plots[0]=KitchenPlot(crop:.tomato,growth:2,wateredDay:1)
+                k.plots[1]=KitchenPlot(crop:.carrot,growth:1,wateredDay:1)
+                k.plots[2]=KitchenPlot(crop:.basil,growth:1,wateredDay:1)
+                sample.motel!.world!.player=Tile(x:2,y:20)
+            }
+            if args.contains("--ui-garden-kitchen") {
+                k.pantry=["basil":3,"tomato":3,"carrot":3,"pepper":3]
+                sample.motel!.world!.player=sample.motel!.groundTile(HotelService.breakfast.tile)
+                sample.motel!.rooms[0].guest=Motel.arrivals(day:1,count:1,randomize:false)[0];sample.motel!.rooms[0].nightsLeft=2
+            }
+            sample.motel!.kitchenGarden=k
+            if args.contains(where:{$0.hasPrefix("--ui-outage-")}) {
+                sample.motel!.world!.player=Tile(x:12,y:16)
+                var s=sample.motel!.simulation;s.powerOut=true
+                s.hour=args.contains("--ui-outage-night") ? 22 : 12;sample.motel!.simulation=s
+                sample.motel!.operations!.weatherOverride = .sunny
+            }
+            sample.save();return sample
+        }
+
+        if args.contains("--ui-beach-outfits") || args.contains("--ui-beach-outfits-street") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeExpansion()
+            sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:54,y:48)
+            var sim=sample.motel!.simulation;sim.hour=14;sample.motel!.simulation=sim
+            let guests=Motel.arrivals(day:1,count:3,randomize:false)
+            var life=sample.motel!.expansion
+            for i in 0..<3 {
+                sample.motel!.rooms[i].guest=guests[i];sample.motel!.rooms[i].nightsLeft=2
+                let tile=Tile(x:53+i,y:49)
+                life.routines[guests[i].id]=HavenRoutineGuest(tile:tile,previous:tile,activity:.beach)
+            }
+            sample.motel!.havenExpansion=life
+            if args.contains("--ui-beach-outfits-street") {
+                sample.motel!.world!.player=Tile(x:54,y:36)
+                var state=sample.motel!.expansion
+                for i in 0..<3 {let tile=Tile(x:53+i,y:37);state.routines[guests[i].id]=HavenRoutineGuest(tile:tile,previous:tile,activity:.walk)}
+                sample.motel!.havenExpansion=state
+            }
+            sample.save();return sample
+        }
+
+        if args.contains(where:{$0.hasPrefix("--ui-expansion-")}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeExpansion()
+            sample.motel!.cash=5000;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=sample.motel!.groundTile(HotelService.breakfast.tile)
+            if args.contains("--ui-expansion-breakfast") {
+                let guests=Motel.arrivals(day:1,count:2,randomize:false)
+                for i in 0..<2 {sample.motel!.rooms[i].guest=guests[i];sample.motel!.rooms[i].nightsLeft=2}
+            }
+            if args.contains("--ui-expansion-journey") {
+                sample.motel!.guestsServed=5;var s=sample.motel!.simulation;s.reputation=50;sample.motel!.simulation=s
+            }
+            if args.contains("--ui-expansion-journal") {sample.motel!.world!.player=sample.motel!.groundNearestWalkable(to:Tile(x:57,y:50))}
+            if args.contains("--ui-expansion-routines") {
+                let guests=Motel.arrivals(day:1,count:3,randomize:false)
+                for i in 0..<3 {sample.motel!.rooms[i].guest=guests[i];sample.motel!.rooms[i].nightsLeft=2}
+                var sim=sample.motel!.simulation;sim.hour=14;sample.motel!.simulation=sim
+                for _ in 0..<120 {sample.motel!.tickWorld()}
+                sample.motel!.world!.player=Tile(x:57,y:50)
+            }
+            sample.save();return sample
+        }
+
+        if args.contains(where:{$0.hasPrefix("--ui-haven-")}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeHavenLife()
+            sample.motel!.cash=5000;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.world!.place = .grounds
+            sample.motel!.world!.neighborPositions=[0:Tile(x:47,y:9)]
+            sample.motel!.world!.player=Tile(x:47,y:10)
+            if args.contains("--ui-haven-calendar") {sample.motel!.world!.player=sample.motel!.groundNearestWalkable(to:HavenActivity.market.location)}
+            if args.contains("--ui-haven-creature") {
+                sample.motel!.world!.place = .basement;sample.motel!.world!.player=BasementLayout.gate(0)
+            }
+            if args.contains("--ui-haven-glimmer") {
+                sample.motel!.world!.place = .basement;sample.motel!.world!.player=BasementLayout.gate(0)
+                _=sample.motel!.startCreatureAdventure(0)
+                sample.motel!.world!.place = .grounds;sample.motel!.world!.player=sample.motel!.adventureTile(0)
+            }
+            if args.contains("--ui-haven-team") {
+                sample.motel!.guestsServed=20;_=sample.motel!.hire(.cleaner);_=sample.motel!.hire(.security)
+                var state=sample.motel!.haven
+                state.employees[StaffRole.security.rawValue]=HavenEmployee(experience:3,requestDay:4)
+                sample.motel!.havenLife=state;sample.motel!.day=4
+            }
+            sample.save();return sample
+        }
+        if args.contains("--ui-police-pursuit") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.cash=500;sample.motel!.world!.place = .office
+            sample.motel!.world!.player=OfficeReception.clerk
+            sample.motel!.operations=MotelOperations()
+            sample.motel!.operations!.consequences=BusinessConsequences(police:PoliceCase(number:1,guest:"Test",cause:.fire,tile:Tile(x:7,y:7),acceptsBribe:false,map:"office"))
+            sample.save();return sample
+        }
+        if args.contains("--ui-entrance-flow") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.waiting=Motel.arrivals(day:8,count:12,randomize:false)
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:10,y:11)
+            let entrance=sample.motel!.groundTile(Tile(x:6,y:10))
+            sample.motel!.world!.guestPositions=Dictionary(uniqueKeysWithValues:sample.motel!.waiting.map{($0.id,entrance)})
+            for _ in 0..<90 {sample.motel!.tickWorld()}
+            sample.motel!.operations!.nextIncidentTick=10000
+            sample.save();return sample
+        }
+        if args.contains("--ui-counter") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.world!.place = .office;sample.motel!.world!.player=OfficeReception.clerk
+            var visitor=OfficeVisitor(guest:sample.motel!.waiting[0]);visitor.phase = .waiting;visitor.pathIndex=OfficeVisitor.path.count-1
+            sample.motel!.world!.reception!.visitor=visitor
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            sample.save();return sample
+        }
+        if let kind=ChaosKind.allCases.first(where:{args.contains("--ui-action-response-"+$0.rawValue)}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            for id in 0..<3 {_=sample.motel!.checkIn(guestID:10+id,roomID:id)}
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=kind.approach
+            sample.motel!.operations=MotelOperations()
+            sample.motel!.operations!.incident=MotelIncident(kind:kind,guest:sample.motel!.rooms[1].guest,otherGuest:sample.motel!.rooms[2].guest)
+            sample.motel!.operations!.nextIncidentTick=10000
+            sample.save();return sample
+        }
+        if args.contains("--ui-story") || args.contains("--ui-story-bar") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.cash=500;sample.motel!.prepareStoryArrivals()
+            let guest=sample.motel!.waiting.first{$0.storyID == .musician}!
+            var visitor=OfficeVisitor(guest:guest);visitor.phase = .waiting;visitor.pathIndex=OfficeVisitor.path.count-1
+            sample.motel!.world!.reception!.visitor=visitor
+            sample.motel!.world!.place = .office;sample.motel!.world!.player=OfficeReception.clerk
+            sample.motel!.operations!.nextIncidentTick=100000
+            if args.contains("--ui-story-bar") {
+                _=sample.motel!.chooseGuestStory(guest,choiceID:1)
+                sample.motel!.world!.place = .shop;sample.motel!.world!.shop = .bar
+                sample.motel!.world!.player=ShopLayout.counter
+                if args.contains("--ui-story-playing") {_=sample.motel!.startLanternShow()}
+            }
+            sample.save();return sample
+        }
+        if args.contains("--ui-creative") || args.contains("--ui-creative-moved") {
+            var sample=Game();sample.coins=5000;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.cash=5000
+            sample.motel!.guestsServed=20
+            for role in StaffRole.allCases {_=sample.motel!.hire(role)}
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:12,y:8)
+            if args.contains("--ui-creative-moved") {
+                _=sample.motel!.relocateStructure("laundry",to:Tile(x:20,y:30))
+                sample.motel!.world!.player=Tile(x:22,y:35)
+            }
+            sample.motel!.operations!.nextIncidentTick=10000;sample.save();return sample
+        }
+        if args.contains("--ui-bike") || args.contains("--ui-bike-riding") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.waiting=[];sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:15,y:32)
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            if args.contains("--ui-bike-riding") {_=sample.motel!.mountNearbyBike();sample.motel!.world!.player=Tile(x:20,y:34)}
+            sample.save();return sample
+        }
+        if args.contains("--ui-fish") || args.contains("--ui-fish-exterior") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.cash=500;sample.motel!.waiting=[];sample.motel!.world!.place = .grounds
+            sample.motel!.world!.player=NeighborhoodShop.fish.door
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            if args.contains("--ui-fish") {_=sample.motel!.enterShop(.fish);sample.motel!.world!.player=ShopLayout.counter}
+            sample.save();return sample
+        }
+        if args.contains("--ui-action-checkin") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.world!.player=Tile(x:4,y:6)
+            _=sample.motel!.checkIn(guestID:sample.motel!.waiting[0].id,roomID:0)
+            sample.save();return sample
+        }
+        if args.contains("--ui-basement") || args.contains("--ui-home-stairs") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.waiting=[];sample.motel!.world!.place = .house
+            sample.motel!.world!.player=Tile(x:2,y:13)
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            if args.contains("--ui-basement") {
+                _=sample.motel!.enterBasement();sample.motel!.world!.player=Tile(x:12,y:23)
+                for id in 0..<8 where args.contains("--ui-corral-\(id)") {sample.motel!.world!.player=BasementLayout.gate(id)}
+            }
+            sample.save();return sample
+        }
+        if args.contains("--ui-creature") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.waiting=[];sample.motel!.world!.place = .house;sample.motel!.world!.player=Tile(x:5,y:8)
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            sample.save();return sample
+        }
+        if args.contains("--ui-neighbors") || args.contains("--ui-chair") || args.contains("--ui-facilities") || args.contains("--ui-laundry") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.cash=900;sample.motel!.waiting=[];sample.motel!.world!.place = .grounds
+            sample.motel!.world!.player=args.contains("--ui-neighbors") ? Tile(x:58,y:9) : args.contains("--ui-chair") ? BeachLayout.approach(0) : args.contains("--ui-laundry") ? Tile(x:12,y:8) : HotelService.repair.tile
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            for _ in 0..<12 {sample.motel!.tickWorld()}
+            if args.contains("--ui-chair") {_=sample.motel!.sitOnBeachChair()}
+            sample.save();return sample
+        }
+        if args.contains("--ui-bar") || args.contains("--ui-bar-exterior") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.cash=500;sample.motel!.waiting=[]
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=NeighborhoodShop.bar.door
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            if args.contains("--ui-bar") {
+                _=sample.motel!.enterShop(.bar)
+                sample.motel!.world!.player=ShopLayout.counter
+            }
+            sample.save();return sample
+        }
+        if args.contains("--ui-guest-favour") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.enableManagement();sample.motel!.cash=900
+            sample.motel!.rooms[0].guest=Motel.arrivals(day:1,count:1)[0]
+            sample.motel!.waiting=[];sample.motel!.world!.place = .grounds
+            sample.motel!.world!.player=Tile(x:16,y:9)
+            sample.motel!.operations!.nextIncidentTick=10000
+            sample.save();return sample
+        }
+        if args.contains("--ui-beach") || args.contains("--ui-water-pool") || args.contains("--ui-street") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.cash=2500;sample.motel!.waiting=[]
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=args.contains("--ui-water-pool") ? Tile(x:10,y:20) : Tile(x:57,y:50)
+            if args.contains("--ui-street") {sample.motel!.world!.player=Tile(x:41,y:36)}
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            for _ in 0..<20 {sample.motel!.tickWorld()}
+            sample.save();return sample
+        }
+        if args.contains("--ui-motel-room") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.waiting=[];sample.motel!.rooms[0].guest=nil
+            _=sample.motel!.enter(0);sample.motel!.visit!.player=Tile(x:4,y:6)
+            sample.save();return sample
+        }
         if args.contains("--ui-staff-posts") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.cash=5000
             sample.motel!.waiting=[];sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:12,y:23)
+            sample.motel!.guestsServed=12
             for role in StaffRole.allCases {_=sample.motel!.hire(role)}
             sample.motel!.operations!.nextIncidentTick=10000
             sample.save();return sample
@@ -66,6 +334,7 @@ struct ContentView: View {
             for _ in 0..<8 { sample.motel!.tickManagement() }
             sample.motel!.operations!.nextIncidentTick=10000
             if args.contains("--ui-parking-staff") {
+                sample.motel!.guestsServed=12
                 _ = sample.motel!.hire(.valet)
                 sample.motel!.operations!.workers[0].tile=HotelCar.approach(0)
                 sample.motel!.operations!.workers[0].progress=3
@@ -76,7 +345,7 @@ struct ContentView: View {
             }
             if args.contains("--ui-action-theft") {
                 _ = sample.motel!.checkIn(guestID:10,roomID:0)
-                _ = sample.motel!.enter(0); sample.motel!.visit!.player=Tile(x:3,y:3)
+                _ = sample.motel!.enter(0); sample.motel!.visit!.player=Tile(x:2,y:4)
                 _ = sample.motel!.steal()
             }
             if args.contains("--ui-action-wash") { _ = sample.motel!.washNearbyCar() }
@@ -86,6 +355,7 @@ struct ContentView: View {
             var sample = Game()
             sample.coins = 545; sample.wakeUp(); sample.motel!.initializeWorld()
             sample.motel!.waiting = []; sample.motel!.cash = 900
+            if args.contains("--ui-hiring") || args.contains("--ui-operations") {sample.motel!.guestsServed=12}
             sample.motel!.operations = MotelOperations()
             if args.contains("--ui-operations") {
                 sample.motel!.operations!.reviews = [GuestReview(id:"good",guest:"Robin",day:2,room:101,stars:5,text:"Lovely room and a peaceful stay!"),GuestReview(id:"bad",guest:"Sasha",day:2,room:102,stars:1,text:"The trouble outside spoiled my stay.")]
@@ -100,6 +370,7 @@ struct ContentView: View {
                 sample.motel!.waiting=Array(guests.dropFirst(2))
                 sample.motel!.operations!.incident = MotelIncident(kind:kind,guest:guests[0],otherGuest:guests[1])
                 if args.contains("--ui-responder") {
+                    sample.motel!.guestsServed=12
                     _=sample.motel!.hire(kind.responder)
                     sample.motel!.operations!.workers[0].tile=kind.approach
                     sample.motel!.world!.player=Tile(x:kind.approach.x+1,y:kind.approach.y)
@@ -124,6 +395,10 @@ struct ContentView: View {
             if args.contains("--ui-home-store") {sample.motel!.world!.player=NeighborhoodShop.furniture.door}
             if args.contains("--ui-clothes-store") {sample.motel!.world!.player=NeighborhoodShop.clothing.door}
             if args.contains("--ui-pawn-store") {sample.motel!.world!.player=NeighborhoodShop.pawn.door;sample.motel!.home=FamilyHome();sample.motel!.home!.stolen=[0,1,2]}
+            if args.contains("--ui-store-inside") {
+                let shop:NeighborhoodShop=args.contains("--ui-clothes-store") ? .clothing : args.contains("--ui-pawn-store") ? .pawn : .furniture
+                _=sample.motel!.enterShop(shop);sample.motel!.world!.player=ShopLayout.counter
+            }
             sample.motel!.home = sample.motel!.home ?? FamilyHome();sample.motel!.home!.storage=[.plant,.rug]
             for _ in 0..<12 {sample.motel!.tickWorld()}
             sample.save();return sample
@@ -158,7 +433,7 @@ struct ContentView: View {
                     fresh.motel!.rooms[0].dirty = args.contains("--ui-world-clean")
                     fresh.save()
                     _ = fresh.motel!.enter(0)
-                    fresh.motel!.visit!.player = args.contains("--ui-world-clean") ? Tile(x: 3, y: 3) : Tile(x: 6, y: 2)
+                    fresh.motel!.visit!.player = args.contains("--ui-world-clean") ? Tile(x: 4, y: 3) : Tile(x: 1, y: 5)
                     return fresh
                 }
                 if args.contains("--ui-world-build") {
@@ -180,14 +455,20 @@ struct ContentView: View {
             return fresh
         }
         #endif
-        return Game.load()
+        StartupTrace.stage("checkpoint_read_begin")
+        let loaded=Game.load()
+        StartupTrace.stage("checkpoint_read_complete")
+        return loaded
     }
     var body: some View {
         Group {
             if playing { gameplay.id(sessionID) }
             else {
                 MotelTitleScreen(hasSave: UserDefaults.standard.data(forKey:"littlehaven.save.v1") != nil, start: {
+                    StartupTrace.begin("continue game")
+                    StartupTrace.stage("continue_checkpoint_read")
                     game = Game.load(); sessionID = UUID(); playing = true
+                    StartupTrace.stage("continue_state_assigned")
                 }, newGame: {
                     heldDirection = nil; conversation = nil; message = nil; showHouse = false; showJournal = false
                     game = Game(); game.save(); sessionID = UUID(); playing = true
@@ -196,18 +477,32 @@ struct ContentView: View {
         }.environment(\.returnToTitle, {
             heldDirection = nil; game.save(); playing = false
         }).onChange(of:scenePhase) { _, phase in if phase != .active { heldDirection = nil } }
+        .statusBarHidden(fullscreenTouch && playing)
+        .persistentSystemOverlays(fullscreenTouch && playing ? .hidden : .automatic)
         .onAppear { if ProcessInfo.processInfo.arguments.contains("--ui-title") { playing = false } }
     }
     private var gameplay: some View {
         Group {
             if game.motel != nil {
-                MotelView(game: $game)
+                AnyView(MotelView(game: $game))
             } else if game.readyToWake {
                 WakeUpView {
+                    StartupTrace.begin("wake button")
                     conversation = nil
                     heldDirection = nil
-                    game.wakeUp()
-                    game.save()
+                    var firstShift = game
+                    firstShift.wakeUp()
+                    StartupTrace.stage("motel_created")
+                    firstShift.motel?.reconcileInteriorSpawn()
+                    StartupTrace.stage("world_prepared")
+                    firstShift.motel?.enableManagement()
+                    StartupTrace.stage("management_prepared")
+                    firstShift.save()
+                    StartupTrace.stage("checkpoint_written")
+                    var transition = Transaction(animation:nil)
+                    transition.disablesAnimations = true
+                    withTransaction(transition) { game = firstShift }
+                    StartupTrace.stage("hotel_state_assigned")
                 }
             } else {
                 townBody
@@ -215,12 +510,73 @@ struct ContentView: View {
         }
     }
 
+
+    private var touchTown:some View {
+        ZStack {
+            TownRPGView(game:game).ignoresSafeArea()
+            VStack {
+                HStack {
+                    Text("BRAINSTORM HAVEN").font(.headline)
+                    Spacer()
+                    Button {townDirection=nil;showJournal=true} label:{Image(systemName:"book.closed.fill").padding(12)}.accessibilityLabel("Open journal")
+                }.padding(10).background(Color(hex:0x172A25).opacity(0.9),in:RoundedRectangle(cornerRadius:16))
+                Spacer()
+                HStack(alignment:.bottom) {
+                    FullscreenJoystick(diagonals:false) {townDirection=$0}
+                        .disabled(conversation != nil || message != nil || showHouse || showJournal)
+                    Spacer()
+                    Button(game.atHouse ? "Cottage" : "Talk",action:interact).buttonStyle(MotelButtonStyle()).frame(width:160).accessibilityIdentifier("interact")
+                }
+            }.padding(16)
+        }
+        .foregroundStyle(cream).background(PaintedPanel(color:0x172A25))
+        .task(id:townDirection != nil) {
+            guard townDirection != nil else{return}
+            defer {game.save()}
+            let clock=ContinuousClock()
+            while !Task.isCancelled,let direction=townDirection,scenePhase == .active,conversation == nil,message == nil,!showHouse,!showJournal {
+                let inside=game.inside
+                game.move(dx:direction.x,dy:direction.y)
+                if game.inside != inside {townDirection=nil;return}
+                do {try await clock.sleep(for:.seconds(0.14))} catch {return}
+            }
+        }
+        .onChange(of:conversation != nil || message != nil || showHouse || showJournal) {_,paused in if paused {townDirection=nil}}
+        .onChange(of:scenePhase) {_,phase in if phase != .active {townDirection=nil}}
+        .onChange(of:fullscreenTouch) {_,_ in townDirection=nil}
+        .onDisappear {townDirection=nil;game.save()}
+    }
     private var townBody: some View {
+        Group {
+            if fullscreenTouch { touchTown } else { classicTown }
+        }
+        .sheet(item: $conversation) { person in
+            dialogue(person)
+                .presentationDetents([.height(340)]).presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showJournal) { journal.sheet(isPresented:$showTownOptions) {GameOptionsView()} }
+        .alert("The Willow Cottage", isPresented: $showHouse) {
+            if game.ownsHouse {
+                Button("Go inside") { game.enterHouse(); game.save() }
+            } else if game.coins >= Game.housePrice {
+                Button("Buy for 500 coins") {
+                    if game.buyHouse() { game.save(); message = "The key is yours! Your neighbors helped you find a home. Walk up to the cottage and tap ENTER to step inside." }
+                }
+            }
+            Button("Keep exploring", role: .cancel) { }
+        } message: {
+            Text(game.ownsHouse ? "Your own little corner of Brainstorm Haven. Welcome home." : game.coins >= 500 ? "A sunny room, a warm bed, and a fresh start. Ready to make it yours?" : "FOR SALE / 500 coins\nYou need \(500 - game.coins) more. Ask the townspeople if they can help with your cottage fund.")
+        }
+        .alert("Brainstorm Haven", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
+            Button("Continue") { message = nil }
+        } message: { Text(message ?? "") }
+    }
+    private var classicTown: some View {
         GeometryReader { geometry in
             VStack(spacing: 12) {
                 HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("LITTLE HAVEN").font(.system(size: 22, weight: .black, design: .rounded)).tracking(2)
+                        Text("BRAINSTORM HAVEN").font(.system(size: 22, weight: .black, design: .rounded)).tracking(2)
                         Text(game.inside ? "YOUR COTTAGE / HOME AT LAST" : "WILLOW TOWN / A NEW BEGINNING")
                             .font(.system(size: 9, weight: .bold, design: .monospaced)).tracking(1)
                             .foregroundStyle(cream.opacity(0.6))
@@ -283,7 +639,7 @@ struct ContentView: View {
                     }
                 }.frame(height: geometry.size.height < 700 ? 130 : 148).padding(.horizontal, 22)
             }.padding(.horizontal, 18).padding(.vertical, 10)
-            .foregroundStyle(cream).background(Color(hex: 0x172A25))
+            .foregroundStyle(cream).background(PaintedPanel(color:0x172A25))
         }
         .task(id: heldDirection) {
             guard let direction = heldDirection else { return }
@@ -300,26 +656,7 @@ struct ContentView: View {
             if phase != .active { stopMoving() }
         }
         .onDisappear { stopMoving() }
-        .sheet(item: $conversation) { person in
-            dialogue(person)
-                .presentationDetents([.height(340)]).presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showJournal) { journal }
-        .alert("The Willow Cottage", isPresented: $showHouse) {
-            if game.ownsHouse {
-                Button("Go inside") { game.enterHouse(); game.save() }
-            } else if game.coins >= Game.housePrice {
-                Button("Buy for 500 coins") {
-                    if game.buyHouse() { game.save(); message = "The key is yours! Your neighbors helped you find a home. Walk up to the cottage and tap ENTER to step inside." }
-                }
-            }
-            Button("Keep exploring", role: .cancel) { }
-        } message: {
-            Text(game.ownsHouse ? "Your own little corner of Little Haven. Welcome home." : game.coins >= 500 ? "A sunny room, a warm bed, and a fresh start. Ready to make it yours?" : "FOR SALE / 500 coins\nYou need \(500 - game.coins) more. Ask the townspeople if they can help with your cottage fund.")
-        }
-        .alert("Little Haven", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
-            Button("Continue") { message = nil }
-        } message: { Text(message ?? "") }
+
     }
 
     private var hint: String {
@@ -347,6 +684,7 @@ struct ContentView: View {
         }
     }
     private func stopMoving() {
+        townDirection = nil
         heldDirection = nil
         game.save()
     }
@@ -404,7 +742,10 @@ struct ContentView: View {
                     Button("Save & return to title") { stopMoving(); showJournal = false; playing = false }
                     Button("Start a new adventure", role: .destructive) { reset = true }
                 }
-            }.navigationTitle("Your journal").toolbar { Button("Done") { showJournal = false } }
+            }.navigationTitle("Your journal").toolbar {
+                ToolbarItem(placement:.topBarLeading) {Button("Options") {showTownOptions=true}}
+                ToolbarItem(placement:.topBarTrailing) {Button("Done") {showJournal=false}}
+            }
                 .confirmationDialog("Erase your saved adventure?", isPresented: $reset, titleVisibility: .visible) {
                     Button("Start over", role: .destructive) { game = Game(); game.save(); showJournal = false }
                 }
@@ -480,6 +821,8 @@ extension EnvironmentValues {
 }
 
 struct GameOptionsView: View {
+    @AppStorage("littlehaven.hideFullscreenToolbar") private var hideFullscreenToolbar = false
+    @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
     @Environment(\.dismiss) private var dismiss
     @AppStorage("littlehaven.hints") private var hints = true
     @AppStorage("littlehaven.haptics") private var haptics = true
@@ -492,22 +835,25 @@ struct GameOptionsView: View {
                     Text("Gameplay").font(.title2.monospaced().bold())
                     Toggle("Show gameplay hints", isOn: $hints).accessibilityIdentifier("optionHints")
                     Toggle("Action haptics", isOn: $haptics)
-                    Toggle("Larger D-pad buttons", isOn: $largeControls).accessibilityIdentifier("optionLargeControls")
+                    Toggle("Full screen / joystick controls", isOn: $fullscreenTouch).accessibilityIdentifier("optionFullscreenTouch")
+                    Text("Fill the screen with the world. Move the visible joystick to walk and release it to stop. Tap nearby objects or use the action button.").font(.caption)
+                    if fullscreenTouch {Toggle("Hide top toolbar",isOn:$hideFullscreenToolbar).accessibilityIdentifier("optionHideToolbar");Text("Tap the small eye button to restore the toolbar. Emergency alerts remain visible.").font(.caption)}
+                    if !fullscreenTouch { Toggle("Larger D-pad buttons", isOn: $largeControls).accessibilityIdentifier("optionLargeControls") }
                     Divider().overlay(Color(hex:0xEFC977))
                     Text("Controls").font(.title2.monospaced().bold())
-                    Text("Hold an arrow to walk. Release or slide off the button to stop. Nearby tasks never move your character; press their action button when you want to work.")
+                    Text(fullscreenTouch ? "Move the joystick at the bottom left in the direction you want to walk. Release to stop. Map touches do not move your character. Use the action button at the bottom right to interact. Open Pause to change controls." : "Hold an arrow to walk. Release or slide off the button to stop. Nearby tasks never move your character; press their action button when you want to work.")
                     Text("Inside the office, walk freely and tap guests, the desk, tools, family, or the door to interact.")
                     Divider().overlay(Color(hex:0xEFC977))
                     Text("Saved game").font(.title2.monospaced().bold())
                     Text("Continue loads your last checkpoint. New Game starts from zero after confirmation. Save at the office before leaving. Quit closes the game session; use the Home gesture to leave the app.")
-                    Button("Restore default options") { hints = true; haptics = true; largeControls = false }
+                    Button("Restore default options") { hints = true; haptics = true; largeControls = false; fullscreenTouch = false; hideFullscreenToolbar = false }
                         .buttonStyle(MotelButtonStyle(subdued:true))
                 }.font(.subheadline).padding(22)
                     .background(Color(hex:0x29483D),in:RoundedRectangle(cornerRadius:16))
                     .overlay(RoundedRectangle(cornerRadius:16).stroke(Color(hex:0xC6DDC8),lineWidth:2))
                     .padding(18)
             }.navigationTitle("Options")
-                .background(Color(hex:0x172A25)).foregroundStyle(Color(hex:0xF5E7C8))
+                .background(PaintedPanel(color:0x172A25)).foregroundStyle(Color(hex:0xF5E7C8))
                 .toolbarBackground(Color(hex:0x172A25),for:.navigationBar).toolbarBackground(.visible,for:.navigationBar)
                 .toolbarColorScheme(.dark,for:.navigationBar)
                 .toolbar { Button("Done") { dismiss() } }
@@ -546,9 +892,9 @@ struct MotelTitleScreen: View {
                 } else {
                     VStack(spacing:12) {
                         VStack(spacing:0) {
-                            Text("MOTEL").font(.system(size:min(60,proxy.size.width*0.15),weight:.black,design:.rounded)).tracking(3)
+                            Text("BRAINSTORM").font(.system(size:min(42,proxy.size.width*0.10),weight:.black,design:.rounded)).tracking(3)
                                 .foregroundStyle(Color(hex:0xFFB4A4)).shadow(color:.red,radius:8)
-                            Text("SIMULATOR").font(.system(size:min(36,proxy.size.width*0.082),weight:.heavy,design:.rounded)).tracking(2)
+                            Text("HAVEN").font(.system(size:min(36,proxy.size.width*0.082),weight:.heavy,design:.rounded)).tracking(2)
                                 .foregroundStyle(Color(hex:0xB8F2EE)).shadow(color:.cyan,radius:8)
                             Text("A GAME OF HOSPITALITY").font(.system(size:11,weight:.bold,design:.monospaced)).tracking(1).padding(.top,8)
                         }.padding(20).background(Color(hex:0x193D43).opacity(0.96),in:RoundedRectangle(cornerRadius:20))
@@ -562,7 +908,8 @@ struct MotelTitleScreen: View {
                                 menuButton("QUIT",tint:0x653C35,id:"titleQuit") { confirmQuit = true }
                             }
                         }.frame(maxWidth:460)
-                        Text("LITTLE HAVEN / YOUR NEXT SHIFT AWAITS").font(.system(size:9,weight:.bold,design:.monospaced)).shadow(color:.black,radius:3)
+                        Text("BRAINSTORM HAVEN / YOUR NEXT SHIFT AWAITS").font(.system(size:9,weight:.bold,design:.monospaced)).shadow(color:.black,radius:3)
+                        Text("VERSION \(StartupTrace.version)").font(.system(size:9,design:.monospaced)).accessibilityIdentifier("installedVersion")
                     }.padding(24)
                 }
                 if confirmQuit {
@@ -579,6 +926,7 @@ struct MotelTitleScreen: View {
             }.foregroundStyle(cream)
         }.accessibilityIdentifier("titleScreen")
             .onAppear {
+                StartupTrace.finish("title_visible")
                 #if DEBUG
                 if ProcessInfo.processInfo.arguments.contains("--ui-options-preview") { options=true }
                 if ProcessInfo.processInfo.arguments.contains("--ui-quit-preview") { confirmQuit=true }
