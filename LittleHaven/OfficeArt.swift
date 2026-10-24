@@ -160,7 +160,7 @@ enum CozyScenery {
         let bounds=CGRect(x:x+4,y:y+4,width:w-8,height:h-8)
         context.fill(water,with:.linearGradient(Gradient(colors:[Color(hex:0x88D3CD),Color(hex:0x55B5BD),Color(hex:0x3B9FAA)]),startPoint:CGPoint(x:x,y:y),endPoint:CGPoint(x:x+w,y:y+h)))
         var reflection=context;reflection.clip(to:water)
-        reflection.fill(Path(ellipseIn:bounds.insetBy(dx:8,dy:12)),with:.color(Color(hex:0xB2ECE0).opacity(0.14)))
+        reflection.fill(Path(bounds),with:.linearGradient(Gradient(colors:[Color.clear,Color(hex:0xC1F1E4).opacity(0.10),Color.clear]),startPoint:CGPoint(x:x,y:y+h*0.15),endPoint:CGPoint(x:x+w,y:y+h*0.85)))
         context.stroke(water,with:.color(Color(hex:0x397E87).opacity(0.42)),lineWidth:0.7)
         // Motion is a small SpriteKit overlay, never a full-map redraw.
 
