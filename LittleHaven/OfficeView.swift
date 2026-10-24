@@ -28,7 +28,7 @@ extension Motel {
     }
 }
 
-enum OfficeTap: String { case computer, workbench, player, guest, door, basement, chichu, chichi, mochi, samhil, hildarelys, tools, paint, bed, save }
+enum OfficeTap: String { case girlBedroom, parentsBedroom, computer, workbench, player, guest, door, basement, chichu, chichi, mochi, samhil, hildarelys, tools, paint, bed, save }
 struct FamilyHouseView:View {
     @Environment(\.worldTouch) private var worldTouch
     let motel:Motel
@@ -44,12 +44,14 @@ struct FamilyHouseView:View {
             let origin=CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
                 RPGSceneView(mapID:"family-house",revision:"decorated-home-26-\(motel.household.level)-\(motel.household.wallpaper)-\(motel.household.floor)-\(motel.household.placed.map{"\($0.id):\($0.tile.x):\($0.tile.y)"}.joined())",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeInteriorArt(home:motel.household))}
-                target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin)
-                target(.samhil,"Talk to Samhil",OfficeReception.samhil,scale,origin)
+                target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin).animation(.linear(duration:0.65),value:motel.reception.hildarelys).zIndex(2)
+                target(.samhil,"Talk to Samhil",OfficeReception.samhil,scale,origin).zIndex(2)
                 ForEach(motel.visiblePets, id: \.key) { pet in
                     target(OfficeTap(rawValue:pet.key)!,"Talk to \(motel.companionName(pet.key))",pet.value.tile,scale,origin)
                         .animation(.linear(duration:pet.value.following ? 0.14 : 0.65),value:pet.value.tile)
                 }
+                target(.girlBedroom,"Enter Samhil bedroom",HomeBedroom.samhil.door,scale,origin)
+                target(.parentsBedroom,"Enter parents bedroom",HomeBedroom.parents.door,scale,origin)
                 target(.basement,"Enter basement",BasementLayout.homeStairs,scale,origin)
                 target(.door,"Leave home",FamilyHome.exit,scale,origin)
                 target(.player,"Home checkpoint",Tile(x:2,y:10),scale,origin)
@@ -59,7 +61,7 @@ struct FamilyHouseView:View {
             .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
     }
     private func target(_ item:OfficeTap,_ label:String,_ tile:Tile,_ scale:CGFloat,_ origin:CGPoint)->some View {
-        Button {if item == .hildarelys || item == .samhil {tap(item)} else if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).contentShape(Rectangle())}.buttonStyle(.plain).frame(width:max(item == .hildarelys ? 60 : 44,24*scale),height:max(item == .hildarelys ? 60 : 44,26*scale)).contentShape(Rectangle()).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+CGFloat(tile.y*16+5)*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
+        Button {if item == .hildarelys || item == .samhil {tap(item)} else if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).frame(width:max(item == .hildarelys ? 64 : 44,24*scale),height:max(item == .hildarelys ? 64 : 44,26*scale)).contentShape(Rectangle())}.buttonStyle(.plain).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+CGFloat(tile.y*16+5)*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
     }
 }
 struct OfficeReceptionView: View {
@@ -235,5 +237,36 @@ extension Motel {
         guard isAtHome else{return []}
         return homeNeighborIDs.map{id in RPGActor(id:"home-neighbor-\(id)",tile:homeNeighborTile(id),
             color:Self.themeColors[(id+1)%4],variant:610+id,facing:0)}
+    }
+}
+
+struct HomeBedroomView:View {
+    @Environment(\.worldTouch) private var worldTouch
+    let motel:Motel
+    let bedroom:HomeBedroom
+    let exit:()->Void
+    let save:()->Void
+    private var actors:[RPGActor] {
+        [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing)] + motel.petActors + motel.policeActors
+    }
+    var body:some View {
+        GeometryReader {proxy in
+            let scale=min(proxy.size.width/240,proxy.size.height/240)
+            let origin=CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
+            ZStack(alignment:.topLeading) {
+                RPGSceneView(mapID:bedroom.map,revision:"bedroom-50",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeBedroomArt(bedroom:bedroom))}
+                Button {if let worldTouch {worldTouch(HomeBedroom.exit,exit)} else {exit()}} label:{
+                    Color.white.opacity(0.001).frame(width:30*scale,height:36*scale).contentShape(Rectangle())
+                }.buttonStyle(.plain).position(x:origin.x+120*scale,y:origin.y+220*scale)
+                    .accessibilityLabel("Return to living room").accessibilityIdentifier("bedroomExit")
+                if bedroom == .parents {
+                    Button(action:save) {Color.white.opacity(0.001).frame(width:32*scale,height:24*scale).contentShape(Rectangle())}
+                        .buttonStyle(.plain).position(x:origin.x+88*scale,y:origin.y+126*scale)
+                        .accessibilityLabel("Save home checkpoint").accessibilityIdentifier("bedroomSave")
+                }
+            }
+        }.accessibilityElement(children:.contain).accessibilityIdentifier("homeBedroomScene")
+            .accessibilityLabel(bedroom.title)
+            .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
     }
 }

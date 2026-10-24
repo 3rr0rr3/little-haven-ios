@@ -184,6 +184,60 @@ final class LittleHavenUITests: XCTestCase {
         capture(app,"Fullscreen home seated Samhil and reliable family conversations")
     }
 
+    func testFullscreenDialogueBackAndWifePhysicalTaps() {
+        let app=XCUIApplication();app.launchArguments=["--ui-family-home","--ui-testing","--ui-touch"];app.launch()
+        XCTAssertTrue(app.buttons["office_hildarelys"].waitForExistence(timeout:15))
+        app.buttons["hideFullscreenToolbar"].tap()
+        let wife=app.buttons["office_hildarelys"]
+        // Screen coordinates exercise actual hit regions, not accessibility activation.
+        wife.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+        XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5))
+        let back=app.buttons["dialogueBack"]
+        XCTAssertGreaterThanOrEqual(back.frame.height,44)
+        back.coordinate(withNormalizedOffset:CGVector(dx:0.85,dy:0.5)).tap()
+        XCTAssertFalse(app.otherElements["gameDialogue"].exists)
+        // Back must unpause the map and allow another family conversation.
+        wife.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+        XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5))
+        app.buttons["Give her a kiss"].tap()
+        app.terminate()
+        app.launchArguments=["--ui-family-home","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["office_mochi"].waitForExistence(timeout:15))
+        app.buttons["office_mochi"].coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+        XCTAssertTrue(app.buttons["Play"].waitForExistence(timeout:5))
+        app.buttons["dialogueBack"].coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+        XCTAssertFalse(app.otherElements["gameDialogue"].exists)
+        app.buttons["office_hildarelys"].tap()
+        XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5))
+        capture(app,"Working Back button and home family conversation")
+    }
+    func testHomeBedroomsEnterExitAndSavedReturn() {
+        for touch in [false,true] {
+            for parents in [false,true] {
+                let app=XCUIApplication()
+                app.launchArguments=[parents ? "--ui-bedroom-parents-door" : "--ui-bedroom-doors","--ui-testing"]+(touch ? ["--ui-touch"] : [])
+                app.launch()
+                let door=app.buttons[parents ? "office_parentsBedroom" : "office_girlBedroom"]
+                XCTAssertTrue(door.waitForExistence(timeout:15))
+                if touch {app.buttons["hideFullscreenToolbar"].tap()}
+                door.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+                XCTAssertTrue(app.otherElements["homeBedroomScene"].waitForExistence(timeout:5))
+                XCTAssertTrue(app.otherElements["homeBedroomScene"].label.contains(parents ? "Hildarelys" : "Samhil"))
+                capture(app,parents ? "Shared parents bedroom" : "Samhil bedroom")
+                if parents {
+                    app.buttons["bedroomSave"].tap()
+                    app.terminate();app.launchArguments=["--ui-title","--ui-testing"]+(touch ? ["--ui-touch"] : []);app.launch()
+                    XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:10));app.buttons["CONTINUE GAME"].tap()
+                    XCTAssertTrue(app.otherElements["homeBedroomScene"].waitForExistence(timeout:10),"Saved bedroom reloads in its own map")
+                }
+                app.buttons["bedroomExit"].coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+                XCTAssertTrue(app.otherElements["familyHouseScene"].waitForExistence(timeout:5))
+                XCTAssertFalse(app.otherElements["homeBedroomScene"].exists)
+                app.terminate()
+            }
+        }
+    }
+
     func testFamilyAndCatsAreTappable() {
         let app = launch("--ui-family-home")
         XCTAssertTrue(app.buttons["office_chichu"].waitForExistence(timeout:10), app.debugDescription)

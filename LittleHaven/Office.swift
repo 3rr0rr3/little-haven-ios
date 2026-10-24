@@ -12,7 +12,7 @@ struct PetCompanion: Codable {
 
 extension Motel {
     func companionName(_ id:String)->String {id == "mochi" ? "Tuki" : id.capitalized}
-    var petMap: String { visit.map { "room-\($0.roomID)" } ?? (currentShop.map {"shop-"+$0.rawValue} ?? worldState.place.rawValue) }
+    var petMap: String { visit.map { "room-\($0.roomID)" } ?? (currentShop.map {"shop-"+$0.rawValue} ?? (currentBedroom?.map ?? worldState.place.rawValue)) }
     func petState(_ id: String) -> PetCompanion {
         worldState.pets?[id] ?? PetCompanion(tile: id == "mochi" ? Tile(x:4,y:8) : id == "chichu" ? OfficeReception.chichu : OfficeReception.chichi)
     }
@@ -43,6 +43,7 @@ extension Motel {
             let trailBlocked:Bool
             if visit != nil {trailBlocked=RPGMaps.room.blocked(trail)}
             else if isAtBasement {trailBlocked=BasementLayout.blocked(trail)}
+            else if let bedroom=currentBedroom {trailBlocked=bedroom.blocked(trail)}
             else if isAtHome {trailBlocked=homeBlocked(trail)}
             else if isAtShop {trailBlocked=shopBlocked(trail)}
             else if isAtReception {trailBlocked=RPGMaps.office.blocked(trail)}
@@ -54,6 +55,7 @@ extension Motel {
                     if visit != nil { return !RPGMaps.room.blocked(tile) }
                     if isAtShop {return !shopBlocked(tile) && tile != ShopLayout.exit}
                     if isAtBasement {return !BasementLayout.blocked(tile) && tile != BasementLayout.stairs}
+                    if let bedroom=currentBedroom {return !bedroom.blocked(tile) && tile != HomeBedroom.exit}
                     if isAtHome { return !homeBlocked(tile) && tile != FamilyHome.exit }
                     if isAtReception { return !RPGMaps.office.blocked(tile) && tile != OfficeReception.door }
                     return !groundBlocked(tile)
@@ -72,7 +74,7 @@ extension Motel {
     }
     /// Home cats wander on the existing simulation cadence; no extra UI timer.
     mutating func tickHomeCats() {
-        guard isAtHome,worldState.tick%4==0 else{return}
+        guard isAtHome,currentBedroom == nil,worldState.tick%4==0 else{return}
         let route=[Tile(x:10,y:12),Tile(x:8,y:10),Tile(x:6,y:7),Tile(x:8,y:4),Tile(x:10,y:7),Tile(x:12,y:12)]
         for (index,id) in ["chichu","chichi"].enumerated() {
             var pet=petState(id)
@@ -255,5 +257,40 @@ extension Motel {
         guard isAtReception,let visitor=reception.visitor,visitor.phase == .waiting,
               visitor.tile == target else{return false}
         return (2...6).contains(actorTile.x) && actorTile.y == 3
+    }
+}
+
+// An optional room field keeps every existing home checkpoint decodable.
+enum HomeBedroom:String,Codable,CaseIterable,Hashable {
+    case samhil,parents
+    var title:String {self == .samhil ? "Samhil's bedroom" : "Your & Hildarelys's bedroom"}
+    var map:String {"home-bedroom-"+rawValue}
+    var door:Tile {Tile(x:self == .samhil ? 5 : 8,y:2)}
+    static let exit=Tile(x:7,y:13)
+    static let arrival=Tile(x:7,y:12)
+    init?(map:String) {
+        guard map.hasPrefix("home-bedroom-") else{return nil}
+        self.init(rawValue:String(map.dropFirst(13)))
+    }
+    func blocked(_ tile:Tile)->Bool {
+        if tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 {return true}
+        let bedWidth=self == .samhil ? 2 : 4
+        return RPGRegion(x:2,y:3,width:bedWidth,height:4).contains(tile) ||
+            RPGRegion(x:10,y:3,width:3,height:3).contains(tile) ||
+            RPGRegion(x:10,y:7,width:3,height:2).contains(tile) ||
+            RPGRegion(x:2,y:10,width:2,height:2).contains(tile) || tile == Tile(x:12,y:11)
+    }
+}
+extension Motel {
+    var currentBedroom:HomeBedroom? {isAtHome ? worldState.homeBedroom : nil}
+    @discardableResult mutating func enterBedroom(_ bedroom:HomeBedroom)->Bool {
+        guard isAtHome,currentBedroom == nil,!policeRequiresDecision,actorTile.distance(to:bedroom.door)<=1 else{return false}
+        initializeWorld();world!.homeBedroom=bedroom;world!.player=HomeBedroom.arrival;world!.facing=3
+        return true
+    }
+    @discardableResult mutating func leaveBedroom()->Bool {
+        guard let bedroom=currentBedroom,!policeRequiresDecision,actorTile.distance(to:HomeBedroom.exit)<=1 else{return false}
+        world!.homeBedroom=nil;world!.player=Tile(x:bedroom.door.x,y:3);world!.facing=0
+        return true
     }
 }

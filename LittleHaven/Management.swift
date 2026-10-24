@@ -111,7 +111,7 @@ extension Motel {
         logMoney(-25,category:"Home improvement",note:wall ? "Wallpaper" : "Flooring");return true
     }
     @discardableResult mutating func placeHomeObject(_ kind:HomeObject,at tile:Tile)->Bool {
-        guard isAtHome,let index=household.storage.firstIndex(of:kind),household.placed.count<household.capacity,!homeBlocked(tile),tile.distance(to:BasementLayout.homeStairs)>1,tile.y<12,tile.x>1,
+        guard isAtHome,currentBedroom == nil,!HomeBedroom.allCases.contains(where:{tile.distance(to:$0.door)<=1}),let index=household.storage.firstIndex(of:kind),household.placed.count<household.capacity,!homeBlocked(tile),tile.distance(to:BasementLayout.homeStairs)>1,tile.y<12,tile.x>1,
               !household.placed.contains(where:{$0.tile == tile}),!Self.familyTiles.contains(tile),!OfficeReception.hildarelysRoute.contains(tile),tile != actorTile else{return false}
         let before=household
         var state=before;state.storage.remove(at:index);state.placed.append(PlacedHomeObject(id:state.nextID,kind:kind,tile:tile));state.nextID+=1;home=state
@@ -120,7 +120,7 @@ extension Motel {
             let current=queue[cursor];cursor+=1
             for (dx,dy) in [(1,0),(-1,0),(0,1),(0,-1)] {let next=Tile(x:current.x+dx,y:current.y+dy);if !homeBlocked(next),seen.insert(next).inserted {queue.append(next)}}
         }
-        guard seen.contains(FamilyHome.exit),Self.familyTiles.allSatisfy({family in seen.contains{ $0.distance(to:family)<=1 }}),OfficeReception.hildarelysRoute.allSatisfy({seen.contains($0)}) else {home=before;return false}
+        guard HomeBedroom.allCases.allSatisfy({seen.contains($0.door)}),seen.contains(FamilyHome.exit),Self.familyTiles.allSatisfy({family in seen.contains{ $0.distance(to:family)<=1 }}),OfficeReception.hildarelysRoute.allSatisfy({seen.contains($0)}) else {home=before;return false}
         return true
     }
     static let familyTiles=[OfficeReception.samhil,OfficeReception.chichu,OfficeReception.chichi]
@@ -1634,7 +1634,7 @@ extension StaffRole {
 extension Motel {
     var policeRequiresDecision:Bool {business.police?.arrived == true}
     private func policeEntrance(_ map:String)->(outside:Tile,inside:Tile) {
-        if map == "house" || map == "basement" {
+        if map == "house" || map == "basement" || HomeBedroom(map:map) != nil {
             let door=groundTile(FamilyHome.door)
             return (Tile(x:door.x,y:door.y+1),map == "basement" ? BasementLayout.arrival : Tile(x:7,y:12))
         }
@@ -1649,6 +1649,7 @@ extension Motel {
     }
     func policeBlocked(_ tile:Tile,map:String)->Bool {
         if map == "grounds" {return groundBlocked(tile)}
+        if let bedroom=HomeBedroom(map:map) {return bedroom.blocked(tile)}
         if map == "house" {return homeBlocked(tile)}
         if map == "basement" {return BasementLayout.blocked(tile)}
         if map.hasPrefix("room-") {return RoomVisit.blocked(tile)}

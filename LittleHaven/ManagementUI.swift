@@ -141,7 +141,16 @@ struct GameDialogue: View {
             HStack {
                 Text(speaker.uppercased()).font(.system(size:13,weight:.black,design:.monospaced)).tracking(1).foregroundStyle(Color(hex:0xF2CE7F))
                 Spacer()
-                if dismissible {Button("Back",action:close).font(.system(size:11,weight:.bold,design:.monospaced)).foregroundStyle(Color(hex:0xE9DAB9))}
+                if dismissible {
+                    Button(action:close) {
+                        Label("Back",systemImage:"chevron.left")
+                            .font(.system(size:13,weight:.bold,design:.rounded))
+                            .foregroundStyle(Color(hex:0xF5E7C8))
+                            .frame(minWidth:80,minHeight:48)
+                            .background(Color(hex:0x385448),in:RoundedRectangle(cornerRadius:8))
+                            .contentShape(Rectangle())
+                    }.buttonStyle(.plain).accessibilityIdentifier("dialogueBack")
+                }
             }
             HStack(alignment:.top,spacing:12) {
                 portrait.frame(width:64,height:76).background(Color(hex:0x344E40)).overlay(Rectangle().stroke(Color(hex:0xC4A96F),lineWidth:1))
@@ -154,7 +163,7 @@ struct GameDialogue: View {
                         .foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x385448))
                 }.accessibilityLabel(choice.title)
             }
-        }.modifier(RPGFrame()).accessibilityElement(children:.contain).accessibilityIdentifier("gameDialogue")
+        }.modifier(RPGFrame()).contentShape(Rectangle()).accessibilityElement(children:.contain).accessibilityIdentifier("gameDialogue")
     }
 }
 struct CatPortrait: View {

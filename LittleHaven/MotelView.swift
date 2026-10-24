@@ -409,6 +409,7 @@ struct MotelView: View {
         ZStack {
             deferredScene.ignoresSafeArea()
                 .environment(\.worldTouch,interactAtTouch)
+                .allowsHitTesting(!paused)
             VStack(spacing:8) {
                 if hideFullscreenToolbar {
                     HStack {Spacer();Button {hideFullscreenToolbar=false} label:{Image(systemName:"eye").padding(12).background(.ultraThinMaterial,in:Capsule())}.accessibilityLabel("Show top toolbar").accessibilityIdentifier("restoreFullscreenToolbar")}
@@ -504,6 +505,7 @@ struct MotelView: View {
                 }.accessibilityIdentifier("policeAlarm")
             }
             deferredScene
+                .allowsHitTesting(!paused)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
                 .overlay(RoundedRectangle(cornerRadius: 20).stroke(cream.opacity(0.18), lineWidth: 1))
                 // Notifications must not participate in the map's layout or move its touch targets.
@@ -680,6 +682,8 @@ struct MotelView: View {
             ShopInteriorView(motel:motel,shop:shop,chat:{toast=$0},trade:{if motel.canTrade(shop) {performAction()} else {toast="Walk to "+shop.keeperName+"'s counter first."}},exit:{stop();var left=false;change{left=$0.leaveShop()};if !left {toast="Walk to the lower shop door first."}})
         } else if motel.isAtBasement {
             BasementView(motel:motel,corral:openCorral,exit:{stop();change{_=$0.leaveBasement()}}).id(mapIdentity)
+        } else if let bedroom=motel.currentBedroom {
+            HomeBedroomView(motel:motel,bedroom:bedroom,exit:{stop();change{_=$0.leaveBedroom()}},save:saveHere).id(mapIdentity)
         } else if motel.isAtHome {
             FamilyHouseView(motel:motel,tap:officeTap).id(mapIdentity)
         } else if motel.isAtReception {
@@ -696,6 +700,8 @@ struct MotelView: View {
 
     private var actionName: String {
         switch motel.nearbyAction {
+        case .bedroom:return "BEDROOM"
+        case .family:return "TALK"
         case .basement:return "BASEMENT"
         case .corral:return "VISIT CREATURE"
         case .computer: return "RECEPTION PC"
@@ -743,6 +749,8 @@ struct MotelView: View {
     private var hint: String {
         if motel.isRelaxing {return "Relaxing by the sea. Stand up or move whenever you are ready."}
         switch motel.nearbyAction {
+        case .bedroom(let bedroom):return "Enter "+bedroom.title+"."
+        case .family(let person):return "Talk to "+person.capitalized+"."
         case .basement:return "Stairs to your basement sanctuary."
         case .corral(let id):return "Visit "+BasementLayout.titles[id]+" at its corral gate."
         case .computer: return "RECEPTION PC"
@@ -808,6 +816,8 @@ struct MotelView: View {
         stop()
         if haptics { UIImpactFeedbackGenerator(style:.light).impactOccurred() }
         switch motel.nearbyAction {
+        case .bedroom(let bedroom):change{_=$0.enterBedroom(bedroom)}
+        case .family(let person):family=OfficeTap(rawValue:person)
         case .basement:change{_=$0.enterBasement()}
         case .corral(let id):openCorral(id)
         case .home: change { _ = $0.useEntrance() }
@@ -999,6 +1009,8 @@ struct MotelView: View {
         guard !paused, motel.isAtReception || motel.isAtHome else { return }
         stop()
         switch item {
+        case .girlBedroom:change{_=$0.enterBedroom(.samhil)}
+        case .parentsBedroom:change{_=$0.enterBedroom(.parents)}
         case .basement:change{_=$0.enterBasement()}
         case .door:
             change { value in

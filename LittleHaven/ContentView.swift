@@ -388,6 +388,14 @@ struct ContentView: View {
             sample.save()
             return sample
         }
+        if args.contains("--ui-bedroom-samhil") || args.contains("--ui-bedroom-parents") || args.contains("--ui-bedroom-doors") || args.contains("--ui-bedroom-parents-door") {
+            var sample=Game();sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.world!.place = .house
+            sample.motel!.waiting=[]
+            if args.contains("--ui-bedroom-doors") {sample.motel!.world!.player=Tile(x:5,y:3)}
+            else if args.contains("--ui-bedroom-parents-door") {sample.motel!.world!.player=Tile(x:8,y:3)}
+            else {sample.motel!.world!.homeBedroom=args.contains("--ui-bedroom-samhil") ? .samhil : .parents;sample.motel!.world!.player=HomeBedroom.arrival}
+            sample.save();return sample
+        }
         if args.contains("--ui-home-exterior") || args.contains("--ui-family-home") || args.contains("--ui-neighborhood") || args.contains("--ui-home-store") || args.contains("--ui-clothes-store") || args.contains("--ui-pawn-store") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.cash=2500;sample.motel!.waiting=[]
             sample.motel!.world!.place = args.contains("--ui-family-home") ? .house : .grounds

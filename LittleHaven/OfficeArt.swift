@@ -257,7 +257,12 @@ struct HomeInteriorArt:View {
             PaintedArt.draw("workbench",in:CGRect(x:62,y:174,width:20,height:14),context:&context)
             PaintedArt.draw("door",in:CGRect(x:111,y:208,width:18,height:32),context:&context)
             for item in home.placed {Self.object(context:&context,kind:item.kind,x:Double(item.tile.x*16),y:Double(item.tile.y*16))}
-            context.draw(Text("HOME SWEET HOME").font(.system(size:7,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:120,y:17))
+            for bedroom in HomeBedroom.allCases {
+                let x=Double(bedroom.door.x*16-2)
+                PaintedArt.draw("door",in:CGRect(x:x,y:12,width:20,height:30),context:&context)
+                context.draw(Text(bedroom == .samhil ? "SAMHIL" : "OUR ROOM").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x+10,y:9))
+            }
+            context.draw(Text("HOME SWEET HOME").font(.system(size:7,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:120,y:195))
         }.frame(width:240,height:240)
     }
 }
@@ -1038,6 +1043,44 @@ struct FishInteriorArt:View {
             for x in [22.0,197] {CozyScenery.planter(context:&c,x:x,y:211)}
             block(110,208,20,32,0xE4D2AA)
             c.draw(Text("EXIT").font(.system(size:4,weight:.bold)).foregroundColor(Color(hex:0x4A6B63)),at:CGPoint(x:120,y:225))
+        }.frame(width:240,height:240)
+    }
+}
+
+struct HomeBedroomArt:View {
+    let bedroom:HomeBedroom
+    var body:some View {
+        Canvas {context,_ in
+            let child=bedroom == .samhil
+            CozyScenery.interior(context:&context,width:240,height:240,floor:0xBC9E79,wall:child ? 0xBCA2B6 : 0x87ADA0)
+            PaintedArt.draw("glazed-window",in:CGRect(x:103,y:5,width:34,height:23),context:&context)
+            DecorArt.rug(&context,89,113,63,58,child ? 0xD09CAF : 0x709F92)
+            // Beds occupy exactly the solid bed footprint in HomeBedroom.blocked.
+            let width=child ? 32.0 : 64.0
+            PaintedArt.draw("bed",in:CGRect(x:32,y:48,width:width,height:64),context:&context)
+            if !child {
+                // Matching pillows make the shared bed unmistakably a double.
+                for x in [39.0,66.0] {
+                    CozyScenery.block(context:&context,x:x,y:56,w:22,h:12,color:0xF2E6D1,depth:0.5)
+                }
+            }
+            PaintedArt.draw("bookshelf",in:CGRect(x:160,y:48,width:48,height:48),context:&context)
+            PaintedArt.draw("workbench",in:CGRect(x:160,y:112,width:48,height:32),context:&context)
+            // Small framed reading/study area with a book and a desk lamp.
+            PaintedArt.draw("save-journal",in:CGRect(x:174,y:112,width:18,height:12),context:&context)
+            HomeInteriorArt.object(context:&context,kind:.lamp,x:194,y:108)
+            PaintedArt.draw("coffee-table",in:CGRect(x:32,y:160,width:32,height:32),context:&context)
+            CozyScenery.planter(context:&context,x:192,y:176)
+            if child {
+                for (i,color) in [UInt32(0xCF8B9A),0xE3BF6D,0x76AAA7].enumerated() {
+                    CozyScenery.block(context:&context,x:35+Double(i*7),y:165-Double(i%2)*4,w:7,h:7,color:color,depth:1)
+                }
+            } else {
+                PaintedArt.draw("save-journal",in:CGRect(x:77,y:119,width:22,height:14),context:&context)
+            }
+            PaintedArt.draw("door",in:CGRect(x:111,y:208,width:18,height:32),context:&context)
+            context.draw(Text(child ? "SAMHIL'S ROOM" : "YOUR & HILDARELYS'S ROOM").font(.system(size:5,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:120,y:39))
+            context.draw(Text("LIVING ROOM").font(.system(size:3,weight:.bold)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:120,y:205))
         }.frame(width:240,height:240)
     }
 }

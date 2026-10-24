@@ -1887,3 +1887,42 @@ func homeRoamingAndRearBathroomRules() {
     print("PASS: home roaming, furniture avoidance, stay/follow commands, legacy pet saves and rear bathroom migration")
 }
 homeRoamingAndRearBathroomRules()
+
+func homeBedroomRules() {
+    for room in HomeBedroom.allCases {
+        var home=Motel();home.initializeWorld();home.world!.place = .house;home.world!.player=Tile(x:room.door.x,y:3)
+        require(home.enterBedroom(room),"Each home bedroom has a working living-room entrance")
+        require(home.currentBedroom==room && home.petMap==room.map,"Separate bedroom identity")
+        require(HomeBedroom(map:room.map)==room,"Bedroom map identifiers round-trip")
+        var queue=[HomeBedroom.arrival],seen:Set<Tile>=[HomeBedroom.arrival],cursor=0
+        while cursor<queue.count {
+            let at=queue[cursor];cursor+=1
+            for (dx,dy) in [(0,1),(0,-1),(-1,0),(1,0)] {
+                let next=Tile(x:at.x+dx,y:at.y+dy)
+                if !room.blocked(next),seen.insert(next).inserted {queue.append(next)}
+            }
+        }
+        require(seen.contains(HomeBedroom.exit) && seen.contains(Tile(x:6,y:5)),"Bed side and exit stay reachable")
+        require(room.blocked(Tile(x:2,y:3)) && room.blocked(Tile(x:11,y:4)),"Bed and wardrobe have matching collision")
+        require(home.policeBlocked(Tile(x:2,y:3),map:room.map),"Police use bedroom obstacles")
+        home.world!.pets=["chichu":PetCompanion(following:true,map:"house",tile:Tile(x:7,y:4))]
+        home.updateCompanions(from:room.door,map:"house")
+        require(home.petState("chichu").map==room.map && !room.blocked(home.petState("chichu").tile),"Pet follows safely into bedroom")
+        let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(home))
+        require(saved.currentBedroom==room && saved.petMap==room.map,"Bedroom checkpoint survives relaunch")
+        home.world!.player=HomeBedroom.arrival;home.moveActor(dx:0,dy:1)
+        require(home.currentBedroom==nil && home.isAtHome && home.actorTile==Tile(x:room.door.x,y:3),"Walking through bedroom exit returns to its living-room door")
+    }
+    var home=Motel();home.initializeWorld();home.world!.place = .house
+    home.world!.player=home.reception.hildarelys
+    require(home.nearbyAction == .family("hildarelys"),"Nearby wife offers Talk even when a following pet is present")
+    let encoded=try! JSONEncoder().encode(home.world!)
+    var object=try! JSONSerialization.jsonObject(with:encoded) as! [String:Any];object.removeValue(forKey:"homeBedroom")
+    let legacy=try! JSONDecoder().decode(MotelWorldState.self,from:JSONSerialization.data(withJSONObject:object))
+    require(legacy.homeBedroom==nil,"Existing home saves open the living room without migration")
+    home.home=FamilyHome();home.home!.placed=[PlacedHomeObject(id:1,kind:.plant,tile:HomeBedroom.samhil.door)]
+    home.reconcileInteriorSpawn()
+    require(home.household.placed.isEmpty && home.household.storage.contains(.plant),"Doorway furniture is preserved in storage instead of blocking a new room")
+    print("PASS: two home bedrooms, collisions, followers, safe exits, saves, legacy saves and family Talk")
+}
+homeBedroomRules()
