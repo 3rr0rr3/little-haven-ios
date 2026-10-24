@@ -298,7 +298,7 @@ func worldRules() {
     require(service.cleaningTarget == 1 && service.cleanNearbyTask(), "Walk to the trash to collect it")
     require(!service.rooms[0].dirty && service.rooms[0].cleanedTasks?.count == 3, "Only all three physical tasks make a room rentable")
     require(!service.paintNearby(2), "Cannot repaint from across the room")
-    service.visit!.player = Tile(x: 7, y: 3)
+    service.visit!.player = Tile(x: 1, y: 5)
     require(service.paintNearby(2) && service.rooms[0].theme == 2 && service.cash == 155, "Paint cabinet changes the room for its stated cost")
     require(!service.paintNearby(2), "No duplicate paint charges")
     service.visit!.player = Tile(x: 3, y: 3)
