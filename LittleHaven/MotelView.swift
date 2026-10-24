@@ -23,7 +23,13 @@ struct WakeUpView: View {
             Button("Start my first shift", action: begin).buttonStyle(MotelButtonStyle()).accessibilityIdentifier("wakeUp")
         }.padding(28)
         }.foregroundStyle(Color(hex: 0xF5E7C8)).frame(maxWidth: .infinity, maxHeight: .infinity).background(PaintedPanel(color:0x172A25))
-            .task { withAnimation(.easeInOut(duration: 1.5)) { awake = true } }
+            .task {
+                withAnimation(.easeInOut(duration: 1.5)) { awake = true }
+                guard let attempt=StartupTrace.activeID else{return}
+                StartupTrace.stage("wake_screen_visible")
+                do {try await Task.sleep(for:.seconds(10))} catch {return}
+                StartupTrace.finish("wake_screen_stable",ifID:attempt)
+            }
     }
 }
 struct MotelButtonStyle: ButtonStyle {
@@ -91,6 +97,12 @@ struct MotelView: View {
     private var paused: Bool { showHavenLife || lifeAfterPause || journalAfterPause || storyGuest != nil || showStoryJournal || motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
+        StartupTrace.stage("hotel_body_begin")
+        let content=AnyView(hotelContent)
+        StartupTrace.stage("hotel_content_constructed")
+        return content
+    }
+    private var hotelContent: some View {
         Group {
             if motel.caught { gameOver }
             else if fullscreenTouch { fullscreenWorld }
@@ -123,7 +135,9 @@ struct MotelView: View {
         }
         .transaction { if testingUI { $0.disablesAnimations = true } }
         .task {
+            StartupTrace.stage("hotel_initialization_begin")
             change { $0.reconcileInteriorSpawn(); if !testingUI || ProcessInfo.processInfo.arguments.contains("--ui-management") { $0.enableManagement() } }
+            StartupTrace.stage("hotel_initialization_complete")
             if motel.business.police?.arrived == true { showPolice=true }
             #if DEBUG
             if let kind=ChaosKind.allCases.first(where:{ProcessInfo.processInfo.arguments.contains("--ui-action-response-"+$0.rawValue)}) {
@@ -147,6 +161,12 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains("--ui-hiring") { panel = .staff }
             if ProcessInfo.processInfo.arguments.contains(where:{$0.hasPrefix("--ui-management-") && $0 != "--ui-management-night"}) {showManagement=true}
             #endif
+        }
+        .task {
+            guard let attempt=StartupTrace.activeID else{return}
+            StartupTrace.stage("hotel_mounted")
+            do {try await Task.sleep(for:.seconds(10))} catch {return}
+            StartupTrace.finish("hotel_stable",ifID:attempt)
         }
         .task(id:joystickDirection != nil) {
             guard fullscreenTouch,joystickDirection != nil else{return}

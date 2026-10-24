@@ -320,6 +320,8 @@ struct ExpandedOfficeArt: View {
     var clerkHired = false
     var body: some View {
         Canvas { context,_ in
+            StartupTrace.stage("office_art_draw_begin")
+            defer {StartupTrace.stage("office_art_draw_complete")}
             func rect(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) { CozyScenery.block(context:&context,x:x,y:y,w:w,h:h,color:color,depth:0.8) }
             func text(_ value:String,_ x:Double,_ y:Double,_ size:Double=4) { context.draw(Text(value).font(.system(size:size,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0xF4E4C0)),at:CGPoint(x:x,y:y)) }
             CozyScenery.interior(context:&context,width:240,height:240,floor:0xC4AD89,wall:Motel.themeColors[theme])

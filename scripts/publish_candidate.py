@@ -22,25 +22,25 @@ with zipfile.ZipFile(io.BytesIO(data)) as archive:
 assert info['CFBundleDisplayName'] == 'Brainstorm Haven'
 assert info['CFBundleSupportedPlatforms'] == ['iPhoneOS']
 version = info['CFBundleShortVersionString'].split('.')[0]
-assert version == '43' and info['CFBundleVersion'] == '48'
-branch = 'codex/download-v43-' + source[:8]
+assert version == '44' and info['CFBundleVersion'] == '49'
+branch = 'codex/download-v44-' + source[:8]
 entries = []
 def blob(path, content):
     result = api('/git/blobs', {'content': base64.b64encode(content).decode(), 'encoding':'base64'})
     expected = hashlib.sha1(b'blob ' + str(len(content)).encode() + b'\0' + content).hexdigest()
     assert result['sha'] == expected
     entries.append({'path':path, 'mode':'100644', 'type':'blob', 'sha':result['sha']})
-blob('downloads/BrainstormHaven-43.ipa', data)
-verification = {'source':source, 'version':'43.0', 'build':'48', 'size':len(data), 'sha256':digest}
-blob('downloads/BrainstormHaven-43-verification.json', json.dumps(verification, indent=2).encode())
+blob('downloads/BrainstormHaven-44.ipa', data)
+verification = {'source':source, 'version':'44.0', 'build':'49', 'size':len(data), 'sha256':digest}
+blob('downloads/BrainstormHaven-44-verification.json', json.dumps(verification, indent=2).encode())
 for image in sorted(Path('.').glob('LittleHaven-response-painted-*.png')):
     reduced = Path('/tmp') / (image.stem+'.jpg')
     subprocess.run(['sips','-s','format','jpeg','-s','formatOptions','90','-Z','1100',str(image),'--out',str(reduced)],check=True,stdout=subprocess.DEVNULL)
-    blob('previews/v43/' + image.stem+'.jpg', reduced.read_bytes())
+    blob('previews/v44/' + image.stem+'.jpg', reduced.read_bytes())
 tree = api('/git/trees', {'base_tree':api('/git/commits/' + source)['tree']['sha'], 'tree':entries})
-commit = api('/git/commits', {'message':'Verified Brainstorm Haven v43 build48 [skip ci]', 'tree':tree['sha'], 'parents':[source]})
+commit = api('/git/commits', {'message':'Verified Brainstorm Haven v44 build49 [skip ci]', 'tree':tree['sha'], 'parents':[source]})
 api('/git/refs', {'ref':'refs/heads/' + branch, 'sha':commit['sha']})
-url = 'https://raw.githubusercontent.com/' + repo + '/' + commit['sha'] + '/downloads/BrainstormHaven-43.ipa'
+url = 'https://raw.githubusercontent.com/' + repo + '/' + commit['sha'] + '/downloads/BrainstormHaven-44.ipa'
 with urllib.request.urlopen(url, timeout=90) as response:
     downloaded = response.read()
     assert response.status == 200

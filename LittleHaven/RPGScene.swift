@@ -177,6 +177,7 @@ struct CompatibleOfficeScene: View {
                 .offset(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
         }
         .onChange(of:visual?.id) { _,_ in visualStarted = Date() }
+        .onAppear {StartupTrace.stage("compatible_office_appeared")}
         .allowsHitTesting(false)
         .accessibilityElement(children:.ignore)
         .accessibilityLabel("Reception compatibility renderer")
@@ -292,6 +293,7 @@ final class RPGScene: SKScene {
                              actors: [RPGActor], working: Bool, workKind:String,
                              visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],bikePositions:[Int:Tile],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,pumpFault:Bool,pumpPosition:Tile,lifeProps:[HavenWorldProp],
                              scenery: () -> AnyView) {
+        StartupTrace.stage("spritekit_configure_"+mapID)
         let changedMap = worldID != mapID
         dimensions = mapSize
         visibleColumns = columns
@@ -448,6 +450,7 @@ final class RPGScene: SKScene {
             }
         }
         layoutCamera(jump: changedMap)
+        StartupTrace.stage("spritekit_ready_"+mapID)
     }
 
     // Small reusable props animate on the scene, without per-frame map redraws.

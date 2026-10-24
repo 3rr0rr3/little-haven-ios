@@ -78,6 +78,7 @@ struct OfficeReceptionView: View {
         return HotelVisual(id:v.id,kind:v.kind,origin:v.origin,target:v.target,map:"family-office")
     }
     private var actors: [RPGActor] {
+        StartupTrace.stage("office_actors_begin")
         var result = [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You")]
         if motel.operationsState.workers.contains(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:motel.staffHome($0.role)) <= 1})  {
             result.append(RPGActor(id:"clerk-nora",tile:Tile(x:6,y:3),color:StaffRole.clerk.color,variant:204,name:"Nora"))
@@ -90,7 +91,9 @@ struct OfficeReceptionView: View {
                 result.append(RPGActor(id:"celebration-friend-\(index)",tile:Tile(x:index==0 ? 4 : 8,y:10),color:index==0 ? 0xB4A1C5 : 0xD8AC66,variant:530+index,facing:index==0 ? 2 : 1,expression:"cheerful"))
             }
         }
-        return result + motel.petActors + motel.policeActors
+        let actors=result + motel.petActors + motel.policeActors
+        StartupTrace.stage("office_actors_complete")
+        return actors
     }
     var body: some View {
         GeometryReader { proxy in

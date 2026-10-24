@@ -25,11 +25,29 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["CONTINUE GAME"].tap()
         XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:30),app.debugDescription)
         XCTAssertTrue(app.otherElements["officeCompatibilityRenderer"].exists)
-        Thread.sleep(forTimeInterval:5)
+        Thread.sleep(forTimeInterval:12)
         XCTAssertEqual(app.state,.runningForeground)
     }
     #endif
     override func setUp() { continueAfterFailure = false }
+
+    func testStartupRecoveryReportWithoutLoadingGame() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-recovery-preview"]
+        app.launch()
+        XCTAssertTrue(app.buttons["copyStartupReport"].waitForExistence(timeout:15))
+        app.terminate()
+        app.launchArguments=["--ui-recovery-inspect"]
+        app.launch()
+        XCTAssertTrue(app.buttons["copyStartupReport"].waitForExistence(timeout:15),"The unfinished report survives process relaunch")
+        XCTAssertTrue(app.buttons["retryStartup"].exists)
+        XCTAssertFalse(app.otherElements["officeScene"].exists)
+        XCTAssertFalse(app.buttons["CONTINUE GAME"].exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS %@","before_hotel_view")).firstMatch.exists)
+        app.buttons["copyStartupReport"].tap()
+        XCTAssertTrue(app.buttons["Report copied"].exists)
+        capture(app,"Startup recovery reads the report without loading gameplay")
+    }
 
     func testCompatibleOfficeWakeAndSave() {
         for touch in [false,true] {

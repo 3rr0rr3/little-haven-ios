@@ -456,14 +456,20 @@ struct ContentView: View {
             return fresh
         }
         #endif
-        return Game.load()
+        StartupTrace.stage("checkpoint_read_begin")
+        let loaded=Game.load()
+        StartupTrace.stage("checkpoint_read_complete")
+        return loaded
     }
     var body: some View {
         Group {
             if playing { gameplay.id(sessionID) }
             else {
                 MotelTitleScreen(hasSave: UserDefaults.standard.data(forKey:"littlehaven.save.v1") != nil, start: {
+                    StartupTrace.begin("continue game")
+                    StartupTrace.stage("continue_checkpoint_read")
                     game = Game.load(); sessionID = UUID(); playing = true
+                    StartupTrace.stage("continue_state_assigned")
                 }, newGame: {
                     heldDirection = nil; conversation = nil; message = nil; showHouse = false; showJournal = false
                     game = Game(); game.save(); sessionID = UUID(); playing = true
@@ -479,19 +485,25 @@ struct ContentView: View {
     private var gameplay: some View {
         Group {
             if game.motel != nil {
-                MotelView(game: $game)
+                AnyView(MotelView(game: $game))
             } else if game.readyToWake {
                 WakeUpView {
+                    StartupTrace.begin("wake button")
                     conversation = nil
                     heldDirection = nil
                     var firstShift = game
                     firstShift.wakeUp()
+                    StartupTrace.stage("motel_created")
                     firstShift.motel?.reconcileInteriorSpawn()
+                    StartupTrace.stage("world_prepared")
                     firstShift.motel?.enableManagement()
+                    StartupTrace.stage("management_prepared")
                     firstShift.save()
+                    StartupTrace.stage("checkpoint_written")
                     var transition = Transaction(animation:nil)
                     transition.disablesAnimations = true
                     withTransaction(transition) { game = firstShift }
+                    StartupTrace.stage("hotel_state_assigned")
                 }
             } else {
                 townBody
@@ -898,6 +910,7 @@ struct MotelTitleScreen: View {
                             }
                         }.frame(maxWidth:460)
                         Text("BRAINSTORM HAVEN / YOUR NEXT SHIFT AWAITS").font(.system(size:9,weight:.bold,design:.monospaced)).shadow(color:.black,radius:3)
+                        Text("VERSION \(StartupTrace.version)").font(.system(size:9,design:.monospaced)).accessibilityIdentifier("installedVersion")
                     }.padding(24)
                 }
                 if confirmQuit {
@@ -914,6 +927,7 @@ struct MotelTitleScreen: View {
             }.foregroundStyle(cream)
         }.accessibilityIdentifier("titleScreen")
             .onAppear {
+                StartupTrace.finish("title_visible")
                 #if DEBUG
                 if ProcessInfo.processInfo.arguments.contains("--ui-options-preview") { options=true }
                 if ProcessInfo.processInfo.arguments.contains("--ui-quit-preview") { confirmQuit=true }
