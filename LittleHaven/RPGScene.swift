@@ -60,27 +60,170 @@ struct RPGSceneView: UIViewRepresentable {
     var lifeProps:[HavenWorldProp] = []
     let scenery: () -> AnyView
 
+    @MainActor final class Coordinator {
+        let scene = RPGScene()
+        private var pending: (() -> Void)?
+        private var scheduled = false
+        func enqueue(in view: SKView, update: @escaping () -> Void) {
+            pending = update
+            schedule(in: view)
+        }
+        func schedule(in view: SKView) {
+            guard !scheduled, pending != nil else { return }
+            scheduled = true
+            // ImageRenderer must not start another SwiftUI render inside updateUIView.
+            DispatchQueue.main.async { [weak self, weak view] in
+                guard let self else { return }
+                self.scheduled = false
+                guard let view, view.window != nil,
+                      RPGViewport.cameraScale(mapWidth: 1, mapHeight: 1,
+                        viewportWidth: Double(view.bounds.width), viewportHeight: Double(view.bounds.height),
+                        columns: 1, interior: true) != nil else { return }
+                let update = self.pending
+                self.pending = nil
+                autoreleasepool { update?() }
+            }
+        }
+        func cancel() { pending = nil }
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
     func makeUIView(context: Context) -> SKView {
-        let view = SKView()
+        let view = LayoutReadyRPGView()
         view.preferredFramesPerSecond = 60
         view.ignoresSiblingOrder = true
         view.isAccessibilityElement = false
         view.isMultipleTouchEnabled = true
-        let scene = RPGScene()
-        scene.scaleMode = .resizeFill
-        view.presentScene(scene)
+        view.onLayoutReady = { [weak coordinator = context.coordinator, weak view] in
+            if let view { coordinator?.schedule(in: view) }
+        }
         return view
     }
     func updateUIView(_ view: SKView, context: Context) {
-        guard let scene = view.scene as? RPGScene else { return }
+        let scene = context.coordinator.scene
+        context.coordinator.enqueue(in: view) { [weak view, weak scene] in
+        guard let view, let scene else { return }
+        if view.scene !== scene {
+            scene.scaleMode = .resizeFill
+            view.presentScene(scene)
+        }
         scene.configure(mapID: mapID, revision: revision, mapSize: mapSize,
                         columns: columns, interior: interior, actors: actors,
                         working: working, workKind: workKind, visual: visual,
                         weather:weather,cars:cars,bikePositions:bikePositions,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,pumpPosition:pumpPosition,lifeProps:lifeProps,scenery: scenery)
+        }
     }
-    static func dismantleUIView(_ view: SKView, coordinator: ()) {
+    static func dismantleUIView(_ view: SKView, coordinator: Coordinator) {
+        coordinator.cancel()
+        (view as? LayoutReadyRPGView)?.onLayoutReady = nil
         view.scene?.removeAllActions()
         view.presentScene(nil)
+    }
+}
+
+private final class LayoutReadyRPGView: SKView {
+    var onLayoutReady: (() -> Void)?
+    override func layoutSubviews() { super.layoutSubviews(); onLayoutReady?() }
+    override func didMoveToWindow() { super.didMoveToWindow(); onLayoutReady?() }
+}
+
+enum OfficeRenderPolicy {
+    static var compatibility: Bool {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--ui-office-compatibility") { return true }
+        #endif
+        return ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 27 ||
+            UserDefaults.standard.bool(forKey:"littlehaven.compatibleOffice")
+    }
+}
+
+// Uses the same illustrated scene and actor frames, without a SpriteKit view or
+// ImageRenderer texture upload. Gameplay and all office touch targets stay outside.
+struct CompatibleOfficeScene: View {
+    let theme: Int
+    let clerkHired: Bool
+    let actors: [RPGActor]
+    let visual: HotelVisual?
+    let props: [HavenWorldProp]
+    @State private var visualStarted = Date.distantPast
+    var body: some View {
+        GeometryReader { proxy in
+            let scale = max(0, min(proxy.size.width / 240, proxy.size.height / 240))
+            ZStack(alignment: .topLeading) {
+                ExpandedOfficeArt(theme: theme, clerkHired: clerkHired).frame(width:240,height:240)
+                ForEach(props.filter { $0.kind == 41 }, id: \.id) { prop in
+                    CompatibilityCelebrationTable()
+                        .position(x:CGFloat(prop.tile.x*16+8),y:CGFloat(prop.tile.y*16+5))
+                        .zIndex(20)
+                }
+                ForEach(actors, id: \.id) { actor in
+                    CompatibleOfficeActor(actor: actor)
+                        .position(x:CGFloat(actor.tile.x*16+8),y:CGFloat(actor.tile.y*16+5))
+                        .animation(.linear(duration:actor.duration), value:actor.tile)
+                        .zIndex(Double(actor.tile.y*16))
+                }
+                if let visual {
+                    TimelineView(.animation(minimumInterval:0.1,paused:Date().timeIntervalSince(visualStarted)>2.65)) { timeline in
+                        let elapsed = timeline.date.timeIntervalSince(visualStarted)
+                        if elapsed >= 0 && elapsed < 2.65 {
+                            HotelActionArtwork(kind:visual.kind,frame:Int(elapsed/0.1)%8)
+                                .scaleEffect(22.0/64.0)
+                                .position(x:CGFloat(visual.target.x*16+8),y:CGFloat(visual.target.y*16+5))
+                        }
+                    }.zIndex(10000)
+                }
+            }.frame(width:240,height:240)
+                .scaleEffect(scale,anchor:.topLeading)
+                .offset(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
+        }
+        .onChange(of:visual?.id) { _,_ in visualStarted = Date() }
+        .allowsHitTesting(false)
+        .accessibilityElement(children:.ignore)
+        .accessibilityLabel("Reception compatibility renderer")
+        .accessibilityIdentifier("officeCompatibilityRenderer")
+    }
+}
+
+private struct CompatibleOfficeActor: View {
+    let actor: RPGActor
+    @State private var walkingUntil = Date.distantPast
+    var body: some View {
+        TimelineView(.animation(minimumInterval:0.095,paused:Date()>walkingUntil && actor.action.isEmpty)) { timeline in
+            let walking = timeline.date < walkingUntil
+            let phase = Int(timeline.date.timeIntervalSinceReferenceDate/0.095)%4
+            let stride = walking ? [1.0,0,-1,0][phase] : 0
+            ZStack {
+                if actor.action.isEmpty {
+                    ActorArtwork(actor:actor,stride:stride).scaleEffect(actor.displayScale)
+                } else {
+                    WorkingCharacterArtwork(kind:actor.action,frame:phase*3,color:actor.color,variant:actor.variant,facing:actor.facing)
+                }
+                if !actor.marker.isEmpty {
+                    Text(actor.marker).font(.system(size:3.5,weight:.bold,design:.monospaced))
+                        .foregroundStyle(Color(hex:0x304A3B)).offset(y:-17)
+                }
+            }.frame(width:48,height:48)
+        }
+        .onChange(of:actor.tile) { _,_ in walkingUntil=Date().addingTimeInterval(actor.duration*1.5) }
+    }
+}
+
+private struct CompatibilityCelebrationTable: View {
+    var body: some View {
+        Canvas { c,_ in
+            c.fill(Path(roundedRect:CGRect(x:4,y:22,width:34,height:14),cornerRadius:3),with:.color(Color(hex:0xF5E7C8)))
+            c.fill(Path(CGRect(x:5,y:32,width:32,height:3)),with:.color(Color(hex:0xD99B7E)))
+            for x in [3.0,39] {
+                c.fill(Path(CGRect(x:x,y:8,width:0.5,height:16)),with:.color(Color(hex:0xD7CBAA)))
+                c.fill(Path(ellipseIn:CGRect(x:x-3,y:0,width:7,height:9)),with:.color(Color(hex:x<20 ? 0xD99B7E : 0x91B7A1)))
+            }
+            c.fill(Path(roundedRect:CGRect(x:17,y:17,width:8,height:7),cornerRadius:2),with:.color(Color(hex:0xE4AB9A)))
+            c.fill(Path(CGRect(x:20,y:13,width:1,height:4)),with:.color(Color(hex:0xEFC977)))
+            for x in [9.0,33] {
+                c.fill(Path(CGRect(x:x,y:19,width:3,height:5)),with:.color(Color(hex:0x91B7A1)))
+                c.fill(Path(ellipseIn:CGRect(x:x-2,y:14,width:6,height:6)),with:.color(Color(hex:0xEFC977)))
+            }
+        }.frame(width:42,height:42)
     }
 }
 

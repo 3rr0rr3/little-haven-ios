@@ -66,6 +66,13 @@ struct OfficeReceptionView: View {
     let motel: Motel
     let tap: (OfficeTap) -> Void
     private var visitor: OfficeVisitor? { motel.reception.visitor }
+    @ViewBuilder private var renderedOffice: some View {
+        if OfficeRenderPolicy.compatibility {
+            CompatibleOfficeScene(theme:motel.officeTheme,clerkHired:motel.staffStations.contains(.clerk),actors:actors,visual:receptionVisual,props:motel.celebrationWorldProps)
+        } else {
+            RPGSceneView(mapID:"family-office",revision:"office-28-\(motel.officeTheme)-\(motel.staffStations.contains(.clerk))",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,visual:receptionVisual,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut,lifeProps:motel.celebrationWorldProps) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme,clerkHired:motel.staffStations.contains(.clerk))) }
+        }
+    }
     private var receptionVisual:HotelVisual? {
         guard let v=motel.operationsState.visual,v.kind == "checkin",v.map == "office" else{return nil}
         return HotelVisual(id:v.id,kind:v.kind,origin:v.origin,target:v.target,map:"family-office")
@@ -90,7 +97,7 @@ struct OfficeReceptionView: View {
             let scale = min(proxy.size.width / 240, proxy.size.height / 240)
             let origin = CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-office",revision:"office-28-\(motel.officeTheme)-\(motel.staffStations.contains(.clerk))",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,visual:receptionVisual,night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut,lifeProps:motel.celebrationWorldProps) { AnyView(ExpandedOfficeArt(theme:motel.officeTheme,clerkHired:motel.staffStations.contains(.clerk))) }
+                renderedOffice
                 target(.player,"Front desk",OfficeReception.clerk,scale,origin)
                 target(.computer,"Reception computer",OfficeReception.computer,scale,origin)
                 ForEach(motel.visiblePets, id: \.key) { pet in

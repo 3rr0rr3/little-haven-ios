@@ -40,6 +40,7 @@ struct ContentView: View {
             for name in ["stone-a","stone-b","timber","lantern","bedding","fence-h","desk","sofa-front","sofa-back","washer","linen","tv-frame","bath-sink","clothes-rack","extinguisher"] {precondition(PaintedArt.image("bh-"+name) != nil,"Missing scenery: "+name)}
         }
         Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
+        if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.removeObject(forKey:"littlehaven.compatibleOffice")}
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}
 
 
@@ -483,8 +484,14 @@ struct ContentView: View {
                 WakeUpView {
                     conversation = nil
                     heldDirection = nil
-                    game.wakeUp()
-                    game.save()
+                    var firstShift = game
+                    firstShift.wakeUp()
+                    firstShift.motel?.reconcileInteriorSpawn()
+                    firstShift.motel?.enableManagement()
+                    firstShift.save()
+                    var transition = Transaction(animation:nil)
+                    transition.disablesAnimations = true
+                    withTransaction(transition) { game = firstShift }
                 }
             } else {
                 townBody

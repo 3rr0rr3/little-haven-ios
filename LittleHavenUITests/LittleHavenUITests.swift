@@ -1,7 +1,75 @@
 import XCTest
 
 final class LittleHavenUITests: XCTestCase {
+    #if !DEBUG
+    // Invoked only by the Release probe after CI seeds simulator preferences.
+    func testActualReleaseWakeAndFirstShift() {
+        let app=XCUIApplication()
+        app.launchArguments=[]
+        app.launch()
+        XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:20),app.debugDescription)
+        capture(app,"Actual Release title before first chapter")
+        app.buttons["CONTINUE GAME"].tap()
+        let wake=app.buttons["wakeUp"]
+        XCTAssertTrue(wake.waitForExistence(timeout:20),app.debugDescription)
+        if !wake.isHittable {app.swipeUp()}
+        wake.tap()
+        XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:30),app.debugDescription)
+        XCTAssertTrue(app.otherElements["officeCompatibilityRenderer"].exists)
+        Thread.sleep(forTimeInterval:20)
+        XCTAssertEqual(app.state,.runningForeground)
+        capture(app,"Actual optimized Release first shift")
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:20),app.debugDescription)
+        app.buttons["CONTINUE GAME"].tap()
+        XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:30),app.debugDescription)
+        XCTAssertTrue(app.otherElements["officeCompatibilityRenderer"].exists)
+        Thread.sleep(forTimeInterval:5)
+        XCTAssertEqual(app.state,.runningForeground)
+    }
+    #endif
     override func setUp() { continueAfterFailure = false }
+
+    func testCompatibleOfficeWakeAndSave() {
+        for touch in [false,true] {
+            let app=XCUIApplication()
+            app.launchArguments=["--ui-wake","--ui-office-compatibility"]+(touch ? ["--ui-touch"] : [])
+            app.launch()
+            let wake=app.buttons["wakeUp"]
+            XCTAssertTrue(wake.waitForExistence(timeout:15))
+            if !wake.isHittable {app.swipeUp()}
+            wake.tap()
+            XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:20),app.debugDescription)
+            XCTAssertTrue(app.otherElements["officeCompatibilityRenderer"].exists)
+            app.buttons["receptionDesk"].tap()
+            XCTAssertTrue(app.buttons["saveCheckpoint"].waitForExistence(timeout:5))
+            app.buttons["saveCheckpoint"].tap()
+            capture(app,touch ? "Compatible first shift touch" : "Compatible first shift standard")
+            app.terminate()
+            app.launchArguments=["--ui-title","--ui-office-compatibility"]+(touch ? ["--ui-touch"] : [])
+            app.launch()
+            app.buttons["CONTINUE GAME"].tap()
+            XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:20))
+            XCTAssertTrue(app.otherElements["officeCompatibilityRenderer"].exists)
+            app.terminate()
+        }
+    }
+
+    func testCompatibleOfficeGuestInteraction() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-world","--ui-testing","--ui-office-compatibility"]
+        app.launch()
+        XCTAssertTrue(app.otherElements["officeCompatibilityRenderer"].waitForExistence(timeout:15))
+        XCTAssertTrue(app.buttons["office_guest"].waitForExistence(timeout:15))
+        Thread.sleep(forTimeInterval:5)
+        app.buttons["office_guest"].tap()
+        XCTAssertTrue(app.buttons["chargeGuest"].waitForExistence(timeout:15))
+        app.buttons["chooseRoom0"].tap()
+        app.buttons["chargeGuest"].tap()
+        XCTAssertTrue(cash(app).contains("260"))
+        capture(app,"Compatible reception guest booking preserves artwork and touch targets")
+    }
 
     func testProductionWakeUpStartsFirstChapter() {
         for touch in [false,true] {

@@ -52,7 +52,7 @@ jobs:
           echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -only-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -only-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -only-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -only-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -resultBundlePath CreativeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeWakeAndSave -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeGuestInteraction -only-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -only-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -only-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -only-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -resultBundlePath CreativeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
       - name: Test first-chapter transition on a smaller iPhone
         run: |
           set -euo pipefail
@@ -66,6 +66,20 @@ jobs:
           xcrun simctl shutdown "$SMALL"
           xcrun simctl boot "$SIM_DEVICE"
           xcrun simctl bootstatus "$SIM_DEVICE" -b
+      - name: Test actual Release wake-up with compatible reception
+        timeout-minutes: 18
+        run: |
+          set -euo pipefail
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-startup-build CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES build-for-testing
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl install "$SIM_DEVICE" release-startup-build/Build/Products/Release-iphonesimulator/LittleHaven.app
+          for TOUCH in false true; do
+            CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+            python3 scripts/seed_release_startup.py "$CONTAINER" "$TOUCH"
+            xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-startup-build -parallel-testing-enabled NO -only-testing:LittleHavenUITests/LittleHavenUITests/testActualReleaseWakeAndFirstShift -resultBundlePath "ReleaseStartup-$TOUCH.xcresult" CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test-without-building
+          done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl install "$SIM_DEVICE" sim-build/Build/Products/Debug-iphonesimulator/LittleHaven.app
       - name: Preserve focused failure diagnostics immediately
         if: failure()
         uses: actions/upload-artifact@v4
@@ -128,7 +142,7 @@ jobs:
         timeout-minutes: 24
         run: |
           set -euo pipefail
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SIM_DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -skip-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -skip-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -skip-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -skip-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -skip-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SIM_DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -skip-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -skip-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeWakeAndSave -skip-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeGuestInteraction -skip-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -skip-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -skip-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -skip-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
       - name: Publish tested candidate download without updating SideStore
         if: ${{ success() && github.ref == 'refs/heads/codex/pokopia-scenery' }}
         env:
@@ -428,6 +442,7 @@ jobs:
           name: Simulator-test-results
           path: |
             SmallStartupResults.xcresult
+            ReleaseStartup-*.xcresult
             CreativeResults.xcresult
             TestResults.xcresult
           if-no-files-found: ignore
