@@ -1,6 +1,28 @@
 import XCTest
 
 final class LittleHavenUITests: XCTestCase {
+    func testActualReleaseWakeAndFirstShift() {
+        let app=XCUIApplication()
+        app.launchArguments=[]
+        app.launch()
+        XCTAssertTrue(app.buttons["startGame"].waitForExistence(timeout:20))
+        app.buttons["startGame"].tap()
+        let wake=app.buttons["wakeUp"]
+        XCTAssertTrue(wake.waitForExistence(timeout:20),app.debugDescription)
+        if !wake.isHittable {app.swipeUp()}
+        wake.tap()
+        XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:30),app.debugDescription)
+        Thread.sleep(forTimeInterval:20)
+        XCTAssertEqual(app.state,.runningForeground)
+        capture(app,"Actual optimized Release first shift")
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["startGame"].waitForExistence(timeout:20))
+        app.buttons["startGame"].tap()
+        XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:30),app.debugDescription)
+        Thread.sleep(forTimeInterval:5)
+        XCTAssertEqual(app.state,.runningForeground)
+    }
     override func setUp() { continueAfterFailure = false }
 
     func testProductionWakeUpStartsFirstChapter() {

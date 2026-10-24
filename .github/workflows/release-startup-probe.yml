@@ -1,0 +1,45 @@
+name: Diagnose actual Release wake-up
+on:
+  push:
+    branches: ['codex/diagnose-release-wakeup-43']
+permissions:
+  contents: read
+jobs:
+  startup:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build unchanged production app with Release optimizations
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; print(next(v["udid"] for group in json.load(sys.stdin)["devices"].values() for v in group if "iPhone" in v["name"]))')
+          echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$DEVICE" -derivedDataPath release-probe CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES build-for-testing
+          xcrun simctl install "$DEVICE" release-probe/Build/Products/Release-iphonesimulator/LittleHaven.app
+      - name: Seed only simulator preferences and exercise normal title to first chapter
+        run: |
+          set -euo pipefail
+          for TOUCH in false true; do
+            CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+            python3 scripts/seed_release_startup.py "$CONTAINER" "$TOUCH"
+            xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-probe -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 150 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testActualReleaseWakeAndFirstShift -resultBundlePath "ReleaseStartup-$TOUCH.xcresult" CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test-without-building
+          done
+      - name: Print crash and test details
+        if: always()
+        run: |
+          find "$HOME/Library/Logs/DiagnosticReports" -name '*LittleHaven*' -type f -maxdepth 2 -exec cat {} \; || true
+          for RESULTS in ReleaseStartup-*.xcresult; do
+            xcrun xcresulttool get test-results tests --path "$RESULTS" || true
+          done
+      - name: Preserve Release crash evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Release-startup-diagnostics
+          path: |
+            ReleaseStartup-*.xcresult
+            ~/Library/Logs/DiagnosticReports/*
+          if-no-files-found: ignore
