@@ -245,7 +245,7 @@ enum PaperPerson {
         case 2: for dx in [2.0,5,8,11] {oval(dx,-6,4,4.5,hair)}
         case 3: oval(2,-5.5,12,3.5,hair);oval(facing == 1 ? 12 : -1,-3,5,9,hair)
         case 4:
-            for i in 0..<5 {var spike=Path();spike.move(to:CGPoint(x:x+2+Double(i*2.5),y:y-2-bob));spike.addLine(to:CGPoint(x:x+3+Double(i*2.5),y:y-7.5-bob));spike.addLine(to:CGPoint(x:x+6+Double(i*2.5),y:y-2-bob));spike.closeSubpath();shape(spike,hair)}
+            for i in 0..<5 {var spike=Path();spike.move(to:CGPoint(x:x+2+Double(i)*2.5,y:y-2-bob));spike.addLine(to:CGPoint(x:x+3+Double(i)*2.5,y:y-7.5-bob));spike.addLine(to:CGPoint(x:x+6+Double(i)*2.5,y:y-2-bob));spike.closeSubpath();shape(spike,hair)}
         case 5: oval(2,-5.3,12,2.5,hair);box(2,-3,1,3,hair);box(13,-3,1,3,hair)
         case 6: for dx in [0.0,3,6,9,12] {oval(dx,-6,5,6,hair)}
         case 7: for dx in [2.0,12] {oval(dx,-2,2,5,hair)}
