@@ -170,6 +170,20 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(cash(app).contains("260"))
         capture(app,"Reception decisions and saved desk checkpoint")
     }
+    func testFullscreenHomeFamilyConversations() {
+        let app=XCUIApplication();app.launchArguments=["--ui-family-home","--ui-testing","--ui-touch"];app.launch()
+        XCTAssertTrue(app.buttons["office_hildarelys"].waitForExistence(timeout:15))
+        app.buttons["hideFullscreenToolbar"].tap()
+        app.buttons["office_hildarelys"].tap()
+        XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5),"Hildarelys can be tapped from the home entrance in fullscreen")
+        app.buttons["Give her a kiss"].tap()
+        app.buttons["office_samhil"].tap()
+        XCTAssertTrue(app.buttons["Watch together"].waitForExistence(timeout:5))
+        app.buttons["Watch together"].tap()
+        XCTAssertTrue(app.buttons["office_chichu"].exists)
+        capture(app,"Fullscreen home seated Samhil and reliable family conversations")
+    }
+
     func testFamilyAndCatsAreTappable() {
         let app = launch("--ui-family-home")
         XCTAssertTrue(app.buttons["office_chichu"].waitForExistence(timeout:10), app.debugDescription)
@@ -283,8 +297,8 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["worldAction"].tap()
         app.buttons["paint2"].tap()
         XCTAssertTrue((world.value as? String ?? "").contains("Theme 2"))
-        step("west", 3, app)
-        step("north", 1, app)
+        step("east", 3, app)
+        step("north", 3, app)
         app.buttons["worldAction"].tap()
         XCTAssertTrue((world.value as? String ?? "").contains("Furnishings 1"))
         capture(app, "Physical furniture and paint interaction")

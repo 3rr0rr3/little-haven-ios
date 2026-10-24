@@ -111,7 +111,7 @@ enum RPGMaps {
             RPGMapEvent(id: "rest",tile: Tile(x: 1,y: 2),trigger: .action)])
     static let room = RPGMapDefinition(id: "room",width: 9,height: 9,
         walkable: RPGRegion(x: 1,y: 2,width: 7,height: 6),
-        obstacles: [RPGRegion(x: 2,y: 2,width: 2,height: 2),RPGRegion(x: 5,y: 2,width: 3,height: 1),RPGRegion(x: 2,y: 3,width: 1,height: 1),RPGRegion(x: 6,y: 6,width: 1,height: 1),RPGRegion(x: 2,y: 6,width: 1,height: 1)],
+        obstacles: [RPGRegion(x: 2,y: 2,width: 2,height: 2),RPGRegion(x: 5,y: 2,width: 3,height: 1),RPGRegion(x:6,y:3,width:2,height:1),RPGRegion(x:1,y:6,width:1,height:1),RPGRegion(x: 2,y: 3,width: 1,height: 1),RPGRegion(x: 6,y: 6,width: 1,height: 1),RPGRegion(x: 2,y: 6,width: 1,height: 1)],
         passages: [Tile(x: 4,y: 8)], events: [RPGMapEvent(id: "exit",tile: Tile(x: 4,y: 8),trigger: .playerTouch,destination: "grounds")])
     static let grounds: RPGMapDefinition = {
         var obstacles = [RPGRegion(x: 3,y: 3,width: 8,height: 6),RPGRegion(x: 3,y: 18,width: 7,height: 5)]

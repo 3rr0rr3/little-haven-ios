@@ -189,7 +189,7 @@ enum MotelGrounds {
     }
     static let cleaningTiles = [Tile(x: 3, y: 3), Tile(x: 2, y: 6), Tile(x: 5, y: 5)]
     static let cleaningNames = ["Make bed", "Collect trash", "Mop spill"]
-    static let roomPaint = Tile(x: 7, y: 2)
+    static let roomPaint = Tile(x: 1, y: 6)
 }
 
 extension Motel {
@@ -301,7 +301,8 @@ extension Motel {
         if isAtShop && shopBlocked(world!.player) {world!.player=ShopLayout.arrival}
         for (id,saved) in worldState.pets ?? [:] {
             var pet=saved
-            if pet.map == "basement" && BasementLayout.blocked(pet.tile) {pet.tile=BasementLayout.arrival}
+            if pet.map.hasPrefix("room-"),RoomVisit.blocked(pet.tile) {pet.tile=Tile(x:4,y:7)}
+            else if pet.map == "basement" && BasementLayout.blocked(pet.tile) {pet.tile=BasementLayout.arrival}
             else if pet.map == "grounds" && groundBlocked(pet.tile) {pet.tile=groundNearestWalkable(to:pet.tile)}
             else if pet.map == "house" && homeBlocked(pet.tile) {pet.tile=id == "chichu" ? OfficeReception.chichu : OfficeReception.chichi}
             else if pet.map == "office" && RPGMaps.office.blocked(pet.tile) {pet.tile=Tile(x:8,y:id == "chichu" ? 8 : 9)}
@@ -563,6 +564,7 @@ extension Motel {
         }
         state.townPositions=townspeople;state.townPrevious=previous;state.townDestinations=destinations
         world = state
+        tickHomeCats()
         tickHavenRoutines()
     }
 }

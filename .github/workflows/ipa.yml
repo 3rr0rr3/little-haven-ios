@@ -52,7 +52,7 @@ jobs:
           echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeWakeAndSave -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeGuestInteraction -only-testing:LittleHavenUITests/LittleHavenUITests/testStartupRecoveryReportWithoutLoadingGame -only-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -only-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -only-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -only-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -resultBundlePath CreativeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeWakeAndSave -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeGuestInteraction -only-testing:LittleHavenUITests/LittleHavenUITests/testStartupRecoveryReportWithoutLoadingGame -only-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -only-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenHomeFamilyConversations -only-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -only-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -resultBundlePath CreativeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
       - name: Test first-chapter transition on a smaller iPhone
         run: |
           set -euo pipefail
@@ -131,14 +131,18 @@ jobs:
             sleep 7
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-action-$MODE.png"
           done
-          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
-          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-beach --ui-testing --ui-touch
-          sleep 4
-          xcrun simctl io "$SIM_DEVICE" recordVideo --codec=h264 LittleHaven-water-motion.mp4 &
-          WATER_VIDEO_PID=$!
-          sleep 8
-          kill -INT "$WATER_VIDEO_PID"
-          wait "$WATER_VIDEO_PID"
+          for MOTION_MODE in beach family-home; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MOTION_MODE" --ui-testing --ui-touch
+            sleep 4
+            MOTION_NAME=water
+            if [ "$MOTION_MODE" = family-home ]; then MOTION_NAME=home-cats; fi
+            xcrun simctl io "$SIM_DEVICE" recordVideo --codec=h264 "LittleHaven-$MOTION_NAME-motion.mp4" &
+            MOTION_VIDEO_PID=$!
+            sleep 8
+            kill -INT "$MOTION_VIDEO_PID"
+            wait "$MOTION_VIDEO_PID"
+          done
           xcrun xcresulttool export attachments --path CreativeResults.xcresult --output-path /tmp/art-ui-diagnostics || true
           python3 scripts/publish_art_previews.py
       - name: Preserve response previews for early visual review
@@ -148,13 +152,13 @@ jobs:
           name: Response-previews
           path: |
             LittleHaven-response-*.png
-            LittleHaven-water-motion.mp4
+            LittleHaven-*-motion.mp4
           if-no-files-found: error
       - name: Test controls, motel management and game-over recovery
         timeout-minutes: 24
         run: |
           set -euo pipefail
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SIM_DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -skip-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -skip-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeWakeAndSave -skip-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeGuestInteraction -skip-testing:LittleHavenUITests/LittleHavenUITests/testStartupRecoveryReportWithoutLoadingGame -skip-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -skip-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -skip-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -skip-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SIM_DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -skip-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -skip-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeWakeAndSave -skip-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeGuestInteraction -skip-testing:LittleHavenUITests/LittleHavenUITests/testStartupRecoveryReportWithoutLoadingGame -skip-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -skip-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -skip-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenHomeFamilyConversations -skip-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -skip-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
       - name: Publish tested candidate download without updating SideStore
         if: ${{ success() && github.ref == 'refs/heads/codex/pokopia-scenery' }}
         env:

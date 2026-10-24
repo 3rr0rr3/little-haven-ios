@@ -433,7 +433,7 @@ struct ContentView: View {
                     fresh.motel!.rooms[0].dirty = args.contains("--ui-world-clean")
                     fresh.save()
                     _ = fresh.motel!.enter(0)
-                    fresh.motel!.visit!.player = args.contains("--ui-world-clean") ? Tile(x: 4, y: 3) : Tile(x: 7, y: 3)
+                    fresh.motel!.visit!.player = args.contains("--ui-world-clean") ? Tile(x: 4, y: 3) : Tile(x: 1, y: 5)
                     return fresh
                 }
                 if args.contains("--ui-world-build") {

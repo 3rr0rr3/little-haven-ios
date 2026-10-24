@@ -9,7 +9,7 @@ extension Motel {
     }
     var petActors: [RPGActor] {
         visiblePets.map { pet in
-            RPGActor(id:pet.key,tile:pet.value.tile,color:pet.key == "chichu" ? 0x85817C : 0xE9E2D0,variant:0,facing:actorFacing,name:companionName(pet.key),duration:0.14,creature:pet.key == "mochi",animal:pet.key == "mochi" ? 0 : pet.key == "chichu" ? 1 : 2,displayScale:pet.key == "mochi" ? 0.7 : 0.55)
+            RPGActor(id:pet.key,tile:pet.value.tile,color:pet.key == "chichu" ? 0x85817C : 0xE9E2D0,variant:0,facing:pet.value.facing ?? actorFacing,name:companionName(pet.key),duration:pet.value.map=="house" && !pet.value.following ? 0.65 : 0.14,creature:pet.key == "mochi",animal:pet.key == "mochi" ? 0 : pet.key == "chichu" ? 1 : 2,displayScale:pet.key == "mochi" ? 0.7 : 0.55)
         }
     }
     var neighborActors:[RPGActor] {
@@ -36,7 +36,7 @@ struct FamilyHouseView:View {
     private var actors:[RPGActor] {[
         RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You"),
         RPGActor(id:"hildarelys",tile:motel.reception.hildarelys,color:0x292A2C,variant:8,facing:motel.reception.tick%12<6 ? 2 : 1,name:"Hildarelys",duration:0.65),
-        RPGActor(id:"samhil",tile:OfficeReception.samhil,color:0xD88BAA,variant:9,facing:3,name:"Samhil",displayScale:0.8),
+        RPGActor(id:"samhil",tile:OfficeReception.samhil,color:0xD88BAA,variant:9,facing:3,name:"Samhil",displayScale:0.8,seated:true),
         ] + motel.havenHomeActors + motel.petActors + motel.policeActors}
     var body:some View {
         GeometryReader {proxy in
@@ -48,6 +48,7 @@ struct FamilyHouseView:View {
                 target(.samhil,"Talk to Samhil",OfficeReception.samhil,scale,origin)
                 ForEach(motel.visiblePets, id: \.key) { pet in
                     target(OfficeTap(rawValue:pet.key)!,"Talk to \(motel.companionName(pet.key))",pet.value.tile,scale,origin)
+                        .animation(.linear(duration:pet.value.following ? 0.14 : 0.65),value:pet.value.tile)
                 }
                 target(.basement,"Enter basement",BasementLayout.homeStairs,scale,origin)
                 target(.door,"Leave home",FamilyHome.exit,scale,origin)
@@ -58,7 +59,7 @@ struct FamilyHouseView:View {
             .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
     }
     private func target(_ item:OfficeTap,_ label:String,_ tile:Tile,_ scale:CGFloat,_ origin:CGPoint)->some View {
-        Button {if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).contentShape(Rectangle())}.buttonStyle(.plain).frame(width:max(item == .hildarelys ? 60 : 44,24*scale),height:max(item == .hildarelys ? 60 : 44,26*scale)).contentShape(Rectangle()).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+CGFloat(tile.y*16+5)*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
+        Button {if item == .hildarelys || item == .samhil {tap(item)} else if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).contentShape(Rectangle())}.buttonStyle(.plain).frame(width:max(item == .hildarelys ? 60 : 44,24*scale),height:max(item == .hildarelys ? 60 : 44,26*scale)).contentShape(Rectangle()).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+CGFloat(tile.y*16+5)*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
     }
 }
 struct OfficeReceptionView: View {

@@ -5,7 +5,7 @@ import sys
 
 container, touch, destination = sys.argv[1:]
 report = json.loads((Path(container) / 'Library/Application Support/startup-report.json').read_text())
-assert report['build'] == '48.0 (53)', report
+assert report['build'] == '49.0 (54)', report
 assert report['pending'] is False, report
 required = [
     'hotel_body_begin', 'hotel_screen_deferred', 'hotelChrome_constructed',

@@ -36,7 +36,7 @@ struct RoomVisit: Codable {
     var loot: Set<Int> = []
     var pocket = 0
     var guestTile: Tile {
-        [Tile(x: 6, y: 3), Tile(x: 6, y: 4), Tile(x: 5, y: 4), Tile(x: 5, y: 3)][(ticks / 3) % 4]
+        [Tile(x: 4, y: 3), Tile(x: 4, y: 4), Tile(x: 5, y: 4), Tile(x: 5, y: 3)][(ticks / 3) % 4]
     }
     static let lootTiles = [Tile(x: 2, y: 3), Tile(x: 6, y: 6), Tile(x: 2, y: 6)]
     static let lootNames = ["Suitcase", "Watch", "Camera"]

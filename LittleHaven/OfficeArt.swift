@@ -57,6 +57,19 @@ enum CozyScenery {
         }
     }
 
+    static func indoorFloor(context:inout GraphicsContext,in rect:CGRect,unit:Double=16) {
+        var c=context;c.clip(to:Path(rect))
+        c.fill(Path(rect),with:.color(Color(hex:0xA89F8C)))
+        for row in Int(floor(rect.minY/unit))...Int(floor(rect.maxY/unit)) {
+            for col in Int(floor(rect.minX/unit))...Int(floor(rect.maxX/unit)) {
+                let tile=CGRect(x:Double(col)*unit+0.4,y:Double(row)*unit+0.4,width:unit-0.8,height:unit-0.8)
+                let color=[UInt32(0xD3CCB9),0xCEC7B5,0xD9D1BD,0xD0C8B6][abs(row*7+col*11)%4]
+                c.fill(Path(roundedRect:tile,cornerRadius:0.7),with:.color(Color(hex:color)))
+                c.fill(Path(CGRect(x:tile.minX+0.7,y:tile.minY+0.4,width:tile.width-1.4,height:0.4)),with:.color(Color(hex:0xF3EAD5).opacity(0.38)))
+            }
+        }
+    }
+
     static func tree(context:inout GraphicsContext,x:Double,y:Double) {
         if PaintedArt.draw("tree",in:CGRect(x:x-8,y:y-23,width:38,height:46),context:&context,fit:true) {return}
         shadow(context:&context,x:x-5,y:y+10,w:30,h:9)

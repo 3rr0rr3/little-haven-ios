@@ -4,6 +4,10 @@ struct PetCompanion: Codable {
     var following = false
     var map = "house"
     var tile: Tile
+    var previous:Tile?
+    var facing:Int?
+    var stay:Bool?
+    var homeStop:Int?
 }
 
 extension Motel {
@@ -20,6 +24,7 @@ extension Motel {
         initializeWorld()
         var pet=petState(id)
         pet.following.toggle()
+        pet.stay = !pet.following
         if world!.pets == nil { world!.pets=[:] }
         world!.pets![id]=pet
         lastEvent=companionName(id) + (pet.following ? " will follow you." : " will wait here.")
@@ -57,12 +62,45 @@ extension Motel {
             } else {
                 pet.tile=trail
             }
+            pet.previous=old
+            pet.facing=pet.tile.x<old.x ? 1 : pet.tile.x>old.x ? 2 : pet.tile.y<old.y ? 3 : 0
             pet.map=petMap
             if world!.pets == nil { world!.pets=[:] }
             world!.pets![id]=pet
             trail=old
         }
     }
+    /// Home cats wander on the existing simulation cadence; no extra UI timer.
+    mutating func tickHomeCats() {
+        guard isAtHome,worldState.tick%4==0 else{return}
+        let route=[Tile(x:10,y:12),Tile(x:8,y:10),Tile(x:6,y:7),Tile(x:8,y:4),Tile(x:10,y:7),Tile(x:12,y:12)]
+        for (index,id) in ["chichu","chichi"].enumerated() {
+            var pet=petState(id)
+            guard pet.map=="house",!pet.following,pet.stay != true else{continue}
+            var stop=abs(pet.homeStop ?? index*3)%route.count
+            if pet.tile==route[stop] {stop=(stop+1)%route.count}
+            let reserved=Set(visiblePets.filter{$0.key != id}.map{$0.value.tile}+[actorTile,reception.hildarelys,FamilyHome.exit,BasementLayout.homeStairs])
+            var queue=[pet.tile],seen:Set<Tile>=[pet.tile],parents:[Tile:Tile]=[:],cursor=0
+            var found:Tile?
+            while cursor<queue.count {
+                let current=queue[cursor];cursor+=1
+                if current==route[stop] {found=current;break}
+                for (dx,dy) in [(0,-1),(1,0),(0,1),(-1,0)] {
+                    let next=Tile(x:current.x+dx,y:current.y+dy)
+                    if !homeBlocked(next),!reserved.contains(next),seen.insert(next).inserted {parents[next]=current;queue.append(next)}
+                }
+            }
+            pet.previous=pet.tile;pet.homeStop=stop
+            if var step=found,step != pet.tile {
+                while let previous=parents[step],previous != pet.tile {step=previous}
+                let old=pet.tile;pet.tile=step
+                pet.facing=step.x<old.x ? 1 : step.x>old.x ? 2 : step.y<old.y ? 3 : 0
+            } else if found==nil {pet.homeStop=(stop+1)%route.count}
+            if world!.pets==nil {world!.pets=[:]}
+            world!.pets![id]=pet
+        }
+    }
+
 }
 
 struct OfficeVisitor: Codable {
@@ -94,7 +132,7 @@ extension Motel {
         guard !caught else { return }
         initializeWorld()
         var office = reception
-        office.tick += 1
+        if !isAtHome || actorTile.distance(to:office.hildarelys)>2 {office.tick += 1}
         if var visitor = office.visitor {
             switch visitor.phase {
             case .entering:

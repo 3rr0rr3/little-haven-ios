@@ -1844,3 +1844,46 @@ func cartoonIdentityRules() {
     print("PASS: unique cartoon NPC designs, stable appearance identities, no cloned guest arrivals and unchanged checkpoint schema")
 }
 cartoonIdentityRules()
+
+
+func homeRoamingAndRearBathroomRules() {
+    var home=Motel();home.initializeWorld();home.waiting=[];home.world!.place = .house;home.world!.player=Tile(x:7,y:12)
+    var paths:[String:Set<Tile>]=["chichu":[],"chichi":[]]
+    home.home=FamilyHome();home.home!.placed=[PlacedHomeObject(id:99,kind:.table,tile:Tile(x:8,y:10))]
+    for _ in 0..<120 {
+        home.tickWorld()
+        for id in ["chichu","chichi"] {
+            let tile=home.petState(id).tile;paths[id]!.insert(tile)
+            require(!home.homeBlocked(tile),"Roaming cats avoid real home furniture")
+            require(tile != FamilyHome.exit && tile != BasementLayout.homeStairs,"Cats do not leave through either stair or doorway")
+        }
+        require(home.petState("chichu").tile != home.petState("chichi").tile,"Roaming cats reserve separate floor positions")
+    }
+    require(paths.values.allSatisfy{$0.count>5},"Both cats explore the home instead of staying on their beds")
+    home.togglePet("chichu");let follower=home.petState("chichu").tile
+    for _ in 0..<12 {home.tickWorld()}
+    require(home.petState("chichu").tile==follower,"A follower does not independently roam")
+    home.togglePet("chichu");let waiting=home.petState("chichu").tile
+    for _ in 0..<16 {home.tickWorld()}
+    require(home.petState("chichu").tile==waiting && home.petState("chichu").stay==true,"Explicit Stay here pauses home roaming")
+    let oldPet=Data(#"{"following":false,"map":"house","tile":{"x":10,"y":12}}"#.utf8)
+    let legacy=try! JSONDecoder().decode(PetCompanion.self,from:oldPet)
+    require(legacy.tile==OfficeReception.chichu && legacy.stay==nil,"Old pet saves load without new roaming fields")
+    let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(home))
+    require(restored.petState("chichu").stay==true && restored.petState("chichu").tile==waiting,"Stay and roaming positions survive a checkpoint")
+    home.world!.place = .grounds;let away=home.petState("chichi").tile
+    for _ in 0..<8 {home.tickWorld()}
+    require(home.petState("chichi").tile==away && home.petState("chichi").map=="house","House cats do not appear or roam on other maps")
+    home.world!.place = .house;home.world!.player=home.reception.hildarelys
+    let before=home.reception.hildarelys;for _ in 0..<6 {home.tickReception()}
+    require(home.reception.hildarelys==before,"Hildarelys pauses nearby for a reliable conversation target")
+    require(RoomVisit.blocked(Tile(x:6,y:3)) && RoomVisit.blocked(Tile(x:7,y:3)),"Rear shower and privacy screen have matching solid tiles")
+    require(!RoomVisit.blocked(Tile(x:5,y:3)),"The rear bathroom doorway stays open")
+    for tick in 0..<12 {var visit=RoomVisit(roomID:0,sneaking:true);visit.ticks=tick;require(!RoomVisit.blocked(visit.guestTile),"Guest patrol stays out of bathroom fixtures")}
+    var oldRoom=Motel();oldRoom.initializeWorld();oldRoom.visit=RoomVisit(roomID:0,sneaking:false);oldRoom.visit!.player=Tile(x:7,y:3)
+    oldRoom.world!.pets=["chichu":PetCompanion(map:"room-0",tile:Tile(x:7,y:3))]
+    oldRoom.reconcileInteriorSpawn()
+    require(!RoomVisit.blocked(oldRoom.actorTile) && !RoomVisit.blocked(oldRoom.petState("chichu").tile),"Old room saves relocate players and pets out of the new washroom fixtures")
+    print("PASS: home roaming, furniture avoidance, stay/follow commands, legacy pet saves and rear bathroom migration")
+}
+homeRoamingAndRearBathroomRules()

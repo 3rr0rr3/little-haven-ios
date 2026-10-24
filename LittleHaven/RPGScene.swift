@@ -19,6 +19,7 @@ struct RPGActor {
     var creature = false
     var animal = 0
     var displayScale = 1.0
+    var seated = false
     var effect = 0
     var action = ""
     var expression = ""
@@ -245,6 +246,10 @@ private struct ActorArtwork: View {
             } else if actor.corralCreature > 0 {CorralCreatureArt.draw(context:&context,kind:actor.corralCreature,facing:actor.facing,walk:stride)}
             else if actor.creature {MochiArt.draw(context:&context,facing:actor.facing,walk:stride)}
             else if actor.animal > 0 { CatArt.draw(context:&context,gray:actor.animal == 1,walk:stride,facing:actor.facing) }
+            else if actor.seated {
+                var sitter=context;sitter.clip(to:Path(CGRect(x:0,y:0,width:24,height:22)))
+                PaperPerson.draw(context:&sitter,x:4,y:9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:0,kneeling:true)
+            }
             else { PaperPerson.draw(context:&context,x:4,y:actor.cycling ? 7.5 : 9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:actor.cycling ? stride*0.4 : stride,expression:actor.expression,beachwear:actor.beachwear) }
             if actor.cycling && (actor.facing == 0 || actor.facing == 3) {
                 var handlebar=Path();handlebar.move(to:CGPoint(x:6,y:21));handlebar.addLine(to:CGPoint(x:18,y:21))
@@ -320,6 +325,7 @@ final class RPGScene: SKScene {
         }
         configureWater(mapID:mapID,poolOffset:poolOffset)
         configureHomeTV(mapID:mapID)
+        configureHomeSofa(mapID:mapID)
         configurePumpFault(active:mapID == "grounds" && pumpFault,at:pumpPosition)
         configureAmbient(night:night && !interior,nightVision:nightVision,powerOut:powerOut)
         configureWeather(interior ? .sunny : weather)
@@ -358,7 +364,7 @@ final class RPGScene: SKScene {
             node.userData?["targetX"] = actor.tile.x
             node.userData?["targetY"] = actor.tile.y
             let idle = sprite(actor, stride: 0)
-            let appearance = "\(actor.color)-\(actor.variant)-\(actor.effect)-\(actor.expression)-\(actor.facing)-\(actor.beachwear)"
+            let appearance = "\(actor.color)-\(actor.variant)-\(actor.effect)-\(actor.expression)-\(actor.facing)-\(actor.beachwear)-\(actor.seated)"
             if node.userData?["appearance"] as? String != appearance {
                 node.removeAction(forKey:"effect"); node.removeAction(forKey:"walk"); node.removeAction(forKey:"spar")
                 node.removeAction(forKey:"walkEnd")
@@ -491,7 +497,7 @@ final class RPGScene: SKScene {
     }
 
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
-        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.cycling)-\(actor.bikeColor)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)-\(actor.beachwear)"
+        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.cycling)-\(actor.bikeColor)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)-\(actor.beachwear)-\(actor.seated)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
         renderer.scale = 4
@@ -572,6 +578,19 @@ final class RPGScene: SKScene {
             fault.addChild(spark)
         }
         world.addChild(fault)
+    }
+
+    private func configureHomeSofa(mapID:String) {
+        guard mapID=="family-house" else {world.childNode(withName:"home-sofa-front")?.removeFromParent();return}
+        guard world.childNode(withName:"home-sofa-front")==nil,
+              let image=PaintedArt.image("bh-sofa-back")?.cgImage else{return}
+        // The backrest is in front of a sitter's lower body, not underneath her feet.
+        let top=Int(Double(image.height)*0.52)
+        guard let piece=image.cropping(to:CGRect(x:0,y:top,width:image.width,height:image.height-top)) else{return}
+        let fraction=Double(top)/Double(image.height),height=34*(1-fraction)
+        let front=SKSpriteNode(texture:SKTexture(cgImage:piece),size:CGSize(width:54,height:height))
+        front.name="home-sofa-front";front.position=CGPoint(x:188,y:-(141+34*fraction+height/2));front.zPosition=159
+        world.addChild(front)
     }
 
     private func configureHomeTV(mapID:String) {

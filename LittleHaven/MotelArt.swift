@@ -77,13 +77,23 @@ enum InteriorArt {
         PaintedArt.draw("small-lamp",in:CGRect(x:19,y:27,width:10,height:11),context:&c)
         DecorArt.rug(&c,30,70,51,24,0xAD947C)
         PaintedArt.draw("glazed-window",in:CGRect(x:94,y:8,width:29,height:17),context:&c)
-        PaintedArt.draw("tv-console",in:CGRect(x:80,y:40,width:29,height:14),context:&c)
-        PaintedArt.draw("tv-frame",in:CGRect(x:84,y:28,width:19,height:12),context:&c)
+        PaintedArt.draw("tv-console",in:CGRect(x:30,y:98,width:19,height:12),context:&c)
+        PaintedArt.draw("tv-frame",in:CGRect(x:32,y:85,width:15,height:12),context:&c)
         PaintedArt.draw("travel-chest",in:CGRect(x:91,y:91,width:28,height:20),context:&c)
-        PaintedArt.draw("nightstand",in:CGRect(x:30,y:96,width:18,height:14),context:&c)
-        // Compact tiled sink and mirror, with a low divider rather than a house lounge.
-        PaintedArt.draw("bath-sink",in:CGRect(x:16,y:109,width:21,height:18),context:&c)
-        PaintedArt.draw("toilet",in:CGRect(x:37,y:110,width:10,height:17),context:&c)
+        // Private washroom occupies the far rear corner, away from the entrance.
+        CozyScenery.indoorFloor(context:&c,in:CGRect(x:80,y:32,width:48,height:32),unit:8)
+        PaintedArt.draw("bath-sink",in:CGRect(x:82,y:32,width:19,height:16),context:&c)
+        PaintedArt.draw("toilet",in:CGRect(x:112,y:32,width:11,height:16),context:&c)
+        block(102,49,25,14,0xD5DDD5)
+        c.stroke(Path(roundedRect:CGRect(x:104,y:50,width:21,height:11),cornerRadius:1.5),with:.color(Color(hex:0x8CA9A4)),lineWidth:0.6)
+        block(122,50,2,6,0x668F94)
+        c.fill(Path(ellipseIn:CGRect(x:113,y:57,width:2,height:1)),with:.color(Color(hex:0x7A9696)))
+        // Low privacy screen on occupied shower tiles; the left doorway stays open.
+        block(96,61,32,3,0x9CB9B1)
+        block(80,32,2,16,0xA4B4A4)
+        let paint=MotelGrounds.roomPaint
+        block(Double(paint.x*16+2),Double(paint.y*16),13,15,0x80664D)
+        for i in 0..<4 {block(Double(paint.x*16+3+i*3),Double(paint.y*16+3),2,5,Motel.themeColors[i])}
         c.draw(Text("MOTEL / PRIVATE ROOM").font(.system(size:4,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF9EAC9)),at:CGPoint(x:64,y:18))
         if level>0 {CozyScenery.planter(context:&c,x:113,y:113)}
     }
@@ -124,12 +134,6 @@ struct MotelRoomCanvas: View, Animatable {
                 for panel in 0..<6 {context.fill(Path(CGRect(x:18+Double(panel*7),y:18,width:4,height:10)),with:.color(Color(hex:0x758B7D)))}
             }
             if !visit.sneaking {
-                let paint = MotelGrounds.roomPaint
-                let cabinet = CGRect(x: Double(paint.x * 16 + 2), y: Double(paint.y * 16), width: 13, height: 15)
-                context.fill(Path(cabinet), with: .color(Color(hex: 0x80664D)))
-                for i in 0..<4 {
-                    context.fill(Path(CGRect(x: Double(paint.x * 16 + 3 + i * 3), y: Double(paint.y * 16 + 3), width: 2, height: 5)), with: .color(Color(hex: Motel.themeColors[i])))
-                }
                 // Furniture occupies the same tiles that block movement in empty rooms.
                 for index in RoomVisit.lootTiles.indices {
                     let tile = RoomVisit.lootTiles[index]
