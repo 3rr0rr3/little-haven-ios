@@ -5,8 +5,9 @@ final class LittleHavenUITests: XCTestCase {
         let app=XCUIApplication()
         app.launchArguments=[]
         app.launch()
-        XCTAssertTrue(app.buttons["startGame"].waitForExistence(timeout:20))
-        app.buttons["startGame"].tap()
+        XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:20),app.debugDescription)
+        capture(app,"Actual Release title before first chapter")
+        app.buttons["CONTINUE GAME"].tap()
         let wake=app.buttons["wakeUp"]
         XCTAssertTrue(wake.waitForExistence(timeout:20),app.debugDescription)
         if !wake.isHittable {app.swipeUp()}
@@ -17,8 +18,8 @@ final class LittleHavenUITests: XCTestCase {
         capture(app,"Actual optimized Release first shift")
         app.terminate()
         app.launch()
-        XCTAssertTrue(app.buttons["startGame"].waitForExistence(timeout:20))
-        app.buttons["startGame"].tap()
+        XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:20),app.debugDescription)
+        app.buttons["CONTINUE GAME"].tap()
         XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:30),app.debugDescription)
         Thread.sleep(forTimeInterval:5)
         XCTAssertEqual(app.state,.runningForeground)

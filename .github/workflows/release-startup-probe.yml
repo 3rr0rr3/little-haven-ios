@@ -27,6 +27,13 @@ jobs:
             python3 scripts/seed_release_startup.py "$CONTAINER" "$TOUCH"
             xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-probe -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 150 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testActualReleaseWakeAndFirstShift -resultBundlePath "ReleaseStartup-$TOUCH.xcresult" CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test-without-building
           done
+      - name: Preserve compiled Release simulator app for focused follow-up
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Compiled-Release-probe
+          path: release-probe/Build/Products
+          if-no-files-found: ignore
       - name: Print crash and test details
         if: always()
         run: |
