@@ -26,7 +26,7 @@ jobs:
       - name: Test prologue, motel economy, stealth and checkpoint rules
         run: |
           set -euo pipefail
-          swiftc LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
+          swiftc LittleHaven/NPCDesign.swift LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
           /tmp/little-haven-tests
       - name: Compare navigation performance with shipped v32
         run: python3 scripts/benchmark_navigation.py

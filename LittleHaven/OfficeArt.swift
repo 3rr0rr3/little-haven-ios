@@ -15,12 +15,12 @@ enum CozyScenery {
         planes.fill(Path(CGRect(x:x+w*0.78,y:y,width:w*0.22,height:h)),with:.color(tint(color,0.88)))
         planes.fill(Path(CGRect(x:x,y:y,width:w,height:min(1,h*0.12))),with:.color(tint(color,1.10)))
         PaintedArt.finish(body,bounds:CGRect(x:x,y:y,width:w,height:h),color:color,context:&context,wood:((color>>16)&255)>((color>>8)&255) && (color&255)<((color>>16)&255)*4/5)
-        context.stroke(body,with:.color(Color.white.opacity(0.18)),lineWidth:0.35)
+        context.stroke(body,with:.color(Color(hex:0x453A32).opacity(0.8)),lineWidth:0.5)
     }
     static func shadow(context:inout GraphicsContext,x:Double,y:Double,w:Double,h:Double) {
         var shade=context
         shade.translateBy(x:x+w/2,y:y+h/2);shade.scaleBy(x:w/2,y:h/2)
-        shade.fill(Path(ellipseIn:CGRect(x:-1,y:-1,width:2,height:2)),with:.radialGradient(Gradient(colors:[Color(hex:0x425C42).opacity(0.26),.clear]),center:.zero,startRadius:0,endRadius:1))
+        shade.fill(Path(ellipseIn:CGRect(x:-1,y:-1,width:2,height:2)),with:.color(Color(hex:0x425C42).opacity(0.18)))
     }
     static func ground(context:inout GraphicsContext,x:Double,y:Double,kind:Int,seed:Int) {
         let material=kind==1 ? "stone-a" : kind==2 ? "road" : "grass"
@@ -46,7 +46,7 @@ enum CozyScenery {
         block(context:&context,x:x,y:y+4,w:13,h:3,color:0xE4B68B,depth:0.5)
         for i in 0..<4 {
             let dx=Double(i)*2.5
-            context.fill(Path(ellipseIn:CGRect(x:x+1+dx,y:y-1-Double(i%2)*2,width:5,height:7)),with:.linearGradient(Gradient(colors:[Color(hex:0xA5C97D),Color(hex:0x638F5D)]),startPoint:CGPoint(x:x,y:y-3),endPoint:CGPoint(x:x,y:y+7)))
+            context.fill(Path(ellipseIn:CGRect(x:x+1+dx,y:y-1-Double(i%2)*2,width:5,height:7)),with:.color(Color(hex:0xA5C97D)))
         }
         for i in 0..<3 {
             context.fill(Path(ellipseIn:CGRect(x:x+2+Double(i)*3.5,y:y-2+Double(i%2)*2,width:3.5,height:3)),with:.color(Color(hex:i%2 == 0 ? 0xE7B1AC : 0xF0D99A)))
@@ -75,7 +75,7 @@ enum CozyScenery {
             let shift=row%2 == 0 ? 0.0 : 7.0
             for col in stride(from:7.0+shift,to:w-14,by:15) {
                 let p=Path(roundedRect:CGRect(x:x+col,y:yy,width:min(14,w-col-10),height:5.8),cornerRadius:1.5)
-                context.fill(p,with:.linearGradient(Gradient(colors:[tint(paint,1.035),tint(paint,0.97)]),startPoint:CGPoint(x:x,y:yy),endPoint:CGPoint(x:x,y:yy+6)))
+                context.fill(p,with:.color(tint(paint,1.035)))
             }
         }
         block(context:&context,x:x+2,y:y+h-4,w:w-7,h:4,color:0xC9BEA6,depth:1)
@@ -88,13 +88,13 @@ enum CozyScenery {
         }
         var roofShadow=context;roofShadow.translateBy(x:1,y:3)
         roofShadow.fill(roofPath,with:.color(tint(roof,0.67)))
-        context.fill(roofPath,with:.linearGradient(Gradient(colors:[tint(roof,1.18),Color(hex:roof),tint(roof,0.84)]),startPoint:CGPoint(x:x,y:y),endPoint:CGPoint(x:x+w*0.2,y:y+roofH)))
+        context.fill(roofPath,with:.color(tint(roof,1.18)))
         var roofContext=context;roofContext.clip(to:roofPath)
         for row in 0..<Int(roofH/7)+1 {
             let yy=y+Double(row)*7,shift=row%2 == 0 ? 0.0 : 7.0
             for col in stride(from:-8.0+shift,to:w+8,by:14) {
                 let tile=Path(roundedRect:CGRect(x:x+col,y:yy,width:13.5,height:6.6),cornerRadius:2.4)
-                roofContext.fill(tile,with:.linearGradient(Gradient(colors:[tint(roof,1.12),tint(roof,0.94)]),startPoint:CGPoint(x:x,y:yy),endPoint:CGPoint(x:x,y:yy+7)))
+                roofContext.fill(tile,with:.color(tint(roof,1.12)))
                 roofContext.stroke(tile,with:.color(tint(roof,0.78).opacity(0.28)),lineWidth:0.35)
             }
         }
@@ -111,7 +111,7 @@ enum CozyScenery {
         for wx in [x+11,x+w-33] where abs(wx-door)>18 {
             block(context:&context,x:wx-2,y:y+h-30,w:24,h:22,color:0xEEDFC1,depth:1)
             let glass=Path(roundedRect:CGRect(x:wx,y:y+h-28,width:20,height:18),cornerRadius:2)
-            context.fill(glass,with:.linearGradient(Gradient(colors:[Color(hex:0xB9DADE),Color(hex:0x7DABB7)]),startPoint:CGPoint(x:wx,y:y+h-28),endPoint:CGPoint(x:wx+20,y:y+h-10)))
+            context.fill(glass,with:.color(Color(hex:0xB9DADE)))
             context.fill(Path(roundedRect:CGRect(x:wx+9,y:y+h-28,width:1.5,height:18),cornerRadius:0.5),with:.color(Color(hex:0xF2E7D0)))
             context.fill(Path(CGRect(x:wx,y:y+h-20,width:20,height:1.5)),with:.color(Color(hex:0xF2E7D0)))
             context.fill(Path(ellipseIn:CGRect(x:wx+2,y:y+h-26,width:5,height:2)),with:.color(Color.white.opacity(0.45)))
@@ -137,7 +137,7 @@ enum CozyScenery {
         shadow(context:&context,x:x,y:y+h-3,w:w+5,h:10)
         block(context:&context,x:x,y:y,w:w,h:h,color:0xE9E2CD,depth:2)
         let water=Path(roundedRect:CGRect(x:x+4,y:y+4,width:w-8,height:h-8),cornerRadius:5)
-        context.fill(water,with:.linearGradient(Gradient(colors:[Color(hex:0xA3D9D0),Color(hex:0x76BDB9),Color(hex:0x88C8C0)]),startPoint:CGPoint(x:x,y:y),endPoint:CGPoint(x:x+w,y:y+h)))
+        context.fill(water,with:.color(Color(hex:0xA3D9D0)))
         var paintedWater=context;paintedWater.clip(to:water)
         PaintedArt.texture("water",in:CGRect(x:x+4,y:y+4,width:w-8,height:h-8),context:&paintedWater,unit:64,opacity:0.8)
         context.stroke(water,with:.color(Color(hex:0x639D9B).opacity(0.4)),lineWidth:1)
@@ -293,6 +293,9 @@ enum PersonalArt {
 enum CatArt {
     static func draw(context: inout GraphicsContext,gray: Bool,walk: Double,facing:Int=0) {
         if PaintedArt.creature(context:&context,name:gray ? "chichu" : "chichi",facing:facing,walk:walk) {return}
+        let originalContext=context
+        defer {context=originalContext}
+        if facing == 1 || facing == 2 {context.translateBy(x:12,y:0);context.scaleBy(x:0.8,y:1);context.translateBy(x:-12,y:0)}
         let ink:UInt32=0x3D3937, fur:UInt32=gray ? 0x85817C : 0xE9E2D0
         func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
             let p=Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h)); context.fill(p,with:.color(Color(hex:color))); context.stroke(p,with:.color(Color(hex:ink)),lineWidth:0.3)
@@ -309,6 +312,7 @@ enum CatArt {
             for i in 0..<3 { let p=Path(CGRect(x:9+Double(i*2),y:10,width:1,height:3)); context.fill(p,with:.color(Color(hex:0x55514D))) }
             for y in [15.0,18.0] { context.fill(Path(CGRect(x:6,y:y,width:3,height:0.7)),with:.color(Color(hex:0x5E5953))) }
         } else { oval(4.5,10,6,7,0xA66B42); oval(14,9.5,6.5,8,0x33302E); oval(14,17,4,5,0xB27B4E) }
+        if facing == 3 {return}
         oval(7,13,4,3,0xB4BE76); oval(14,13,4,3,0xB4BE76)
         oval(8.8,13.4,0.6,2.2,ink); oval(15.8,13.4,0.6,2.2,ink)
         oval(11.3,16.5,2.5,1.5,0xBA877F)
@@ -572,7 +576,7 @@ enum BeachArt {
     static func draw(context c:inout GraphicsContext,motel:Motel?=nil) {
         for row in stride(from:40,to:64,by:2) {for col in stride(from:0,to:39,by:2) {CozyScenery.tree(context:&c,x:Double(col*16),y:Double(row*16+8))}}
         let sand=CGRect(x:640,y:640,width:512,height:384)
-        c.fill(Path(sand),with:.linearGradient(Gradient(colors:[Color(hex:0xEBDBB1),Color(hex:0xF3E3BC),Color(hex:0xDDC598)]),startPoint:CGPoint(x:640,y:640),endPoint:CGPoint(x:900,y:1024)))
+        c.fill(Path(sand),with:.color(Color(hex:0xEBDBB1)))
         PaintedArt.texture("sand",in:sand,context:&c,unit:96)
         var coast=Path();coast.move(to:CGPoint(x:Double(BeachLayout.shoreline(42)*16),y:672))
         for row in 42..<MotelGrounds.height {
@@ -581,7 +585,7 @@ enum BeachArt {
         }
         var water=coast
         water.addLine(to:CGPoint(x:1152,y:1024));water.addLine(to:CGPoint(x:1152,y:672));water.closeSubpath()
-        c.fill(water,with:.linearGradient(Gradient(colors:[Color(hex:0xA3DCD5),Color(hex:0x69B4BC),Color(hex:0x508FAD)]),startPoint:CGPoint(x:944,y:672),endPoint:CGPoint(x:1152,y:1024)))
+        c.fill(water,with:.color(Color(hex:0xA3DCD5)))
         var paintedWater=c;paintedWater.clip(to:water);PaintedArt.texture("water",in:sand,context:&paintedWater,unit:96,opacity:0.70)
         c.stroke(coast,with:.color(Color(hex:0xDCEBDD)),style:StrokeStyle(lineWidth:8,lineCap:.round,lineJoin:.round))
         c.stroke(coast,with:.color(Color(hex:0xFFF3D8)),style:StrokeStyle(lineWidth:2.5,lineCap:.round,lineJoin:.round))
@@ -767,13 +771,13 @@ enum MochiArt {
             shape.move(to:CGPoint(x:x,y:y))
             shape.addQuadCurve(to:tip,control:CGPoint(x:x+dx*0.12-dy*width,y:y+dy*0.12+dx*width))
             shape.addQuadCurve(to:CGPoint(x:x,y:y),control:CGPoint(x:x+dx*0.8+dy*width,y:y+dy*0.8-dx*width))
-            c.fill(shape,with:.linearGradient(Gradient(colors:[Color(hex:0x799D63),Color(hex:0x3D9B88),Color(hex:0x28695C)]),startPoint:tip,endPoint:CGPoint(x:x,y:y)))
+            c.fill(shape,with:.color(Color(hex:0x799D63)))
             var vein=Path();vein.move(to:CGPoint(x:x,y:y));vein.addLine(to:CGPoint(x:x+dx*0.78,y:y+dy*0.78))
             c.stroke(vein,with:.color(Color(hex:0x9CAE75).opacity(0.6)),lineWidth:0.35)
         }
         func berry(_ x:Double,_ y:Double,_ size:Double,_ step:Double) {
             let rect=CGRect(x:x,y:y+step,width:size,height:size+0.7)
-            c.fill(Path(ellipseIn:rect),with:.radialGradient(Gradient(colors:[Color(hex:0xAB506E),Color(hex:0x82354F),Color(hex:0x4D263E)]),center:CGPoint(x:x+size*0.35,y:y+step+size*0.3),startRadius:0,endRadius:size*0.8))
+            c.fill(Path(ellipseIn:rect),with:.color(Color(hex:0x934461)))
             oval(x+size*0.2,y+step+size*0.16,size*0.27,size*0.18,0xB26180)
         }
         oval(1,24,22,3.5,0x304038)
@@ -784,7 +788,7 @@ enum MochiArt {
             leaf(20,y,3.5,-3,0.32)
         }
         let body=Path(roundedRect:CGRect(x:3,y:5.5,width:18,height:20),cornerRadius:1.8)
-        c.fill(body,with:.linearGradient(Gradient(colors:[Color(hex:0xD19BC6),Color(hex:0xB27BAC),Color(hex:0x80517F)]),startPoint:CGPoint(x:7,y:6),endPoint:CGPoint(x:19,y:26)))
+        c.fill(body,with:.color(Color(hex:0xD19BC6)))
         c.stroke(body,with:.color(Color(hex:0x674566)),lineWidth:0.55)
         // Broad violet zigzags, rather than the old rounded ears and side spots.
         var stripe=Path()
@@ -851,10 +855,10 @@ enum CorralCreatureArt {
         if (1...8).contains(kind),PaintedArt.creature(context:&context,name:PaintedArt.creatures[kind-1],facing:facing,walk:walk) {return}
         var c=context
         func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
-            c.fill(Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:color)))
+            let shape=Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h));c.fill(shape,with:.color(Color(hex:color)));c.stroke(shape,with:.color(Color(hex:0x3D3937)),lineWidth:0.3)
         }
         func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32,_ r:Double=1) {
-            c.fill(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:r),with:.color(Color(hex:color)))
+            let shape=Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:r);c.fill(shape,with:.color(Color(hex:color)));c.stroke(shape,with:.color(Color(hex:0x3D3937)),lineWidth:0.3)
         }
         func polygon(_ points:[CGPoint],_ color:UInt32) {
             var p=Path();p.addLines(points);p.closeSubpath();c.fill(p,with:.color(Color(hex:color)))

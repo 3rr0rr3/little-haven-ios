@@ -15,7 +15,7 @@ try:
 except urllib.error.HTTPError as error:
     if error.code!=404:raise
 entries=[]
-images=list(Path('.').glob('LittleHaven-response-painted-*.png'))+list(Path('.').glob('LittleHaven-character-turns.png'))+list(Path('.').glob('LittleHaven-app-icon.png'))+list(Path('/tmp/art-ui-diagnostics').rglob('*.png'))
+images=list(Path('.').glob('LittleHaven-npc-gallery.png'))+list(Path('.').glob('LittleHaven-response-painted-*.png'))+list(Path('.').glob('LittleHaven-character-turns.png'))+list(Path('.').glob('LittleHaven-app-icon.png'))+list(Path('/tmp/art-ui-diagnostics').rglob('*.png'))
 for index,image in enumerate(images[:30]):
     target=Path('/tmp')/('art-review-'+str(index)+'.jpg')
     subprocess.run(['sips','-s','format','jpeg','-s','formatOptions','90','-Z','1100',str(image),'--out',str(target)],check=True,stdout=subprocess.DEVNULL)

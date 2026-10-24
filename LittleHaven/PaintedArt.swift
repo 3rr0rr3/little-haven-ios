@@ -23,7 +23,7 @@ enum PaintedArt {
         context.draw(Image(uiImage:value),in:target);return true
     }
     static func texture(_ name:String,in rect:CGRect,context:inout GraphicsContext,unit:Double=64,opacity:Double=1,blend:GraphicsContext.BlendMode = .normal) {
-        guard rect.width>0,rect.height>0,let value=image("bh-"+name) else{return}
+        guard name != "plaster",rect.width>0,rect.height>0,let value=image("bh-"+name) else{return}
         var layer=context;layer.clip(to:Path(rect));layer.opacity*=opacity;layer.blendMode=blend
         for yy in stride(from:floor(rect.minY/unit)*unit,to:rect.maxY,by:unit) {
             for xx in stride(from:floor(rect.minX/unit)*unit,to:rect.maxX,by:unit) {
@@ -44,8 +44,8 @@ enum PaintedArt {
         return true
     }
     static func finish(_ path:Path,bounds:CGRect,color:UInt32,context:inout GraphicsContext,wood:Bool=false) {
-        var layer=context;layer.clip(to:path)
-        texture(wood ? "timber" : "plaster",in:bounds,context:&layer,unit:48,opacity:wood ? 0.16 : 0.08,blend:.softLight)
+        // Deliberately flat: the approved office has no grain overlay.
+
     }
     static func sunlight(context:inout GraphicsContext,bounds:CGRect) {
         var shade=context;shade.clip(to:Path(bounds))
@@ -53,7 +53,7 @@ enum PaintedArt {
             let x=bounds.minX+Double(index)*bounds.width*0.30
             var ray=Path();ray.move(to:CGPoint(x:x,y:bounds.minY));ray.addLine(to:CGPoint(x:x+22,y:bounds.minY))
             ray.addLine(to:CGPoint(x:x+bounds.width*0.44+65,y:bounds.maxY));ray.addLine(to:CGPoint(x:x+bounds.width*0.44,y:bounds.maxY));ray.closeSubpath()
-            shade.fill(ray,with:.linearGradient(Gradient(colors:[Color(hex:0xFFF0B4).opacity(0.16),Color(hex:0xFFE1A0).opacity(0.04)]),startPoint:CGPoint(x:bounds.minX,y:bounds.minY),endPoint:CGPoint(x:bounds.maxX,y:bounds.maxY)))
+            shade.fill(ray,with:.color(Color(hex:0xFFF0B4).opacity(0.16)))
         }
     }
     static func nameplate(_ text:String,in rect:CGRect,context:inout GraphicsContext,font:Double) {
@@ -108,18 +108,12 @@ enum PaintedArt {
         images.setObject(value,forKey:key,cost:192*224*4);return value
     }
     static func person(context:inout GraphicsContext,x:Double,y:Double,variant:Int,facing:Int,walk:Double,color:UInt32,hands:Bool=true,kneeling:Bool=false,beachwear:Bool=false)->Bool {
-        let name:String
-        if variant==7 {name="player"}
-        else if variant==8 {name="hildarelys"}
-        else if variant==9 {name="samhil"}
-        else {name=["guest-a","guest-b","guest-c","guest-d"][abs(variant)%4]+(beachwear ? "-beach" : "")}
-        guard let value=frame(name,facing:facing,walk:walk,tint:color,working:!hands) else{return false}
-        let rect=CGRect(x:x-4,y:y-9+(kneeling ? 3 : 0),width:24,height:kneeling ? 25 : 28)
-        context.draw(Image(uiImage:value),in:rect);return true
+        return false // Native cut-paper people preserve unique visual identities.
+
     }
     static func creature(context:inout GraphicsContext,name:String,facing:Int,walk:Double)->Bool {
-        guard let value=frame(name,facing:facing,walk:walk) else{return false}
-        context.draw(Image(uiImage:value),in:CGRect(x:0,y:0,width:24,height:28));return true
+        return false // Native cut-paper creatures retain original silhouettes and names.
+
     }
 }
 

@@ -111,14 +111,16 @@ enum PaperPerson {
         if PaintedArt.person(context:&context,x:x,y:y,variant:variant,facing:facing,walk:walk,color:color,hands:hands,kneeling:kneeling,beachwear:beachwear) {return}
         if [7,8,9].contains(variant) { PersonalArt.draw(context: &context, x: x, y: y, variant: variant, facing: facing, walk: walk,shirt:color,hands:hands,kneeling:kneeling); return }
         let ink: UInt32 = 0x343333
-        let seed = abs(variant)
-        let skin: UInt32 = [UInt32(0xF0C9A0),0xD6A477,0xA87350,0x734A37,0xE9B693][seed % 5]
-        let hair: UInt32 = [0x795334, 0x52362B, 0x554432, 0xA15D3A, 0x493A30, 0xBA8C48, 0xC2BDB0, 0x594537][seed % 8]
-        let style = seed % 7
+        let seed = Int(UInt(bitPattern:variant) % 51_840)
+        let design = NPCDesign(variant:variant)
+        let skin = NPCDesign.skinColors[design.skin]
+        let hair = NPCDesign.hairColors[design.hairColor]
+        let style = design.hairStyle
+        let accent = NPCDesign.accentColors[design.outfit]
         let bob = abs(walk) * 0.35
         func shape(_ path: Path, _ fill: UInt32, _ outline: Bool = true) {
             context.fill(path, with: .color(Color(hex: fill)))
-            if outline { context.stroke(path, with: .color(Color(hex: ink)), lineWidth: 0.28) }
+            if outline { context.stroke(path, with: .color(Color(hex: ink)), lineWidth: 0.38) }
         }
         func oval(_ dx: Double, _ dy: Double, _ w: Double, _ h: Double, _ fill: UInt32, _ outline: Bool = true) {
             shape(Path(ellipseIn: CGRect(x: x + dx, y: y + dy - bob, width: w, height: h)), fill, outline)
@@ -139,8 +141,8 @@ enum PaperPerson {
         if facing == 1 || facing == 2 {
             context.translateBy(x:x+8,y:0);context.scaleBy(x:0.72,y:1);context.translateBy(x:-x-8,y:0)
         }
-        box(3.7, 12, 4.1, 3.1 + walk * 0.4, beachwear ? skin : 0x3D4754)
-        box(8.2, 12, 4.1, 3.1 - walk * 0.4, beachwear ? skin : 0x3D4754)
+        box(3.7, 12, 4.1, 3.1 + walk * 0.4, beachwear ? skin : [UInt32(0x3D4754),0x54453C,0x40544C,0x5A4B65,0x5F5043,0x324C5C][design.outfit])
+        box(8.2, 12, 4.1, 3.1 - walk * 0.4, beachwear ? skin : [UInt32(0x3D4754),0x54453C,0x40544C,0x5A4B65,0x5F5043,0x324C5C][design.outfit])
         oval(2.8, 14 + walk * 0.4, 5.2, 1.8, beachwear ? 0x9D7752 : 0x302F30)
         oval(8, 14 - walk * 0.4, 5.2, 1.8, beachwear ? 0x9D7752 : 0x302F30)
         var coat = Path()
@@ -168,15 +170,21 @@ enum PaperPerson {
             }
             if facing==0 {line([CGPoint(x:8,y:11.8),CGPoint(x:8,y:13.7)],ink,0.2)}
         } else if facing == 0 {
-            if seed % 3 == 0 { box(3, 8, 10, 1.3, 0xEEE3BA) }
-            if seed % 3 == 1 { box(4, 7, 2, 5, 0x445B69) }
-            if seed % 4 == 0 { box(10, 10, 3, 3, 0xBD975F) }
+            if design.outfit == 0 { box(3, 8, 10, 1.3, accent) }
+            if design.outfit == 1 { box(4, 7, 2, 5, accent); box(10,7,2,5,accent) }
+            if design.outfit == 2 {box(4,6,8,1.2,accent)}
+            if design.outfit == 3 {box(6,6,4,6,accent)}
+            if design.outfit == 4 {box(3,10.5,10,2.5,accent)}
+            if design.outfit == 5 {box(4,6,2,2,accent);box(10,6,2,2,accent)}
+            if design.outfit == 2 || design.outfit == 5 { box(10, 10, 3, 3, accent) }
             line([CGPoint(x: 8, y: 7), CGPoint(x: 8, y: 13.7)], ink)
             for button in 0..<3 { oval(8.7, 8.2 + Double(button) * 1.7, 0.5, 0.5, ink, false) }
         } else if facing == 3 {
             line([CGPoint(x:4,y:6),CGPoint(x:8,y:6.7),CGPoint(x:12,y:6)],ink,0.4)
             line([CGPoint(x:8,y:7),CGPoint(x:8,y:12.5)],ink,0.2)
-            if seed % 3 == 0 {box(3,8,10,1.3,0xEEE3BA)}
+            if design.outfit == 0 {box(3,8,10,1.3,accent)}
+            if design.outfit == 1 {box(4,7,2,5,accent);box(10,7,2,5,accent)}
+            if design.outfit == 4 {box(3,10.5,10,2.5,accent)}
         } else {
             let seam=facing == 1 ? 5.0 : 11.0
             line([CGPoint(x:seam,y:7),CGPoint(x:seam,y:13)],ink,0.3)
@@ -186,7 +194,7 @@ enum PaperPerson {
             oval(11.9, 9 - walk * 0.7, 3.5, 3.7, skin)
         }
         context=bodyContext
-        if style == 1 || style == 3 || style == 6 { oval(1, -4.5, 14, 13.5, hair) }
+        if [1,3,6,8,9].contains(style) { oval(1, -4.5, 14, 13.5, hair) }
         oval(1.7, -5, 12.6, 12.5, skin)
         if facing == 3 {
             oval(1.8, -5, 12.4, 11.6, hair)
@@ -219,22 +227,32 @@ enum PaperPerson {
                 line([CGPoint(x:5.5,y:4.6),CGPoint(x:8,y:6),CGPoint(x:10.5,y:4.6)],ink,0.5)
                 if mood == "cheerful" { oval(3,3.2,2,1,0xD58A79,false); oval(11,3.2,2,1,0xD58A79,false) }
             }
-            if style == 3 || style == 6 {
+            if design.facialHair == 1 {oval(5,3.7,6,1.3,hair,false)}
+            if design.facialHair == 2 {oval(4,3.8,8,3.4,hair,false);oval(6,4.2,4,1.2,skin,false)}
+            if design.facialHair == 3 {for dx in [3.0,11] {oval(dx,3.4,1,0.6,hair,false);oval(dx+1,4,0.7,0.6,hair,false)}}
+            if design.accessory == 1 {
                 context.stroke(Path(ellipseIn: CGRect(x: x + 3.1, y: y - 1.7 - bob, width: 4.8, height: 5.3)), with: .color(Color(hex: ink)), lineWidth: 0.45)
                 context.stroke(Path(ellipseIn: CGRect(x: x + 8, y: y - 1.7 - bob, width: 4.8, height: 5.3)), with: .color(Color(hex: ink)), lineWidth: 0.45)
             }
         }
-        if style == 2 || style == 5 {
-            // Brimmed fedora, baseball cap, straw sunhat or tall top hat. No knit caps.
-            let hat = (seed / 7) % 4
-            box(3,-7,10,hat == 3 ? 7 : 4,color)
-            if hat == 0 { box(4,-8,8,2,color) }
-            box(hat == 1 ? 4 : -0.5,-2.8,hat == 1 ? 14 : 17,1.6,hat == 2 ? 0xDBBB76 : color)
-            box(3,-4,10,1,0xE9DFBA)
-        } else {
-            oval(2, -5.5, 12, 3.7, hair)
-            if style == 1 { oval(10.8, -6.5, 4, 4, hair) }
-            if style == 4 { line([CGPoint(x: 5.6, y: 4.1), CGPoint(x: 10.4, y: 4.1)], hair, 0.8) }
+        if facing != 3 && design.accessory == 2 {
+            for dx in [3.0,8] {context.stroke(Path(roundedRect:CGRect(x:x+dx,y:y-1.7-bob,width:4.8,height:5.1),cornerRadius:0.6),with:.color(Color(hex:ink)),lineWidth:0.6)}
+            box(7.5,0,1,0.5,ink)
+        }
+        switch style {
+        case 0: oval(2,-5.5,12,3.7,hair);box(2,-3,3,3,hair)
+        case 1: oval(1.5,-5.5,13,4,hair);box(1,-3,3,11,hair);box(12,-3,3,11,hair)
+        case 2: for dx in [2.0,5,8,11] {oval(dx,-6,4,4.5,hair)}
+        case 3: oval(2,-5.5,12,3.5,hair);oval(facing == 1 ? 12 : -1,-3,5,9,hair)
+        case 4:
+            for i in 0..<5 {var spike=Path();spike.move(to:CGPoint(x:x+2+Double(i*2.5),y:y-2-bob));spike.addLine(to:CGPoint(x:x+3+Double(i*2.5),y:y-7.5-bob));spike.addLine(to:CGPoint(x:x+6+Double(i*2.5),y:y-2-bob));spike.closeSubpath();shape(spike,hair)}
+        case 5: oval(2,-5.3,12,2.5,hair);box(2,-3,1,3,hair);box(13,-3,1,3,hair)
+        case 6: for dx in [0.0,3,6,9,12] {oval(dx,-6,5,6,hair)}
+        case 7: for dx in [2.0,12] {oval(dx,-2,2,5,hair)}
+        case 8: oval(2,-5.5,12,3.7,hair);for yy in [0.0,3,6] {oval(12,yy,3.5,4,hair)}
+        case 9: oval(2,-5.5,12,3.7,hair);oval(5,-8,6,5,hair)
+        case 10: box(2,-6,12,4.5,accent);box(facing == 1 ? -2 : 3,-2.5,15,1.5,accent)
+        default: box(3,-7,10,5,accent);box(0,-2.5,16,1.5,accent);box(3,-4,10,1,0xEEE3BA)
         }
     }
 }

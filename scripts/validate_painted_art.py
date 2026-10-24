@@ -2,7 +2,7 @@
 import hashlib, json, struct, zlib
 from pathlib import Path
 root=Path(__file__).resolve().parents[1]
-manifest=json.loads((root/'ArtSources/CelV41/manifest.json').read_text(encoding='utf-8'))
+manifest=json.loads((root/'ArtSources/CartoonV46/manifest.json').read_text(encoding='utf-8'))
 assert len(manifest['assets'])==109
 for asset in manifest['assets']:
     path=root/asset['path'];data=path.read_bytes()

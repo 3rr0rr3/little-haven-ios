@@ -5,7 +5,7 @@ extension Motel {
         guard let police=business.police,(police.map ?? "grounds") == petMap else{return []}
         let previous=police.previous ?? police.tile
         let facing=police.tile.x<previous.x ? 1 : police.tile.x>previous.x ? 2 : police.tile.y<previous.y ? 3 : 0
-        return [RPGActor(id:"police",tile:police.tile,color:0x54739C,variant:0,facing:facing,marker:"!",duration:MotelCadence.travel,expression:"serious")]
+        return [RPGActor(id:"police",tile:police.tile,color:0x54739C,variant:700,facing:facing,marker:"!",duration:MotelCadence.travel,expression:"serious")]
     }
     var petActors: [RPGActor] {
         visiblePets.map { pet in
@@ -135,7 +135,7 @@ struct ShopInteriorView:View {
     private var actors:[RPGActor] {
         [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You"),
          RPGActor(id:"shopkeeper-"+shop.rawValue,tile:ShopLayout.keeper,color:shop.keeperColor,variant:460+shop.uniform,name:shop.keeperName,shopUniform:shop.uniform)] + ((shop == .bar || shop == .fish) ? BarLayout.seats.enumerated().map { index,tile in
-             RPGActor(id:(shop == .fish ? "fish-diner-" : "bar-patron-")+"\(index)",tile:tile,color:[UInt32(0xA58AAB),0x9CB69E,0xD1AD74][index%3],variant:520+index,facing:index%2 == 0 ? 2 : 1,name:["Avery","Rosa","Theo","Mila","Leon","Iris"][index])
+             RPGActor(id:(shop == .fish ? "fish-diner-" : "bar-patron-")+"\(index)",tile:tile,color:[UInt32(0xA58AAB),0x9CB69E,0xD1AD74][index%3],variant:(shop == .fish ? 560 : 520)+index,facing:index%2 == 0 ? 2 : 1,name:(shop == .fish ? ["Elena","Marcus","Priya","Bruno","Nadia","Felix"] : ["Cleo","Dante","Petra","Emil","Nia","Orson"])[index])
          } : []) + musicActors + motel.petActors + motel.policeActors
     }
     private var musicActors:[RPGActor] {

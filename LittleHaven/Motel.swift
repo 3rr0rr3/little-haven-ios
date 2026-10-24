@@ -82,11 +82,12 @@ struct Motel: Codable {
         return operationsState.simulation == nil ? base : managementRate(room,base:base)
     }
     static var randomizeGuestArrivals = true
-    static func arrivals(day: Int, count: Int, randomize:Bool? = nil) -> [MotelGuest] {
+    static func arrivals(day: Int, count: Int, randomize:Bool? = nil, excluding:Set<String> = []) -> [MotelGuest] {
         let randomize=randomize ?? randomizeGuestArrivals
-        let names = randomize ? Self.guestNames.shuffled() : Self.guestNames
+        let availableNames=Self.guestNames.filter{!excluding.contains($0)}
+        let names = randomize ? availableNames.shuffled() : availableNames
         let stories = ["Passing through on a road trip.", "In town for the weekend market.", "Needs a quiet place to write.", "Visiting an old friend.", "Taking the scenic route home."]
-        return (0..<count).map { index in
+        return (0..<min(max(0,count),names.count)).map { index in
             let key = day == 1 ? 10 + index : day * 100 + index
             let identity=Self.guestNames.firstIndex(of:names[index % names.count]) ?? index
             return MotelGuest(id: key, name: names[index % names.count],
@@ -190,7 +191,7 @@ struct Motel: Codable {
                 departures += 1
             }
         }
-        waiting = Self.arrivals(day: day, count: max(1,min(rooms.count + 1 + officeLevel, 10) - bookingPenalty))
+        waiting = Self.arrivals(day: day, count: max(1,min(rooms.count + 1 + officeLevel, 10) - bookingPenalty), excluding:Set(rooms.compactMap{$0.guest?.name} + (world?.travellers.map(\.name) ?? [])))
         finishSimulationDay()
         if guestStories != nil { settleGuestStoryDay() }
         if Self.randomizeGuestArrivals || guestStories != nil { prepareStoryArrivals() }
@@ -349,7 +350,7 @@ extension Motel {
         let extra = min(2, storyBookingBonus)
         if extra > 0 {
             let targetCount = min(Self.guestNames.count, waiting.count + extra)
-            let additions = Self.arrivals(day: day, count: targetCount)
+            let additions = Self.arrivals(day: day, count: targetCount, excluding:Set(waiting.map(\.name) + rooms.compactMap{$0.guest?.name} + (world?.travellers.map(\.name) ?? [])))
             for guest in additions where !waiting.contains(where: { $0.id == guest.id }) {
                 waiting.append(guest)
                 if waiting.count >= targetCount { break }
@@ -1483,7 +1484,7 @@ extension Motel {
         let allied=o.allianceWeek==finishedWeek;havenOccasions=o
         let reward=(won ? 50 : 0)+(allied ? 45 : 0);cash+=reward
         if reward>0 {logMoney(reward,category:"Coastal rivalry",note:"Weekly comparison and referrals")}
-        if allied,waiting.count<10 {waiting += Self.arrivals(day:day+1000,count:1)}
+        if allied,waiting.count<10 {waiting += Self.arrivals(day:day+1000,count:1,excluding:Set(waiting.map(\.name) + rooms.compactMap{$0.guest?.name} + (world?.travellers.map(\.name) ?? [])))}
         var state=simulation;state.reputation=min(100,max(0,state.reputation+(won ? 2 : -1)));simulation=state
         occasionNote("Week \(finishedWeek): Haven \(appeal), Seabreeze \(rival). "+(won ? "You won the service award!" : "Seabreeze led this week; improve your weakest inspection check.")+" +\(reward) coins.")
     }

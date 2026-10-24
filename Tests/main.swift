@@ -1819,3 +1819,28 @@ func firstChapterStartupRules() {
     print("PASS: production first-chapter startup, normal guests, initial ticks, checkpoint restoration and finite transition camera")
 }
 firstChapterStartupRules()
+
+func cartoonIdentityRules() {
+    let variants=Array(0..<7)+Array(100..<124)+Array(180..<185)+Array(200..<209)+Array(220..<240)+Array(310..<317)+Array(461..<466)+Array(520..<526)+Array(530..<532)+Array(560..<566)+Array(610..<616)+[700]
+    let faces=variants.map{NPCDesign(variant:$0).fingerprint}
+    require(Set(faces).count==variants.count,"Every ordinary guest, neighbor, worker, keeper, diner and police design is distinct")
+    require(Set((0..<1024).map{NPCDesign(variant:$0).fingerprint}).count==1024,"The native character system does not cycle through four repeated faces")
+    for variant in variants {
+        require(NPCDesign(variant:variant)==NPCDesign(variant:variant),"A person keeps the same appearance across maps and reloads")
+    }
+    let previous=Motel.randomizeGuestArrivals
+    defer {Motel.randomizeGuestArrivals=previous}
+    Motel.randomizeGuestArrivals=false
+    let capped=Motel.arrivals(day:1,count:1000,randomize:false)
+    require(capped.count==Motel.guestNames.count && Set(capped.map(\.name)).count==capped.count,"A large arrival request never creates duplicate people")
+    require(Motel.arrivals(day:1,count:4,excluding:Set(Motel.guestNames)).isEmpty,"An exhausted identity pool creates no clones")
+    var m=Motel();m.cash=10000
+    for i in 0..<3 {m.rooms[i].guest=Motel.arrivals(day:1,count:3,randomize:false)[i];m.rooms[i].nightsLeft=3}
+    require(m.nextDay(),"Advance a day while guests stay in occupied rooms")
+    let residents=Set(m.rooms.compactMap{$0.guest?.name})
+    require(residents.isDisjoint(with:Set(m.waiting.map(\.name))),"A checked-in person cannot appear again in the arrival queue")
+    let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(m))
+    require(restored.rooms.compactMap{$0.guest?.appearanceSeed}==m.rooms.compactMap{$0.guest?.appearanceSeed},"Existing guest appearance identities survive saving without a new schema")
+    print("PASS: unique cartoon NPC designs, stable appearance identities, no cloned guest arrivals and unchanged checkpoint schema")
+}
+cartoonIdentityRules()

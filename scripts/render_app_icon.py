@@ -8,6 +8,7 @@ personal=source[source.index("enum PersonalArt {"):source.index("\nenum CatArt {
 people=(root/"LittleHaven/TownCanvas.swift").read_text()
 people=people[people.index("enum PaperPerson {"):]
 uniform=source[source.index("enum ShopKeeperArt {"):source.index("\nenum BeachArt {")]
+design=(root/"LittleHaven/NPCDesign.swift").read_text()
 swift=r'''
 import SwiftUI
 import AppKit
@@ -16,13 +17,11 @@ extension Color {
 }
 enum PaintedArt {
     static func person(context:inout GraphicsContext,x:Double,y:Double,variant:Int,facing:Int,walk:Double,color:UInt32,hands:Bool=true,kneeling:Bool=false,beachwear:Bool=false)->Bool {
-        let name=variant==7 ? "player" : variant==8 ? "hildarelys" : variant==9 ? "samhil" : ["guest-a","guest-b","guest-c","guest-d"][abs(variant)%4]
-        let path=CommandLine.arguments[3]+"/bh-"+name+".imageset/bh-"+name+".png"
-        guard let image=NSImage(contentsOfFile:path),let cg=image.cgImage(forProposedRect:nil,context:nil,hints:nil),let cell=cg.cropping(to:CGRect(x:0,y:max(0,min(3,facing))*224,width:192,height:224)) else{return false}
-        context.draw(Image(decorative:cell,scale:1),in:CGRect(x:x-4,y:y-9,width:24,height:28));return true
+        return false
+
     }
 }
-''' + personal + '\n' + people + '\n' + uniform + r'''
+''' + design + '\n' + personal + '\n' + people + '\n' + uniform + r'''
 struct CharacterIcon:View {
     var body:some View {
         Canvas {context,size in
@@ -52,6 +51,29 @@ struct TurnPreview:View {
         }.frame(width:1024,height:810)
     }
 }
+struct NPCGallery:View {
+    let variants:[Int]=Array(100..<124)+Array(180..<185)+Array(200..<209)+Array(461..<466)+Array(520..<526)+Array(560..<566)+Array(610..<616)+[700]
+    var body:some View {
+        Canvas {c,_ in
+            c.fill(Path(CGRect(x:0,y:0,width:1200,height:1100)),with:.color(Color(hex:0xC2D0BC)))
+            for (index,variant) in variants.enumerated() {
+                let xx=Double(index%10)*120,yy=Double(index/10)*150
+                var person=c;person.translateBy(x:xx+17,y:yy+13);person.scaleBy(x:3.5,y:3.5)
+                PaperPerson.draw(context:&person,x:4,y:9,color:[UInt32(0xD99B7E),0x82AFC1,0xAE95B9,0xD6BD71][index%4],variant:variant,facing:0,walk:0)
+                c.draw(Text("ID \(variant)").font(.system(size:13,weight:.bold)).foregroundColor(Color(hex:0x243B32)),at:CGPoint(x:xx+60,y:yy+125))
+            }
+        }.frame(width:1200,height:1100)
+    }
+}
+struct NPCIdentitySample:View {
+    let variant:Int
+    var body:some View {
+        Canvas {c,_ in
+            c.scaleBy(x:4,y:4)
+            PaperPerson.draw(context:&c,x:4,y:9,color:0x82AFC1,variant:variant,facing:0,walk:0)
+        }.frame(width:96,height:112)
+    }
+}
 @main struct RenderIcon {
     @MainActor static func main() throws {
         let renderer=ImageRenderer(content:CharacterIcon())
@@ -64,6 +86,17 @@ struct TurnPreview:View {
         let bitmap=NSBitmapImageRep(cgImage:rgb.makeImage()!)
         let png=bitmap.representation(using:.png,properties:[:])!
         try png.write(to:URL(fileURLWithPath:CommandLine.arguments[1]))
+        var seen=Set<Data>()
+        for variant in NPCGallery().variants {
+            let sample=ImageRenderer(content:NPCIdentitySample(variant:variant));sample.scale=1
+            guard let rendered=sample.cgImage,let pixels=rendered.dataProvider?.data else {fatalError("NPC identity rendering failed")}
+            precondition(seen.insert(pixels as Data).inserted,"Repeated rendered NPC design: \(variant)")
+        }
+        print("Verified distinct native NPC renders with identical outfit color:",seen.count)
+        let gallery=ImageRenderer(content:NPCGallery());gallery.scale=1
+        guard let galleryImage=gallery.cgImage else {fatalError("NPC contact sheet failed")}
+        let galleryPNG=NSBitmapImageRep(cgImage:galleryImage).representation(using:.png,properties:[:])!
+        try galleryPNG.write(to:URL(fileURLWithPath:CommandLine.arguments[4]))
         let turns=ImageRenderer(content:TurnPreview());turns.scale=1
         guard let preview=turns.cgImage else {fatalError("Turn preview failed")}
         let turnPNG=NSBitmapImageRep(cgImage:preview).representation(using:.png,properties:[:])!
@@ -76,6 +109,6 @@ with tempfile.TemporaryDirectory() as folder:
     binary=Path(folder)/"render-icon"
     subprocess.run(["swiftc","-target",platform.machine()+"-apple-macosx13.0","-parse-as-library",str(program),"-o",str(binary)],check=True)
     target=root/"LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
-    subprocess.run([str(binary),str(target),str(root/"LittleHaven-character-turns.png"),str(root/"LittleHaven/Assets.xcassets/Painted")],check=True)
+    subprocess.run([str(binary),str(target),str(root/"LittleHaven-character-turns.png"),str(root/"LittleHaven/Assets.xcassets/Painted"),str(root/"LittleHaven-npc-gallery.png")],check=True)
     (root/"LittleHaven-app-icon.png").write_bytes(target.read_bytes())
     print("Rendered original player character into opaque 1024px app icon")

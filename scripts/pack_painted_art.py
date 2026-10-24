@@ -11,7 +11,7 @@ from PIL import Image, ImageFilter, ImageChops, ImageDraw
 
 ROOT=Path(__file__).resolve().parents[1]
 CATALOG=ROOT/'LittleHaven/Assets.xcassets/Painted'
-ORIGINALS=ROOT/'ArtSources/CelV41'
+ORIGINALS=ROOT/'ArtSources/CartoonV46'
 source_list=Path(sys.argv[sys.argv.index('--source-list')+1]) if '--source-list' in sys.argv else None
 if source_list is not None:
     SOURCES=json.loads(source_list.read_text(encoding='utf-8'))
@@ -20,7 +20,10 @@ else:
     for source in SOURCES:source['path']=str(ORIGINALS/source['file'])
 CATALOG.mkdir(parents=True,exist_ok=True);ORIGINALS.mkdir(parents=True,exist_ok=True)
 (CATALOG/'Contents.json').write_text(json.dumps({'info':{'author':'xcode','version':1}}),encoding='utf-8')
-manifest={'version':41,'cell':[192,224],'directions':['front','left','right','back'],'frames':['idle','leftStep','rightStep'],'assets':[],'sources':[]}
+legacy=json.loads((ROOT/'ArtSources/CelV41/manifest.json').read_text())
+legacy_actors=[a for a in legacy['assets'] if a['size']==[576,896]]
+assert len(legacy_actors)==27
+manifest={'version':46,'cell':[192,224],'directions':['front','left','right','back'],'frames':['idle','leftStep','rightStep'],'assets':legacy_actors.copy(),'sources':[],'legacy_actor_assets_not_rendered':True}
 
 def save_asset(name,image):
     folder=CATALOG/(name+'.imageset');folder.mkdir(exist_ok=True)
