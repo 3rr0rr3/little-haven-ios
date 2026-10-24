@@ -389,7 +389,7 @@ struct ContentView: View {
             return sample
         }
         if args.contains("--ui-bedroom-samhil") || args.contains("--ui-bedroom-parents") || args.contains("--ui-bedroom-doors") || args.contains("--ui-bedroom-parents-door") {
-            var sample=Game();sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.world!.place = .house
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.world!.place = .house
             sample.motel!.waiting=[]
             if args.contains("--ui-bedroom-doors") {sample.motel!.world!.player=Tile(x:5,y:3)}
             else if args.contains("--ui-bedroom-parents-door") {sample.motel!.world!.player=Tile(x:8,y:3)}

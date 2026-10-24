@@ -262,7 +262,8 @@ struct HomeInteriorArt:View {
                 PaintedArt.draw("door",in:CGRect(x:x,y:12,width:20,height:30),context:&context)
                 context.draw(Text(bedroom == .samhil ? "SAMHIL" : "OUR ROOM").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x+10,y:9))
             }
-            context.draw(Text("HOME SWEET HOME").font(.system(size:7,weight:.black,design:.monospaced)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:120,y:195))
+            rect(154,7,62,20,0x70513B)
+            context.draw(Text("HOME SWEET HOME").font(.system(size:4.5,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:185,y:17))
         }.frame(width:240,height:240)
     }
 }
@@ -463,7 +464,7 @@ enum DecorArt {
         CozyScenery.block(context:&c,x:x-3,y:y+5,w:134,h:13,color:0x5A7977,depth:1)
         CozyScenery.block(context:&c,x:x+2,y:y+2,w:124,h:5,color:0x91AAA0,depth:0.7)
         CozyScenery.block(context:&c,x:x+6,y:y+23,w:116,h:17,color:0x344F4E,depth:0.8)
-        c.draw(Text("BRAINSTORM HAVEN • OFFICE").font(.system(size:5.4,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E5BC)),at:CGPoint(x:x+64,y:y+31))
+        c.draw(Text("BRAINSTORM HAVEN â€¢ OFFICE").font(.system(size:5.4,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E5BC)),at:CGPoint(x:x+64,y:y+31))
         // Reception glazing, service counter visible behind the large windows.
         for dx in [8.0,84] {
             CozyScenery.block(context:&c,x:x+dx,y:y+47,w:34,h:33,color:0x648C8D,depth:0.6)
@@ -550,7 +551,7 @@ enum DecorArt {
             c.fill(Path(CGRect(x:x+8,y:y+8,width:5,height:1.5)),with:.color(Color(hex:color)))
         }
         c.draw(Text(shop.title.uppercased()).font(.system(size:4.2,weight:.heavy,design:.rounded)).foregroundColor(Color(hex:0xFFF1D5)),at:CGPoint(x:x+48,y:y+6))
-        c.draw(Text(shop == .furniture ? "FURNITURE & DECOR" : shop == .clothing ? "CLOTHING & TAILOR" : shop == .bar ? "DRINKS • MUSIC • GOOD COMPANY" : shop == .fish ? "FRESH FISH • COASTAL KITCHEN" : "PAWN & CURIOS").font(.system(size:2.8,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF4DCAB)),at:CGPoint(x:x+48,y:y+12))
+        c.draw(Text(shop == .furniture ? "FURNITURE & DECOR" : shop == .clothing ? "CLOTHING & TAILOR" : shop == .bar ? "DRINKS â€¢ MUSIC â€¢ GOOD COMPANY" : shop == .fish ? "FRESH FISH â€¢ COASTAL KITCHEN" : "PAWN & CURIOS").font(.system(size:2.8,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF4DCAB)),at:CGPoint(x:x+48,y:y+12))
     }
 }
 struct ShopInteriorArt:View {
@@ -737,7 +738,7 @@ struct BarInteriorArt:View {
                 c.fill(Path(ellipseIn:CGRect(x:x-20,y:34,width:41,height:28)),with:.radialGradient(Gradient(colors:[Color(hex:0xFFE3A7).opacity(0.22),.clear]),center:CGPoint(x:x,y:41),startRadius:0,endRadius:25))
             }
             block(20,133,18,18,0x5D6C65);block(23,135,12,6,0xD2B877)
-            c.draw(Text("♪ LIVE LOUNGE").font(.system(size:3.5,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF5D591)),at:CGPoint(x:120,y:39))
+            c.draw(Text("â™ª LIVE LOUNGE").font(.system(size:3.5,weight:.bold,design:.rounded)).foregroundColor(Color(hex:0xF5D591)),at:CGPoint(x:120,y:39))
             block(111,208,18,32,0xE7D1AD)
         }.frame(width:240,height:240)
     }
@@ -1064,7 +1065,7 @@ struct HomeBedroomArt:View {
                     CozyScenery.block(context:&context,x:x,y:56,w:22,h:12,color:0xF2E6D1,depth:0.5)
                 }
             }
-            PaintedArt.draw("bookshelf",in:CGRect(x:160,y:48,width:48,height:48),context:&context)
+            PaintedArt.draw(child ? "bookshelf" : "clothes-rack",in:CGRect(x:160,y:48,width:48,height:48),context:&context)
             PaintedArt.draw("workbench",in:CGRect(x:160,y:112,width:48,height:32),context:&context)
             // Small framed reading/study area with a book and a desk lamp.
             PaintedArt.draw("save-journal",in:CGRect(x:174,y:112,width:18,height:12),context:&context)

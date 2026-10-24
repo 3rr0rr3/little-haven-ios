@@ -272,7 +272,7 @@ extension Motel {
         guestsServed >= hiringMilestone(role) || operationsState.workers.contains { $0.role == role }
     }
     func hiringProgress(_ role:StaffRole)->String {
-        hiringUnlocked(role) ? "Unlocked • Staff station included" : "Check in \(hiringMilestone(role)) guests to unlock • \(min(guestsServed,hiringMilestone(role)))/\(hiringMilestone(role))"
+        hiringUnlocked(role) ? "Unlocked â€¢ Staff station included" : "Check in \(hiringMilestone(role)) guests to unlock â€¢ \(min(guestsServed,hiringMilestone(role)))/\(hiringMilestone(role))"
     }
     @discardableResult mutating func hire(_ role: StaffRole) -> Bool {
         guard hiringUnlocked(role) else {lastEvent=hiringProgress(role);return false}
@@ -497,7 +497,7 @@ extension Motel {
                             rooms[i].hospitality=health
                             state.simulation!.stock[supply.rawValue,default:0] -= 2
                             cash -= 15
-                            staffRepairs.append(worker.role.name+" • Room "+String(rooms[i].number))
+                            staffRepairs.append(worker.role.name+" â€¢ Room "+String(rooms[i].number))
                         } else if let issue=state.simulation?.issues.first(where:{$0.roomID==roomID && worker.role.handles($0.kind)}) {
                             completedIssues.append(issue.id)
                         }

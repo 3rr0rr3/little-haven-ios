@@ -226,7 +226,7 @@ extension Motel {
     }
     func corralCare(_ id:Int)->CorralCare {worldState.corrals?[id] ?? CorralCare()}
     @discardableResult mutating func enterBasement()->Bool {
-        guard isAtHome,actorTile.distance(to:BasementLayout.homeStairs)<=1 else{return false}
+        guard isAtHome,currentBedroom == nil,actorTile.distance(to:BasementLayout.homeStairs)<=1 else{return false}
         initializeWorld();world!.place = .basement;world!.player=BasementLayout.arrival
         lastEvent="Welcome to your creature sanctuary. Eight corrals, eight friends."
         return true
