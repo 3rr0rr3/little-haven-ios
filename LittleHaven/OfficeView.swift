@@ -50,8 +50,8 @@ struct FamilyHouseView:View {
                     target(OfficeTap(rawValue:pet.key)!,"Talk to \(motel.companionName(pet.key))",pet.value.tile,scale,origin)
                         .animation(.linear(duration:pet.value.following ? 0.14 : 0.65),value:pet.value.tile)
                 }
-                target(.girlBedroom,"Enter Samhil bedroom",HomeBedroom.samhil.door,scale,origin)
-                target(.parentsBedroom,"Enter parents bedroom",HomeBedroom.parents.door,scale,origin)
+                target(.girlBedroom,"Enter Samhil bedroom",HomeBedroom.samhil.door,scale,origin).zIndex(3)
+                target(.parentsBedroom,"Enter parents bedroom",HomeBedroom.parents.door,scale,origin).zIndex(3)
                 target(.basement,"Enter basement",BasementLayout.homeStairs,scale,origin)
                 target(.door,"Leave home",FamilyHome.exit,scale,origin)
                 target(.player,"Home checkpoint",Tile(x:2,y:10),scale,origin)
@@ -61,7 +61,10 @@ struct FamilyHouseView:View {
             .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
     }
     private func target(_ item:OfficeTap,_ label:String,_ tile:Tile,_ scale:CGFloat,_ origin:CGPoint)->some View {
-        Button {if item == .hildarelys || item == .samhil {tap(item)} else if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).frame(width:max(item == .hildarelys ? 64 : 44,24*scale),height:max(item == .hildarelys ? 64 : 44,26*scale)).contentShape(Rectangle())}.buttonStyle(.plain).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+CGFloat(tile.y*16+5)*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
+        let bedroomDoor=item == .girlBedroom || item == .parentsBedroom
+        // Bedroom doors extend up the wall. Keep their target on the actual door,
+        // above the family patrol, instead of centering it on the floor approach.
+        return Button {if item == .hildarelys || item == .samhil {tap(item)} else if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).frame(width:max(item == .hildarelys ? 64 : 44,24*scale),height:max(item == .hildarelys ? 64 : 44,(bedroomDoor ? 30 : 26)*scale)).contentShape(Rectangle())}.buttonStyle(.plain).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+(bedroomDoor ? 27 : CGFloat(tile.y*16+5))*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
     }
 }
 struct OfficeReceptionView: View {
@@ -225,7 +228,7 @@ private struct LanternMusicProp:View {
                 context.fill(Path(ellipseIn:CGRect(x:28,y:4,width:6,height:7)),with:.color(Color(hex:0x536963)))
                 if playing {
                     let bob=sin(timeline.date.timeIntervalSinceReferenceDate*3)*2
-                    context.draw(Text("♪ ♫").font(.system(size:11,weight:.bold)).foregroundColor(Color(hex:0xF1D887)),at:CGPoint(x:29,y:4+bob))
+                    context.draw(Text("â™ª â™«").font(.system(size:11,weight:.bold)).foregroundColor(Color(hex:0xF1D887)),at:CGPoint(x:29,y:4+bob))
                 }
             }
         }

@@ -221,7 +221,7 @@ final class LittleHavenUITests: XCTestCase {
                 XCTAssertTrue(door.waitForExistence(timeout:15))
                 if touch {app.buttons["hideFullscreenToolbar"].tap()}
                 door.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
-                XCTAssertTrue(app.otherElements["homeBedroomScene"].waitForExistence(timeout:5))
+                XCTAssertTrue(app.otherElements["homeBedroomScene"].waitForExistence(timeout:5),app.debugDescription)
                 XCTAssertTrue(app.otherElements["homeBedroomScene"].label.contains(parents ? "Hildarelys" : "Samhil"))
                 capture(app,parents ? "Shared parents bedroom" : "Samhil bedroom")
                 if parents {
@@ -833,7 +833,7 @@ final class LittleHavenUITests: XCTestCase {
         capture(app,"Rowan playing at the Lantern Bar")
         app.buttons["shopCounter"].tap()
         XCTAssertFalse(app.buttons["startLanternShow"].exists)
-        XCTAssertTrue(app.staticTexts["Rowan's live set · promise kept"].exists)
+        XCTAssertTrue(app.staticTexts["Rowan's live set Â· promise kept"].exists)
     }
     func testNeighborRelationshipAndFavor() {
         let app=launch("--ui-haven-neighbor")
