@@ -228,7 +228,7 @@ private struct LanternMusicProp:View {
                 context.fill(Path(ellipseIn:CGRect(x:28,y:4,width:6,height:7)),with:.color(Color(hex:0x536963)))
                 if playing {
                     let bob=sin(timeline.date.timeIntervalSinceReferenceDate*3)*2
-                    context.draw(Text("â™ª â™«").font(.system(size:11,weight:.bold)).foregroundColor(Color(hex:0xF1D887)),at:CGPoint(x:29,y:4+bob))
+                    context.draw(Text("♪ ♫").font(.system(size:11,weight:.bold)).foregroundColor(Color(hex:0xF1D887)),at:CGPoint(x:29,y:4+bob))
                 }
             }
         }

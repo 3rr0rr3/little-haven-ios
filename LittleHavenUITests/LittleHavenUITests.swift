@@ -833,7 +833,7 @@ final class LittleHavenUITests: XCTestCase {
         capture(app,"Rowan playing at the Lantern Bar")
         app.buttons["shopCounter"].tap()
         XCTAssertFalse(app.buttons["startLanternShow"].exists)
-        XCTAssertTrue(app.staticTexts["Rowan's live set Â· promise kept"].exists)
+        XCTAssertTrue(app.staticTexts["Rowan's live set · promise kept"].exists)
     }
     func testNeighborRelationshipAndFavor() {
         let app=launch("--ui-haven-neighbor")

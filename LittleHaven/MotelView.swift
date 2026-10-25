@@ -394,7 +394,7 @@ struct MotelView: View {
                 } else if motel.isAtReception {
                     HStack(spacing:10) {
                         Button("Front desk") { stop(); panel = .desk }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("receptionDesk")
-                        Button(motel.hiringUnlocked(.cleaner) ? "Hire employees" : "Staff unlocks â€¢ \(motel.guestsServed)/3 guests") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")
+                        Button(motel.hiringUnlocked(.cleaner) ? "Hire employees" : "Staff unlocks • \(motel.guestsServed)/3 guests") { stop(); panel = .staff }.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("hireEmployees")
                     }
                 } else if !fullscreenTouch && !motel.visiblePets.filter({motel.actorTile.distance(to:$0.value.tile)<=2}).isEmpty {
                     HStack {
@@ -418,7 +418,7 @@ struct MotelView: View {
                     HStack(spacing:10) {
                         VStack(alignment:.leading,spacing:2) {
                             Text(motel.mapName).font(.system(size:13,weight:.bold,design:.rounded)).lineLimit(1)
-                            Text("DAY \(motel.day) Â· \(motel.clockLabel)").font(.system(size:9,weight:.medium,design:.monospaced)).opacity(0.65)
+                            Text("DAY \(motel.day) · \(motel.clockLabel)").font(.system(size:9,weight:.medium,design:.monospaced)).opacity(0.65)
                         }.accessibilityElement(children:.ignore).accessibilityLabel(motel.mapName)
                             .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).").accessibilityIdentifier("touchPosition")
                         Spacer(minLength:0)
@@ -564,7 +564,7 @@ struct MotelView: View {
                         VStack(alignment: .leading, spacing: 3) {
                             Text("EMERGENCY").font(.system(size: 10, weight: .black, design: .rounded)).tracking(1.5)
                             Text(incident.kind.title).font(.system(size: 15, weight: .heavy, design: .rounded))
-                            Text(location + " â€¢ Guests need help now").font(.system(size: 11))
+                            Text(location + " • Guests need help now").font(.system(size: 11))
                         }
                         Spacer(minLength: 0)
                         Text("\(incident.remaining)s").font(.system(size: 18, weight: .black, design: .monospaced))
@@ -572,7 +572,7 @@ struct MotelView: View {
                     ProgressView(value: Double(incident.remaining), total: Double(incident.limit)).tint(.white)
                         .accessibilityLabel("Time remaining").accessibilityValue("\(incident.remaining) seconds")
                     HStack {
-                        Text(incident.remaining <= 20 ? "CRITICAL â€¢ A guest could die" : "Respond before someone is hurt")
+                        Text(incident.remaining <= 20 ? "CRITICAL • A guest could die" : "Respond before someone is hurt")
                             .font(.system(size: 10, weight: .bold))
                         Spacer(minLength: 2)
                         Label("RESPOND", systemImage: "arrow.right.circle.fill").font(.system(size: 11, weight: .black))
@@ -584,8 +584,8 @@ struct MotelView: View {
             }.buttonStyle(.plain).accessibilityIdentifier("incidentAlarm")
         } else if motel.managementEnabled, let issue = motel.simulation.issues.first {
             Button { stop(); showManagement = true } label: {
-                HotelNoticeCard(title: "NEEDS ATTENTION â€¢ Room \(motel.rooms.first(where:{$0.id == issue.roomID})?.number ?? issue.roomID)",
-                    message: issue.kind.title + " â€¢ Open management to respond",
+                HotelNoticeCard(title: "NEEDS ATTENTION • Room \(motel.rooms.first(where:{$0.id == issue.roomID})?.number ?? issue.roomID)",
+                    message: issue.kind.title + " • Open management to respond",
                     symbol: issue.kind == .outage ? "bolt.slash.fill" : issue.kind == .leak ? "drop.triangle.fill" : "exclamationmark.bubble.fill",
                     tint: Color(hex:0xEFC977))
             }.buttonStyle(.plain).accessibilityIdentifier("issueNotification")
@@ -1265,7 +1265,7 @@ struct GuestStoriesView: View {
                             VStack(alignment:.leading,spacing:8) {
                                 HStack {
                                     PaperPortrait(color:id.color,variant:id.appearance).frame(width:36,height:45)
-                                    VStack(alignment:.leading) {Text(id.name+" Â· "+id.title).font(.headline);Text("Trust \(progress.relationship) Â· \(min(3,progress.chapter))/3 chapters").font(.caption)}
+                                    VStack(alignment:.leading) {Text(id.name+" · "+id.title).font(.headline);Text("Trust \(progress.relationship) · \(min(3,progress.chapter))/3 chapters").font(.caption)}
                                 }
                                 if progress.memories.isEmpty {Text("A new face to meet.").font(.caption)}
                                 ForEach(Array(progress.memories.enumerated()),id:\.offset) { _, memory in Text(memory).font(.caption) }
@@ -1274,8 +1274,8 @@ struct GuestStoriesView: View {
                             }.padding(14).frame(maxWidth:.infinity,alignment:.leading)
                                 .background(Color.white.opacity(0.06),in:RoundedRectangle(cornerRadius:14))
                         }
-                        if motel.storyBook.musicPartnership {Label("Lantern music nights Â· +12 coins/day, +1 arrival",systemImage:"music.note")}
-                        if motel.storyBook.travelFeature {Label("Travel guide feature Â· +1 arrival/day",systemImage:"newspaper")}
+                        if motel.storyBook.musicPartnership {Label("Lantern music nights · +12 coins/day, +1 arrival",systemImage:"music.note")}
+                        if motel.storyBook.travelFeature {Label("Travel guide feature · +1 arrival/day",systemImage:"newspaper")}
                         if motel.storyBook.familyReunited {Label("Emilia's family reunited",systemImage:"heart.fill")}
                     }
                 }.padding(22)
