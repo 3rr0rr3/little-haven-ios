@@ -362,7 +362,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(world.waitForExistence(timeout: 10))
         app.buttons["worldAction"].tap()
         app.buttons["buildRoom"].tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "4 ROOMS")).firstMatch.exists)
+        XCTAssertTrue((world.value as? String ?? "").contains("4 rooms"),"Construction adds the fourth room, independently of HUD visibility")
     }
 
     func testCaughtRestoresLastCheckpoint() {
@@ -407,7 +407,7 @@ final class LittleHavenUITests: XCTestCase {
             capture(app,"Emergency alert " + fixture)
             app.buttons["incidentAlarm"].tap()
             XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
-            app.buttons[action].tap()
+            app.otherElements["gameDialogue"].buttons[action].tap()
             XCTAssertFalse(app.buttons["incidentAlarm"].exists)
         }
     }
@@ -644,10 +644,11 @@ final class LittleHavenUITests: XCTestCase {
         let app=XCUIApplication()
         app.launchArguments=["--ui-world","--ui-touch","--ui-testing"]
         app.launch()
-        let position=app.descendants(matching:.any)["touchPosition"].firstMatch
+        let position=app.descendants(matching:.any)["fullscreenJoystick"].firstMatch
         XCTAssertTrue(position.waitForExistence(timeout:15),app.debugDescription)
         XCTAssertFalse(app.buttons["Walk north"].exists)
         let before=position.value as? String
+        XCTAssertTrue(before?.contains("Column") == true,"Joystick exposes position while the toolbar is hidden")
         let start=app.coordinate(withNormalizedOffset:CGVector(dx:0.55,dy:0.53))
         let east=app.coordinate(withNormalizedOffset:CGVector(dx:0.75,dy:0.53))
         start.tap()
@@ -666,7 +667,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertEqual(position.value as? String,released,"Releasing the finger stops without walking to its destination")
         center.press(forDuration:0.05,thenDragTo:stick.coordinate(withNormalizedOffset:CGVector(dx:0.1,dy:0.5)),withVelocity:.slow,thenHoldForDuration:0.4)
         XCTAssertNotEqual(position.value as? String,released,"A fresh drag can reverse direction")
-        app.buttons["Pause game"].tap()
+        openPause(app)
         let stopped=position.value as? String
         Thread.sleep(forTimeInterval:0.4)
         XCTAssertEqual(position.value as? String,stopped,"Pause cancels movement")
@@ -1079,8 +1080,10 @@ final class LittleHavenUITests: XCTestCase {
         capture(app,"Quiet fullscreen with one-tap toolbar reveal")
     }
     private func back(_ app:XCUIApplication) {
-        let menu=app.buttons["menuBack"]
-        XCTAssertTrue(menu.waitForExistence(timeout:5),app.debugDescription);menu.tap()
+        let menus=app.buttons.matching(identifier:"menuBack")
+        XCTAssertTrue(menus.firstMatch.waitForExistence(timeout:5),app.debugDescription)
+        guard let visible=menus.allElementsBoundByIndex.first(where:{$0.isHittable}) else {XCTFail("No visible Back control: "+app.debugDescription);return}
+        visible.tap()
     }
     private func openPause(_ app:XCUIApplication) {
         if app.buttons["restoreFullscreenToolbar"].exists {app.buttons["restoreFullscreenToolbar"].tap()}

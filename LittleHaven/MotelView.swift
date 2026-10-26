@@ -484,6 +484,7 @@ struct MotelView: View {
                 contextActionChooser
                 HStack(alignment:.bottom) {
                     FullscreenJoystick(diagonals:true,direction:steer).disabled(paused || motel.caught)
+                        .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
                     Spacer()
                     if motel.nearbyAction != .none {actionButton.frame(width:160,height:82)}
                 }
@@ -720,7 +721,7 @@ struct MotelView: View {
                 .id(mapIdentity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Airb&b GROUNDS. Column \(tile.x), row \(tile.y).")
-                .accessibilityValue("\(motel.worldState.travellers.count) guests walking to their destinations.")
+                .accessibilityValue("\(motel.rooms.count) rooms. \(motel.worldState.travellers.count) guests walking to their destinations.")
                 .accessibilityIdentifier("motelWorld")
         }
     }
