@@ -1596,7 +1596,7 @@ func connectedHavenLifeRules() {
     promises.day=4;promises.settleHavenDay()
     require(!promises.neighborState(1).favorPending && promises.neighborState(1).friendship == -2,"Overdue neighbor promises have lasting consequences")
     let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(creatures))
-    require(restored.haven.adventures.count==8 && restored.haven.petFindDays==creatures.haven.petFindDays,"All creature quests and rewards survive reloading")
+    require(restored.haven.adventures.count==BasementLayout.titles.count && restored.haven.petFindDays==creatures.haven.petFindDays,"All eleven creature quests and rewards survive reloading")
     var object=try! JSONSerialization.jsonObject(with:JSONEncoder().encode(base())) as! [String:Any]
     object.removeValue(forKey:"havenLife")
     require((try! JSONDecoder().decode(Motel.self,from:JSONSerialization.data(withJSONObject:object))).havenLife==nil,"Older saves remain compatible with Haven life")
