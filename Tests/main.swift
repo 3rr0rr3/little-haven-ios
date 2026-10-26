@@ -1943,8 +1943,9 @@ func menuNavigationRules() {
     require(pins.contains{$0.id=="home" && $0.tile==motel.groundTile(FamilyHome.door)},"Family marker follows its actual door")
     require(pins.filter{$0.group == .shops}.count==NeighborhoodShop.allCases.count,"Every shop is filterable")
     require(motel.navigationGroundTile==motel.groundTile(FamilyHome.door) && motel.actorTile==before,"Viewing a map anchors an interior to its building without teleporting")
-    motel.world!.structureOffsets=["family-home":Tile(x:1,y:0)]
-    require(motel.navigationPins.first{$0.id=="home"}!.tile==motel.groundTile(FamilyHome.door),"Map selection follows creative relocation")
+    let oldHome=motel.navigationPins.first{$0.id=="home"}!.tile
+    motel.world!.structureOffsets=["home":Tile(x:1,y:0)]
+    require(motel.navigationPins.first{$0.id=="home"}!.tile==Tile(x:oldHome.x+1,y:oldHome.y),"Map selection follows creative relocation")
     motel.guestsServed=12;motel.cash=1200;_=motel.hire(.maintenance)
     motel.operations!.incident=MotelIncident(kind:.fire,guest:Motel.arrivals(day:1,count:1,randomize:false)[0])
     let money=motel.cash,worker=motel.operationsState.workers.first{$0.role == .maintenance}!.tile

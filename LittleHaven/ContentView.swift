@@ -732,13 +732,13 @@ struct ContentView: View {
     private func dialogue(_ person: Neighbor) -> some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack {
+                MenuBackButton {conversation=nil}
                 PaperPortrait(color: person.color, variant: person.id).frame(width: 54, height: 62)
                 VStack(alignment: .leading) {
                     Text(person.name).font(.title2.bold())
                     Text(person.role.uppercased()).font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(gold)
                 }
                 Spacer()
-                Button("Close") { conversation = nil }.tint(cream)
             }
             Text(game.gifts.contains(person.id) ? person.reply : person.greeting).font(.system(size: 17)).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)

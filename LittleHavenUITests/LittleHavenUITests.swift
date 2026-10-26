@@ -310,7 +310,7 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["pawn_sell_1"].tap()
         XCTAssertFalse(app.buttons["pawn_sell_1"].exists)
         capture(app,"Pawn shop sells carried items individually")
-        app.buttons["Close"].tap()
+        back(app)
         XCTAssertTrue(cash(app).contains("2570"))
     }
     func testClothingShopBuysAndEquips() {
