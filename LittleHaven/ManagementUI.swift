@@ -1,4 +1,57 @@
 import SwiftUI
+import UIKit
+
+// Observe the native scroll view without replacing its gesture handling or delegate.
+// Save only when leaving a page, rather than writing preferences on every frame.
+private struct ManagementScrollMemory:UIViewRepresentable {
+    let page:String
+    func makeCoordinator()->Coordinator {Coordinator()}
+    func makeUIView(context:Context)->UIView {UIView(frame:.zero)}
+    func updateUIView(_ view:UIView,context:Context) {
+        let coordinator=context.coordinator
+        DispatchQueue.main.async { [weak view] in
+            guard let view else{return}
+            var ancestor=view.superview
+            while let current=ancestor {
+                if let scroll=current as? UIScrollView {coordinator.attach(scroll,page:page);return}
+                ancestor=current.superview
+            }
+        }
+    }
+    static func dismantleUIView(_ view:UIView,coordinator:Coordinator) {coordinator.save();coordinator.observation=nil}
+    final class Coordinator {
+        weak var scroll:UIScrollView?
+        var observation:NSKeyValueObservation?
+        var page=""
+        var offset:CGFloat=0
+        var restoring=false
+        private let key="littlehaven.management.offsets"
+        func save() {
+            guard !page.isEmpty else{return}
+            var values=UserDefaults.standard.dictionary(forKey:key) as? [String:Double] ?? [:]
+            values[page]=Double(max(0,offset))
+            UserDefaults.standard.set(values,forKey:key)
+        }
+        func attach(_ view:UIScrollView,page next:String) {
+            guard scroll !== view || page != next else{return}
+            save();observation=nil;scroll=view;page=next;restoring=true
+            let values=UserDefaults.standard.dictionary(forKey:key) as? [String:Double] ?? [:]
+            offset=CGFloat(values[next] ?? 0)
+            observation=view.observe(\.contentOffset,options:[.new]) { [weak self] view,_ in
+                guard let self,!self.restoring else{return}
+                self.offset=max(0,view.contentOffset.y+view.adjustedContentInset.top)
+            }
+            DispatchQueue.main.asyncAfter(deadline:.now()+0.12) { [weak self,weak view] in
+                guard let self,let view,self.page==next else{return}
+                view.layoutIfNeeded()
+                let maximum=max(0,view.contentSize.height-view.bounds.height+view.adjustedContentInset.bottom+view.adjustedContentInset.top)
+                let target=min(self.offset,maximum)-view.adjustedContentInset.top
+                view.setContentOffset(CGPoint(x:view.contentOffset.x,y:target),animated:false)
+                self.restoring=false
+            }
+        }
+    }
+}
 
 
 struct MenuBackButton:View {
@@ -6,7 +59,7 @@ struct MenuBackButton:View {
     let action:()->Void
     var body:some View {
         Button(action:action) {
-            Label("Back",systemImage:"chevron.left").font(.subheadline.bold())
+            Label("Back",systemImage:"chevron.left").labelStyle(.titleAndIcon).font(.subheadline.bold())
                 .frame(minWidth:76,minHeight:44).contentShape(Rectangle())
         }.buttonStyle(.plain).accessibilityIdentifier(id)
     }
@@ -671,10 +724,7 @@ struct ManagementHub:View {
     @Environment(\.dismiss) private var dismiss
     var initialTab:ManagementTab?=nil
     @AppStorage("littlehaven.management.tab") private var savedTab="Today"
-    @AppStorage("littlehaven.management.scroll") private var savedScroll="{}"
     @State private var tab:ManagementTab = .overview
-    @State private var scrollAnchor:String?
-    @State private var restoringScroll=true
     @State private var roomFilter:RoomBoardFilter = .all
     @AppStorage("littlehaven.management.roomFilter") private var savedRoomFilter="All"
     @AppStorage("littlehaven.management.roomSearch") private var roomSearch=""
@@ -693,7 +743,6 @@ struct ManagementHub:View {
                     }.buttonStyle(.plain).padding(.horizontal).accessibilityIdentifier("managementEmergency")
                 }
                 boardNavigation
-                ScrollViewReader {proxy in
                 ScrollView {
                     VStack(alignment:.leading,spacing:16) {
                         Color.clear.frame(height:1).id(tab.rawValue+"|top")
@@ -710,23 +759,7 @@ struct ManagementHub:View {
                         case .story:storyPanel
                         case .books:booksPanel
                         }
-                    }.padding().scrollTargetLayout()
-                }.scrollPosition(id:$scrollAnchor,anchor:.top)
-                    .task(id:tab) {
-                        restoringScroll=true
-                        let entries=(try? JSONDecoder().decode([String:String].self,from:Data(savedScroll.utf8))) ?? [:]
-                        let target=entries[tab.rawValue] ?? tab.rawValue+"|top"
-                        await Task.yield()
-                        proxy.scrollTo(target,anchor:.top)
-                        do {try await Task.sleep(for:.milliseconds(180))} catch {return}
-                        restoringScroll=false
-                    }
-                    .onChange(of:scrollAnchor) {_,value in
-                        guard !restoringScroll,let value,value.hasPrefix(tab.rawValue+"|") else{return}
-                        var entries=(try? JSONDecoder().decode([String:String].self,from:Data(savedScroll.utf8))) ?? [:]
-                        entries[tab.rawValue]=value
-                        if let data=try? JSONEncoder().encode(entries),let text=String(data:data,encoding:.utf8) {savedScroll=text}
-                    }
+                    }.padding().scrollTargetLayout().background(ManagementScrollMemory(page:tab.rawValue).frame(width:0,height:0))
                 }
                 if !feedback.isEmpty {Label(feedback,systemImage:"info.circle.fill").font(.subheadline).foregroundStyle(gold).padding(12).frame(maxWidth:.infinity,alignment:.leading).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12)).padding(.horizontal).accessibilityIdentifier("managementFeedback")}
                 Text("The hotel keeps running while this board is open.").font(.system(size:10)).foregroundStyle(.secondary).padding(.bottom,6)
@@ -735,7 +768,7 @@ struct ManagementHub:View {
                 .sheet(isPresented:$showHavenLife) {HavenLifeView(game:$game)}
                 .toolbar {ToolbarItem(placement:.topBarLeading) {MenuBackButton(id:"closeManagement") {dismiss()}}}
         }.tint(gold).presentationBackground(Color(hex:0x172A25))
-            .onChange(of:tab) {_,value in restoringScroll=true;savedTab=value.rawValue}
+            .onChange(of:tab) {_,value in savedTab=value.rawValue}
             .onChange(of:roomFilter) {_,value in savedRoomFilter=value.rawValue}
             .onAppear {
                 tab=initialTab ?? ManagementTab(rawValue:savedTab) ?? .overview
@@ -989,12 +1022,12 @@ struct ManagementHub:View {
             ForEach(motel.rooms.filter{$0.guest != nil}) {room in
                 if let guest=room.guest {
                     card {
-                        Text(guest.name+" / "+guest.kind.title+" / Room \(room.number)").font(.headline).id("Guests|guest-\(guest.id)")
+                        Text(guest.name+" / "+guest.kind.title+" / Room \(room.number)").font(.headline)
                         Text(guest.kind.preference).font(.caption)
                         Text("Trust \(motel.simulation.relationships[guest.name,default:0]) / stays \(motel.simulation.visits[guest.name,default:0])").font(.caption).foregroundStyle(gold)
                         Text("Clean \(room.health.cleanliness)% / AC \(room.health.faults.contains(.ac) ? "broken" : "working") / Wi-Fi \(motel.simulation.powerOut ? "offline" : motel.simulation.facilities.contains(.wifi) ? "fiber" : "standard")").font(.caption)
                         Button("Personal service / 8 coins + snack") {_=perform{$0.serviceGuest(guest.id)}}.buttonStyle(.bordered)
-                    }
+                    }.id("Guests|guest-\(guest.id)")
                 }
             }
             ReviewsPanel(motel:motel)
@@ -1138,10 +1171,10 @@ struct ManagementHub:View {
             }
             ForEach(motel.simulation.ledger) {line in
                 HStack(alignment:.top) {
-                    VStack(alignment:.leading) {Text("Day \(line.day), \(line.hour):00 / "+line.category).font(.caption.bold()).id("Books|line-\(line.id)");Text(line.note).font(.caption2)}
+                    VStack(alignment:.leading) {Text("Day \(line.day), \(line.hour):00 / "+line.category).font(.caption.bold());Text(line.note).font(.caption2)}
                     Spacer()
                     Text(line.amount>=0 ? "+\(line.amount)" : "\(line.amount)").foregroundStyle(line.amount>=0 ? Color.mint : Color.orange).font(.caption.monospaced())
-                }.padding(8).background(Color.white.opacity(0.05))
+                }.padding(8).background(Color.white.opacity(0.05)).id("Books|line-\(line.id)")
             }
         }.scrollTargetLayout()
     }

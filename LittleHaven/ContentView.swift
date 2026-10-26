@@ -39,7 +39,7 @@ struct ContentView: View {
         }
         Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
         if args.contains(where:{$0.hasPrefix("--ui-")}),!args.contains("--ui-restore-menus") {
-            for key in ["littlehaven.management.tab","littlehaven.management.scroll","littlehaven.management.roomFilter","littlehaven.management.roomSearch","littlehaven.map.filter","littlehaven.haven.tab"] {UserDefaults.standard.removeObject(forKey:key)}
+            for key in ["littlehaven.management.tab","littlehaven.management.scroll","littlehaven.management.offsets","littlehaven.management.roomFilter","littlehaven.management.roomSearch","littlehaven.map.filter","littlehaven.haven.tab"] {UserDefaults.standard.removeObject(forKey:key)}
             UserDefaults.standard.set(true,forKey:"littlehaven.autoHideHUD")
         }
 

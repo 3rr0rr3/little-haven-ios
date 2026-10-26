@@ -1,7 +1,7 @@
 # Menu usability — v51 (56)
 
 1. Money, time, location and Pause form the compact HUD. Secondary Reviews, Creative and Map destinations live in Pause; Team appears there after hiring.
-2. Five primary reception tabs group all existing tools: Overview (events, growth, cameras, story), Guests (arrivals and stays), Rooms (room board and supplies), Staff, Finances. Overview remains the first-use dashboard. The last selected page and stable row anchors are stored as menu preferences, outside game save data.
+2. Five primary reception tabs group all existing tools: Overview (events, growth, cameras, story), Guests (arrivals and stays), Rooms (room board and supplies), Staff, Finances. Overview remains the first-use dashboard. The last selected page and native scroll offsets are stored as menu preferences, outside game save data.
 3. Persistent incident cards show actual location, urgency, remaining time, Show location and Send employee. Dispatch respects hire/shift eligibility and the existing walking responder; it does not resolve an emergency instantly. Everyday notices remain small.
 4. Primary action labels identify their target. An explicit nearby-action chooser offers overlapping interactions without replacing movement or adding point-and-click walking.
 5. Leading Back controls use the same large touch area on menus, dialogues and optional mini-games. Forced police decisions retain their existing non-dismissible behavior.
