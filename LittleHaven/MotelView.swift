@@ -44,6 +44,7 @@ struct MotelButtonStyle: ButtonStyle {
     }
 }
 
+private enum PauseDestination {case reviews,staff,creative,map,options}
 private enum MotelPanel: Equatable { case guest(Int), paint(Int?), desk, construction, staff, reviews, roomUpgrades }
 struct MotelView: View {
     @Binding var game: Game
@@ -65,6 +66,11 @@ struct MotelView: View {
     @State private var panel: MotelPanel?
     @State private var selectedRoom: Int?
     @State private var showMap = false
+    @State private var mapFocus:String?
+    @State private var managementFocus:ManagementTab?
+    @State private var showActionPicker=false
+    @State private var pauseDestination:PauseDestination?
+    @AppStorage("littlehaven.autoHideHUD") private var autoHideHUD=true
     @State private var showPause = false
     @State private var showManagement = false
     @State private var confirmRest = false
@@ -94,7 +100,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { showHavenLife || lifeAfterPause || journalAfterPause || storyGuest != nil || showStoryJournal || motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { showActionPicker || pauseDestination != nil || showHavenLife || lifeAfterPause || journalAfterPause || storyGuest != nil || showStoryJournal || motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         StartupTrace.stage("hotel_body_begin")
@@ -185,6 +191,10 @@ struct MotelView: View {
                 change{_=$0.resolveNearbyIncident()};responseDuration=kind.responseDuration
             }
             if ProcessInfo.processInfo.arguments.contains("--ui-dialogue") { family = .hildarelys }
+            if ProcessInfo.processInfo.arguments.contains("--ui-menu-pause") {showPause=true}
+            if ProcessInfo.processInfo.arguments.contains("--ui-menu-map") {showMap=true}
+            if ProcessInfo.processInfo.arguments.contains("--ui-menu-staff") {managementFocus = .team;showManagement=true}
+            if ProcessInfo.processInfo.arguments.contains("--ui-menu-purchases") {neighborhood = .furniture}
             for id in 0..<8 where ProcessInfo.processInfo.arguments.contains("--ui-corral-\(id)") {corral=id}
             if ProcessInfo.processInfo.arguments.contains("--ui-creative-preview") {showCreative=true}
             if ProcessInfo.processInfo.arguments.contains("--ui-creature-portrait") { family = .mochi }
@@ -298,13 +308,16 @@ struct MotelView: View {
             if arrived == true {
                 stop();panel=nil;family=nil;talkingRoom=nil;corral=nil
                 showIncident=false;showCreative=false;showManagement=false;showHome=false
-                neighborhood=nil;showOptions=false;showPause=false;showMap=false
+                neighborhood=nil;showOptions=false;showPause=false;showMap=false;showActionPicker=false;pauseDestination=nil;lifeAfterPause=false;journalAfterPause=false
                 confirmRest=false;showSneak=false;confirmRestore=false;showPolice=true
                 game.save()
             }
         }
         .onChange(of: mapIdentity) { _, _ in stop() }
-        .onChange(of: motel.actorTile) { _, _ in working = false; workProgress = 0 }
+        .onChange(of: motel.actorTile) { _, _ in
+            working=false;workProgress=0
+            if fullscreenTouch,autoHideHUD,!paused {hideFullscreenToolbar=true}
+        }
         .onChange(of: motel.caught) { _, caught in if caught { stop(); panel = nil } }
         .onChange(of: paused) { _, value in if value { stop() } }
         .onChange(of: scenePhase) { _, phase in if phase != .active { stop() } }
@@ -313,22 +326,50 @@ struct MotelView: View {
     }
 
     @inline(never) private func hotelSheets(_ content:AnyView) -> AnyView {
-        AnyView(content
+        let shared=AnyView(content
         .sheet(item:$storyGuest) { guest in GuestStoriesView(game:$game,guest:guest) }
         .sheet(isPresented:$showHavenLife) {HavenLifeView(game:$game,initialTab:havenTab)}
         .sheet(isPresented:$showStoryJournal) { GuestStoriesView(game:$game) }
         .sheet(item:$neighborhood) { shop in NeighborhoodStoreView(game:$game,shop:shop) }
         .sheet(isPresented:$showHome) { HomeDesignView(game:$game) }
-        .sheet(isPresented:$showManagement) {
-            ManagementHub(game:$game).presentationDetents([.large]).presentationDragIndicator(.visible)
+        )
+        return AnyView(shared
+        .sheet(isPresented:$showManagement,onDismiss:{managementFocus=nil}) {
+            ManagementHub(game:$game,initialTab:managementFocus).presentationDetents([.large]).presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showMap) {
-            MotelPocketMap(motel: motel).presentationDetents([.large]).presentationDragIndicator(.visible)
+        .sheet(isPresented: $showMap,onDismiss:{mapFocus=nil}) {
+            MotelPocketMap(motel:motel,initialFocus:mapFocus).presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showPause,onDismiss:{
             if lifeAfterPause {lifeAfterPause=false;showHavenLife=true}
             if journalAfterPause {journalAfterPause=false;showStoryJournal=true}
-        }) { pauseSheet.presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
+            if let destination=pauseDestination {
+                pauseDestination=nil
+                if !motel.policeRequiresDecision {
+                    switch destination {
+                    case .reviews:panel = .reviews
+                    case .staff:panel = .staff
+                    case .creative:showCreative=true
+                    case .map:showMap=true
+                    case .options:showOptions=true
+                    }
+                }
+            }
+        }) { pauseSheet.presentationDetents([.large]).presentationDragIndicator(.visible) }
+        .sheet(isPresented:$showActionPicker) {
+            NavigationStack {
+                List {
+                    Section("Nearby actions") {
+                        ForEach(Array(motel.contextActions.enumerated()),id:\.offset) {_,action in
+                            Button(motel.actionTitle(action)) {showActionPicker=false;performAction(action)}
+                                .frame(minHeight:44).accessibilityIdentifier("chooseContext_"+motel.actionTitle(action))
+                        }
+                    }
+                }.scrollContentBackground(.hidden).background(Color(hex:0x172F29))
+                    .navigationTitle("Choose an action").navigationBarTitleDisplayMode(.inline)
+                    .toolbar {ToolbarItem(placement:.topBarLeading){MenuBackButton {showActionPicker=false}}}
+            }.tint(gold).presentationDetents([.medium,.large])
+        }
         )
     }
 
@@ -336,7 +377,7 @@ struct MotelView: View {
         ZStack {
                 if motel.isRidingBike {
                     Button("Dismount bike") {stop();change{_=$0.dismountBike()}}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("dismountBike")
-                } else if let visitor=motel.homeNeighborIDs.first(where:{motel.isAtHome && motel.actorTile.distance(to:motel.homeNeighborTile($0))<=2 && motel.neighborState($0).welcomedDay != motel.day}) {
+                } else if let visitor=motel.homeNeighborIDs.first(where:{motel.isAtHome && motel.currentBedroom == nil && motel.actorTile.distance(to:motel.homeNeighborTile($0))<=2 && motel.neighborState($0).welcomedDay != motel.day}) {
                     Button("Welcome "+ResidentialLayout.names[visitor]) {stop();change{_=$0.welcomeHomeNeighbor(visitor)};game.save()}
                         .buttonStyle(MotelButtonStyle()).accessibilityIdentifier("welcomeHomeNeighbor")
                 } else if motel.nearbyAdventureFind != nil {
@@ -412,39 +453,35 @@ struct MotelView: View {
                 .allowsHitTesting(!paused)
             VStack(spacing:8) {
                 if hideFullscreenToolbar {
-                    HStack {Spacer();Button {hideFullscreenToolbar=false} label:{Image(systemName:"eye").padding(12).background(.ultraThinMaterial,in:Capsule())}.accessibilityLabel("Show top toolbar").accessibilityIdentifier("restoreFullscreenToolbar")}
+                    HStack {
+                        Spacer()
+                        Button {hideFullscreenToolbar=false} label:{
+                            Label("Menu",systemImage:"eye").font(.caption.bold()).padding(.horizontal,14).frame(minHeight:44)
+                                .background(.ultraThinMaterial,in:Capsule())
+                        }.buttonStyle(.plain).accessibilityLabel("Show top toolbar").accessibilityIdentifier("restoreFullscreenToolbar")
+                    }
                 } else {
-                VStack(spacing:8) {
-                    HStack(spacing:10) {
-                        VStack(alignment:.leading,spacing:2) {
+                    HStack(spacing:12) {
+                        VStack(alignment:.leading,spacing:3) {
                             Text(motel.mapName).font(.system(size:13,weight:.bold,design:.rounded)).lineLimit(1)
-                            Text("DAY \(motel.day) · \(motel.clockLabel)").font(.system(size:9,weight:.medium,design:.monospaced)).opacity(0.65)
+                            Text("DAY \(motel.day) · \(motel.clockLabel)").font(.system(size:10,design:.monospaced)).opacity(0.75)
                         }.accessibilityElement(children:.ignore).accessibilityLabel(motel.mapName)
                             .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).").accessibilityIdentifier("touchPosition")
                         Spacer(minLength:0)
-                        Label("\(motel.cash)",systemImage:"circle.circle.fill").font(.system(size:15,weight:.bold,design:.rounded)).foregroundStyle(gold)
-                    }
-                    HStack(spacing:4) {
-                        toolbarItem("Map",symbol:"map",id:"fullscreenMap"){showMap=true}
-                        toolbarItem("Reviews",symbol:"star.bubble",id:"openReviews"){panel = .reviews}
-                        if !motel.operationsState.workers.isEmpty {
-                            toolbarItem("Team",symbol:"person.2",id:"openStaff"){panel = .staff}
-                        }
-                        if motel.isAtReception && motel.actorTile.distance(to:OfficeReception.computer)<=1 {
-                            toolbarItem("Office PC",symbol:"desktopcomputer",id:"fullscreenComputer"){showManagement=true}
-                        }
-                        toolbarItem("Creative",symbol:"square.and.pencil",id:"openCreative"){showCreative=true}
-                        toolbarItem("Hide",symbol:"eye.slash",id:"hideFullscreenToolbar"){hideFullscreenToolbar=true}
-                        toolbarItem("Pause",symbol:"pause",id:"fullscreenPause"){showPause=true}
-                    }
-                }.padding(12)
-                    .background(.ultraThinMaterial,in:RoundedRectangle(cornerRadius:22))
-                    .overlay(RoundedRectangle(cornerRadius:22).stroke(cream.opacity(0.12),lineWidth:1))
+                        Label("\(motel.cash)",systemImage:"circle.circle.fill").font(.subheadline.bold()).foregroundStyle(gold)
+                            .accessibilityLabel("Cash \(motel.cash) coins").accessibilityIdentifier("motelCash")
+                        Button {hideFullscreenToolbar=true} label:{Image(systemName:"eye.slash").frame(width:44,height:44)}
+                            .accessibilityLabel("Hide top toolbar").accessibilityIdentifier("hideFullscreenToolbar")
+                        Button {stop();showPause=true} label:{Image(systemName:"pause.fill").frame(width:44,height:44)}
+                            .accessibilityLabel("Pause game").accessibilityIdentifier("fullscreenPause")
+                    }.padding(.horizontal,12).padding(.vertical,5)
+                        .background(.ultraThinMaterial,in:RoundedRectangle(cornerRadius:18))
                 }
                 priorityAlerts
                 Spacer()
                 if working {ProgressView(value:workProgress).tint(gold)}
                 nearbyTouchActions.fixedSize(horizontal:false,vertical:true)
+                contextActionChooser
                 HStack(alignment:.bottom) {
                     FullscreenJoystick(diagonals:true,direction:steer).disabled(paused || motel.caught)
                     Spacer()
@@ -476,34 +513,18 @@ struct MotelView: View {
     }
     private var worldScreen: some View {
         VStack(spacing: 10) {
-            HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(motel.mapName).font(.system(size: 20, weight: .black, design: .rounded))
-                    Text("DAY \(motel.day) / \(motel.occupancy) GUESTS / \(motel.rooms.count) ROOMS / \(motel.clockLabel) \(motel.weather.title)")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced)).foregroundStyle(gold)
+            HStack(spacing:10) {
+                VStack(alignment:.leading,spacing:3) {
+                    Text(motel.mapName).font(.system(size:18,weight:.bold,design:.rounded)).lineLimit(1)
+                    Text("Day \(motel.day) · \(motel.clockLabel) \(motel.weather.title)").font(.system(size:10,design:.monospaced)).foregroundStyle(gold)
                 }
-                Spacer(minLength: 4)
-                Label("\(motel.cash)", systemImage: "circle.circle.fill").font(.system(size: 18, weight: .heavy, design: .monospaced)).foregroundStyle(gold).accessibilityElement(children: .ignore).accessibilityLabel("Cash \(motel.cash) coins").accessibilityIdentifier("motelCash")
-                Button {stop();showCreative=true} label:{Image(systemName:"square.and.pencil").frame(width:28,height:40)}.accessibilityLabel("Creative mode").accessibilityIdentifier("openCreative")
-                Button { stop(); showMap = true } label: { Image(systemName: "map.fill").frame(width: 36, height: 40) }.accessibilityLabel("Airb&b map")
-                Button { stop(); showPause = true } label: { Image(systemName: "pause.fill").frame(width: 28, height: 40) }.accessibilityLabel("Pause game")
+                Spacer(minLength:0)
+                Label("\(motel.cash)",systemImage:"circle.circle.fill").font(.headline).foregroundStyle(gold)
+                    .accessibilityElement(children:.ignore).accessibilityLabel("Cash \(motel.cash) coins").accessibilityIdentifier("motelCash")
+                Button {stop();showPause=true} label:{Image(systemName:"pause.fill").frame(width:44,height:44)}
+                    .accessibilityLabel("Pause game").accessibilityIdentifier("standardPause")
             }
-            HStack {
-                Button { stop(); panel = .reviews } label: { Text(motel.reviewAverage.map { String(format:"RATING %.1f",$0) } ?? "NEW REVIEWS") }.accessibilityIdentifier("openReviews")
-                Spacer()
-                if !motel.operationsState.workers.isEmpty {
-                    Button("TEAM \(motel.operationsState.workers.count)") { stop(); panel = .staff }.accessibilityIdentifier("openStaff")
-                }
-
-            }.font(.system(size:10,weight:.bold,design:.monospaced)).foregroundStyle(gold)
             priorityAlerts
-            if motel.managementEnabled {Text(motel.guestFavourSummary ?? motel.simulation.news).font(.system(size:10)).foregroundStyle(gold).lineLimit(1)}
-            if let police = motel.business.police {
-                Button { stop(); showPolice = true } label: {
-                    Label(police.arrived ? "POLICE HERE - FINE / BRIBE" : "POLICE ON THE WAY",systemImage:"light.beacon.max.fill")
-                        .font(.system(size:11,weight:.heavy)).frame(maxWidth:.infinity).padding(9).background(Color(hex:0x6A3D3D))
-                }.accessibilityIdentifier("policeAlarm")
-            }
             deferredScene
                 .allowsHitTesting(!paused)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
@@ -528,6 +549,7 @@ struct MotelView: View {
             }
             Text(showHints ? (motel.isAtReception ? "Walk freely. Tap guests, family and office objects to interact." : hint) : "").font(.system(size: 11, weight: .medium)).foregroundStyle(cream.opacity(0.8)).lineLimit(2).frame(maxWidth: .infinity, minHeight: 29, alignment: .leading)
             nearbyTouchActions.frame(height:44).clipped()
+            contextActionChooser
             HStack(spacing: 16) {
                 MotelJoystick(direction: { direction in
                     if let direction, !paused && !motel.caught {
@@ -552,48 +574,53 @@ struct MotelView: View {
 
     // Persistent safety alerts remain visible until the actual incident is resolved.
     // They do not present a modal or stop movement until the player taps Respond.
-    @ViewBuilder private var priorityAlerts: some View {
-        if let incident = motel.operationsState.incident {
-            let symbol = incident.kind == .fire ? "flame.fill" : incident.kind == .pool ? "figure.pool.swim" : "exclamationmark.shield.fill"
-            let location = incident.kind == .fire ? "Hotel courtyard" : incident.kind == .pool ? "South pool" : "Hotel grounds"
-            Button { stop(); showIncident = true } label: {
-                VStack(alignment: .leading, spacing: 7) {
-                    HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: symbol).font(.system(size: 24, weight: .bold)).frame(width: 38, height: 38)
-                            .background(.white.opacity(0.14), in: RoundedRectangle(cornerRadius: 10))
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("EMERGENCY").font(.system(size: 10, weight: .black, design: .rounded)).tracking(1.5)
-                            Text(incident.kind.title).font(.system(size: 15, weight: .heavy, design: .rounded))
-                            Text(location + " • Guests need help now").font(.system(size: 11))
+    @ViewBuilder private var priorityAlerts:some View {
+        if let incident=motel.operationsState.incident {
+            VStack(alignment:.leading,spacing:5) {
+                Button {stop();showIncident=true} label:{
+                    VStack(alignment:.leading,spacing:6) {
+                        HStack(spacing:10) {
+                            Image(systemName:incident.kind == .fire ? "flame.fill" : incident.kind == .pool ? "figure.pool.swim" : "exclamationmark.shield.fill").font(.title2)
+                            VStack(alignment:.leading,spacing:3) {
+                                Text("EMERGENCY").font(.system(size:10,weight:.black)).tracking(1)
+                                Text(incident.kind.title).font(.subheadline.bold())
+                                Text("Motel grounds · Column \(incident.tile.x), row \(incident.tile.y)").font(.caption2)
+                            }
+                            Spacer(minLength:0)
+                            Text("\(incident.remaining)s").font(.headline.monospaced())
                         }
-                        Spacer(minLength: 0)
-                        Text("\(incident.remaining)s").font(.system(size: 18, weight: .black, design: .monospaced))
-                    }
-                    ProgressView(value: Double(incident.remaining), total: Double(incident.limit)).tint(.white)
-                        .accessibilityLabel("Time remaining").accessibilityValue("\(incident.remaining) seconds")
-                    HStack {
-                        Text(incident.remaining <= 20 ? "CRITICAL • A guest could die" : "Respond before someone is hurt")
-                            .font(.system(size: 10, weight: .bold))
-                        Spacer(minLength: 2)
-                        Label("RESPOND", systemImage: "arrow.right.circle.fill").font(.system(size: 11, weight: .black))
-                    }
-                }
-                .padding(12).foregroundStyle(.white).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(hex: incident.remaining <= 20 ? 0xA51F30 : 0x9A3D2F), in: RoundedRectangle(cornerRadius: 15))
-                .overlay(RoundedRectangle(cornerRadius: 15).stroke(Color(hex:0xFFBA9D),lineWidth:2))
-            }.buttonStyle(.plain).accessibilityIdentifier("incidentAlarm")
-        } else if motel.managementEnabled, let issue = motel.simulation.issues.first {
-            Button { stop(); showManagement = true } label: {
-                HotelNoticeCard(title: "NEEDS ATTENTION • Room \(motel.rooms.first(where:{$0.id == issue.roomID})?.number ?? issue.roomID)",
-                    message: issue.kind.title + " • Open management to respond",
-                    symbol: issue.kind == .outage ? "bolt.slash.fill" : issue.kind == .leak ? "drop.triangle.fill" : "exclamationmark.bubble.fill",
-                    tint: Color(hex:0xEFC977))
-            }.buttonStyle(.plain).accessibilityIdentifier("issueNotification")
+                        ProgressView(value:Double(incident.remaining),total:Double(incident.limit)).tint(.white)
+                        Text(incident.remaining<=20 ? "CRITICAL · A guest could die" : "Respond before someone is hurt").font(.caption2.bold())
+                    }.contentShape(Rectangle())
+                }.buttonStyle(.plain).accessibilityIdentifier("incidentAlarm")
+                HStack(spacing:9) {
+                    Button {stop();mapFocus="incident";showMap=true} label:{Label("Show location",systemImage:"map.fill")}
+                        .accessibilityIdentifier("emergencyShowLocation")
+                    Button {stop();change{_=$0.dispatchEmergencyResponder()}} label:{Label("Send "+(motel.emergencyDispatchReason==nil ? incident.kind.responder.name : "employee"),systemImage:"person.fill.checkmark")}
+                        .disabled(motel.emergencyDispatchReason != nil).accessibilityIdentifier("emergencyDispatch")
+                }.font(.caption.bold()).buttonStyle(.bordered).controlSize(.regular).frame(minHeight:44)
+                if let reason=motel.emergencyDispatchReason {Text(reason).font(.caption2).fixedSize(horizontal:false,vertical:true)}
+            }.padding(11).foregroundStyle(.white).tint(.white)
+                .background(Color(hex:incident.remaining<=20 ? 0xA51F30 : 0x923D31),in:RoundedRectangle(cornerRadius:15))
+        } else if let police=motel.business.police {
+            Button {stop();showPolice=true} label:{HotelNoticeCard(title:police.arrived ? "POLICE HERE" : "OFFICER ON THE WAY",message:police.arrived ? "Speak to the officer to settle your case" : "An officer is looking for you",symbol:"light.beacon.max.fill",tint:Color(hex:0xF4BA9E))}
+                .buttonStyle(.plain).accessibilityIdentifier("policeAlarm")
+        } else if motel.managementEnabled,let issue=motel.simulation.issues.first {
+            VStack(spacing:4) {
+                Button {stop();managementFocus = .events;showManagement=true} label:{
+                    HotelNoticeCard(title:"ROOM \(motel.rooms.first(where:{$0.id==issue.roomID})?.number ?? issue.roomID) · NEEDS ATTENTION",message:issue.kind.title+" · \(max(0,issue.deadline-motel.simulation.absoluteHour)) hours left",symbol:"exclamationmark.bubble.fill",tint:gold)
+                }.buttonStyle(.plain).accessibilityIdentifier("issueNotification")
+                Button("Show request location") {stop();mapFocus="issue-\(issue.id)";showMap=true}.font(.caption.bold()).frame(minHeight:44).accessibilityIdentifier("issueShowLocation")
+            }
         } else if motel.managementEnabled && (motel.simulation.powerOut || motel.simulation.waterOut) {
-            Button { stop(); showManagement = true } label: {
-                HotelNoticeCard(title: "SERVICE OUTAGE", message: "Restore power / water in management.",
-                    symbol: "bolt.slash.fill", tint: Color(hex:0xEFC977))
-            }.buttonStyle(.plain).accessibilityIdentifier("utilityNotification")
+            Button {stop();managementFocus = .events;showManagement=true} label:{HotelNoticeCard(title:"SERVICE OUTAGE",message:"Review power and water under Overview → Events",symbol:"bolt.slash.fill",tint:gold)}
+                .buttonStyle(.plain).accessibilityIdentifier("utilityNotification")
+        }
+    }
+    @ViewBuilder private var contextActionChooser:some View {
+        if motel.contextActions.count>1 {
+            Button {stop();showActionPicker=true} label:{Label("Nearby actions (\(motel.contextActions.count))",systemImage:"list.bullet.circle")}
+                .font(.caption.bold()).frame(minHeight:44).disabled(paused || motel.caught).accessibilityIdentifier("otherNearbyActions")
         }
     }
     private func noticeTitle(_ message:String)->String {
@@ -698,33 +725,7 @@ struct MotelView: View {
         }
     }
 
-    private var actionName: String {
-        switch motel.nearbyAction {
-        case .bedroom:return "BEDROOM"
-        case .family:return "TALK"
-        case .basement:return "BASEMENT"
-        case .corral:return "VISIT CREATURE"
-        case .computer: return "RECEPTION PC"
-        case .pet: return "CALL PET"
-        case .home: return "HOME"
-        case .homeDecor: return "WORKBENCH"
-        case .shop: return motel.isAtShop ? (motel.currentShop == .fish ? "ORDER FOOD" : motel.currentShop == .bar ? "ORDER DRINK" : "BROWSE") : "ENTER SHOP"
-        case .incident: return "HELP"
-        case .office, .room: return "ENTER"
-        case .guest: return "TALK"
-        case .construction: return "BUILD"
-        case .desk: return "DESK"
-        case .save: return "SAVE"
-        case .rest: return "SLEEP"
-        case .tools: return "TAKE TOOLS"
-        case .paint: return "PAINT"
-        case .furniture: return "UPGRADE"
-        case .clean: return motel.worldState.hasCleaningKit ? "HOLD TO CLEAN" : "NEED MOP"
-        case .loot: return "TAKE"
-        case .exit: return "LEAVE"
-        case .none: return "EXPLORE"
-        }
-    }
+    private var actionName:String {motel.actionTitle(motel.nearbyAction)}
     private var actionSymbol: String {
         switch motel.nearbyAction {
         case .incident: return "exclamationmark.triangle.fill"
@@ -744,7 +745,7 @@ struct MotelView: View {
                          progress: workProgress, pressed: { pressed in
             if pressed { stop() }
             working = pressed
-        }, action: performAction).accessibilityIdentifier("worldAction")
+        }, action:{performAction()}).accessibilityIdentifier("worldAction")
     }
     private var hint: String {
         if motel.isRelaxing {return "Relaxing by the sea. Stand up or move whenever you are ready."}
@@ -773,7 +774,7 @@ struct MotelView: View {
         case .rest: return "Your bed: end the day, handle checkouts and save the next morning."
         case .tools: return "Pick up a mop, fresh sheets and bin bags for cleaning."
         case .office: return "Office entrance. Walk through the door or tap ENTER."
-        case .exit: return "Walk through the lower door to go outside."
+        case .exit: return motel.currentBedroom != nil ? "Return to the living room through the lower door." : "Walk through the lower door to go outside."
         case .construction: return "Build room \(101 + motel.rooms.count) here for \(motel.expansionCost) coins."
         case .loot(let item): return "\(RoomVisit.lootNames[item]): +\(RoomVisit.lootValues[item]) value, +\(RoomVisit.lootNoise[item]) suspicion. Sell it at the pawn shop after escaping."
         case .none:
@@ -810,12 +811,13 @@ struct MotelView: View {
         guard motel.isAtBasement,motel.actorTile.distance(to:BasementLayout.gate(id))<=1 else{toast="Walk to this corral's gate in the central aisle.";return}
         stop();corral=id
     }
-    private func performAction() {
+    private func performAction(_ selected:MotelAction?=nil) {
+        if let selected,!motel.contextActions.contains(selected) {toast="Move closer to that action.";return}
         guard !paused else { return }
         guard !motel.isRidingBike else{toast="Dismount your bike before interacting.";return}
         stop()
         if haptics { UIImpactFeedbackGenerator(style:.light).impactOccurred() }
-        switch motel.nearbyAction {
+        switch selected ?? motel.nearbyAction {
         case .bedroom(let bedroom):change{_=$0.enterBedroom(bedroom)}
         case .family(let person):family=OfficeTap(rawValue:person)
         case .basement:change{_=$0.enterBasement()}
@@ -845,11 +847,7 @@ struct MotelView: View {
     }
     @ViewBuilder private func interactionPanel(_ selected: MotelPanel) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(panelTitle(selected)).font(.headline)
-                Spacer()
-                Button { panel = nil } label: { Image(systemName: "xmark.circle.fill").font(.title2) }.accessibilityLabel("Close interaction")
-            }
+            HStack {MenuBackButton(id:"closeInteraction") {panel=nil};Spacer();Text(panelTitle(selected)).font(.headline)}
             switch selected {
             case .guest(let id):
                 if let guest = motel.waiting.first(where: { $0.id == id }) {
@@ -945,21 +943,39 @@ struct MotelView: View {
         case .construction: return "Airb&b expansion"
         }
     }
-    private var pauseSheet: some View {
-        ScrollView {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("On a break").font(.title.bold())
-            Text("Move around the Airb&b to do your work. Visit the desk or logbook to save, the tools closet for a mop, and your bed for the next day. Clean all three messes inside a vacated room before renting it again.").font(.body)
-            Text("Getting caught while stealing means loading your latest checkpoint. Changes since that save will be lost.").font(.subheadline).foregroundStyle(.secondary)
-            Button("Back to the Airb&b") { showPause = false }.buttonStyle(MotelButtonStyle())
-            Button("Load last save") { showPause = false; confirmRestore = true }.buttonStyle(MotelButtonStyle(subdued: true))
-            Button("Haven life & weekly activities") {havenTab = .neighbors;lifeAfterPause=true;showPause=false}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("openHavenLife")
-            Button("Guest stories") { journalAfterPause=true;showPause=false }.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("guestStoriesJournal")
-            Button("Options") { showOptions = true }.buttonStyle(MotelButtonStyle(subdued:true))
-            Button("Save & return to title") { stop(); game.save(); showPause = false; returnToTitle() }.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("backToTitle")
-        }.padding(24)
-        }.foregroundStyle(cream).presentationBackground(Color(hex: 0x172A25))
-            .sheet(isPresented:$showOptions) { GameOptionsView() }
+    private var pauseSheet:some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment:.leading,spacing:16) {
+                    Text("Take a break").font(.title2.bold())
+                    Text("Your game is paused. Choose what you need.").font(.subheadline).foregroundStyle(.secondary)
+                    LazyVGrid(columns:[GridItem(.flexible()),GridItem(.flexible())],spacing:12) {
+                        pauseTile("Map",symbol:"map.fill",id:"pauseMap",destination:.map)
+                        pauseTile("Reviews",symbol:"star.bubble.fill",id:"openReviews",destination:.reviews)
+                        pauseTile("Creative mode",symbol:"square.and.pencil",id:"openCreative",destination:.creative)
+                        if !motel.operationsState.workers.isEmpty {pauseTile("Team",symbol:"person.2.fill",id:"openStaff",destination:.staff)}
+                        pauseTile("Options",symbol:"gearshape.fill",id:"pauseOptions",destination:.options)
+                    }
+                    Button("Haven life & weekly activities") {havenTab = .neighbors;lifeAfterPause=true;showPause=false}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("openHavenLife")
+                    Button("Guest stories") {journalAfterPause=true;showPause=false}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("guestStoriesJournal")
+                    Divider()
+                    Button("Load last checkpoint") {showPause=false;confirmRestore=true}.buttonStyle(MotelButtonStyle(subdued:true))
+                    Button("Save & return to title") {stop();game.save();showPause=false;returnToTitle()}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("backToTitle")
+                    Text("The reception computer holds Guests, Rooms, Staff and Finances. Your last section and room-board position are remembered.").font(.caption).foregroundStyle(.secondary)
+                }.padding(20)
+            }.navigationTitle("Menu").navigationBarTitleDisplayMode(.inline)
+                .toolbar {ToolbarItem(placement:.topBarLeading){MenuBackButton {showPause=false}}}
+                .foregroundStyle(cream).background(Color(hex:0x172A25))
+        }.tint(gold).sheet(isPresented:$showOptions){GameOptionsView()}
+    }
+    private func pauseTile(_ title:String,symbol:String,id:String,destination:PauseDestination)->some View {
+        Button {if case .options = destination {showOptions=true} else {pauseDestination=destination;showPause=false}} label:{
+            VStack(alignment:.leading,spacing:11) {
+                Image(systemName:symbol).font(.title2).foregroundStyle(gold)
+                Text(title).font(.subheadline.bold()).foregroundStyle(cream)
+            }.frame(maxWidth:.infinity,minHeight:78,alignment:.leading).padding(14)
+                .background(Color.white.opacity(0.07),in:RoundedRectangle(cornerRadius:15))
+        }.buttonStyle(.plain).accessibilityLabel(title).accessibilityIdentifier(id)
     }
     private var gameOver: some View {
         VStack(spacing: 24) {
@@ -1161,8 +1177,8 @@ private struct CreativeModeView:View {
                     .font(.system(size:10)).foregroundStyle(.secondary).padding(.horizontal).padding(.bottom,8)
             }.navigationTitle("Creative mode").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement:.topBarLeading) {Button("Reset"){confirmReset=true}}
-                    ToolbarItem(placement:.topBarTrailing) {Button("Done"){dismiss()}.accessibilityIdentifier("closeCreative")}
+                    ToolbarItem(placement:.topBarLeading) {MenuBackButton(id:"closeCreative") {dismiss()}}
+                    ToolbarItem(placement:.topBarTrailing) {Button("Reset"){confirmReset=true}}
                 }
                 .confirmationDialog("Restore the original outdoor layout?",isPresented:$confirmReset,titleVisibility:.visible) {
                     Button("Restore layout",role:.destructive){reset();selected=nil;destination=nil;message="Original layout restored."}
@@ -1281,7 +1297,7 @@ struct GuestStoriesView: View {
                 }.padding(22)
             }.foregroundStyle(Color(hex:0xF5E7C8)).background(PaintedPanel(color:0x172A25))
                 .navigationTitle(guest?.storyID?.title ?? "Guest stories").navigationBarTitleDisplayMode(.inline)
-                .toolbar {ToolbarItem(placement:.confirmationAction) {Button("Done") {dismiss()}}}
+                .toolbar {ToolbarItem(placement:.topBarLeading) {MenuBackButton {dismiss()}}}
                 .tint(Color(hex:0xEFC977)).accessibilityIdentifier("guestStorySheet")
         }
     }

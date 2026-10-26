@@ -1926,3 +1926,36 @@ func homeBedroomRules() {
     print("PASS: two home bedrooms, collisions, followers, safe exits, saves, legacy saves and family Talk")
 }
 homeBedroomRules()
+
+func menuNavigationRules() {
+    var motel=Motel();motel.initializeWorld();motel.enableManagement();motel.world!.place = .house;motel.world!.player=Tile(x:7,y:3)
+    motel.world!.pets=["mochi":PetCompanion(tile:Tile(x:7,y:4))]
+    require(motel.contextActions.contains(.family("hildarelys")) && motel.contextActions.contains(.pet("mochi")),"Overlapping family and pet targets are independently selectable")
+    require(Set(motel.contextActions).count==motel.contextActions.count,"Context actions have no duplicates")
+    require(motel.actionTitle(.family("hildarelys"))=="Talk to Hildarelys" && motel.actionTitle(.pet("mochi"))=="Talk to Tuki","Interaction labels identify their target")
+    motel.world!.homeBedroom = .parents
+    require(motel.actionTitle(.exit)=="Return to living room","Bedroom exits state their destination")
+    require(!motel.contextActions.contains(.family("hildarelys")),"A living-room target does not appear in a bedroom")
+    motel.world!.homeBedroom=nil
+    let before=motel.actorTile
+    let pins=motel.navigationPins
+    require(Set(pins.map(\.id)).count==pins.count,"Map places use unique stable IDs")
+    require(pins.contains{$0.id=="home" && $0.tile==motel.groundTile(FamilyHome.door)},"Family marker follows its actual door")
+    require(pins.filter{$0.group == .shops}.count==NeighborhoodShop.allCases.count,"Every shop is filterable")
+    require(motel.navigationGroundTile==motel.groundTile(FamilyHome.door) && motel.actorTile==before,"Viewing a map anchors an interior to its building without teleporting")
+    motel.world!.structureOffsets=["family-home":Tile(x:1,y:0)]
+    require(motel.navigationPins.first{$0.id=="home"}!.tile==motel.groundTile(FamilyHome.door),"Map selection follows creative relocation")
+    motel.guestsServed=12;motel.cash=1200;_=motel.hire(.maintenance)
+    motel.operations!.incident=MotelIncident(kind:.fire,guest:Motel.arrivals(day:1,count:1,randomize:false)[0])
+    let money=motel.cash,worker=motel.operationsState.workers.first{$0.role == .maintenance}!.tile
+    require(motel.dispatchEmergencyResponder(),"An available trained employee can be dispatched")
+    require(motel.cash==money && motel.operationsState.incident != nil && motel.operationsState.workers.first{$0.role == .maintenance}!.tile==worker,"Dispatch uses the existing walking response without charging or teleporting")
+    require(motel.navigationPins.contains{$0.id=="incident" && $0.group == .tasks},"An emergency has an active-task map destination")
+    motel.operations!.workers[0].active=false
+    require(motel.emergencyDispatchReason != nil && !motel.dispatchEmergencyResponder(),"Off-duty staff have a visible dispatch lock")
+    require(motel.facilityLockReason(.nightVision) != nil,"Development prerequisites are explained before spending")
+    var simulation=motel.simulation;simulation.facilities.insert(.wifi);motel.simulation=simulation
+    require(motel.facilityLockReason(.wifi)=="Already operational","Owned developments do not invite a duplicate purchase")
+    print("PASS: contextual actions, named buttons, map filters/coordinates, safe dispatch and development requirements")
+}
+menuNavigationRules()

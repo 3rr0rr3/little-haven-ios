@@ -38,6 +38,11 @@ struct ContentView: View {
             for name in ["stone-a","stone-b","timber","lantern","bedding","fence-h","desk","sofa-front","sofa-back","washer","linen","tv-frame","bath-sink","clothes-rack","extinguisher"] {precondition(PaintedArt.image("bh-"+name) != nil,"Missing scenery: "+name)}
         }
         Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
+        if args.contains(where:{$0.hasPrefix("--ui-")}),!args.contains("--ui-restore-menus") {
+            for key in ["littlehaven.management.tab","littlehaven.management.scroll","littlehaven.management.roomFilter","littlehaven.management.roomSearch","littlehaven.map.filter","littlehaven.haven.tab"] {UserDefaults.standard.removeObject(forKey:key)}
+            UserDefaults.standard.set(true,forKey:"littlehaven.autoHideHUD")
+        }
+
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.removeObject(forKey:"littlehaven.compatibleOffice")}
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}
 
@@ -304,6 +309,28 @@ struct ContentView: View {
             sample.motel!.guestsServed=12
             for role in StaffRole.allCases {_=sample.motel!.hire(role)}
             sample.motel!.operations!.nextIncidentTick=10000
+            sample.save();return sample
+        }
+        if args.contains(where:{$0.hasPrefix("--ui-menu-")}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement()
+            sample.motel!.cash=args.contains("--ui-menu-locked") ? 50 : 1200
+            sample.motel!.waiting=[];sample.motel!.world!.place = .office;sample.motel!.world!.player=OfficeReception.computer
+            sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.rooms[1].dirty=true;sample.motel!.rooms[1].cleanedTasks=[]
+            if args.contains("--ui-menu-emergency") {
+                sample.motel!.guestsServed=12;_=sample.motel!.hire(.maintenance)
+                sample.motel!.operations!.workers[0].tile=Tile(x:60,y:8)
+                sample.motel!.operations!.incident=MotelIncident(kind:.fire,guest:Motel.arrivals(day:1,count:1,randomize:false)[0])
+                sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:16,y:29)
+            }
+            if args.contains("--ui-menu-purchases") {
+                sample.motel!.world!.place = .grounds;sample.motel!.world!.player=NeighborhoodShop.furniture.door
+                _=sample.motel!.enterShop(.furniture);sample.motel!.world!.player=ShopLayout.counter
+            }
+            if args.contains("--ui-menu-actions") {
+                sample.motel!.world!.place = .house;sample.motel!.world!.player=Tile(x:7,y:3)
+                sample.motel!.world!.pets=["mochi":PetCompanion(tile:Tile(x:7,y:4))]
+            }
             sample.save();return sample
         }
         if args.contains(where:{$0.hasPrefix("--ui-management")}) {
@@ -751,8 +778,8 @@ struct ContentView: View {
                     Button("Start a new adventure", role: .destructive) { reset = true }
                 }
             }.navigationTitle("Your journal").toolbar {
-                ToolbarItem(placement:.topBarLeading) {Button("Options") {showTownOptions=true}}
-                ToolbarItem(placement:.topBarTrailing) {Button("Done") {showJournal=false}}
+                ToolbarItem(placement:.topBarLeading) {MenuBackButton {showJournal=false}}
+                ToolbarItem(placement:.topBarTrailing) {Button("Options") {showTownOptions=true}}
             }
                 .confirmationDialog("Erase your saved adventure?", isPresented: $reset, titleVisibility: .visible) {
                     Button("Start over", role: .destructive) { game = Game(); game.save(); showJournal = false }
@@ -829,6 +856,7 @@ extension EnvironmentValues {
 }
 
 struct GameOptionsView: View {
+    @AppStorage("littlehaven.autoHideHUD") private var autoHideHUD=true
     @AppStorage("littlehaven.hideFullscreenToolbar") private var hideFullscreenToolbar = false
     @AppStorage("littlehaven.fullscreenTouch") private var fullscreenTouch = false
     @Environment(\.dismiss) private var dismiss
@@ -845,7 +873,11 @@ struct GameOptionsView: View {
                     Toggle("Action haptics", isOn: $haptics)
                     Toggle("Full screen / joystick controls", isOn: $fullscreenTouch).accessibilityIdentifier("optionFullscreenTouch")
                     Text("Fill the screen with the world. Move the visible joystick to walk and release it to stop. Tap nearby objects or use the action button.").font(.caption)
-                    if fullscreenTouch {Toggle("Hide top toolbar",isOn:$hideFullscreenToolbar).accessibilityIdentifier("optionHideToolbar");Text("Tap the small eye button to restore the toolbar. Emergency alerts remain visible.").font(.caption)}
+                    if fullscreenTouch {
+                        Toggle("Hide toolbar while walking",isOn:$autoHideHUD).accessibilityIdentifier("optionAutoHideHUD")
+                        Toggle("Hide top toolbar",isOn:$hideFullscreenToolbar).accessibilityIdentifier("optionHideToolbar")
+                        Text("Tap the small Menu button to show the toolbar. Emergency alerts stay visible.").font(.caption)
+                    }
                     if !fullscreenTouch { Toggle("Larger D-pad buttons", isOn: $largeControls).accessibilityIdentifier("optionLargeControls") }
                     Divider().overlay(Color(hex:0xEFC977))
                     Text("Controls").font(.title2.monospaced().bold())
@@ -854,7 +886,7 @@ struct GameOptionsView: View {
                     Divider().overlay(Color(hex:0xEFC977))
                     Text("Saved game").font(.title2.monospaced().bold())
                     Text("Continue loads your last checkpoint. New Game starts from zero after confirmation. Save at the office before leaving. Quit closes the game session; use the Home gesture to leave the app.")
-                    Button("Restore default options") { hints = true; haptics = true; largeControls = false; fullscreenTouch = false; hideFullscreenToolbar = false }
+                    Button("Restore default options") { hints = true; haptics = true; largeControls = false; fullscreenTouch = false; hideFullscreenToolbar = false; autoHideHUD=true }
                         .buttonStyle(MotelButtonStyle(subdued:true))
                 }.font(.subheadline).padding(22)
                     .background(Color(hex:0x29483D),in:RoundedRectangle(cornerRadius:16))
@@ -864,7 +896,7 @@ struct GameOptionsView: View {
                 .background(PaintedPanel(color:0x172A25)).foregroundStyle(Color(hex:0xF5E7C8))
                 .toolbarBackground(Color(hex:0x172A25),for:.navigationBar).toolbarBackground(.visible,for:.navigationBar)
                 .toolbarColorScheme(.dark,for:.navigationBar)
-                .toolbar { Button("Done") { dismiss() } }
+                .toolbar {ToolbarItem(placement:.topBarLeading) {MenuBackButton {dismiss()}}}
         }.tint(Color(hex:0xEFC977))
     }
 }

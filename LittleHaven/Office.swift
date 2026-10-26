@@ -294,3 +294,136 @@ extension Motel {
         return true
     }
 }
+
+// Menu-only navigation data. These values do not move actors or alter checkpoints.
+enum HavenMapFilter:String,CaseIterable,Identifiable {
+    case all="All",rooms="Rooms",shops="Shops",family="Family",tasks="Tasks"
+    var id:String {rawValue}
+}
+struct HavenMapPin:Identifiable {
+    let id:String
+    let title:String
+    let detail:String
+    let tile:Tile
+    let symbol:String
+    let group:HavenMapFilter
+}
+extension Motel {
+    var navigationGroundTile:Tile {
+        if let visit {return groundRoomDoor(visit.roomID)}
+        if let shop=currentShop {return groundTile(shop.door)}
+        if isAtHome || isAtBasement {return groundTile(FamilyHome.door)}
+        return isAtReception ? groundTile(MotelGrounds.officeDoor) : actorTile
+    }
+    var navigationPins:[HavenMapPin] {
+        var pins=[HavenMapPin(id:"office",title:"Reception",detail:"Computer, check-in and supplies",tile:groundTile(MotelGrounds.officeDoor),symbol:"desktopcomputer",group:.all),
+                  HavenMapPin(id:"beach",title:"Sunset Cove",detail:"Beach, palms and loungers",tile:Tile(x:48,y:44),symbol:"beach.umbrella.fill",group:.all)]
+        for room in rooms where room.id/9==viewingFloor {
+            pins.append(HavenMapPin(id:"room-\(room.id)",title:"Room \(room.number)",detail:room.guest?.name ?? (room.available ? "Ready for guests" : "Needs care"),tile:groundRoomDoor(room.id),symbol:"bed.double.fill",group:.rooms))
+            if room.dirty || !room.health.faults.isEmpty {
+                pins.append(HavenMapPin(id:"care-\(room.id)",title:"Care for room \(room.number)",detail:room.dirty ? "Cleaning needed" : room.health.faults.map(\.title).sorted().joined(separator:", "),tile:groundRoomDoor(room.id),symbol:"wrench.and.screwdriver.fill",group:.tasks))
+            }
+        }
+        for shop in NeighborhoodShop.allCases {
+            pins.append(HavenMapPin(id:"shop-"+shop.rawValue,title:shop.title,detail:shop.keeperName+" · "+shop.detail,tile:groundTile(shop.door),symbol:shop == .bar ? "wineglass.fill" : shop == .fish ? "fish.fill" : "bag.fill",group:.shops))
+        }
+        pins.append(HavenMapPin(id:"home",title:"Family home",detail:"Hildarelys, Samhil, pets and bedrooms",tile:groundTile(FamilyHome.door),symbol:"house.fill",group:.family))
+        for id in ResidentialLayout.doors.indices {
+            pins.append(HavenMapPin(id:"neighbor-\(id)",title:ResidentialLayout.names[id],detail:"Neighbor's home",tile:groundTile(ResidentialLayout.doors[id]),symbol:"person.fill",group:.family))
+        }
+        if let incident=operationsState.incident {
+            pins.append(HavenMapPin(id:"incident",title:incident.kind.title,detail:"Emergency · \(incident.remaining) seconds left",tile:incident.tile,symbol:incident.kind == .fire ? "flame.fill" : incident.kind == .pool ? "figure.pool.swim" : "exclamationmark.shield.fill",group:.tasks))
+        }
+        for issue in simulation.issues {
+            if let room=rooms.first(where:{$0.id==issue.roomID}) {
+                pins.append(HavenMapPin(id:"issue-\(issue.id)",title:issue.kind.title,detail:"Room \(room.number) · \(max(0,issue.deadline-simulation.absoluteHour)) hours left",tile:groundRoomDoor(room.id),symbol:"exclamationmark.bubble.fill",group:.tasks))
+            }
+        }
+        if let favour=worldState.guestFavour,favour.status == .pending,let room=rooms.first(where:{$0.guest?.id==favour.guestID}) {
+            pins.append(HavenMapPin(id:"guest-favour",title:"Guest delivery",detail:room.guest?.name ?? "Guest request",tile:groundRoomDoor(room.id),symbol:"shippingbox.fill",group:.tasks))
+        }
+        return pins
+    }
+    func navigationDirection(to destination:Tile)->String {
+        let from=navigationGroundTile,dx=destination.x-from.x,dy=destination.y-from.y
+        if dx==0 && dy==0 {return "You are here"}
+        let vertical=dy<0 ? "north" : dy>0 ? "south" : ""
+        let horizontal=dx<0 ? "west" : dx>0 ? "east" : ""
+        return "Head "+vertical+horizontal+" · \(from.distance(to:destination)) tiles away"
+    }
+    func actionTitle(_ action:MotelAction)->String {
+        switch action {
+        case .none:return "Walk closer to interact"
+        case .bedroom(let room):return "Enter "+room.title
+        case .family(let name):return "Talk to "+name.capitalized
+        case .pet(let id):return "Talk to "+companionName(id)
+        case .basement:return "Enter creature sanctuary"
+        case .corral(let id):return "Visit "+BasementLayout.titles[id]
+        case .computer:return "Use reception computer"
+        case .home:return "Enter family home"
+        case .homeDecor:return "Use home workbench"
+        case .shop(let shop):return isAtShop ? "Browse "+shop.title : "Enter "+shop.title
+        case .office:return "Enter reception"
+        case .room(let id):return "Enter room \(rooms.first(where:{$0.id==id})?.number ?? 101+id)"
+        case .guest(let id):return "Talk to "+(waiting.first(where:{$0.id==id})?.name ?? "guest")
+        case .construction:return "Build room \(101+rooms.count)"
+        case .desk:return "Use front desk"
+        case .save:return "Save checkpoint"
+        case .rest:return "Sleep until morning"
+        case .tools:return "Take cleaning tools"
+        case .paint:return "Choose paint"
+        case .furniture:return "Upgrade furnishings"
+        case .clean:return worldState.hasCleaningKit ? "Hold to clean" : "Get a cleaning kit first"
+        case .loot(let id):return "Take "+RoomVisit.lootNames[id]
+        case .exit:return currentBedroom != nil ? "Return to living room" : isAtBasement ? "Return upstairs" : isAtHome ? "Leave home" : isAtShop ? "Leave shop" : visit != nil ? "Leave room" : "Leave office"
+        case .incident:return operationsState.incident?.kind.action ?? "Respond to emergency"
+        }
+    }
+    var contextActions:[MotelAction] {
+        var result:[MotelAction]=[]
+        func add(_ action:MotelAction) {if action != .none,!result.contains(action) {if case .clean = action {return};result.append(action)}}
+        add(nearbyAction)
+        for pet in visiblePets where actorTile.distance(to:pet.value.tile)<=2 {add(.pet(pet.key))}
+        if currentBedroom != nil {return result}
+        if isAtHome {
+            if actorTile.distance(to:reception.hildarelys)<=2 {add(.family("hildarelys"))}
+            if actorTile.distance(to:OfficeReception.samhil)<=2 {add(.family("samhil"))}
+            for room in HomeBedroom.allCases where actorTile.distance(to:room.door)<=1 {add(.bedroom(room))}
+            if actorTile.distance(to:BasementLayout.homeStairs)<=1 {add(.basement)}
+            if actorTile.distance(to:FamilyHome.workbench)<=1 {add(.homeDecor)}
+            if actorTile.distance(to:FamilyHome.exit)<=1 {add(.exit)}
+        } else if isAtReception {
+            let objects:[(Tile,MotelAction)]=[(OfficeReception.computer,.computer),(OfficeReception.clerk,.desk),(OfficeReception.door,.exit),(Tile(x:1,y:7),.tools),(Tile(x:1,y:9),.paint(nil)),(Tile(x:1,y:2),.rest),(Tile(x:5,y:4),.save)]
+            for (tile,action) in objects where actorTile.distance(to:tile)<=1 {add(action)}
+        } else if worldState.place == .grounds,visit==nil {
+            if actorTile.distance(to:groundTile(FamilyHome.door))<=1 {add(.home)}
+            for shop in NeighborhoodShop.allCases where actorTile.distance(to:groundTile(shop.door))<=1 {add(.shop(shop))}
+            if actorTile.distance(to:groundTile(MotelGrounds.officeDoor))<=1 {add(.office)}
+            for room in rooms where room.id/9==viewingFloor && actorTile.distance(to:groundRoomDoor(room.id))<=1 {add(.room(room.id))}
+        }
+        return result
+    }
+    var emergencyDispatchReason:String? {
+        guard let incident=operationsState.incident else{return "No active emergency"}
+        guard let worker=operationsState.workers.first(where:{$0.role==incident.kind.responder}) else{return "Hire a "+incident.kind.responder.title.lowercased()+" to send help"}
+        return worker.active ? nil : worker.role.name+" is off duty; check wages in Staff"
+    }
+    @discardableResult mutating func dispatchEmergencyResponder()->Bool {
+        guard !policeRequiresDecision,emergencyDispatchReason==nil,let incident=operationsState.incident,
+              let index=operationsState.workers.firstIndex(where:{$0.role==incident.kind.responder && $0.active}) else{return false}
+        var state=operationsState
+        state.workers[index].roomID=nil
+        state.workers[index].status="Responding to "+incident.kind.rawValue+" emergency"
+        operations=state
+        lastEvent=incident.kind.responder.name+" is heading to the emergency. Watch their progress on the grounds."
+        return true
+    }
+    func facilityLockReason(_ facility:Facility)->String? {
+        if simulation.facilities.contains(facility) {return "Already operational"}
+        if !journeyAllows(facility) {return "Reach the "+Self.journeyNames[facilityJourneyTier(facility)]+" milestone in Haven life"}
+        if simulation.reputation<facility.requiredRep {return "Requires reputation \(facility.requiredRep); current \(simulation.reputation)"}
+        if facility == .upperFloor && !simulation.facilities.contains(.adjacentLot) {return "Buy the adjacent lot first"}
+        if facility == .nightVision && !simulation.facilities.contains(.cameras) {return "Install the camera network first"}
+        return nil
+    }
+}

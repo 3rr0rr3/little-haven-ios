@@ -484,39 +484,109 @@ struct MotelOfficeCanvas: View, Animatable {
     }
 }
 
-struct MotelPocketMap: View {
-    let motel: Motel
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Airb&b grounds").font(.title.bold())
-            Text("Walk to places to interact. This map does not teleport you.").font(.subheadline).foregroundStyle(.secondary)
-            HStack(alignment: .top, spacing: 12) {
-                VStack(spacing: 12) {
-                    Label("Office", systemImage: "building.2.fill").padding(14).background(Color(hex: 0x385B50), in: RoundedRectangle(cornerRadius: 14))
-                    Text("Guests wait outside").font(.caption)
-                    Label("Pool", systemImage: "water.waves").padding(14).background(Color(hex: 0x467F7E), in: RoundedRectangle(cornerRadius: 14))
-                    Text("Build sign\nby the lower path").font(.caption)
-                }.frame(maxWidth: .infinity)
-                VStack(spacing: 10) {
-                    ForEach(0..<3) { row in
-                        HStack(spacing: 7) {
-                            ForEach(0..<3) { col in
-                                let id = row * 3 + col
-                                Text(id < motel.rooms.count ? "\(101 + id)" : "+").font(.caption.monospaced().bold()).frame(maxWidth: .infinity).padding(.vertical, 20)
-                                    .background(Color(hex: id < motel.rooms.count ? 0xB18564 : 0x4C5F4D), in: RoundedRectangle(cornerRadius: 8))
-                            }
+struct MotelPocketMap:View {
+    let motel:Motel
+    var initialFocus:String?=nil
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("littlehaven.map.filter") private var savedFilter="All"
+    @State private var selection:String?
+    private var filter:HavenMapFilter {HavenMapFilter(rawValue:savedFilter) ?? .all}
+    private var pins:[HavenMapPin] {motel.navigationPins.filter{filter == .all || $0.group == filter}}
+    private var selected:HavenMapPin? {motel.navigationPins.first{$0.id==selection}}
+    var body:some View {
+        NavigationStack {
+            ScrollViewReader {reader in
+                ScrollView {
+                    VStack(alignment:.leading,spacing:15) {
+                        Text("Choose a place to highlight it. You stay where you are.").font(.subheadline).foregroundStyle(.secondary)
+                        Picker("Map filter",selection:$savedFilter) {
+                            ForEach(HavenMapFilter.allCases) {item in Text(item.rawValue).tag(item.rawValue)}
+                        }.pickerStyle(.segmented).accessibilityIdentifier("mapFilter")
+                        overview.id("map-top")
+                        if let selected {
+                            VStack(alignment:.leading,spacing:8) {
+                                Label(selected.title,systemImage:selected.symbol).font(.headline)
+                                Text(selected.detail).font(.subheadline)
+                                Text(motel.navigationDirection(to:selected.tile)).font(.subheadline.bold()).foregroundStyle(Color(hex:0xEFC977))
+                                Text("Column \(selected.tile.x), row \(selected.tile.y)").font(.caption.monospaced())
+                            }.padding(15).frame(maxWidth:.infinity,alignment:.leading)
+                                .background(Color.white.opacity(0.08),in:RoundedRectangle(cornerRadius:14))
+                                .accessibilityElement(children:.contain).accessibilityIdentifier("mapSelection")
                         }
+                        Label("You are at "+motel.mapName.lowercased(),systemImage:"location.fill").font(.caption)
+                        if pins.isEmpty {Text("No active tasks on this floor. Check back when a guest or room needs attention.").font(.subheadline)}
+                        ForEach(pins) {pin in
+                            Button {
+                                selection=pin.id
+                                withAnimation(.easeInOut(duration:0.2)){reader.scrollTo("map-top",anchor:.top)}
+                            } label:{
+                                HStack(spacing:12) {
+                                    Image(systemName:pin.symbol).frame(width:30)
+                                    VStack(alignment:.leading,spacing:4) {Text(pin.title).font(.subheadline.bold());Text(pin.detail).font(.caption).foregroundStyle(.secondary).lineLimit(2)}
+                                    Spacer(minLength:4)
+                                    Image(systemName:selection==pin.id ? "checkmark.circle.fill" : "scope").foregroundStyle(Color(hex:0xEFC977))
+                                }.padding(13).frame(maxWidth:.infinity,alignment:.leading)
+                                    .background(Color.white.opacity(selection==pin.id ? 0.12 : 0.04),in:RoundedRectangle(cornerRadius:12))
+                            }.buttonStyle(.plain).accessibilityIdentifier("mapPlace_"+pin.id)
+                                .accessibilityValue(selection==pin.id ? "Selected" : "")
+                        }
+                    }.padding(16)
+                }
+            }.navigationTitle("Haven map").navigationBarTitleDisplayMode(.inline)
+                .toolbar {ToolbarItem(placement:.topBarLeading){MenuBackButton {dismiss()}}}
+                .background(Color(hex:0x172F29)).foregroundStyle(Color(hex:0xF5E7C8))
+                .onAppear {
+                    if let initialFocus,motel.navigationPins.contains(where:{$0.id==initialFocus}) {
+                        selection=initialFocus;savedFilter=HavenMapFilter.tasks.rawValue
                     }
-                }.frame(maxWidth: .infinity)
-            }
-            Text("SUNSET COVE: south of town, beyond the boardwalk. Palms, loungers and a sandy shoreline; deep water stays out of bounds.").font(.caption)
-            Text("PARKING / ROAD").font(.caption.monospaced().bold()).frame(maxWidth: .infinity).padding().background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
-            Text("EAST > NEIGHBORHOOD").font(.headline)
-            Text("Family home: column 54, row 14, north of the town road. Enter to visit your family, save, upgrade and decorate.").font(.caption)
-            Text("Shops along the southern sidewalk: Willow Home (47,29), Thread & Co. (57,29), Second Chance Pawn (67,29). Walk to each door and press SHOP.").font(.caption)
-            if let incident=motel.operationsState.incident {Text("EMERGENCY: \(incident.kind.title) / column \(incident.tile.x), row \(incident.tile.y)").font(.caption.bold()).foregroundStyle(.orange)}
-            Text("You are in \(motel.mapName.lowercased()), column \(motel.actorTile.x), row \(motel.actorTile.y).").font(.footnote)
-            Text("Office: desk = save or upgrade; bed = next day; closet = cleaning kit; paint cabinet = wall colors. Rooms: hold work near mess to clean, use the bed to upgrade furnishings, and use the paint cabinet for colors.").font(.footnote).foregroundStyle(.secondary)
-        }.padding(24).foregroundStyle(Color(hex: 0xF5E7C8)).presentationBackground(Color(hex: 0x172A25))
+                }
+                .onChange(of:savedFilter) {_,_ in
+                    if let selected,filter != .all,selected.group != filter {selection=nil}
+                }
+        }.tint(Color(hex:0xEFC977)).presentationBackground(Color(hex:0x172A25))
+    }
+    private var overview:some View {
+        GeometryReader {proxy in
+            let scale=proxy.size.width/72
+            ZStack(alignment:.topLeading) {
+                Canvas {context,size in
+                    context.fill(Path(CGRect(origin:.zero,size:size)),with:.color(Color(hex:0x719062)))
+                    func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
+                        context.fill(Path(roundedRect:CGRect(x:x*scale,y:y*scale,width:w*scale,height:h*scale),cornerRadius:3),with:.color(Color(hex:color)))
+                    }
+                    box(0,35,72,3,0x65716F);box(40,0,3,40,0x65716F);box(43,18,29,3,0x65716F)
+                    box(40,40,32,24,0xDFC68F);box(42,54,30,10,0x63B6BA)
+                    let office=motel.groundTile(MotelGrounds.officeDoor),pool=motel.creativeOffset("pool")
+                    box(Double(office.x-3),Double(office.y-5),8,6,0xC8B58B)
+                    box(Double(2+pool.x),Double(18+pool.y),8,8,0x69B2B9)
+                    for room in motel.rooms where room.id/9==motel.viewingFloor {
+                        let tile=motel.groundRoomDoor(room.id)
+                        box(Double(tile.x-2),Double(tile.y-4),6,4,0xD5BE96)
+                    }
+                    for shop in NeighborhoodShop.allCases {
+                        let tile=motel.groundTile(shop.door)
+                        box(Double(tile.x-2),Double(tile.y-3),5,3,0xB19A7A)
+                    }
+                    let home=motel.groundTile(FamilyHome.door)
+                    box(Double(home.x-3),Double(home.y-4),7,4,0xD9B99B)
+                }.allowsHitTesting(false)
+                ForEach(pins) {pin in
+                    Button {selection=pin.id} label:{
+                        Image(systemName:pin.symbol).font(.system(size:pin.id==selection ? 15 : 11,weight:.bold))
+                            .foregroundStyle(pin.group == .tasks ? Color.white : Color(hex:0x183A31))
+                            .frame(width:pin.id==selection ? 36 : 28,height:pin.id==selection ? 36 : 28)
+                            .background(pin.group == .tasks ? Color(hex:0xAC4D3A) : Color(hex:0xEBCB82),in:Circle())
+                            .overlay(Circle().stroke(Color.white,lineWidth:pin.id==selection ? 3 : 0))
+                    }.buttonStyle(.plain)
+                        .position(x:CGFloat(pin.tile.x)*scale,y:CGFloat(pin.tile.y)*scale)
+                        .zIndex(pin.id==selection ? 2 : 0)
+                        .accessibilityLabel(pin.title).accessibilityIdentifier("mapPin_"+pin.id)
+                }
+                Image(systemName:"location.circle.fill").font(.system(size:24,weight:.bold)).foregroundStyle(Color.white,Color(hex:0x285E93))
+                    .position(x:CGFloat(motel.navigationGroundTile.x)*scale,y:CGFloat(motel.navigationGroundTile.y)*scale)
+                    .allowsHitTesting(false).accessibilityLabel("Your location")
+                Text("N ↑").font(.caption.bold()).padding(7).background(.black.opacity(0.3),in:Capsule()).padding(6).allowsHitTesting(false)
+            }.clipShape(RoundedRectangle(cornerRadius:16))
+        }.aspectRatio(72.0/64.0,contentMode:.fit).accessibilityElement(children:.contain).accessibilityIdentifier("interactiveHavenMap")
     }
 }

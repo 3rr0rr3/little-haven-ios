@@ -57,7 +57,7 @@ struct WorkActionButton: View {
     private var label: some View {
         VStack(spacing: 7) {
             Image(systemName: symbol).font(.system(size: 25))
-            Text(title).font(.system(size: 11, weight: .black, design: .monospaced))
+            Text(title).font(.system(size:12,weight:.bold,design:.rounded)).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.7).padding(.horizontal,8)
             if cleaning && progress > 0 { ProgressView(value: progress).tint(Color(hex: 0x244234)).padding(.horizontal, 12) }
         }.frame(maxWidth: .infinity).frame(height: 91)
             .foregroundStyle(Color(hex: 0x203B32))

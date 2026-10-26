@@ -126,7 +126,7 @@ final class LittleHavenUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 0.6)
         XCTAssertEqual(map.label, stopped)
         app.buttons["Open journal"].tap()
-        app.buttons["Done"].tap()
+        back(app)
         app.terminate()
         app.launchArguments = ["--ui-testing"]
         app.launch()
@@ -384,16 +384,16 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["hireEmployees"].tap()
         app.buttons["hire_cleaner"].tap()
         XCTAssertTrue(cash(app).contains("800"))
-        app.buttons["Close interaction"].tap()
-        XCTAssertTrue(app.buttons["openStaff"].exists)
+        app.buttons["closeInteraction"].tap()
+        openPause(app);XCTAssertTrue(app.buttons["openStaff"].exists);back(app)
         app.buttons["receptionDesk"].tap()
         capture(app,"Art QA desk interaction target")
         print("ART DESK TARGET: "+app.debugDescription)
         app.buttons["deskRooms"].tap()
         app.buttons["deskUpgrade_0"].tap()
         XCTAssertTrue(cash(app).contains("710"))
-        app.buttons["Close interaction"].tap()
-        app.buttons["openReviews"].tap()
+        app.buttons["closeInteraction"].tap()
+        openPauseDestination("openReviews",app)
         XCTAssertTrue(app.descendants(matching:.any)["guestReview_good"].exists)
         XCTAssertTrue(app.descendants(matching:.any)["guestReview_bad"].exists)
         capture(app,"Good and bad reviews, hired staff and room upgrades")
@@ -458,7 +458,7 @@ final class LittleHavenUITests: XCTestCase {
         if !app.buttons["miniClean_1"].isHittable {app.swipeUp()}
         app.buttons["miniClean_1"].tap()
         XCTAssertTrue(app.buttons["miniGameTap"].waitForExistence(timeout:3))
-        app.buttons["Cancel"].tap()
+        app.buttons["cancelMiniGame"].tap()
         app.buttons["managementSections"].tap()
         app.buttons["manageSection_Supplies"].tap()
         XCTAssertTrue(app.buttons["buy_toiletries"].waitForExistence(timeout:3))
@@ -484,7 +484,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS %@", "22:00 NIGHT")).firstMatch.waitForExistence(timeout:10))
         capture(app,"Night shift hotel grounds")
         app.buttons["office_computer"].tap()
-        app.buttons["manageTab_Desk"].tap()
+        app.buttons["managePrimary_Guests"].tap();app.buttons["manageTab_Desk"].tap()
         XCTAssertTrue(app.segmentedControls["pricingPolicy"].waitForExistence(timeout:5))
         capture(app,"Hourly nightly and weekly pricing")
     }
@@ -506,13 +506,13 @@ final class LittleHavenUITests: XCTestCase {
         waitForExpectations(timeout:3)
         let changedHintValue = hintSwitch.value as? String
         XCTAssertEqual(changedHintValue, expectedHintValue)
-        app.buttons["Done"].tap()
+        back(app)
         app.buttons["OPTIONS"].tap()
         XCTAssertEqual(app.switches["optionHints"].value as? String, changedHintValue)
         let defaults=app.buttons["Restore default options"]
         if !defaults.isHittable { app.swipeUp() }
         defaults.tap()
-        app.buttons["Done"].tap()
+        back(app)
         app.buttons["QUIT"].tap()
         app.buttons["Quit session"].tap()
         XCTAssertTrue(app.buttons["RETURN TO TITLE"].waitForExistence(timeout:5))
@@ -522,7 +522,7 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["Pause game"].tap()
         app.buttons["Options"].tap()
         XCTAssertTrue(app.switches["optionHints"].waitForExistence(timeout:5),"In-game options opens from pause")
-        app.buttons["Done"].tap()
+        back(app)
         app.buttons["backToTitle"].tap()
         XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:10))
         app.buttons["NEW GAME"].tap()
@@ -743,8 +743,7 @@ final class LittleHavenUITests: XCTestCase {
         let app=XCUIApplication()
         app.launchArguments=["--ui-creative","--ui-touch","--ui-testing"]
         app.launch()
-        XCTAssertTrue(app.buttons["openCreative"].waitForExistence(timeout:15))
-        app.buttons["openCreative"].tap()
+        openPauseDestination("openCreative",app)
         XCTAssertTrue(app.buttons["closeCreative"].waitForExistence(timeout:10))
         let washer=app.descendants(matching:.any)["creative-washer"].firstMatch
         XCTAssertTrue(washer.waitForExistence(timeout:5))
@@ -757,8 +756,7 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["closeCreative"].tap()
         XCTAssertTrue(app.descendants(matching:.any)["fullscreenJoystick"].firstMatch.waitForExistence(timeout:5))
         app.terminate();app.launchArguments=["--ui-touch","--ui-testing"];app.launch()
-        XCTAssertTrue(app.buttons["openCreative"].waitForExistence(timeout:15))
-        app.buttons["openCreative"].tap()
+        openPauseDestination("openCreative",app)
         let restored=app.descendants(matching:.any)["creative-washer"].firstMatch
         XCTAssertTrue(restored.waitForExistence(timeout:5))
         XCTAssertEqual(restored.value as? String,savedPosition,"Creative changes survive closing and reopening the app")
@@ -770,7 +768,7 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["office_guest"].tap()
         XCTAssertTrue(app.buttons["Accept guest & collect payment"].waitForExistence(timeout:5),app.debugDescription)
         capture(app,"Reception guest interaction from behind counter")
-        app.buttons["Close interaction"].tap()
+        app.buttons["closeInteraction"].tap()
         XCTAssertTrue(app.buttons["hideFullscreenToolbar"].waitForExistence(timeout:5))
         app.buttons["hideFullscreenToolbar"].tap()
         XCTAssertTrue(app.buttons["restoreFullscreenToolbar"].waitForExistence(timeout:3))
@@ -844,7 +842,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Willow Home"))
         XCTAssertFalse(app.buttons["neighborFavor0"].isEnabled,"Delivery requires physically collecting the parcel")
         capture(app,"Neighbor friendship and physical favor")
-        app.buttons["Done"].tap()
+        back(app)
         app.buttons["Pause game"].tap()
         let community=app.buttons["openHavenLife"]
         XCTAssertTrue(community.waitForExistence(timeout:3))
@@ -914,7 +912,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertFalse(app.buttons["discovery_shell-pearl"].exists)
         XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Pearl shell"))
         capture(app,"Collection journal and physical beach discovery")
-        app.buttons["Done"].tap()
+        back(app)
         app.terminate();app.launchArguments=["--ui-testing"];app.launch()
         XCTAssertTrue(app.buttons["Walk east"].waitForExistence(timeout:10),"Collected discovery survives loading and controls remain available")
     }
@@ -1004,9 +1002,92 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertFalse(host.isEnabled)
         XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("loved"))
         capture(app,"Hosted guest celebration and lasting memory")
-        app.buttons["Done"].tap()
+        back(app)
         XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:5))
         capture(app,"Celebration table and visiting friends in reception")
+    }
+
+    func testMenuHubFiveSectionsAndRememberedPosition() {
+        let app=launch("--ui-menu-pc")
+        XCTAssertTrue(app.buttons["office_computer"].waitForExistence(timeout:15));app.buttons["office_computer"].tap()
+        XCTAssertTrue(app.staticTexts["managementOverview"].waitForExistence(timeout:5))
+        for title in ["Overview","Guests","Rooms","Staff","Finances"] {XCTAssertTrue(app.buttons["managePrimary_"+title].exists)}
+        app.buttons["managePrimary_Rooms"].tap()
+        let last=app.descendants(matching:.any)["managementRoom_2"].firstMatch
+        for _ in 0..<5 where !last.isHittable {app.swipeUp()}
+        XCTAssertTrue(last.isHittable,app.debugDescription)
+        capture(app,"Remembered room-board position")
+        app.buttons["closeManagement"].tap()
+        app.buttons["office_computer"].tap()
+        XCTAssertTrue(app.segmentedControls["roomStatusFilter"].waitForExistence(timeout:5),"Reopening returns to Rooms")
+        XCTAssertTrue(last.waitForExistence(timeout:5));XCTAssertTrue(last.isHittable,"Reopening keeps the visible room rather than resetting to the top")
+        app.buttons["managePrimary_Finances"].tap()
+        XCTAssertTrue(app.buttons["advanceHour"].waitForExistence(timeout:5))
+        capture(app,"Five clear management destinations")
+    }
+    func testCompactPauseMenuAndContextChooser() {
+        let app=launch("--ui-menu-actions")
+        XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:15))
+        XCTAssertFalse(app.buttons["openCreative"].exists);XCTAssertFalse(app.buttons["openReviews"].exists)
+        XCTAssertTrue(app.buttons["otherNearbyActions"].exists)
+        app.buttons["otherNearbyActions"].tap()
+        XCTAssertTrue(app.buttons["chooseContext_Talk to Hildarelys"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["chooseContext_Talk to Tuki"].exists)
+        app.buttons["chooseContext_Talk to Hildarelys"].tap()
+        XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5));app.buttons["dialogueBack"].tap()
+        openPause(app)
+        for id in ["pauseMap","openReviews","openCreative","pauseOptions"] {XCTAssertTrue(app.buttons[id].exists)}
+        capture(app,"Compact menu and secondary destinations")
+        app.buttons["openReviews"].tap()
+        XCTAssertTrue(app.buttons["closeInteraction"].waitForExistence(timeout:5));app.buttons["closeInteraction"].tap()
+        XCTAssertTrue(app.buttons["worldAction"].exists)
+    }
+    func testMapFiltersEmergencyLocationAndDispatch() {
+        let app=launch("--ui-menu-map")
+        XCTAssertTrue(app.segmentedControls["mapFilter"].waitForExistence(timeout:15))
+        app.segmentedControls["mapFilter"].buttons["Shops"].tap()
+        XCTAssertFalse(app.buttons["mapPin_home"].exists)
+        let shop=app.buttons["mapPlace_shop-furniture"]
+        for _ in 0..<3 where !shop.isHittable {app.swipeUp()}
+        shop.tap()
+        XCTAssertTrue(app.otherElements["mapSelection"].waitForExistence(timeout:5))
+        capture(app,"Filtered map with selected store")
+        app.terminate();app.launchArguments=["--ui-menu-emergency","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["emergencyShowLocation"].waitForExistence(timeout:15));app.buttons["emergencyShowLocation"].tap()
+        XCTAssertTrue(app.otherElements["mapSelection"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["mapPin_incident"].exists)
+        back(app)
+        XCTAssertTrue(app.buttons["emergencyDispatch"].isEnabled);app.buttons["emergencyDispatch"].tap()
+        XCTAssertTrue(app.buttons["incidentAlarm"].exists,"Dispatch does not teleport or instantly resolve the emergency")
+        capture(app,"Actionable emergency location and responder")
+    }
+    func testHiringRequirementsAndQuietFullscreen() {
+        let app=launch("--ui-menu-locked")
+        XCTAssertTrue(app.buttons["hireEmployees"].waitForExistence(timeout:15));app.buttons["hireEmployees"].tap()
+        XCTAssertFalse(app.buttons["hire_cleaner"].isEnabled)
+        XCTAssertTrue(app.descendants(matching:.any).matching(NSPredicate(format:"label CONTAINS %@","Need 50 more coins")).firstMatch.exists)
+        capture(app,"Clear hiring price, benefit, remaining balance and unlock")
+        app.terminate();app.launchArguments=["--ui-family-home","--ui-touch","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["hideFullscreenToolbar"].waitForExistence(timeout:15))
+        let stick=app.descendants(matching:.any)["fullscreenJoystick"].firstMatch
+        let center=stick.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5))
+        center.press(forDuration:0.2,thenDragTo:stick.coordinate(withNormalizedOffset:CGVector(dx:0.75,dy:0.5)))
+        XCTAssertTrue(app.buttons["restoreFullscreenToolbar"].waitForExistence(timeout:5),"Walking collapses the HUD without changing joystick controls")
+        app.buttons["restoreFullscreenToolbar"].tap();XCTAssertTrue(app.buttons["fullscreenPause"].exists)
+        capture(app,"Quiet fullscreen with one-tap toolbar reveal")
+    }
+    private func back(_ app:XCUIApplication) {
+        let menu=app.buttons["menuBack"]
+        XCTAssertTrue(menu.waitForExistence(timeout:5),app.debugDescription);menu.tap()
+    }
+    private func openPause(_ app:XCUIApplication) {
+        if app.buttons["restoreFullscreenToolbar"].exists {app.buttons["restoreFullscreenToolbar"].tap()}
+        let button=app.buttons["Pause game"]
+        XCTAssertTrue(button.waitForExistence(timeout:10),app.debugDescription);button.tap()
+        XCTAssertTrue(app.buttons["pauseOptions"].waitForExistence(timeout:5))
+    }
+    private func openPauseDestination(_ id:String,_ app:XCUIApplication) {
+        openPause(app);app.buttons[id].tap()
     }
 
     private func launch(_ fixture: String) -> XCUIApplication {

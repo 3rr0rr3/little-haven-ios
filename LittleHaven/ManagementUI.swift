@@ -1,5 +1,50 @@
 import SwiftUI
 
+
+struct MenuBackButton:View {
+    var id="menuBack"
+    let action:()->Void
+    var body:some View {
+        Button(action:action) {
+            Label("Back",systemImage:"chevron.left").font(.subheadline.bold())
+                .frame(minWidth:76,minHeight:44).contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityIdentifier(id)
+    }
+}
+struct PurchaseDetails:View {
+    let price:Int
+    let cash:Int
+    let benefit:String
+    var requirement:String?=nil
+    var body:some View {
+        VStack(alignment:.leading,spacing:5) {
+            Text(benefit).font(.caption).foregroundStyle(Color(hex:0xDFE8D8))
+            HStack {
+                Label("\(price) coins",systemImage:"circle.circle.fill").font(.subheadline.bold())
+                Spacer(minLength:4)
+                Text(cash>=price ? "After: \(cash-price) coins" : "Need \(price-cash) more coins").font(.caption.bold())
+            }.foregroundStyle(Color(hex:0xEFC977))
+            if let requirement {Label(requirement,systemImage:"lock.fill").font(.caption).foregroundStyle(Color(hex:0xF4BA9E)).fixedSize(horizontal:false,vertical:true)}
+        }.accessibilityElement(children:.combine)
+    }
+}
+enum ManagementPrimary:String,CaseIterable,Identifiable {
+    case overview="Overview",guests="Guests",rooms="Rooms",staff="Staff",finances="Finances"
+    var id:String {rawValue}
+    var symbol:String {switch self {case .overview:return "square.grid.2x2.fill";case .guests:return "person.fill";case .rooms:return "bed.double.fill";case .staff:return "person.2.fill";case .finances:return "banknote.fill"}}
+    var pages:[ManagementTab] {switch self {
+    case .overview:return [.overview,.events,.growth,.cameras,.story]
+    case .guests:return [.desk,.guests]
+    case .rooms:return [.rooms,.supplies]
+    case .staff:return [.team]
+    case .finances:return [.books]
+    }}
+}
+extension ManagementTab {
+    var primary:ManagementPrimary {ManagementPrimary.allCases.first{$0.pages.contains(self)} ?? .overview}
+    var displayTitle:String {switch self {case .overview:return "Overview";case .desk:return "Arrivals";case .guests:return "Staying guests";case .team:return "Staff";case .books:return "Finances";default:return rawValue}}
+}
+
 struct NeighborhoodStoreView:View {
     @Binding var game:Game
     let shop:NeighborhoodShop
@@ -8,9 +53,10 @@ struct NeighborhoodStoreView:View {
     private var motel:Motel {game.motel ?? Motel()}
     private func change(_ action:(inout Motel)->Void) {var value=motel;action(&value);game.motel=value}
     var body:some View {
+        NavigationStack {
         ScrollView {
             VStack(alignment:.leading,spacing:18) {
-                HStack {Text(shop.title).font(.largeTitle.bold());Spacer();Button("Close"){dismiss()}}
+                Text(shop.keeperName).font(.title2.bold())
                 Text("\(motel.cash) COINS").font(.headline.monospaced()).foregroundStyle(Color(hex:0xEFC977))
                 Text(shop.keeperName+" / "+shop.detail)
                 if shop == .furniture {
@@ -19,22 +65,30 @@ struct NeighborhoodStoreView:View {
                             .disabled(!motel.canTrade(.furniture)).accessibilityIdentifier("collectNeighborParcels")
                     }
                     ForEach(HomeObject.allCases) {kind in
-                        HStack {HomeItemIcon(kind:kind).frame(width:46,height:46);Text(kind.title);Spacer();Button("Buy / \(kind.price)"){change{_=$0.buyHomeObject(kind)}}.disabled(motel.cash<kind.price).accessibilityIdentifier("buy_home_"+kind.rawValue)}
+                        VStack(alignment:.leading,spacing:10) {
+                            HStack {HomeItemIcon(kind:kind).frame(width:46,height:46);Text(kind.title).font(.headline);Spacer()}
+                            PurchaseDetails(price:kind.price,cash:motel.cash,benefit:"Delivered to home storage. Place it at your workbench.",requirement:motel.canTrade(.furniture) ? nil : "Walk to the shop counter")
+                            Button("Buy "+kind.title){change{_=$0.buyHomeObject(kind)}}.disabled(!motel.canTrade(.furniture) || motel.cash<kind.price).accessibilityIdentifier("buy_home_"+kind.rawValue)
+                        }.padding(14).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:14))
                     }
                     Text("Take your purchases home and use the workbench to place them.").font(.caption)
                 } else if shop == .clothing {
                     ForEach(FamilyHome.outfitNames.indices,id:\.self) {index in
                         HStack {
                             RoundedRectangle(cornerRadius:8).fill(Color(hex:FamilyHome.outfitColors[index])).frame(width:44,height:44)
-                            Text(FamilyHome.outfitNames[index]);Spacer()
+                            VStack(alignment:.leading,spacing:5) {
+                                Text(FamilyHome.outfitNames[index]).font(.headline)
+                                PurchaseDetails(price:motel.household.outfits.contains(index) ? 0 : 80,cash:motel.cash,benefit:motel.household.outfits.contains(index) ? "Owned · free to wear" : "Unlock this outfit permanently")
+                            };Spacer()
                             Button(motel.household.outfit == index ? "Wearing" : motel.household.outfits.contains(index) ? "Wear" : "Buy / 80") {change{_=$0.wearOutfit(index)}}.disabled(motel.household.outfit == index || (!motel.household.outfits.contains(index) && motel.cash<80)).accessibilityIdentifier("outfit_\(index)")
                         }
                     }
                 } else if shop == .fish {
+                    Text("Every order shows its total and your remaining balance.").font(.caption)
                     Button("Garden kitchen & recipes") {showGardenKitchen=true}.accessibilityIdentifier("shopGardenKitchen")
                     ForEach(FishMeal.allCases) {meal in
                         HStack {
-                            Label(meal.title,systemImage:"fish.fill");Spacer()
+                            VStack(alignment:.leading,spacing:5) {Label(meal.title,systemImage:"fish.fill");PurchaseDetails(price:meal.price,cash:motel.cash,benefit:"Freshly served by Marina",requirement:motel.canTrade(.fish) ? nil : "Walk to the counter")};Spacer()
                             Button("Order / \(meal.price)") {change{_=$0.orderFishMeal(meal)}}
                                 .disabled(!motel.canTrade(.fish) || motel.cash<meal.price)
                                 .accessibilityIdentifier("orderMeal_"+meal.rawValue)
@@ -53,7 +107,7 @@ struct NeighborhoodStoreView:View {
                     }
                     ForEach(BarDrink.allCases) {drink in
                         HStack {
-                            Label(drink.title,systemImage:"wineglass.fill");Spacer()
+                            VStack(alignment:.leading,spacing:5) {Label(drink.title,systemImage:"wineglass.fill");PurchaseDetails(price:drink.price,cash:motel.cash,benefit:"Freshly served by Jules",requirement:motel.canTrade(.bar) ? nil : "Walk to the counter")};Spacer()
                             Button("Order / \(drink.price)") {change{_=$0.orderBarDrink(drink)}}
                                 .disabled(!motel.canTrade(.bar) || motel.cash<drink.price)
                                 .accessibilityIdentifier("orderDrink_"+drink.rawValue)
@@ -72,7 +126,10 @@ struct NeighborhoodStoreView:View {
                 }
             }.padding(24)
         }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x233E33)).tint(Color(hex:0xEFC977)).buttonStyle(.bordered).accessibilityIdentifier("neighborhoodShop")
+            .navigationTitle(shop.title).navigationBarTitleDisplayMode(.inline)
+            .toolbar {ToolbarItem(placement:.topBarLeading){MenuBackButton {dismiss()}}}
             .sheet(isPresented:$showGardenKitchen){HavenLifeView(game:$game,initialTab:.garden)}
+        }
     }
 }
 struct HomeDesignView:View {
@@ -83,16 +140,18 @@ struct HomeDesignView:View {
     private var motel:Motel {game.motel ?? Motel()}
     private func change(_ action:(inout Motel)->Void) {var value=motel;action(&value);game.motel=value}
     var body:some View {
+        NavigationStack {
         ScrollView {
             VStack(alignment:.leading,spacing:14) {
-                HStack {Text("Make it home").font(.title.bold());Spacer();Button("Done"){dismiss()}}
+                Text("Storage and finishes").font(.title2.bold())
                 Text("\(motel.cash) COINS / LEVEL \(motel.household.level) / \(motel.household.placed.count) OF \(motel.household.capacity) OBJECTS").font(.caption.monospaced())
                 if motel.household.level<3 {
                     Text(motel.household.level == 0 ? "Improve home finishes and add furniture space." : "Expand furniture space and renovate the exterior.")
+                    PurchaseDetails(price:motel.household.upgradeCost,cash:motel.cash,benefit:"Four more furniture spaces and improved home finishes")
                     Button("Upgrade home / \(motel.household.upgradeCost)"){change{_=$0.upgradeHome()}}.disabled(motel.cash<motel.household.upgradeCost).accessibilityIdentifier("upgradeHome")
                 }
-                HStack {Text("Walls / 25");ForEach(0..<4,id:\.self) {index in Button {change{_=$0.finishHome(wall:true,color:index)}} label:{Circle().fill(Color(hex:Motel.themeColors[index])).frame(width:28,height:28)}.disabled(motel.cash<25 || motel.household.wallpaper == index)}}
-                HStack {Text("Floor / 25");ForEach(0..<4,id:\.self) {index in Button {change{_=$0.finishHome(wall:false,color:index)}} label:{Circle().fill(Color(hex:HomeInteriorArt.floors[index])).frame(width:28,height:28)}.disabled(motel.cash<25 || motel.household.floor == index)}}
+                HStack {Text("Walls / 25");ForEach(0..<4,id:\.self) {index in Button {change{_=$0.finishHome(wall:true,color:index)}} label:{Circle().fill(Color(hex:Motel.themeColors[index])).frame(width:28,height:28).padding(8).contentShape(Circle())}.accessibilityLabel("Wall finish \(index+1)").accessibilityValue(motel.household.wallpaper==index ? "Selected" : "25 coins").disabled(motel.cash<25 || motel.household.wallpaper == index)}}
+                HStack {Text("Floor / 25");ForEach(0..<4,id:\.self) {index in Button {change{_=$0.finishHome(wall:false,color:index)}} label:{Circle().fill(Color(hex:HomeInteriorArt.floors[index])).frame(width:28,height:28).padding(8).contentShape(Circle())}.accessibilityLabel("Floor finish \(index+1)").accessibilityValue(motel.household.floor==index ? "Selected" : "25 coins").disabled(motel.cash<25 || motel.household.floor == index)}}
                 Text("Storage").font(.headline)
                 if motel.household.storage.isEmpty {Text("Visit Willow Home east of the motel to buy furniture.").font(.caption)}
                 ScrollView(.horizontal) {HStack {ForEach(HomeObject.allCases.filter{motel.household.storage.contains($0)}) {kind in Button("\(kind.title) x \(motel.household.storage.filter{$0 == kind}.count)"){selected=kind}.tint(selected == kind ? .orange : Color(hex:0xEFC977))}}}
@@ -110,6 +169,9 @@ struct HomeDesignView:View {
                 Text("Tap placed furniture to store it, then select it and tap another tile to move it. A rug can be walked over.").font(.caption)
             }.padding(22)
         }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x233E33)).tint(Color(hex:0xEFC977)).buttonStyle(.bordered).accessibilityIdentifier("homeDesigner")
+            .navigationTitle("Make it home").navigationBarTitleDisplayMode(.inline)
+            .toolbar {ToolbarItem(placement:.topBarLeading){MenuBackButton {dismiss()}}}
+        }
     }
 }
 struct HomeItemIcon:View {
@@ -138,19 +200,9 @@ struct GameDialogue: View {
     let close: () -> Void
     var body: some View {
         VStack(alignment:.leading,spacing:12) {
-            HStack {
-                Text(speaker.uppercased()).font(.system(size:13,weight:.black,design:.monospaced)).tracking(1).foregroundStyle(Color(hex:0xF2CE7F))
-                Spacer()
-                if dismissible {
-                    Button(action:close) {
-                        Label("Back",systemImage:"chevron.left")
-                            .font(.system(size:13,weight:.bold,design:.rounded))
-                            .foregroundStyle(Color(hex:0xF5E7C8))
-                            .frame(minWidth:80,minHeight:48)
-                            .background(Color(hex:0x385448),in:RoundedRectangle(cornerRadius:8))
-                            .contentShape(Rectangle())
-                    }.buttonStyle(.plain).accessibilityIdentifier("dialogueBack")
-                }
+            HStack(spacing:10) {
+                if dismissible {MenuBackButton(id:"dialogueBack",action:close)}
+                Text(speaker.uppercased()).font(.system(size:13,weight:.black,design:.monospaced)).foregroundStyle(Color(hex:0xF2CE7F)).frame(maxWidth:.infinity,alignment:.trailing)
             }
             HStack(alignment:.top,spacing:12) {
                 portrait.frame(width:64,height:76).background(Color(hex:0x344E40)).overlay(Rectangle().stroke(Color(hex:0xC4A96F),lineWidth:1))
@@ -189,7 +241,7 @@ struct StaffPanel: View {
                         Text(role.duty).font(.caption)
                         Text("\(role.wage) coins/day").font(.caption.monospaced()).foregroundStyle(Color(hex:0xEFC977))
                         if let worker { Text(worker.active ? (worker.status ?? "On duty") : "Off duty: unpaid shift").font(.caption.bold()) }
-                        else { Text(motel.hiringProgress(role)).font(.caption).foregroundStyle(Color(hex:0xEFC977)); Button("Hire \(role.name) / \(role.hireCost)") { hire(role) }.buttonStyle(MotelButtonStyle()).disabled(!motel.hiringUnlocked(role) || motel.cash < role.hireCost).accessibilityIdentifier("hire_"+role.rawValue) }
+                        else { PurchaseDetails(price:role.hireCost,cash:motel.cash,benefit:role.duty+" First shift included; then \(motel.scheduledWage(role)) coins per day.",requirement:motel.hiringUnlocked(role) ? nil : motel.hiringProgress(role)); Button("Hire \(role.name) / \(role.hireCost)") { hire(role) }.buttonStyle(MotelButtonStyle()).disabled(!motel.hiringUnlocked(role) || motel.cash < role.hireCost).accessibilityIdentifier("hire_"+role.rawValue) }
                     }
                 }
             }
@@ -538,9 +590,15 @@ struct HotelMiniRequest:Identifiable {
 struct ManagementHub:View {
     @Binding var game:Game
     @Environment(\.dismiss) private var dismiss
+    var initialTab:ManagementTab?=nil
+    @AppStorage("littlehaven.management.tab") private var savedTab="Today"
+    @AppStorage("littlehaven.management.scroll") private var savedScroll="{}"
     @State private var tab:ManagementTab = .overview
+    @State private var scrollAnchor:String?
+    @State private var restoringScroll=true
     @State private var roomFilter:RoomBoardFilter = .all
-    @State private var roomSearch=""
+    @AppStorage("littlehaven.management.roomFilter") private var savedRoomFilter="All"
+    @AppStorage("littlehaven.management.roomSearch") private var roomSearch=""
     @State private var feedback=""
     @State private var mini:HotelMiniRequest?
     @State private var showHavenLife=false
@@ -556,8 +614,10 @@ struct ManagementHub:View {
                     }.buttonStyle(.plain).padding(.horizontal).accessibilityIdentifier("managementEmergency")
                 }
                 boardNavigation
+                ScrollViewReader {proxy in
                 ScrollView {
                     VStack(alignment:.leading,spacing:16) {
+                        Color.clear.frame(height:1).id(tab.rawValue+"|top")
                         switch tab {
                         case .overview:overviewPanel
                         case .rooms:roomsPanel
@@ -571,16 +631,37 @@ struct ManagementHub:View {
                         case .story:storyPanel
                         case .books:booksPanel
                         }
-                    }.padding()
+                    }.padding().scrollTargetLayout()
+                }.scrollPosition(id:$scrollAnchor,anchor:.top)
+                    .task(id:tab) {
+                        restoringScroll=true
+                        let entries=(try? JSONDecoder().decode([String:String].self,from:Data(savedScroll.utf8))) ?? [:]
+                        let target=entries[tab.rawValue] ?? tab.rawValue+"|top"
+                        await Task.yield()
+                        proxy.scrollTo(target,anchor:.top)
+                        do {try await Task.sleep(for:.milliseconds(180))} catch {return}
+                        restoringScroll=false
+                    }
+                    .onChange(of:scrollAnchor) {_,value in
+                        guard !restoringScroll,let value,value.hasPrefix(tab.rawValue+"|") else{return}
+                        var entries=(try? JSONDecoder().decode([String:String].self,from:Data(savedScroll.utf8))) ?? [:]
+                        entries[tab.rawValue]=value
+                        if let data=try? JSONEncoder().encode(entries),let text=String(data:data,encoding:.utf8) {savedScroll=text}
+                    }
                 }
                 if !feedback.isEmpty {Label(feedback,systemImage:"info.circle.fill").font(.subheadline).foregroundStyle(gold).padding(12).frame(maxWidth:.infinity,alignment:.leading).background(.white.opacity(0.06),in:RoundedRectangle(cornerRadius:12)).padding(.horizontal).accessibilityIdentifier("managementFeedback")}
                 Text("The hotel keeps running while this board is open.").font(.system(size:10)).foregroundStyle(.secondary).padding(.bottom,6)
             }.foregroundStyle(Color(hex:0xF5E7C8)).background(LinearGradient(colors:[Color(hex:0x143C37),Color(hex:0x102823)],startPoint:.topLeading,endPoint:.bottomTrailing))
                 .navigationTitle("Hotel management").navigationBarTitleDisplayMode(.inline)
                 .sheet(isPresented:$showHavenLife) {HavenLifeView(game:$game)}
-                .toolbar {ToolbarItem(placement:.topBarTrailing) {Button("Done") {dismiss()}.accessibilityIdentifier("closeManagement")}}
+                .toolbar {ToolbarItem(placement:.topBarLeading) {MenuBackButton(id:"closeManagement") {dismiss()}}}
         }.tint(gold).presentationBackground(Color(hex:0x172A25))
+            .onChange(of:tab) {_,value in restoringScroll=true;savedTab=value.rawValue}
+            .onChange(of:roomFilter) {_,value in savedRoomFilter=value.rawValue}
             .onAppear {
+                tab=initialTab ?? ManagementTab(rawValue:savedTab) ?? .overview
+                roomFilter=RoomBoardFilter(rawValue:savedRoomFilter) ?? .all
+                #if DEBUG
                 let args=ProcessInfo.processInfo.arguments
                 if args.contains("--ui-management") || args.contains("--ui-management-night") {tab = .rooms}
                 if args.contains("--ui-management-cameras") {tab = .cameras}
@@ -588,6 +669,7 @@ struct ManagementHub:View {
                 if args.contains("--ui-management-desk") {tab = .desk}
                 if args.contains("--ui-management-growth") {tab = .growth}
                 if args.contains("--ui-management-dashboard") {tab = .overview}
+                #endif
             }
             .sheet(item:$mini) { request in
                 HotelMiniGame(repairing:request.repairing,outfit:FamilyHome.outfitColors[motel.household.outfit]) {
@@ -618,27 +700,41 @@ struct ManagementHub:View {
         }.padding(.horizontal,18).padding(.vertical,8)
     }
     private var boardNavigation:some View {
-        HStack(spacing:0) {
-            ScrollViewReader {proxy in
-                ScrollView(.horizontal,showsIndicators:false) {
-                    HStack(spacing:8) {
-                        ForEach(ManagementTab.allCases) {item in
-                            Button {tab=item} label:{
-                                Label(item.rawValue,systemImage:item.symbol).font(.subheadline.weight(.semibold)).padding(.horizontal,14).padding(.vertical,11)
-                                    .background(tab==item ? gold : Color.white.opacity(0.07),in:RoundedRectangle(cornerRadius:12))
-                                    .foregroundStyle(tab==item ? Color(hex:0x173A36) : Color(hex:0xD8E8DB))
-                            }.buttonStyle(.plain).id(item.id).accessibilityIdentifier("manageTab_"+item.id)
-                                .accessibilityValue(tab==item ? "Selected" : "")
-                        }
-                    }.padding(.horizontal,16)
-                }.onChange(of:tab) {_,value in proxy.scrollTo(value.id,anchor:.center)}
-            }
-            Menu {
-                ForEach(ManagementTab.allCases) {item in
-                    Button {tab=item} label:{Label(item.rawValue,systemImage:item.symbol)}.accessibilityIdentifier("manageSection_"+item.id)
+        VStack(spacing:9) {
+            HStack(spacing:3) {
+                ForEach(ManagementPrimary.allCases) {group in
+                    Button {tab=group.pages[0]} label:{
+                        VStack(spacing:5) {
+                            Image(systemName:group.symbol).font(.system(size:17))
+                            Text(group.rawValue).font(.system(size:10,weight:.semibold)).lineLimit(1).minimumScaleFactor(0.75)
+                        }.frame(maxWidth:.infinity,minHeight:51)
+                            .foregroundStyle(tab.primary==group ? Color(hex:0x18392F) : Color(hex:0xE6E7D8))
+                            .background(tab.primary==group ? gold : Color.white.opacity(0.05),in:RoundedRectangle(cornerRadius:12))
+                    }.buttonStyle(.plain).accessibilityIdentifier("managePrimary_"+group.id)
+                        .accessibilityValue(tab.primary==group ? "Selected" : "")
                 }
-            } label:{Image(systemName:"square.grid.2x2.fill").font(.title3).padding(12)}
-                .accessibilityLabel("All management sections").accessibilityIdentifier("managementSections")
+            }.padding(.horizontal,12)
+            HStack(spacing:5) {
+                ScrollView(.horizontal,showsIndicators:false) {
+                    HStack(spacing:6) {
+                        ForEach(tab.primary.pages) {item in
+                            Button(item.displayTitle) {tab=item}.font(.caption.bold()).padding(.horizontal,12).frame(minHeight:44)
+                                .background(tab==item ? Color.white.opacity(0.14) : Color.clear,in:Capsule())
+                                .buttonStyle(.plain).accessibilityIdentifier("manageTab_"+item.id)
+                        }
+                    }
+                }
+                Menu {
+                    ForEach(ManagementPrimary.allCases) {group in
+                        Section(group.rawValue) {
+                            ForEach(group.pages) {item in
+                                Button {tab=item} label:{Label(item.displayTitle,systemImage:item.symbol)}.accessibilityIdentifier("manageSection_"+item.id)
+                            }
+                        }
+                    }
+                } label:{Image(systemName:"square.grid.2x2.fill").frame(width:44,height:44)}
+                    .accessibilityLabel("All management sections").accessibilityIdentifier("managementSections")
+            }.padding(.horizontal,14)
         }.accessibilityElement(children:.contain)
     }
     private var readyRooms:Int {motel.rooms.filter(\.available).count}
@@ -721,8 +817,8 @@ struct ManagementHub:View {
             Picker("Room status",selection:$roomFilter) {ForEach(RoomBoardFilter.allCases) {value in Text(value.rawValue).tag(value)}}.pickerStyle(.segmented).accessibilityIdentifier("roomStatusFilter")
             Text("\(filteredRooms.count) rooms · \(readyRooms) ready to book").font(.caption).foregroundStyle(.white.opacity(0.65)).accessibilityIdentifier("roomResultCount")
             if filteredRooms.isEmpty {Label("No rooms match this filter",systemImage:"magnifyingglass").padding(.vertical,25)}
-            ForEach(filteredRooms) {room in roomCard(room)}
-        }
+            ForEach(filteredRooms) {room in roomCard(room).accessibilityElement(children:.contain).accessibilityIdentifier("managementRoom_\(room.id)").id("Rooms|room-\(room.id)")}
+        }.scrollTargetLayout()
     }
     private func roomCard(_ room:MotelRoom)->some View {
         card {
@@ -746,15 +842,21 @@ struct ManagementHub:View {
             }.font(.caption.bold()).buttonStyle(.bordered)
             DisclosureGroup("Room options & upgrades") {
             if room.guest == nil {
-                Menu("Change room type") {
-                    ForEach(RoomKind.allCases) { kind in
-                        Button("\(kind.title) / \(kind.cost)") {_=perform{$0.changeRoomKind(room.id,kind:kind)}}.disabled(kind==room.health.kind || motel.cash<kind.cost || kind == .suite && motel.simulation.reputation<60)
-                    }
+                ForEach(RoomKind.allCases) {kind in
+                    let reason=kind==room.health.kind ? "Current room type" : kind == .suite && motel.simulation.reputation<60 ? "Requires reputation 60" : nil
+                    VStack(alignment:.leading,spacing:7) {
+                        Text(kind.title).font(.subheadline.bold())
+                        PurchaseDetails(price:kind==room.health.kind ? 0 : kind.cost,cash:motel.cash,benefit:"Nightly room premium: \(kind.premium) coins",requirement:reason)
+                        Button("Change to "+kind.title) {_=perform{$0.changeRoomKind(room.id,kind:kind)}}.disabled(reason != nil || motel.cash<kind.cost)
+                    }.padding(.vertical,7)
                 }
-                Menu("Add a room upgrade") {
-                    ForEach(RoomUpgrade.allCases) { upgrade in
-                        Button("\(upgrade.title) / \(upgrade.cost)") {_=perform{$0.buyRoomUpgrade(room.id,upgrade:upgrade)}}.disabled(room.health.upgrades.contains(upgrade)||motel.cash<upgrade.cost)
-                    }
+                ForEach(RoomUpgrade.allCases) {upgrade in
+                    let owned=room.health.upgrades.contains(upgrade)
+                    VStack(alignment:.leading,spacing:7) {
+                        Text(upgrade.title).font(.subheadline.bold())
+                        PurchaseDetails(price:owned ? 0 : upgrade.cost,cash:motel.cash,benefit:upgrade.benefit,requirement:owned ? "Already installed" : nil)
+                        Button("Install "+upgrade.title) {_=perform{$0.buyRoomUpgrade(room.id,upgrade:upgrade)}}.disabled(owned || motel.cash<upgrade.cost)
+                    }.padding(.vertical,7)
                 }
             } else {Button("Check out & inspect") {_=perform{$0.checkoutGuest(room.id)}}}
             ForEach(Array(room.health.upgrades).sorted{$0.rawValue<$1.rawValue}) {upgrade in
@@ -775,7 +877,7 @@ struct ManagementHub:View {
             }.pickerStyle(.segmented)
             Text("Waiting arrivals").font(.headline)
             if motel.waiting.isEmpty {Text("No arrivals waiting. Night arrivals appear as special event requests.").font(.caption)}
-            ForEach(motel.waiting) {guest in arrivalCard(guest)}
+            ForEach(motel.waiting) {guest in arrivalCard(guest).id("Desk|guest-\(guest.id)")}
             Text("Reservations / no-shows \(motel.simulation.noShows)").font(.headline)
             ForEach(motel.simulation.reservations) {reservation in
                 card {
@@ -783,7 +885,7 @@ struct ManagementHub:View {
                     Text("Due at \(reservation.arrivalHour%24):00 / \(reservation.processed ? reservation.noShow ? "No-show fee collected" : "Arrived" : "10-coin no-show guarantee")").font(.caption)
                 }
             }
-        }
+        }.scrollTargetLayout()
     }
     private func arrivalCard(_ guest:MotelGuest)->some View {
         card {
@@ -808,7 +910,7 @@ struct ManagementHub:View {
             ForEach(motel.rooms.filter{$0.guest != nil}) {room in
                 if let guest=room.guest {
                     card {
-                        Text(guest.name+" / "+guest.kind.title+" / Room \(room.number)").font(.headline)
+                        Text(guest.name+" / "+guest.kind.title+" / Room \(room.number)").font(.headline).id("Guests|guest-\(guest.id)")
                         Text(guest.kind.preference).font(.caption)
                         Text("Trust \(motel.simulation.relationships[guest.name,default:0]) / stays \(motel.simulation.visits[guest.name,default:0])").font(.caption).foregroundStyle(gold)
                         Text("Clean \(room.health.cleanliness)% / AC \(room.health.faults.contains(.ac) ? "broken" : "working") / Wi-Fi \(motel.simulation.powerOut ? "offline" : motel.simulation.facilities.contains(.wifi) ? "fiber" : "standard")").font(.caption)
@@ -817,7 +919,7 @@ struct ManagementHub:View {
                 }
             }
             ReviewsPanel(motel:motel)
-        }
+        }.scrollTargetLayout()
     }
     private var teamPanel:some View {
         VStack(alignment:.leading,spacing:14) {
@@ -836,26 +938,24 @@ struct ManagementHub:View {
                             Button("Dismiss") {change{$0.dismissStaff(role)}}
                         }.font(.caption).buttonStyle(.bordered)
                     } else {
-                        Text(motel.hiringProgress(role)).font(.caption).foregroundStyle(gold)
+                        PurchaseDetails(price:role.hireCost,cash:motel.cash,benefit:role.duty+" First shift included; then \(motel.scheduledWage(role)) coins per day.",requirement:motel.hiringUnlocked(role) ? nil : motel.hiringProgress(role))
                         Button("Hire \(role.name) / \(role.hireCost)") {_=perform{$0.hire(role)}}.buttonStyle(.bordered).disabled(!motel.hiringUnlocked(role) || motel.cash<role.hireCost).accessibilityIdentifier("manageHire_"+role.rawValue)
                     }
-                }
+                }.id("Team|staff-\(role.rawValue)")
             }
-        }
+        }.scrollTargetLayout()
     }
     private var suppliesPanel:some View {
         VStack(alignment:.leading,spacing:14) {
             Text("Every check-in uses towels and toiletries. Cleaning uses detergent; repairs use parts; pest treatment uses pesticide. Fridges and the restaurant use snacks.").font(.caption)
             ForEach(Supply.allCases) {item in
                 card {
-                    HStack {
-                        VStack(alignment:.leading) {Text(item.title).font(.headline);Text("In stock: \(motel.simulation.stock[item.rawValue,default:0])").font(.caption)}
-                        Spacer()
-                        Button("Buy 5 / \(item.price*5)") {_=perform{$0.buyStock(item)}}.buttonStyle(.bordered).disabled(motel.cash<item.price*5).accessibilityIdentifier("buy_"+item.rawValue)
-                    }
-                }
+                    HStack {Text(item.title).font(.headline);Spacer();Text("In stock: \(motel.simulation.stock[item.rawValue,default:0])").font(.caption)}
+                    PurchaseDetails(price:item.price*5,cash:motel.cash,benefit:"Add 5 units; new stock: \(motel.simulation.stock[item.rawValue,default:0]+5)")
+                    Button("Buy 5 / \(item.price*5)") {_=perform{$0.buyStock(item)}}.buttonStyle(.bordered).disabled(motel.cash<item.price*5).accessibilityIdentifier("buy_"+item.rawValue)
+                }.id("Supplies|supply-\(item.rawValue)")
             }
-        }
+        }.scrollTargetLayout()
     }
     private var eventsPanel:some View {
         VStack(alignment:.leading,spacing:14) {
@@ -881,9 +981,9 @@ struct ManagementHub:View {
                             Button("Take off-books cash / reputation & police risk") {_=perform{$0.respondToIssue(issue.id,choice:1)}}.buttonStyle(.bordered).tint(.orange)
                         }
                     }
-                }
+                }.id("Events|issue-\(issue.id)")
             }
-        }
+        }.scrollTargetLayout()
     }
     private var growthPanel:some View {
         VStack(alignment:.leading,spacing:14) {
@@ -902,15 +1002,15 @@ struct ManagementHub:View {
             ForEach(Facility.allCases) {facility in
                 card {
                     Text(facility.title).font(.headline)
-                    Text("\(facility.cost) coins / reputation \(facility.requiredRep)").font(.caption)
+                    PurchaseDetails(price:motel.simulation.facilities.contains(facility) ? 0 : facility.cost,cash:motel.cash,benefit:facilityBenefit(facility),requirement:motel.facilityLockReason(facility))
                     if motel.simulation.facilities.contains(facility) {Text("Operational").foregroundStyle(.mint)}
                     else {
                         if !motel.journeyAllows(facility) {Text("Unlock: "+Motel.journeyNames[motel.facilityJourneyTier(facility)]+" milestone in Haven life").font(.caption).foregroundStyle(.orange)}
-                        Button("Develop / \(facility.cost)") {_=perform{$0.installFacility(facility)}}.buttonStyle(.bordered).disabled(!motel.journeyAllows(facility) || motel.cash<facility.cost || motel.simulation.reputation<facility.requiredRep).accessibilityIdentifier("develop_"+facility.rawValue)
+                        Button("Develop / \(facility.cost)") {_=perform{$0.installFacility(facility)}}.buttonStyle(.bordered).disabled(motel.facilityLockReason(facility) != nil || motel.cash<facility.cost).accessibilityIdentifier("develop_"+facility.rawValue)
                     }
-                }
+                }.id("Growth|facility-\(facility.rawValue)")
             }
-        }
+        }.scrollTargetLayout()
     }
     private var camerasPanel:some View {
         VStack(alignment:.leading,spacing:14) {
@@ -959,11 +1059,23 @@ struct ManagementHub:View {
             }
             ForEach(motel.simulation.ledger) {line in
                 HStack(alignment:.top) {
-                    VStack(alignment:.leading) {Text("Day \(line.day), \(line.hour):00 / "+line.category).font(.caption.bold());Text(line.note).font(.caption2)}
+                    VStack(alignment:.leading) {Text("Day \(line.day), \(line.hour):00 / "+line.category).font(.caption.bold()).id("Books|line-\(line.id)");Text(line.note).font(.caption2)}
                     Spacer()
                     Text(line.amount>=0 ? "+\(line.amount)" : "\(line.amount)").foregroundStyle(line.amount>=0 ? Color.mint : Color.orange).font(.caption.monospaced())
                 }.padding(8).background(Color.white.opacity(0.05))
             }
+        }.scrollTargetLayout()
+    }
+    private func facilityBenefit(_ facility:Facility)->String {
+        switch facility {
+        case .adjacentLot:return "Increase development capacity to nine rooms"
+        case .upperFloor:return "Increase development capacity to eighteen rooms"
+        case .pool:return "Open a staffed swimming pool amenity"
+        case .restaurant:return "Serve meals and improve guest demand"
+        case .parking:return "Provide six guest parking bays"
+        case .wifi:return "Improve room rates and guest connectivity"
+        case .cameras:return "Monitor corridors and gain more response time"
+        case .nightVision:return "Keep camera monitoring useful at night"
         }
     }
     private func change(_ action:(inout Motel)->Void) {
@@ -988,7 +1100,7 @@ struct HotelMiniGame:View {
     @State private var message="Tap when the marker is inside the green zone."
     var body:some View {
         VStack(spacing:18) {
-            HStack {Text(repairing ? "Repair workshop" : "Cleaning challenge").font(.title2.bold());Spacer();Button("Cancel"){dismiss()}}
+            HStack {MenuBackButton(id:"cancelMiniGame") {dismiss()};Spacer();Text(repairing ? "Repair workshop" : "Cleaning challenge").font(.headline)}
             TimelineView(.animation(minimumInterval:0.04)) {timeline in
                 let elapsed=timeline.date.timeIntervalSince(started)
                 let phase=elapsed.truncatingRemainder(dividingBy:1.6)/1.6
@@ -1130,6 +1242,7 @@ enum HavenTab:String,CaseIterable,Identifiable {
 struct HavenLifeView:View {
     @Binding var game:Game
     var initialTab:HavenTab = .neighbors
+    @AppStorage("littlehaven.haven.tab") private var savedHavenTab="Neighbors"
     @State private var tab:HavenTab = .neighbors
     @State private var gardenSection:GardenSection = .grow
     @State private var gardenCrop:GardenCrop = .basil
@@ -1178,8 +1291,8 @@ struct HavenLifeView:View {
                 if !feedback.isEmpty {Text(feedback).font(.caption).padding(.horizontal).accessibilityIdentifier("havenFeedback")}
             }.foregroundStyle(Color(hex:0xF5E7C8)).background(PaintedPanel(color:0x172A25))
                 .navigationTitle("Haven life").navigationBarTitleDisplayMode(.inline)
-                .toolbar {ToolbarItem(placement:.confirmationAction) {Button("Done") {dismiss()}}}
-                .tint(Color(hex:0xEFC977)).onAppear{tab=initialTab;if var value=game.motel {value.initializeExpansion();value.initializeKitchenGarden();if value.havenOccasions == nil {value.havenOccasions=HavenOccasions()};game.motel=value;gardenSection=value.atGardenKitchen ? .cook : .grow}}
+                .toolbar {ToolbarItem(placement:.topBarLeading) {MenuBackButton {dismiss()}}}
+                .tint(Color(hex:0xEFC977)).onChange(of:tab){_,value in savedHavenTab=value.rawValue}.onAppear{tab=(initialTab == .neighbors && motel.nearHavenNeighbor == nil ? HavenTab(rawValue:savedHavenTab) : nil) ?? initialTab;if var value=game.motel {value.initializeExpansion();value.initializeKitchenGarden();if value.havenOccasions == nil {value.havenOccasions=HavenOccasions()};game.motel=value;gardenSection=value.atGardenKitchen ? .cook : .grow}}
                 .accessibilityElement(children:.contain)
         }
     }
