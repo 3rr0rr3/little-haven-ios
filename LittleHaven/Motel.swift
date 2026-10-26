@@ -706,23 +706,23 @@ extension Motel {
         return true
     }
     static let adventureClues=["a keepsake near the north neighborhood path","a ribbon in the shop plaza","a lure outside Coral Catch","a seed pouch by the cove",
-        "a shell on the east beach","a training buckle near the neighbors' homes","a grooming brush beside the laundry","a lost football near the south motel path"]
+        "a shell on the east beach","a training buckle near the neighbors' homes","a grooming brush beside the laundry","a lost football near the south motel path","a pink ribbon by the neighborhood gardens","an ember charm near the motel fountain","a moonstone beside the cove palms"]
     static let adventureSites=[Tile(x:45,y:17),Tile(x:54,y:33),Tile(x:47,y:36),Tile(x:56,y:45),
-        Tile(x:62,y:48),Tile(x:62,y:17),Tile(x:12,y:8),Tile(x:36,y:31)]
+        Tile(x:62,y:48),Tile(x:62,y:17),Tile(x:12,y:8),Tile(x:36,y:31),Tile(x:48,y:16),Tile(x:17,y:13),Tile(x:56,y:47)]
     static let creatureAbilities=["Wizard's insight · +1 toiletry each morning","Twin-tail courier · +1 towel each morning",
         "Blue's lucky cast · +2 fishing score","Shrek's green thumb · +2 snacks each morning",
         "Shark's sea sense · +2 fishing score","Mighty's encouragement · staff fatigue -5 each morning",
-        "Fang's pest patrol · +1 pesticide each morning","Messi's team spirit · +2 activity score"]
+        "Fang's pest patrol · +1 pesticide each morning","Messi's team spirit · +2 activity score","Pink-ear's welcome · +1 snack each morning","Inferno's forge · +1 spare part each morning","Cosmic's clean orbit · +1 towel each morning"]
     func adventure(_ id:Int)->HavenAdventure {haven.adventures[id] ?? HavenAdventure()}
     func adventureTile(_ id:Int)->Tile {groundNearestWalkable(to:groundTile(Self.adventureSites[id]))}
     @discardableResult mutating func startCreatureAdventure(_ id:Int)->Bool {
-        guard !caught,(0..<8).contains(id),nearbyCorral==id,!adventure(id).accepted else{return false}
+        guard !caught,BasementLayout.residents.contains(id),nearbyCorral==id,!adventure(id).accepted else{return false}
         var state=haven;var quest=adventure(id);quest.accepted=true;state.adventures[id]=quest;havenLife=state
         havenNote(BasementLayout.titles[id]+" wants help finding "+Self.adventureClues[id]+". Look for a golden glimmer.");return true
     }
     var nearbyAdventureFind:Int? {
         guard !caught,visit==nil,worldState.place == .grounds else{return nil}
-        return (0..<8).first {id in let q=adventure(id);return q.accepted && !q.found && actorTile.distance(to:adventureTile(id))<=2}
+        return BasementLayout.residents.first {id in let q=adventure(id);return q.accepted && !q.found && actorTile.distance(to:adventureTile(id))<=2}
     }
     @discardableResult mutating func collectAdventureFind()->Bool {
         guard let id=nearbyAdventureFind else{return false}
@@ -730,7 +730,7 @@ extension Motel {
         havenNote("You found the keepsake. Bring it to "+BasementLayout.titles[id]+"'s corral.");return true
     }
     @discardableResult mutating func finishCreatureAdventure(_ id:Int)->Bool {
-        guard (0..<8).contains(id),nearbyCorral==id,adventure(id).found,!adventure(id).completed else{return false}
+        guard BasementLayout.residents.contains(id),nearbyCorral==id,adventure(id).found,!adventure(id).completed else{return false}
         var state=haven,q=adventure(id);q.completed=true;state.adventures[id]=q;havenLife=state
         cash+=15;logMoney(15,category:"Creature adventures",note:BasementLayout.titles[id])
         havenNote(BasementLayout.titles[id]+" trusts you. +15 coins. Unlocked: "+Self.creatureAbilities[id]);return true
@@ -790,7 +790,7 @@ extension Motel {
     }
     var havenWorldProps:[HavenWorldProp] {
         guard havenLife != nil,visit==nil,worldState.place == .grounds else{return []}
-        var props=(0..<8).compactMap {id->HavenWorldProp? in
+        var props=BasementLayout.residents.compactMap {id->HavenWorldProp? in
             let q=adventure(id);return q.accepted && !q.found ? HavenWorldProp(id:"quest-\(id)",tile:adventureTile(id),kind:0) : nil
         }
         if let kind=todaysActivity {props.append(HavenWorldProp(id:"activity-"+kind.rawValue,tile:groundNearestWalkable(to:groundTile(kind.location)),kind:1+(HavenActivity.allCases.firstIndex(of:kind) ?? 0)))}
@@ -840,13 +840,16 @@ extension Motel {
             state.cancellations+=cancelled;s.reputation=max(0,s.reputation-damaged)
             report.append("Neglect caused \(damaged*15) coins in damage bills and \(cancelled) canceled bookings.")
         }
-        for id in 0..<8 where adventure(id).completed {
+        for id in BasementLayout.residents where adventure(id).completed {
             switch id {
             case 0:s.stock["toiletries",default:0]+=1
             case 1:s.stock["towels",default:0]+=1
             case 3:s.stock["snacks",default:0]+=2
             case 5:for role in StaffRole.allCases {if var p=s.profiles[role.rawValue] {p.fatigue=max(0,p.fatigue-5);s.profiles[role.rawValue]=p}}
             case 6:s.stock["pesticide",default:0]+=1
+            case 8:s.stock["snacks",default:0]+=1
+            case 9:s.stock["parts",default:0]+=1
+            case 10:s.stock["towels",default:0]+=1
             default:break
             }
         }

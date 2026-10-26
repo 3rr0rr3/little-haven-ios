@@ -718,7 +718,29 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["worldAction"].tap()
         XCTAssertTrue(app.buttons["Fed today"].waitForExistence(timeout:3))
         app.buttons["Pet"].tap()
-        capture(app,"Eight corral sanctuary and animal care")
+        capture(app,"Eleven corral sanctuary and animal care")
+    }
+    func testNewSanctuaryResidentsCareAndAdventure() {
+        let app=XCUIApplication()
+        for (id,name) in [(8,"Pink-ear Chichu"),(9,"Inferno Chichu"),(10,"Cosmic Chichu")] {
+            app.launchArguments=["--ui-basement","--ui-corral-\(id)","--ui-testing","--ui-painted-check"]
+            app.launch()
+            XCTAssertTrue(app.staticTexts[name.uppercased()].waitForExistence(timeout:15),name)
+            let dialogue=app.otherElements["gameDialogue"]
+            XCTAssertTrue(dialogue.buttons["Feed"].exists);dialogue.buttons["Feed"].tap()
+            app.buttons["worldAction"].tap()
+            XCTAssertTrue(app.buttons["Fed today"].waitForExistence(timeout:5))
+            app.buttons["Pet"].tap();app.buttons["worldAction"].tap()
+            capture(app,name+" in its own sanctuary corral")
+            app.buttons["Adventure & ability"].tap()
+            let quest=app.buttons["creatureAdventure\(id)"]
+            for _ in 0..<12 where !quest.isHittable {app.swipeUp()}
+            XCTAssertTrue(quest.isHittable,name+" has a reachable adventure entry")
+            quest.tap()
+            XCTAssertTrue(app.buttons["creatureAdventure\(id)"].exists)
+            XCTAssertFalse(app.buttons["creatureAdventure\(id)"].isEnabled,"Accepted quests require finding the keepsake")
+            app.terminate()
+        }
     }
     func testRideAndParkBicycle() {
         let app=launch("--ui-bike")

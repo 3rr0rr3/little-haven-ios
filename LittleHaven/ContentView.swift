@@ -242,15 +242,16 @@ struct ContentView: View {
             _=sample.motel!.checkIn(guestID:sample.motel!.waiting[0].id,roomID:0)
             sample.save();return sample
         }
-        if args.contains("--ui-basement") || args.contains("--ui-home-stairs") {
+        if args.contains("--ui-basement") || args.contains("--ui-home-stairs") || args.contains(where:{$0.hasPrefix("--ui-sanctuary-")}) {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.waiting=[];sample.motel!.world!.place = .house
             sample.motel!.world!.player=Tile(x:2,y:13)
             sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
-            if args.contains("--ui-basement") {
+            if args.contains("--ui-basement") || args.contains(where:{$0.hasPrefix("--ui-sanctuary-")}) {
                 _=sample.motel!.enterBasement();sample.motel!.world!.player=Tile(x:12,y:23)
-                for id in 0..<8 where args.contains("--ui-corral-\(id)") {sample.motel!.world!.player=BasementLayout.gate(id)}
+                for id in BasementLayout.residents where args.contains("--ui-corral-\(id)") {sample.motel!.world!.player=BasementLayout.gate(id)}
             }
+            for (flag,id) in [("--ui-sanctuary-pink",8),("--ui-sanctuary-inferno",9),("--ui-sanctuary-cosmic",10)] where args.contains(flag) {sample.motel!.world!.player=BasementLayout.gate(id)}
             sample.save();return sample
         }
         if args.contains("--ui-creature") {

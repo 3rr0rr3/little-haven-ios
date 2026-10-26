@@ -190,7 +190,7 @@ struct BasementView:View {
     let exit:()->Void
     private var actors:[RPGActor] {
         [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing)] +
-        (0..<8).map {id in
+        BasementLayout.residents.map {id in
             let tile=BasementLayout.creature(id,tick:motel.worldState.tick)
             let previous=BasementLayout.creature(id,tick:max(0,motel.worldState.tick-5))
             return RPGActor(id:"corral-creature-\(id)",tile:tile,color:0x999999,variant:id,facing:tile.x<previous.x ? 1 : tile.x>previous.x ? 2 : tile.y<previous.y ? 3 : 0,duration:MotelCadence.travel*5,corralCreature:id+1,displayScale:0.95)
@@ -198,11 +198,11 @@ struct BasementView:View {
     }
     var body:some View {
         VStack(spacing:4) {
-            RPGSceneView(mapID:"basement",revision:"sanctuary-27",mapSize:CGSize(width:400,height:432),columns:15,interior:false,actors:actors) {AnyView(BasementArt())}
+            RPGSceneView(mapID:"basement",revision:"sanctuary-52",mapSize:CGSize(width:BasementLayout.width*16,height:BasementLayout.height*16),columns:15,interior:false,actors:actors) {AnyView(BasementArt())}
                 .accessibilityIdentifier("basementScene")
             ScrollView(.horizontal) {
                 HStack {
-                    ForEach(0..<8,id:\.self) {id in
+                    ForEach(BasementLayout.residents,id:\.self) {id in
                         Button(BasementLayout.titles[id]) {corral(id)}
                             .buttonStyle(MotelButtonStyle(subdued:true))
                             .accessibilityIdentifier("corral\(id)")

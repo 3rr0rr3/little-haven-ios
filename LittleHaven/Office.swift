@@ -203,11 +203,12 @@ struct CorralCare:Codable {
     var visits = 0
 }
 enum BasementLayout {
-    static let width=25,height=27
+    static let width=25,height=37
     static let homeStairs=Tile(x:1,y:13)
-    static let stairs=Tile(x:12,y:25)
-    static let arrival=Tile(x:12,y:24)
-    static let titles=["Wizard Chichu","Two-tail fox","Blue Chichu","Shrek Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Messi Chichu"]
+    static let stairs=Tile(x:12,y:35)
+    static let arrival=Tile(x:12,y:34)
+    static let titles=["Wizard Chichu","Two-tail fox","Blue Chichu","Shrek Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Messi Chichu","Pink-ear Chichu","Inferno Chichu","Cosmic Chichu"]
+    static var residents:Range<Int> {titles.indices}
     static func pen(_ id:Int)->RPGRegion {RPGRegion(x:id%2 == 0 ? 2 : 15,y:3+(id/2)*5,width:8,height:4)}
     static func gate(_ id:Int)->Tile {let p=pen(id);return Tile(x:id%2 == 0 ? 10 : 14,y:p.y+2)}
     static func creature(_ id:Int,tick:Int)->Tile {
@@ -215,20 +216,20 @@ enum BasementLayout {
         return route[(tick/5+id)%route.count]
     }
     static func blocked(_ tile:Tile)->Bool {
-        tile.x<1 || tile.x>23 || tile.y<2 || tile.y>25 || (0..<8).contains{pen($0).contains(tile)}
+        tile.x<1 || tile.x>23 || tile.y<2 || tile.y>height-2 || residents.contains{pen($0).contains(tile)}
     }
 }
 extension Motel {
     var isAtBasement:Bool {visit == nil && worldState.place == .basement}
     var nearbyCorral:Int? {
         guard isAtBasement else{return nil}
-        return (0..<8).first{actorTile.distance(to:BasementLayout.gate($0))<=1}
+        return BasementLayout.residents.first{actorTile.distance(to:BasementLayout.gate($0))<=1}
     }
     func corralCare(_ id:Int)->CorralCare {worldState.corrals?[id] ?? CorralCare()}
     @discardableResult mutating func enterBasement()->Bool {
         guard isAtHome,currentBedroom == nil,actorTile.distance(to:BasementLayout.homeStairs)<=1 else{return false}
         initializeWorld();world!.place = .basement;world!.player=BasementLayout.arrival
-        lastEvent="Welcome to your creature sanctuary. Eight corrals, eight friends."
+        lastEvent="Welcome to your creature sanctuary. Eleven corrals, eleven friends."
         return true
     }
     @discardableResult mutating func leaveBasement()->Bool {
@@ -237,7 +238,7 @@ extension Motel {
         return true
     }
     @discardableResult mutating func careForCorral(_ id:Int,feed:Bool)->Bool {
-        guard (0..<8).contains(id),isAtBasement,actorTile.distance(to:BasementLayout.gate(id))<=1 else{return false}
+        guard BasementLayout.residents.contains(id),isAtBasement,actorTile.distance(to:BasementLayout.gate(id))<=1 else{return false}
         initializeWorld();var care=corralCare(id)
         if feed {
             guard care.fedDay != day else{lastEvent=BasementLayout.titles[id]+" already ate today.";return false}

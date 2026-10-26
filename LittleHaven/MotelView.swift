@@ -195,7 +195,7 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains("--ui-menu-map") {showMap=true}
             if ProcessInfo.processInfo.arguments.contains("--ui-menu-staff") {managementFocus = .team;showManagement=true}
             if ProcessInfo.processInfo.arguments.contains("--ui-menu-purchases") {neighborhood = .furniture}
-            for id in 0..<8 where ProcessInfo.processInfo.arguments.contains("--ui-corral-\(id)") {corral=id}
+            for id in BasementLayout.residents where ProcessInfo.processInfo.arguments.contains("--ui-corral-\(id)") {corral=id}
             if ProcessInfo.processInfo.arguments.contains("--ui-creative-preview") {showCreative=true}
             if ProcessInfo.processInfo.arguments.contains("--ui-creature-portrait") { family = .mochi }
             if ProcessInfo.processInfo.arguments.contains("--ui-guest-dialogue") { talkingRoom=0 }
@@ -780,7 +780,7 @@ struct MotelView: View {
         case .loot(let item): return "\(RoomVisit.lootNames[item]): +\(RoomVisit.lootValues[item]) value, +\(RoomVisit.lootNoise[item]) suspicion. Sell it at the pawn shop after escaping."
         case .none:
             if let shop=motel.currentShop {return "Browse the displays. Walk to "+shop.keeperName+"'s counter to buy or sell, and use the lower door to leave."}
-            if motel.isAtBasement {return "Eight private corrals. Walk along the central aisle to visit, feed, and pet each resident. Return upstairs at the south stairs."}
+            if motel.isAtBasement {return "Eleven private corrals. Walk along the central aisle to visit, feed, and pet each resident. Return upstairs at the south stairs."}
             if motel.isAtHome {return "Relax with your family and the animated TV. Use the workbench to arrange your furniture."}
             if motel.worldState.place == .grounds && BeachLayout.contains(motel.actorTile) {return "Sunset Cove: palms, umbrellas and beach chairs. Follow the sand; deep water is out of bounds."}
             if motel.visit?.sneaking == true { return "Avoid the guest. Take belongings and return to the door before suspicion reaches 100%." }

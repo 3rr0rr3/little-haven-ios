@@ -132,14 +132,15 @@ struct PaintedPanel:View {
 struct PaintedSanctuary:View {
     var body:some View {
         Canvas {c,_ in
-            let room=CGRect(x:16,y:32,width:368,height:384)
-            c.fill(Path(CGRect(x:0,y:0,width:400,height:432)),with:.color(Color(hex:0x554B3D)))
-            PaintedArt.texture("walnut",in:CGRect(x:0,y:0,width:400,height:432),context:&c,unit:64)
+            let height=Double(BasementLayout.height*16)
+            let room=CGRect(x:16,y:32,width:368,height:height-48)
+            c.fill(Path(CGRect(x:0,y:0,width:400,height:height)),with:.color(Color(hex:0x554B3D)))
+            PaintedArt.texture("walnut",in:CGRect(x:0,y:0,width:400,height:height),context:&c,unit:64)
             CozyScenery.indoorFloor(context:&c,in:room)
-            for id in 0..<8 {
+            for id in BasementLayout.residents {
                 let p=BasementLayout.pen(id),x=Double(p.x*16),y=Double(p.y*16)
                 let pen=CGRect(x:x,y:y,width:128,height:64)
-                c.fill(Path(pen),with:.color(Color(hex:[UInt32(0xBDA785),0xCDBB94,0x9DAF9A,0xA5B18C,0xCEC4AA,0xAEA38E,0xB89F95,0x9EAF9A][id])))
+                c.fill(Path(pen),with:.color(Color(hex:[UInt32(0xBDA785),0xCDBB94,0x9DAF9A,0xA5B18C,0xCEC4AA,0xAEA38E,0xB89F95,0x9EAF9A,0xCEB3BE,0xB7A298,0xA1B69C][id])))
                 var bed=c;bed.opacity=0.10;PaintedArt.texture("straw",in:pen.insetBy(dx:3,dy:4),context:&bed,unit:32)
                 PaintedArt.draw("bedding",in:CGRect(x:x+7,y:y+14,width:28,height:26),context:&c,fit:true)
                 PaintedArt.draw("feed-bowl",in:CGRect(x:x+98,y:y+15,width:15,height:8),context:&c)
@@ -154,9 +155,12 @@ struct PaintedSanctuary:View {
                 case 4:PaintedArt.texture("water",in:CGRect(x:x+8,y:y+45,width:27,height:9),context:&c,unit:32)
                 case 5:PaintedArt.draw("dumbbell",in:CGRect(x:x+8,y:y+44,width:28,height:12),context:&c,fit:true)
                 case 6:PaintedArt.draw("rug",in:CGRect(x:x+8,y:y+44,width:26,height:12),context:&c)
-                default:
+                case 7:
                     c.fill(Path(ellipseIn:CGRect(x:x+13,y:y+43,width:12,height:12)),with:.color(Color(hex:0xE6D8BC)))
                     c.fill(Path(ellipseIn:CGRect(x:x+17,y:y+47,width:4,height:4)),with:.color(Color(hex:0x49473D)))
+                case 8:PaintedArt.draw("rug",in:CGRect(x:x+8,y:y+42,width:27,height:13),context:&c)
+                case 9:PaintedArt.draw("spellbook",in:CGRect(x:x+9,y:y+43,width:25,height:12),context:&c,fit:true)
+                default:PaintedArt.draw("fern",in:CGRect(x:x+7,y:y+34,width:26,height:23),context:&c,fit:true)
                 }
                 // Rails, plates and posts stay on the original blocked pen boundary.
                 for edge in [0.0,57] {
@@ -172,14 +176,14 @@ struct PaintedSanctuary:View {
                 PaintedArt.draw("lantern",in:CGRect(x:lx,y:y+9,width:12,height:24),context:&c,fit:true)
                 if id%2==0 {PaintedArt.draw("wildflowers",in:CGRect(x:x+2,y:y+43,width:13,height:16),context:&c,fit:true)}
             }
-            for y in [40.0,120,200,280,360] {
+            for y in stride(from:40.0,to:height-40,by:80) {
                 c.fill(Path(ellipseIn:CGRect(x:192,y:y,width:16,height:8)),with:.radialGradient(Gradient(colors:[Color(hex:0xF0D49B),Color(hex:0xA98651)]),center:CGPoint(x:198,y:y+2),startRadius:0,endRadius:10))
             }
             PaintedArt.sunlight(context:&c,bounds:room)
-            PaintedArt.draw("stairs",in:CGRect(x:176,y:391,width:48,height:25),context:&c)
+            PaintedArt.draw("stairs",in:CGRect(x:176,y:height-41,width:48,height:25),context:&c)
             PaintedArt.nameplate("CREATURE SANCTUARY",in:CGRect(x:75,y:4,width:250,height:24),context:&c,font:9)
             for x in [22.0,354] {PaintedArt.draw("banner",in:CGRect(x:x,y:2,width:23,height:31),context:&c,fit:true)}
-            c.draw(Text("UPSTAIRS").font(.system(size:5,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E3BC)),at:CGPoint(x:200,y:423))
-        }.frame(width:400,height:432)
+            c.draw(Text("UPSTAIRS").font(.system(size:5,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E3BC)),at:CGPoint(x:200,y:height-9))
+        }.frame(width:400,height:CGFloat(BasementLayout.height*16))
     }
 }

@@ -1473,7 +1473,7 @@ struct HavenLifeView:View {
     private var creatures:some View {
         VStack(alignment:.leading,spacing:18) {
             Text("Visit each corral to begin a quest. Find its golden glimmer, then return the keepsake to unlock a unique ability. Chichu, Chichi and Tuki can also discover supplies once daily while following you outside the motel.")
-            ForEach(0..<8,id:\.self) {id in
+            ForEach(BasementLayout.residents,id:\.self) {id in
                 let quest=motel.adventure(id)
                 VStack(alignment:.leading,spacing:8) {
                     Text(BasementLayout.titles[id]).font(.headline)

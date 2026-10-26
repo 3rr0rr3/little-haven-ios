@@ -1148,20 +1148,32 @@ func referenceCompanionRules() {
 referenceCompanionRules()
 
 func basementSanctuaryRules() {
-    require(BasementLayout.titles.count == 8,"Exactly eight distinct corral residents")
-    for id in 0..<8 {
+    require(BasementLayout.titles.count == 11,"Exactly eleven distinct corral residents")
+    require(Array(BasementLayout.titles.prefix(8)) == ["Wizard Chichu","Two-tail fox","Blue Chichu","Shrek Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Messi Chichu"],"Existing resident save IDs and names retain their order")
+    require(Motel.adventureClues.count == 11 && Motel.adventureSites.count == 11 && Motel.creatureAbilities.count == 11,"All eleven care and adventure entries are complete")
+    var reachable:Set<Tile>=[BasementLayout.arrival],queue=[BasementLayout.arrival],cursor=0
+    while cursor<queue.count {
+        let tile=queue[cursor];cursor+=1
+        for (dx,dy) in [(1,0),(-1,0),(0,1),(0,-1)] {
+            let next=Tile(x:tile.x+dx,y:tile.y+dy)
+            if !BasementLayout.blocked(next),reachable.insert(next).inserted {queue.append(next)}
+        }
+    }
+    require(reachable.contains(BasementLayout.stairs),"Expanded sanctuary stairs remain reachable")
+    for id in BasementLayout.residents {
+        require(reachable.contains(BasementLayout.gate(id)),"Every original and new gate connects to the entrance")
         let p=BasementLayout.pen(id)
         for tick in 0..<40 {
             let creature=BasementLayout.creature(id,tick:tick)
             require(p.contains(creature),"Every creature stays inside its assigned corral")
-            require((0..<8).filter{BasementLayout.pen($0).contains(creature)}.count == 1,"Exactly one habitat contains each resident")
+            require(BasementLayout.residents.filter{BasementLayout.pen($0).contains(creature)}.count == 1,"Exactly one habitat contains each resident")
         }
         require(!BasementLayout.blocked(BasementLayout.gate(id)),"Every gate has a clear visitor approach")
     }
     var game=Motel();game.initializeWorld();game.world!.place = .house;game.world!.player=Tile(x:2,y:13)
     require(game.nearbyAction  == .basement && game.enterBasement(),"Physical home stairs enter the basement")
     require(game.isAtBasement && game.actorTile == BasementLayout.arrival,"Basement arrival is safe")
-    for id in 0..<8 {
+    for id in BasementLayout.residents {
         game.world!.player=BasementLayout.gate(id)
         require(game.nearbyCorral == id,"Each corral is individually interactive")
         require(game.careForCorral(id,feed:true),"Feed each resident")
@@ -1175,10 +1187,15 @@ func basementSanctuaryRules() {
     require(!game.careForCorral(0,feed:false),"Cannot interact with a distant animal")
     let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(game))
     require(saved.isAtBasement && saved.corralCare(7).fedDay == game.day && saved.corralCare(7).visits == 1,"Basement location and animal care persist")
+    for id in 8...10 {require(saved.corralCare(id).fedDay == game.day && saved.corralCare(id).visits == 1,"New resident care survives save and reload")}
+    require(!game.careForCorral(11,feed:false) && !game.startCreatureAdventure(11),"An invalid corral ID never indexes the resident arrays")
+    var legacy=game;legacy.world!.corrals=legacy.world!.corrals?.filter{$0.key<8};legacy.world!.player=Tile(x:12,y:24)
+    let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(legacy))
+    require(!BasementLayout.blocked(restored.actorTile) && restored.corralCare(7).visits == 1 && restored.corralCare(8).fedDay == -1,"Eight-resident saves retain their care and safely default the added residents")
     game.togglePet("mochi") // Tuki is upstairs, so remote follow stays disabled.
     require(!game.petState("mochi").following,"Corrals do not alter the home companion")
     require(game.leaveBasement() && game.isAtHome && !game.homeBlocked(game.actorTile),"Upstairs returns to the family home")
-    print("PASS: eight enclosed residents, home stairs, feeding, petting, safe movement and saved care")
+    print("PASS: eleven enclosed residents, home stairs, feeding, petting, safe movement and saved care")
 }
 basementSanctuaryRules()
 
@@ -1542,7 +1559,7 @@ func connectedHavenLifeRules() {
     employees.day=5;employees.settleHavenDay()
     require(employees.haven.employees[StaffRole.security.rawValue]!.level==2,"Employees level up after four shifts")
     var creatures=base()
-    for id in 0..<8 {
+    for id in BasementLayout.residents {
         creatures.world!.place = .basement;creatures.world!.player=BasementLayout.gate(id)
         require(creatures.startCreatureAdventure(id),"Each corral offers a unique quest")
         require(!creatures.finishCreatureAdventure(id),"A quest cannot be completed without its keepsake")
@@ -1553,7 +1570,7 @@ func connectedHavenLifeRules() {
     }
     let snacks=creatures.simulation.stock["snacks",default:0]
     creatures.day=2;creatures.settleHavenDay()
-    require(creatures.simulation.stock["snacks",default:0]==snacks+2,"Shrek's unlocked ability supplies real snacks")
+    require(creatures.simulation.stock["snacks",default:0]==snacks+3,"Shrek and Pink-ear supply their separate snack rewards")
     let after=creatures.simulation.stock;creatures.settleHavenDay()
     require(creatures.simulation.stock==after,"Creature morning rewards settle once daily")
     creatures.world!.place = .grounds;creatures.world!.player=Tile(x:45,y:17)
@@ -1583,7 +1600,7 @@ func connectedHavenLifeRules() {
     var object=try! JSONSerialization.jsonObject(with:JSONEncoder().encode(base())) as! [String:Any]
     object.removeValue(forKey:"havenLife")
     require((try! JSONDecoder().decode(Motel.self,from:JSONSerialization.data(withJSONObject:object))).havenLife==nil,"Older saves remain compatible with Haven life")
-    print("PASS: neighbor friendships and visits, identity guest mix, employee pay and growth, eight creature quests, pet discoveries, four weekly games, damage bills, cancellations and saved consequences")
+    print("PASS: neighbor friendships and visits, identity guest mix, employee pay and growth, eleven creature quests, pet discoveries, four weekly games, damage bills, cancellations and saved consequences")
 }
 connectedHavenLifeRules()
 

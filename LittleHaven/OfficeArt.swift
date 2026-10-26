@@ -898,6 +898,7 @@ struct BasementArt:View {
 
 enum CorralCreatureArt {
     static func draw(context:inout GraphicsContext,kind:Int,facing:Int,walk:Double) {
+        if (9...11).contains(kind) {drawNewResident(context:&context,kind:kind,facing:facing,walk:walk);return}
         if (1...8).contains(kind),PaintedArt.creature(context:&context,name:PaintedArt.creatures[kind-1],facing:facing,walk:walk) {return}
         var c=context
         func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
@@ -990,6 +991,108 @@ struct CorralCreaturePortrait:View {
     let kind:Int
     var body:some View {
         Canvas {c,_ in c.scaleBy(x:3,y:3);CorralCreatureArt.draw(context:&c,kind:kind,facing:0,walk:0)}.frame(width:72,height:84)
+    }
+}
+
+extension CorralCreatureArt {
+    /// Native layered art shares the original residents' 24 x 28 coordinate system.
+    /// All facial features turn with the body; the normal actor cache supplies walking frames.
+    static func drawNewResident(context:inout GraphicsContext,kind:Int,facing:Int,walk:Double) {
+        var c=context
+        let outline=Color(hex:0x393439),back=facing == 3
+        let side=facing == 1 ? -1.6 : facing == 2 ? 1.6 : 0.0
+        let step=max(-1,min(1,walk))*0.7
+        func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
+            let p=Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h))
+            c.fill(p,with:.color(Color(hex:color)));c.stroke(p,with:.color(outline),lineWidth:0.35)
+        }
+        func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32,_ radius:Double=1.5) {
+            let p=Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:radius)
+            c.fill(p,with:.color(Color(hex:color)));c.stroke(p,with:.color(outline),lineWidth:0.35)
+        }
+        func poly(_ xy:[Double],_ color:UInt32) {
+            var p=Path();p.move(to:CGPoint(x:xy[0],y:xy[1]))
+            for i in stride(from:2,to:xy.count,by:2) {p.addLine(to:CGPoint(x:xy[i],y:xy[i+1]))}
+            p.closeSubpath();c.fill(p,with:.color(Color(hex:color)));c.stroke(p,with:.color(outline),lineWidth:0.35)
+        }
+        func line(_ x:Double,_ y:Double,_ xx:Double,_ yy:Double,_ color:UInt32,_ width:Double=0.4) {
+            var p=Path();p.move(to:CGPoint(x:x,y:y));p.addLine(to:CGPoint(x:xx,y:yy));c.stroke(p,with:.color(Color(hex:color)),lineWidth:width)
+        }
+        c.fill(Path(ellipseIn:CGRect(x:3,y:25,width:19,height:2.5)),with:.color(Color.black.opacity(0.22)))
+        if kind == 9 {
+            // The first reference is a person wearing a pink kitten filter, not a furred cat.
+            box(6,18,12,8,0x28272D)
+            oval(5.7,24+step,5,3,0x34313A);oval(13.3,24-step,5,3,0x34313A)
+            oval(4.7,19-step,3.5,5,0xDEAB8E);oval(16.1,19+step,3.5,5,0xDEAB8E)
+            oval(3.5,5,17,15,back ? 0x382B2B : 0xDFAD91)
+            if !back {oval(4.8+side,11,14,8.4,0xE9B99D)}
+            poly([3.6,10,3.4,5.5,6,3.3,8,4,10,2.2,13,3.6,15,2.7,19.7,5,20.1,9.5,17,7.2,14,7.5,11,6.1,8,7.7,5.9,7.2],0x362B2D)
+            oval(2.7,2.5,6.3,7,0xEBABCC);oval(15,2.5,6.3,7,0xEBABCC)
+            oval(4,3.9,3.5,4.3,0xC9659F);oval(16.4,3.9,3.5,4.3,0xC9659F)
+            if !back {
+                for x in [7.8,15.4] {
+                    oval(x-1.7+side,10.2,3.8,3.7,0xF5EEE1)
+                    oval(x-0.45+side,10.8,1.8,2.3,0x4B3936)
+                    line(x-1.4+side,9.7,x+1.6+side,9.9,0x664337,0.55)
+                }
+                poly([10.5+side,14.5,13.4+side,14.5,12+side,16],0xEEA9BE)
+                line(10+side,17.5,14+side,17.5,0x8E5E59)
+                for y in [14.8,16] {line(3.8,y,8.5+side,y+0.3,0xF7DEC9);line(15.5+side,y+0.3,20.1,y,0xF7DEC9)}
+            } else {line(9,21,15,21,0x49414A)}
+            return
+        }
+        let fur:UInt32=kind == 10 ? 0xC5C6BF : 0xA9B9A3
+        let light:UInt32=kind == 10 ? 0xEBE8DA : 0xD2DBC2
+        // Tail and alternating paws sit behind the torso.
+        oval(side<0 ? 16 : 1,18,7,7,fur)
+        oval(5,16,14,10,fur);oval(8,18,8,8,light)
+        oval(4.8,24+step,6,3,fur);oval(13.2,24-step,6,3,fur)
+        oval(2.2,3.7,7,8,fur);oval(14.8,3.7,7,8,fur)
+        oval(3.8,5.1,3.8,4,0xB59F9A);oval(16.2,5.1,3.8,4,0xB59F9A)
+        oval(2,7,20,13.5,fur)
+        if !back {oval(4.4+side,13,15,7,light)}
+        // Snow-leopard spots follow the head, torso and rear silhouette.
+        for dot in [(5.0,9.0),(18.0,9.0),(7.0,7.5),(16.0,7.8),(10.0,7.2),(13.0,7.2),(4.0,16.5),(18.2,16.5),(6.1,20.5),(16.4,22.0)] {
+            oval(dot.0,dot.1,1.4,0.9,kind == 10 ? 0x777876 : 0x697F66)
+        }
+        if kind == 10 {
+            poly([5,7,3.7,4.5,4.2,0.6,6,3.7,8,5.2,7.6,7],0xD3313C)
+            poly([16.5,7,16,5.2,18,3.7,19.8,0.6,20.3,4.5,19,7],0xD3313C)
+            line(5.3,2.8,6,5.8,0xF57565,0.6)
+            line(18.7,2.8,18.2,5.8,0xF57565,0.6)
+        } else {
+            for x in [7.0,17] {
+                let dx=x<12 ? -3.0 : 3.0
+                var antenna=Path();antenna.move(to:CGPoint(x:x,y:8));antenna.addQuadCurve(to:CGPoint(x:x+dx,y:1.9),control:CGPoint(x:x+dx*0.25,y:3))
+                c.stroke(antenna,with:.color(Color(hex:0x558A39)),lineWidth:1.2)
+                oval(x+dx-2.2,0.5,4.4,2.4,0x7EBB4A)
+            }
+        }
+        if !back {
+            if kind == 10 {
+                oval(5+side,10.2,5,5,0x64313C);oval(14+side,10.2,5,5,0x382B32)
+                oval(6.5+side,11.7,2.4,2.4,0xFB3C43);oval(15.4+side,11.3,1.6,1.9,0xFFF3D4)
+                line(4.4+side,13,10.2+side,13,0xFF6B58,0.5);line(7.4+side,10,7.4+side,16.2,0xFF6B58,0.5)
+                oval(6.9+side,12.4,1,1,0xFFF1C1)
+            } else {
+                oval(4.3+side,9.7,6.2,6.6,0x172825);oval(13.4+side,9.7,6.2,6.6,0x172825)
+                oval(5.8+side,10.5,1.4,2.2,0xF5F5D7);oval(14.9+side,10.5,1.4,2.2,0xF5F5D7)
+            }
+            oval(10.5+side,15.4,3,1.8,0x64554F)
+            line(12+side,17.1,12+side,18.3,0x5F5650)
+            for y in [16.2,17.5] {line(1.7,y,8+side,y+0.2,0xECE8D7);line(16+side,y+0.2,22.2,y,0xECE8D7)}
+            if kind == 10 {
+                // Small harmless decorative flames stay within the sprite, never an incident.
+                for x in [5.0,10,15] {
+                    poly([x,26,x-0.5,23,x+1.4,20.5+step,x+2,23,x+3.1,22,x+4,26],0xEFA142)
+                    poly([x+1,26,x+1.7,23,x+2.6,26],0xF9DB77)
+                }
+            } else {
+                oval(6.1,19.7-step,4.3,4,fur);oval(13.6,19.7+step,4.3,4,fur)
+                c.fill(Path(ellipseIn:CGRect(x:8.4,y:18.5,width:7.2,height:7.2)),with:.radialGradient(Gradient(colors:[Color(hex:0xEEFFC1),Color(hex:0x88C846),Color(hex:0x88C846).opacity(0.05)]),center:CGPoint(x:12,y:22),startRadius:0,endRadius:4))
+                line(9,22,15,22,0xE9FFD2,0.6);line(12,19,12,25,0xE9FFD2,0.6)
+            }
+        }
     }
 }
 
