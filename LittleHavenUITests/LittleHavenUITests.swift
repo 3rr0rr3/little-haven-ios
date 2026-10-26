@@ -667,9 +667,10 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertEqual(position.value as? String,released,"Releasing the finger stops without walking to its destination")
         center.press(forDuration:0.05,thenDragTo:stick.coordinate(withNormalizedOffset:CGVector(dx:0.1,dy:0.5)),withVelocity:.slow,thenHoldForDuration:0.4)
         XCTAssertNotEqual(position.value as? String,released,"A fresh drag can reverse direction")
-        openPause(app)
         let stopped=position.value as? String
+        openPause(app)
         Thread.sleep(forTimeInterval:0.4)
+        back(app)
         XCTAssertEqual(position.value as? String,stopped,"Pause cancels movement")
         capture(app,"Full screen visible joystick and release")
     }
