@@ -1003,6 +1003,9 @@ extension CorralCreatureArt {
         func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
             let p=Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h));c.fill(p,with:.color(Color(hex:color)));c.stroke(p,with:.color(edge),lineWidth:0.4)
         }
+        func highlight(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
+            c.fill(Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:color)))
+        }
         func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
             let p=Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:0.7);c.fill(p,with:.color(Color(hex:color)));c.stroke(p,with:.color(edge),lineWidth:0.35)
         }
@@ -1018,13 +1021,13 @@ extension CorralCreatureArt {
                 box(x,21.5+shift,2.8,5.3,0xAA713D);box(x-0.3,25+shift,3.6,2,0x6B6458)
             }
             oval(5.2,9,18.1,17.2,0xB98043)
-            oval(7.2,10.5,14.1,14.7,0xD19A54)
-            oval(8.2,12,10.8,11.3,0xD8A563)
+            highlight(7.2,10.5,14.1,14.7,0xD19A54)
+            highlight(8.2,12,10.8,11.3,0xD8A563)
             oval(3.2,7,7.9,15.3,0xC79253)
             oval(1.5,3.6,7.3,13.4,0xB99B74)
             oval(0,11.4,6.8,6.5,0xABA58C)
-            oval(2.4,1.3,2.2,6,0xB99870);oval(6,1.8,2.1,5.5,0xB99870)
-            oval(2.9,2.2,0.9,3.5,0x8B7867);oval(6.5,2.7,0.8,3.3,0x8B7867)
+            oval(2.4,2.8,2.2,4.5,0xB99870);oval(6,3,2.1,4.3,0xB99870)
+            oval(2.9,3.5,0.9,2.4,0x8B7867);oval(6.5,3.7,0.8,2.3,0x8B7867)
             curve(CGPoint(x:7.8,y:4),CGPoint(x:6.4,y:9),CGPoint(x:8.8,y:16),0xB9B6A0,2.5)
             curve(CGPoint(x:7.5,y:4),CGPoint(x:7.3,y:9),CGPoint(x:8.4,y:13),0xDDD4B8,0.6)
             oval(2.2,7.6,1.5,2,0x3B352F);oval(2.5,7.8,0.45,0.55,0xF8EBC9)
@@ -1035,11 +1038,11 @@ extension CorralCreatureArt {
             box(x,21.3+shift,3,5.3,0xAC763F);box(x-0.2,25+shift,3.4,2,0x6B6458)
         }
         oval(0.6,9,22.8,17.4,0xB98043)
-        oval(2.4,10.6,19.2,15,0xD09B57)
-        oval(4.6,13,14.8,11.8,0xD9A866)
+        highlight(2.4,10.6,19.2,15,0xD09B57)
+        highlight(4.6,13,14.8,11.8,0xD9A866)
         oval(7.4,3,9.2,15.8,0xC59964)
-        oval(7.6,0.8,2.6,6.3,0xBA996E);oval(14,0.8,2.6,6.3,0xBA996E)
-        oval(8.3,2,1,3.7,0x8D7E68);oval(14.8,2,1,3.7,0x8D7E68)
+        oval(7.6,2.1,2.6,5,0xBA996E);oval(14,2.1,2.6,5,0xBA996E)
+        oval(8.3,3.2,1,2.5,0x8D7E68);oval(14.8,3.2,1,2.5,0x8D7E68)
         if facing == 3 {
             curve(CGPoint(x:12,y:4),CGPoint(x:9.8,y:9),CGPoint(x:12,y:17),0xBDBBA4,3.6)
             curve(CGPoint(x:12,y:15),CGPoint(x:14+step,y:21),CGPoint(x:11+step,y:26),0x716455,2.2)
