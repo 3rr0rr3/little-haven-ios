@@ -74,6 +74,7 @@ struct Motel: Codable {
     var havenExpansion:HavenExpansion?
     var kitchenGarden:KitchenGarden?
     var havenOccasions:HavenOccasions?
+    var personalNeeds:PlayerNeeds?
     var household: FamilyHome { home ?? FamilyHome() }
     var expansionCost: Int { 250 + (rooms.count - 3) * 150 }
     var occupancy: Int { rooms.filter { $0.guest != nil }.count }
@@ -175,6 +176,7 @@ struct Motel: Codable {
     }
     @discardableResult mutating func nextDay() -> Bool {
         guard !caught, (visit == nil || managementEnabled), business.police == nil else { return false }
+        advancePersonalNeeds(hours:max(1,32-simulation.hour))
         tickRoomNeglect(elapsed:480)
         settleOccasionEvening()
         prepareGardenNight()
@@ -696,7 +698,7 @@ extension Motel {
         guard isAtHome,homeNeighborIDs.contains(id),actorTile.distance(to:homeNeighborTile(id))<=2 else{return false}
         var state=haven,n=neighborState(id);guard n.welcomedDay != day else{return false}
         n.welcomedDay=day;n.friendship=min(10,n.friendship+2);state.neighbors[id]=n;havenLife=state
-        havenNote(ResidentialLayout.names[id]+" enjoys visiting your home. +2 friendship.");return true
+        havenNote((isPlayerDirty ? ResidentialLayout.names[id]+": "+hygieneRemark()+" " : "")+ResidentialLayout.names[id]+" enjoys visiting your home. +2 friendship.");return true
     }
     func employeePersonality(_ role:StaffRole)->String {
         switch role {case .cleaner:return "Meticulous · values a clean, calm workplace"
@@ -1513,4 +1515,93 @@ extension Motel {
         var state=simulation;state.reputation=min(100,max(0,state.reputation+(won ? 2 : -1)));simulation=state
         occasionNote("Week \(finishedWeek): Haven \(appeal), Seabreeze \(rival). "+(won ? "You won the service award!" : "Seabreeze led this week; improve your weakest inspection check.")+" +\(reward) coins.")
     }
+}
+
+// Optional owner state preserves every pre-needs checkpoint. Hours use the
+// existing hotel clock, not walking frames or an additional UI timer.
+struct PlayerNeeds:Codable,Equatable {
+    var fullness=100
+    var bladder=0
+    var hygiene=100
+    var elapsedHours=0
+    var showerHour=0
+    var showerDay:Int
+    var toiletDay:Int
+    init(day:Int) {showerDay=day;toiletDay=day}
+    var dirty:Bool {elapsedHours-showerHour>=24 || hygiene<=35}
+    var hungry:Bool {fullness<=35}
+    static let hygieneRemarks=[
+        "You look like you've had a long day. A shower would help!",
+        "Phew! Please freshen up before we chat.",
+        "There is a shower at your home. You might want to use it.",
+        "You've got dirt on your face and shirt. Time for a wash?",
+        "I can tell you've been working hard. Go take a shower!",
+        "A clean outfit and a shower would do you good.",
+        "Let's catch up after you've freshened up, okay?",
+        "Is that the garden on your shirt? You could use a shower."
+    ]
+}
+enum PersonalCare:String,CaseIterable,Hashable {
+    case eat,toilet,shower
+    var title:String {switch self {case .eat:return "Eat a meal";case .toilet:return "Use toilet";case .shower:return "Take a shower"}}
+    var symbol:String {switch self {case .eat:return "fork.knife";case .toilet:return "toilet.fill";case .shower:return "shower.fill"}}
+}
+extension Motel {
+    static let homeFridge=Tile(x:12,y:6)
+    static let homeToilet=Tile(x:3,y:5)
+    static let homeShower=Tile(x:10,y:7)
+    var playerNeeds:PlayerNeeds {personalNeeds ?? PlayerNeeds(day:day)}
+    var isPlayerDirty:Bool {playerNeeds.dirty}
+    var playerNeedsSummary:String {
+        var parts:[String]=[]
+        if playerNeeds.hungry {parts.append("Hungry")}
+        if playerNeeds.bladder>=75 || playerNeeds.toiletDay<day {parts.append("Bathroom needed")}
+        if isPlayerDirty {parts.append("Needs a shower")} else if playerNeeds.showerDay<day {parts.append("Shower due today")}
+        return parts.isEmpty ? "Feeling good" : parts.joined(separator:" · ")
+    }
+    var needsAttention:Bool {playerNeeds.hungry || playerNeeds.bladder>=75 || playerNeeds.toiletDay<day || playerNeeds.showerDay<day || isPlayerDirty}
+    mutating func advancePersonalNeeds(hours:Int) {
+        guard hours>0 else{return}
+        var n=playerNeeds;let h=min(168,hours)
+        n.elapsedHours += h;n.fullness=max(0,n.fullness-h*5)
+        n.bladder=min(100,n.bladder+h*5);n.hygiene=max(0,n.hygiene-h*2)
+        personalNeeds=n
+    }
+    mutating func nourishPlayer(amount:Int) {
+        var n=playerNeeds;n.fullness=min(100,n.fullness+max(0,amount));n.bladder=min(100,n.bladder+10);personalNeeds=n
+    }
+    func canUsePersonalCare(_ care:PersonalCare)->Bool {
+        guard !caught,!policeRequiresDecision,!isRidingBike,visit==nil,isAtHome else{return false}
+        switch care {
+        case .eat:return currentBedroom==nil && actorTile.distance(to:Self.homeFridge)<=1
+        case .toilet:return currentBedroom == .bathroom && actorTile.distance(to:Self.homeToilet)<=1
+        case .shower:return currentBedroom == .bathroom && actorTile.distance(to:Self.homeShower)<=1
+        }
+    }
+    var nearbyPersonalCare:PersonalCare? {PersonalCare.allCases.first{canUsePersonalCare($0)}}
+    @discardableResult mutating func performPersonalCare(_ care:PersonalCare)->Bool {
+        guard canUsePersonalCare(care) else {lastEvent="Walk to the fridge, toilet or shower first.";return false}
+        if care != .eat && simulation.waterOut {lastEvent="Restore the water supply before using the bathroom.";return false}
+        switch care {
+        case .eat:
+            guard playerNeeds.fullness<95 else {lastEvent="You are already full. Save this meal for later.";return false}
+            if let dish=GardenRecipe.allCases.first(where:{kitchen.plates[$0.rawValue,default:0]>0}) {
+                var k=kitchen;k.plates[dish.rawValue,default:0]-=1;kitchenGarden=k
+                lastEvent="You eat a serving of "+dish.title.lowercased()+"."
+            } else {
+                guard simulation.stock["snacks",default:0]>0 else {lastEvent="The fridge needs food. Buy snacks at reception Supplies, cook a garden dish, or eat at Coral Catch.";return false}
+                var s=simulation;s.stock["snacks",default:0]-=1;simulation=s
+                lastEvent="You enjoy a home meal. One snack portion used."
+            }
+            nourishPlayer(amount:60)
+        case .toilet:
+            var n=playerNeeds;n.bladder=0;n.toiletDay=day;personalNeeds=n
+            lastEvent="Bathroom break finished. You feel comfortable again."
+        case .shower:
+            var n=playerNeeds;n.hygiene=100;n.showerHour=n.elapsedHours;n.showerDay=day;personalNeeds=n
+            lastEvent="Showered and fresh. Your face and clothes are clean again."
+        }
+        return true
+    }
+    func hygieneRemark()->String {isPlayerDirty ? PlayerNeeds.hygieneRemarks.randomElement()! : ""}
 }

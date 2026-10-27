@@ -29,6 +29,7 @@ struct RPGActor {
     var resting = false
     var routine = ""
     var celebrating = false
+    var dirty = false
 }
 
 private struct WorldTouchKey: EnvironmentKey {
@@ -256,6 +257,7 @@ private struct ActorArtwork: View {
                 var handlebar=Path();handlebar.move(to:CGPoint(x:6,y:21));handlebar.addLine(to:CGPoint(x:18,y:21))
                 context.stroke(handlebar,with:.color(Color(hex:0x344D48)),style:StrokeStyle(lineWidth:1.2,lineCap:.round))
             }
+            if actor.dirty {PlayerDirtArt.draw(context:&context,facing:actor.facing)}
             if actor.wornClothes {
                 // Visible elbow/knee patches and a shoulder bag, with direction-aware placement.
                 let patch=Path(roundedRect:CGRect(x:actor.facing == 1 ? 6 : 15,y:19,width:3,height:3),cornerRadius:0.3)
@@ -375,7 +377,7 @@ final class RPGScene: SKScene {
             node.userData?["targetX"] = actor.tile.x
             node.userData?["targetY"] = actor.tile.y
             let idle = sprite(actor, stride: 0)
-            let appearance = "\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.effect)-\(actor.expression)-\(actor.facing)-\(actor.beachwear)-\(actor.seated)"
+            let appearance = "\(actor.dirty)-\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.effect)-\(actor.expression)-\(actor.facing)-\(actor.beachwear)-\(actor.seated)"
             if node.userData?["appearance"] as? String != appearance {
                 node.removeAction(forKey:"effect"); node.removeAction(forKey:"walk"); node.removeAction(forKey:"spar")
                 node.removeAction(forKey:"walkEnd")
@@ -428,7 +430,7 @@ final class RPGScene: SKScene {
                 node.addChild(ring)
             }
             let poseKind=actor.id == "player" && working ? workKind : actor.action
-            let poseKey=poseKind+"-\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.facing)"
+            let poseKey=poseKind+"-\(actor.dirty)-\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.facing)"
             if node.userData?["poseKey"] as? String != poseKey {
                 node.removeAction(forKey:"working-pose")
                 node.userData?["poseKey"]=poseKey
@@ -508,7 +510,7 @@ final class RPGScene: SKScene {
     }
 
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
-        let key = "\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.cycling)-\(actor.bikeColor)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)-\(actor.beachwear)-\(actor.seated)"
+        let key = "\(actor.dirty)-\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.cycling)-\(actor.bikeColor)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)-\(actor.beachwear)-\(actor.seated)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
         renderer.scale = 4
@@ -1091,7 +1093,7 @@ struct MotelRPGView: View {
         let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.squatters == true)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
         let layoutRevision=(motel.worldState.structureOffsets ?? [:]).keys.sorted().map{key in "\(key):\(motel.creativeOffset(key).x):\(motel.creativeOffset(key).y)"}.joined(separator:",")
         let worldRevision=layoutRevision+"facilities-world-29-\(motel.serviceAvailable(.repair))-" + motel.staffStations.map(\.rawValue).joined(separator:",") + "-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
-        var actors = [RPGActor(id: "player", tile: motel.relaxingTile ?? motel.actorTile, color: FamilyHome.outfitColors[motel.household.outfit], variant: 7, facing: motel.isRelaxing ? 0 : motel.actorFacing, resting:motel.isRelaxing)]
+        var actors = [RPGActor(id: "player", tile: motel.relaxingTile ?? motel.actorTile, color: FamilyHome.outfitColors[motel.household.outfit], variant: 7, facing: motel.isRelaxing ? 0 : motel.actorFacing, resting:motel.isRelaxing,dirty:motel.isPlayerDirty)]
         if !interior {
             actors += motel.neighborhoodActors + motel.neighborActors + motel.routineActors
             let incident = motel.operationsState.incident

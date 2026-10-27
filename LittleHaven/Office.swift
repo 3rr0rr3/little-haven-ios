@@ -263,10 +263,11 @@ extension Motel {
 
 // An optional room field keeps every existing home checkpoint decodable.
 enum HomeBedroom:String,Codable,CaseIterable,Hashable {
-    case samhil,parents
-    var title:String {self == .samhil ? "Samhil's bedroom" : "Your & Hildarelys's bedroom"}
+    case samhil,parents,bathroom
+    var title:String {switch self {case .samhil:return "Samhil's bedroom";case .parents:return "Your & Hildarelys's bedroom";case .bathroom:return "Bathroom"}}
     var map:String {"home-bedroom-"+rawValue}
-    var door:Tile {Tile(x:self == .samhil ? 5 : 8,y:2)}
+    var door:Tile {self == .bathroom ? Tile(x:1,y:8) : Tile(x:self == .samhil ? 5 : 8,y:2)}
+    var homeApproach:Tile {self == .bathroom ? Tile(x:2,y:8) : Tile(x:door.x,y:3)}
     static let exit=Tile(x:7,y:13)
     static let arrival=Tile(x:7,y:12)
     init?(map:String) {
@@ -275,6 +276,9 @@ enum HomeBedroom:String,Codable,CaseIterable,Hashable {
     }
     func blocked(_ tile:Tile)->Bool {
         if tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 {return true}
+        if self == .bathroom {
+            return RPGRegion(x:2,y:3,width:2,height:2).contains(tile) || RPGRegion(x:9,y:3,width:4,height:4).contains(tile) || RPGRegion(x:2,y:8,width:2,height:2).contains(tile)
+        }
         let bedWidth=self == .samhil ? 2 : 4
         return RPGRegion(x:2,y:3,width:bedWidth,height:4).contains(tile) ||
             RPGRegion(x:10,y:3,width:3,height:3).contains(tile) ||
@@ -291,7 +295,7 @@ extension Motel {
     }
     @discardableResult mutating func leaveBedroom()->Bool {
         guard let bedroom=currentBedroom,!policeRequiresDecision,actorTile.distance(to:HomeBedroom.exit)<=1 else{return false}
-        world!.homeBedroom=nil;world!.player=Tile(x:bedroom.door.x,y:3);world!.facing=0
+        world!.homeBedroom=nil;world!.player=bedroom.homeApproach;world!.facing=0
         return true
     }
 }
@@ -354,6 +358,7 @@ extension Motel {
     }
     func actionTitle(_ action:MotelAction)->String {
         switch action {
+        case .personal(let care):return care.title
         case .none:return "Walk closer to interact"
         case .bedroom(let room):return "Enter "+room.title
         case .family(let name):return "Talk to "+name.capitalized
@@ -385,6 +390,7 @@ extension Motel {
         func add(_ action:MotelAction) {if action != .none,!result.contains(action) {if case .clean = action {return};result.append(action)}}
         add(nearbyAction)
         for pet in visiblePets where actorTile.distance(to:pet.value.tile)<=2 {add(.pet(pet.key))}
+        if let care=nearbyPersonalCare {add(.personal(care))}
         if currentBedroom != nil {return result}
         if isAtHome {
             if actorTile.distance(to:reception.hildarelys)<=2 {add(.family("hildarelys"))}

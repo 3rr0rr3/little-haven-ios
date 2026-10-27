@@ -59,6 +59,8 @@ struct MotelView: View {
     @State private var showHome = false
     @State private var showCreative = false
     @State private var showOptions = false
+    @State private var showNeeds = false
+    @State private var needsAfterPause = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var movement: Tile?
     @State private var working = false
@@ -101,7 +103,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { showActionPicker || pauseDestination != nil || showHavenLife || lifeAfterPause || journalAfterPause || storyGuest != nil || showStoryJournal || motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { needsAfterPause || showNeeds || showActionPicker || pauseDestination != nil || showHavenLife || lifeAfterPause || journalAfterPause || storyGuest != nil || showStoryJournal || motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         StartupTrace.stage("hotel_body_begin")
@@ -198,6 +200,8 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains("--ui-menu-purchases") {neighborhood = .furniture}
             for id in BasementLayout.residents where ProcessInfo.processInfo.arguments.contains("--ui-corral-\(id)") {corral=id}
             if ProcessInfo.processInfo.arguments.contains("--ui-creative-preview") {showCreative=true}
+            if ProcessInfo.processInfo.arguments.contains("--ui-needs-panel") {showNeeds=true}
+            if ProcessInfo.processInfo.arguments.contains("--ui-needs-npc") {family = .hildarelys}
             if ProcessInfo.processInfo.arguments.contains("--ui-creature-portrait") { family = .mochi }
             if ProcessInfo.processInfo.arguments.contains("--ui-guest-dialogue") { talkingRoom=0 }
             if ProcessInfo.processInfo.arguments.contains("--ui-story-preview") { storyGuest=motel.receptionGuest }
@@ -309,7 +313,7 @@ struct MotelView: View {
             if arrived == true {
                 stop();panel=nil;family=nil;talkingRoom=nil;corral=nil
                 showIncident=false;showCreative=false;showManagement=false;showHome=false
-                neighborhood=nil;showOptions=false;showPause=false;showMap=false;showActionPicker=false;pauseDestination=nil;lifeAfterPause=false;journalAfterPause=false
+                neighborhood=nil;showOptions=false;showNeeds=false;needsAfterPause=false;showPause=false;showMap=false;showActionPicker=false;pauseDestination=nil;lifeAfterPause=false;journalAfterPause=false
                 confirmRest=false;showSneak=false;confirmRestore=false;showPolice=true
                 game.save()
             }
@@ -328,6 +332,7 @@ struct MotelView: View {
 
     @inline(never) private func hotelSheets(_ content:AnyView) -> AnyView {
         let shared=AnyView(content
+        .sheet(isPresented:$showNeeds) {PlayerNeedsPanel(motel:motel)}
         .sheet(item:$storyGuest) { guest in GuestStoriesView(game:$game,guest:guest) }
         .sheet(isPresented:$showHavenLife) {HavenLifeView(game:$game,initialTab:havenTab)}
         .sheet(isPresented:$showStoryJournal) { GuestStoriesView(game:$game) }
@@ -342,6 +347,7 @@ struct MotelView: View {
             MotelPocketMap(motel:motel,initialFocus:mapFocus).presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showPause,onDismiss:{
+            if needsAfterPause {needsAfterPause=false;showNeeds=true}
             if lifeAfterPause {lifeAfterPause=false;showHavenLife=true}
             if journalAfterPause {journalAfterPause=false;showStoryJournal=true}
             if let destination=pauseDestination {
@@ -479,6 +485,7 @@ struct MotelView: View {
                         .background(.ultraThinMaterial,in:RoundedRectangle(cornerRadius:18))
                 }
                 priorityAlerts
+                needsWarning
                 Spacer()
                 if working {ProgressView(value:workProgress).tint(gold)}
                 nearbyTouchActions.fixedSize(horizontal:false,vertical:true)
@@ -515,6 +522,7 @@ struct MotelView: View {
     }
     private var worldScreen: some View {
         VStack(spacing: 10) {
+            needsWarning
             HStack(spacing:10) {
                 VStack(alignment:.leading,spacing:3) {
                     Text(motel.mapName).font(.system(size:18,weight:.bold,design:.rounded)).lineLimit(1)
@@ -659,7 +667,7 @@ struct MotelView: View {
         }
         let detail = police.arrived ? "\(police.guest) died in the \(police.cause.rawValue) emergency. Your fine is \(police.fine) coins. Bribery may be refused and increase the fine. Unpaid fines are deducted from future room income. \(police.message)" : "An officer is looking for you and will approach wherever you are. You must settle the case when the officer speaks to you."
         let report=police.reason.map {police.arrived ? $0+" Fine: \(police.fine) coins. "+police.message : "An officer is on the way after complaints about night operations."} ?? detail
-        return GameDialogue(speaker:"Officer Vega",text:report,portrait:AnyView(PaperPortrait(color:0x54739C,variant:0)),choices:choices,dismissible:!police.arrived) { if !police.arrived {showPolice=false} }
+        return GameDialogue(speaker:"Officer Vega",text:report,portrait:AnyView(PaperPortrait(color:0x54739C,variant:0)),choices:choices,dismissible:!police.arrived,hygieneDirty:motel.isPlayerDirty) { if !police.arrived {showPolice=false} }
     }
 
     @ViewBuilder private var worldOverlay: some View {
@@ -674,7 +682,7 @@ struct MotelView: View {
                         DialogueChoice(title:"Adventure & ability",action:{corral=nil;havenTab = .creatures;showHavenLife=true})
                     ]) {corral=nil}.padding(12)
                 } else if let family {
-                    GameDialogue(speaker:familyTitle,text:familyMessage,portrait:familyPortrait(family),choices:familyChoices(family)) { self.family = nil }.padding(12)
+                    GameDialogue(speaker:familyTitle,text:familyMessage,portrait:familyPortrait(family),choices:familyChoices(family),hygieneDirty:motel.isPlayerDirty && (family == .samhil || family == .hildarelys)) { self.family = nil }.padding(12)
                 } else if showIncident, let incident = motel.operationsState.incident {
                     GameDialogue(speaker:incident.kind.title,text:incident.kind.detail,portrait:AnyView(Image(systemName:"exclamationmark.triangle.fill").font(.largeTitle).foregroundStyle(gold)),choices:incidentChoices(incident.kind)) { showIncident = false }.padding(12)
                 } else if showSneak {
@@ -713,11 +721,11 @@ struct MotelView: View {
                 .accessibilityValue("\(room.dirty ? "Cleaning \(room.cleanedTasks?.count ?? 0)/3" : "Ready for guests"). Theme \(room.theme). Furnishings \(room.furniture).")
                 .accessibilityIdentifier("motelWorld")
         } else if let shop=motel.currentShop {
-            ShopInteriorView(motel:motel,shop:shop,chat:{toast=$0},trade:{if motel.canTrade(shop) {performAction()} else {toast="Walk to "+shop.keeperName+"'s counter first."}},exit:{stop();var left=false;change{left=$0.leaveShop()};if !left {toast="Walk to the lower shop door first."}})
+            ShopInteriorView(motel:motel,shop:shop,chat:{toast=(motel.isPlayerDirty && !$0.hasPrefix("Walk closer") ? motel.hygieneRemark()+" " : "")+$0},trade:{if motel.canTrade(shop) {performAction()} else {toast="Walk to "+shop.keeperName+"'s counter first."}},exit:{stop();var left=false;change{left=$0.leaveShop()};if !left {toast="Walk to the lower shop door first."}})
         } else if motel.isAtBasement {
             BasementView(motel:motel,corral:openCorral,exit:{stop();change{_=$0.leaveBasement()}}).id(mapIdentity)
         } else if let bedroom=motel.currentBedroom {
-            HomeBedroomView(motel:motel,bedroom:bedroom,exit:{stop();change{_=$0.leaveBedroom()}},save:saveHere).id(mapIdentity)
+            HomeBedroomView(motel:motel,bedroom:bedroom,careAction:{care in stop();change{_=$0.performPersonalCare(care)};game.save()},exit:{stop();change{_=$0.leaveBedroom()}},save:saveHere).id(mapIdentity)
         } else if motel.isAtHome {
             FamilyHouseView(motel:motel,tap:officeTap).id(mapIdentity)
         } else if motel.isAtReception {
@@ -732,9 +740,16 @@ struct MotelView: View {
         }
     }
 
+    @ViewBuilder private var needsWarning:some View {
+        if motel.needsAttention {
+            Button {stop();showNeeds=true} label:{Label(motel.playerNeedsSummary,systemImage:"person.crop.circle.badge.exclamationmark").font(.caption.bold()).frame(maxWidth:.infinity,minHeight:44,alignment:.leading).padding(.horizontal,10).background(Color(hex:0x6A5838),in:RoundedRectangle(cornerRadius:10))}
+                .buttonStyle(.plain).accessibilityIdentifier("personalNeedsWarning")
+        }
+    }
     private var actionName:String {motel.actionTitle(motel.nearbyAction)}
     private var actionSymbol: String {
         switch motel.nearbyAction {
+        case .personal(let care):return care.symbol
         case .incident: return "exclamationmark.triangle.fill"
         case .guest: return "bubble.left.fill"
         case .clean, .tools: return "sparkles"
@@ -757,6 +772,7 @@ struct MotelView: View {
     private var hint: String {
         if motel.isRelaxing {return "Relaxing by the sea. Stand up or move whenever you are ready."}
         switch motel.nearbyAction {
+        case .personal(let care):return care == .eat ? "Eat at the fridge. Prepared garden dishes are used first, otherwise one snack portion." : "Use your family bathroom once a day. Water must be running."
         case .bedroom(let bedroom):return "Enter "+bedroom.title+"."
         case .family(let person):return "Talk to "+person.capitalized+"."
         case .basement:return "Stairs to your basement sanctuary."
@@ -811,7 +827,7 @@ struct MotelView: View {
             choices.append(DialogueChoice(title:"Promise to bring "+GuestFavourKind.forGuest(guest.id).title,action:{change { _ = $0.acceptGuestFavour(room.id) };talkingRoom=nil}))
             choices.append(DialogueChoice(title:"Politely decline the request",action:{change { _ = $0.declineGuestFavour(room.id) };talkingRoom=nil}))
         }
-        return GameDialogue(speaker:guest.name,text:motel.guestConversation(room.id),portrait:AnyView(PaperPortrait(color:guest.color,variant:guest.appearanceSeed)),choices:choices) { talkingRoom=nil }
+        return GameDialogue(speaker:guest.name,text:motel.guestConversation(room.id),portrait:AnyView(PaperPortrait(color:guest.color,variant:guest.appearanceSeed)),choices:choices,hygieneDirty:motel.isPlayerDirty) { talkingRoom=nil }
     }
 
     private func openCorral(_ id:Int) {
@@ -825,6 +841,7 @@ struct MotelView: View {
         stop()
         if haptics { UIImpactFeedbackGenerator(style:.light).impactOccurred() }
         switch selected ?? motel.nearbyAction {
+        case .personal(let care):change{_=$0.performPersonalCare(care)};game.save()
         case .bedroom(let bedroom):change{_=$0.enterBedroom(bedroom)}
         case .family(let person):family=OfficeTap(rawValue:person)
         case .basement:change{_=$0.enterBasement()}
@@ -860,7 +877,8 @@ struct MotelView: View {
                 if let guest = motel.waiting.first(where: { $0.id == id }) {
                     HStack {
                         PaperPortrait(color: guest.color, variant: guest.appearanceSeed).frame(width: 43, height: 55)
-                        Text("Hello! My name is \(guest.name). \(guest.story) Could I stay for \(guest.nights) night\(guest.nights == 1 ? "" : "s")?").font(.caption)
+                        HygieneGreeting(dirty:motel.isPlayerDirty,speaker:guest.name)
+                    Text("Hello! My name is \(guest.name). \(guest.story) Could I stay for \(guest.nights) night\(guest.nights == 1 ? "" : "s")?").font(.caption)
                     }
                     if let story=guest.storyID {
                         Button("Talk: "+story.title) {storyGuest=guest}
@@ -963,6 +981,7 @@ struct MotelView: View {
                         if !motel.operationsState.workers.isEmpty {pauseTile("Team",symbol:"person.2.fill",id:"openStaff",destination:.staff)}
                         pauseTile("Options",symbol:"gearshape.fill",id:"pauseOptions",destination:.options)
                     }
+                    Button {needsAfterPause=true;showPause=false} label:{Label("Personal needs",systemImage:"person.fill.checkmark")}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("openPersonalNeeds")
                     Button("Haven life & weekly activities") {havenTab = .neighbors;lifeAfterPause=true;showPause=false}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("openHavenLife")
                     Button("Guest stories") {journalAfterPause=true;showPause=false}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("guestStoriesJournal")
                     Divider()
@@ -1032,6 +1051,8 @@ struct MotelView: View {
         guard !paused, motel.isAtReception || motel.isAtHome else { return }
         stop()
         switch item {
+        case .fridge:change{_=$0.performPersonalCare(.eat)};game.save()
+        case .bathroomDoor:change{_=$0.enterBedroom(.bathroom)}
         case .girlBedroom:change{_=$0.enterBedroom(.samhil)}
         case .parentsBedroom:change{_=$0.enterBedroom(.parents)}
         case .basement:change{_=$0.enterBasement()}
@@ -1254,6 +1275,7 @@ struct GuestStoriesView: View {
                             PaperPortrait(color:guest.color,variant:guest.appearanceSeed).frame(width:56,height:70)
                             VStack(alignment:.leading,spacing:5) {
                                 Text(guest.name).font(.title.bold())
+                                HygieneGreeting(dirty:motel.isPlayerDirty,speaker:guest.name)
                                 Text(id.title).font(.headline)
                                 Text("Trust: \(motel.storyProgress(id).relationship)").font(.caption)
                             }

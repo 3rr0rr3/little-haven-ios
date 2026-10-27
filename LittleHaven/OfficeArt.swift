@@ -258,8 +258,14 @@ struct HomeInteriorArt:View {
             // Physical workbench: supplies, plans and a hammer, without floating menus.
             PaintedArt.draw("workbench",in:CGRect(x:62,y:174,width:20,height:14),context:&context)
             PaintedArt.draw("door",in:CGRect(x:111,y:208,width:18,height:32),context:&context)
+            HomeBathroomArt.fridge(context:&context)
+            context.draw(Text("FOOD").font(.system(size:2.5,weight:.bold)).foregroundColor(Color(hex:0x34493E)),at:CGPoint(x:200,y:105))
             for item in home.placed {Self.object(context:&context,kind:item.kind,x:Double(item.tile.x*16),y:Double(item.tile.y*16))}
             for bedroom in HomeBedroom.allCases {
+                if bedroom == .bathroom {
+                    PaintedArt.draw("door",in:CGRect(x:17,y:116,width:17,height:30),context:&context)
+                    context.draw(Text("BATH").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:25,y:113));continue
+                }
                 let x=Double(bedroom.door.x*16-2)
                 PaintedArt.draw("door",in:CGRect(x:x,y:12,width:20,height:30),context:&context)
                 context.draw(Text(bedroom == .samhil ? "SAMHIL" : "OUR ROOM").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x+10,y:9))
@@ -1220,6 +1226,7 @@ struct HomeBedroomArt:View {
     let bedroom:HomeBedroom
     var body:some View {
         Canvas {context,_ in
+            if bedroom == .bathroom {HomeBathroomArt.draw(context:&context);return}
             let child=bedroom == .samhil
             CozyScenery.interior(context:&context,width:240,height:240,floor:0xBC9E79,wall:child ? 0xBCA2B6 : 0x87ADA0)
             PaintedArt.draw("glazed-window",in:CGRect(x:103,y:5,width:34,height:23),context:&context)
@@ -1275,6 +1282,45 @@ extension HomeInteriorArt {
         case .giftStack:
             box(1,7,8,8,0xBA5147);box(8,4,7,11,0x507D61);box(4,7,2,8,0xEDC773);box(10,4,2,11,0xEDC773);box(1,9,8,2,0xEDC773);box(8,7,7,2,0xEDC773)
         default:break
+        }
+    }
+}
+
+enum HomeBathroomArt {
+    static func fridge(context:inout GraphicsContext) {
+        CozyScenery.block(context:&context,x:193,y:96,w:14,h:16,color:0xDBD9C4,depth:1)
+        context.stroke(Path(CGRect(x:194,y:102,width:12,height:0.5)),with:.color(Color(hex:0x677E74)),lineWidth:0.5)
+        for y in [98.0,105.0] {context.fill(Path(roundedRect:CGRect(x:203,y:y,width:1.5,height:4),cornerRadius:0.4),with:.color(Color(hex:0x52675D)))}
+    }
+    static func draw(context:inout GraphicsContext) {
+        CozyScenery.interior(context:&context,width:240,height:240,floor:0xB8C7BD,wall:0x8FB6AC)
+        CozyScenery.indoorFloor(context:&context,in:CGRect(x:16,y:32,width:208,height:192),unit:16)
+        PaintedArt.draw("toilet",in:CGRect(x:34,y:49,width:28,height:30),context:&context)
+        PaintedArt.draw("bath-sink",in:CGRect(x:32,y:128,width:32,height:32),context:&context)
+        let tray=CGRect(x:145,y:49,width:62,height:62)
+        context.fill(Path(roundedRect:tray,cornerRadius:4),with:.color(Color(hex:0xDCE7DF)))
+        context.stroke(Path(roundedRect:tray.insetBy(dx:2,dy:2),cornerRadius:3),with:.color(Color(hex:0x678E8B)),lineWidth:1)
+        context.fill(Path(ellipseIn:CGRect(x:173,y:91,width:6,height:4)),with:.color(Color(hex:0x748C88)))
+        context.stroke(Path(CGRect(x:173,y:51,width:2,height:13)),with:.color(Color(hex:0x637F7B)),lineWidth:1.5)
+        context.fill(Path(ellipseIn:CGRect(x:166,y:58,width:16,height:5)),with:.color(Color(hex:0x7B9892)))
+        for i in 0..<5 {let x=165+Double(i*5);context.fill(Path(roundedRect:CGRect(x:x,y:68,width:7,height:39),cornerRadius:2),with:.color(Color(hex:i%2==0 ? 0x91BDB3 : 0xB6D3CA).opacity(0.85)))}
+        PaintedArt.draw("rug",in:CGRect(x:139,y:113,width:72,height:22),context:&context)
+        PaintedArt.draw("bedding",in:CGRect(x:174,y:159,width:28,height:13),context:&context)
+        HomeInteriorArt.object(context:&context,kind:.plant,x:36,y:182)
+        PaintedArt.draw("glazed-window",in:CGRect(x:99,y:5,width:40,height:22),context:&context)
+        PaintedArt.draw("door",in:CGRect(x:111,y:208,width:18,height:32),context:&context)
+        context.draw(Text("FAMILY BATHROOM").font(.system(size:5,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:120,y:39))
+        context.draw(Text("LIVING ROOM").font(.system(size:3,weight:.bold)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:120,y:205))
+    }
+}
+
+enum PlayerDirtArt {
+    static func draw(context:inout GraphicsContext,facing:Int) {
+        let spots:[CGRect]=[CGRect(x:8,y:21,width:3,height:2),CGRect(x:14,y:24,width:3,height:2),CGRect(x:facing==1 ? 8 : 16,y:15,width:2.5,height:1.5)]
+        for r in spots {context.fill(Path(ellipseIn:r),with:.color(Color(hex:0x806343).opacity(0.85)))}
+        for i in 0..<2 {
+            var p=Path();p.move(to:CGPoint(x:21+Double(i*2),y:14));p.addQuadCurve(to:CGPoint(x:22+Double(i*2),y:8),control:CGPoint(x:18+Double(i*2),y:11))
+            context.stroke(p,with:.color(Color(hex:0x8D9A63).opacity(0.8)),lineWidth:0.6)
         }
     }
 }

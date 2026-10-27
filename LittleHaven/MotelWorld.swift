@@ -46,6 +46,7 @@ struct MotelWorldState: Codable {
     var brokenGuestPromises: Set<Int>?
 }
 enum MotelAction: Hashable {
+    case personal(PersonalCare)
     case basement, corral(Int), computer, pet(String), home, homeDecor, shop(NeighborhoodShop), bedroom(HomeBedroom), family(String)
     case none, office, room(Int), guest(Int), construction, desk, save, rest, tools
     case paint(Int?), furniture(Int?), clean(Int), loot(Int), exit, incident
@@ -239,6 +240,7 @@ extension Motel {
             if let id=nearbyCorral {return .corral(id)}
             return petAction
         }
+        if let care=nearbyPersonalCare {return .personal(care)}
         if let bedroom=currentBedroom {
             if player.distance(to:HomeBedroom.exit)<=1 {return .exit}
             if bedroom == .parents && player.distance(to:Tile(x:5,y:7))<=1 {return .save}
@@ -284,10 +286,10 @@ extension Motel {
     mutating func reconcileInteriorSpawn() {
         initializeWorld()
         var homeState=household
-        let moved=homeState.placed.filter{item in item.tile.distance(to:BasementLayout.homeStairs)<=1 || HomeBedroom.allCases.contains(where:{item.tile.distance(to:$0.door)<=1})}
+        let moved=homeState.placed.filter{item in item.tile.distance(to:Self.homeFridge)<=1 || item.tile.distance(to:BasementLayout.homeStairs)<=1 || HomeBedroom.allCases.contains(where:{item.tile.distance(to:$0.door)<=1})}
         if !moved.isEmpty {
             homeState.storage.append(contentsOf:moved.map(\.kind))
-            homeState.placed.removeAll{item in item.tile.distance(to:BasementLayout.homeStairs)<=1 || HomeBedroom.allCases.contains(where:{item.tile.distance(to:$0.door)<=1})}
+            homeState.placed.removeAll{item in item.tile.distance(to:Self.homeFridge)<=1 || item.tile.distance(to:BasementLayout.homeStairs)<=1 || HomeBedroom.allCases.contains(where:{item.tile.distance(to:$0.door)<=1})}
             home=homeState
         }
         // Relocated buildings must not strand people from an older checkpoint.

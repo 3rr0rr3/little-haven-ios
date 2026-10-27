@@ -49,6 +49,19 @@ struct ContentView: View {
 
 
 
+        if args.contains(where:{$0.hasPrefix("--ui-needs-")}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement()
+            sample.motel!.cash=1200;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.world!.place = .house;sample.motel!.world!.player=Tile(x:7,y:8)
+            var n=PlayerNeeds(day:0);n.elapsedHours=26;n.fullness=20;n.bladder=90;n.hygiene=30;sample.motel!.personalNeeds=n
+            if args.contains("--ui-needs-fresh") {sample.motel!.personalNeeds=PlayerNeeds(day:sample.motel!.day)}
+            if args.contains("--ui-needs-food") {sample.motel!.world!.player=Tile(x:11,y:6)}
+            if args.contains("--ui-needs-npc") {sample.motel!.world!.player=Tile(x:7,y:4)}
+            if args.contains("--ui-needs-bathroom") {
+                sample.motel!.world!.player=HomeBedroom.bathroom.homeApproach;_=sample.motel!.enterBedroom(.bathroom);sample.motel!.world!.player=Motel.homeToilet
+            }
+            sample.save();return sample
+        }
         if args.contains("--ui-neglect") || args.contains("--ui-night-sky") || args.contains("--ui-seasonal") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement()
             sample.motel!.cash=1200;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000

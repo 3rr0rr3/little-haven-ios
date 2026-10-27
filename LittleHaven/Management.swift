@@ -71,7 +71,7 @@ extension Motel {
     @discardableResult mutating func orderBarDrink(_ drink:BarDrink)->Bool {
         guard canTrade(.bar),cash>=drink.price else{return false}
         initializeWorld();cash -= drink.price
-        world!.barDrink=drink;world!.barOrders=(world!.barOrders ?? 0)+1
+        world!.barDrink=drink;var n=playerNeeds;n.bladder=min(100,n.bladder+20);personalNeeds=n;world!.barOrders=(world!.barOrders ?? 0)+1
         logMoney(-drink.price,category:"Bar drinks",note:drink.title)
         lastEvent="Jules serves your "+drink.title.lowercased()+". Enjoy the Lantern Bar!"
         return true
@@ -93,7 +93,7 @@ extension Motel {
     static let homeDecorObstacles=[RPGRegion(x:1,y:2,width:3,height:2),RPGRegion(x:2,y:5,width:2,height:2),RPGRegion(x:3,y:12,width:1,height:1)]
 
     func homeBlocked(_ tile:Tile)->Bool {
-        homeNeighborIDs.contains(where:{homeNeighborTile($0)==tile}) || tile == FamilyHome.workbench || tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || (10...13).contains(tile.x) && (3...5).contains(tile.y) || (10...13).contains(tile.x) && (9...10).contains(tile.y) || Self.homeDecorObstacles.contains{$0.contains(tile)} || household.placed.contains{$0.tile == tile && $0.kind != .rug}
+        homeNeighborIDs.contains(where:{homeNeighborTile($0)==tile}) || tile == Self.homeFridge || tile == FamilyHome.workbench || tile.x<1 || tile.x>13 || tile.y<2 || tile.y>13 || (10...13).contains(tile.x) && (3...5).contains(tile.y) || (10...13).contains(tile.x) && (9...10).contains(tile.y) || Self.homeDecorObstacles.contains{$0.contains(tile)} || household.placed.contains{$0.tile == tile && $0.kind != .rug}
     }
     @discardableResult mutating func buyHomeObject(_ kind:HomeObject)->Bool {
         guard canTrade(.furniture),cash>=kind.price else{return false}
@@ -111,7 +111,7 @@ extension Motel {
         logMoney(-25,category:"Home improvement",note:wall ? "Wallpaper" : "Flooring");return true
     }
     @discardableResult mutating func placeHomeObject(_ kind:HomeObject,at tile:Tile)->Bool {
-        guard isAtHome,currentBedroom == nil,!HomeBedroom.allCases.contains(where:{tile.distance(to:$0.door)<=1}),let index=household.storage.firstIndex(of:kind),household.placed.count<household.capacity,!homeBlocked(tile),tile.distance(to:BasementLayout.homeStairs)>1,tile.y<12,tile.x>1,
+        guard isAtHome,currentBedroom == nil,tile.distance(to:Self.homeFridge)>1,!HomeBedroom.allCases.contains(where:{tile.distance(to:$0.door)<=1}),let index=household.storage.firstIndex(of:kind),household.placed.count<household.capacity,!homeBlocked(tile),tile.distance(to:BasementLayout.homeStairs)>1,tile.y<12,tile.x>1,
               !household.placed.contains(where:{$0.tile == tile}),!Self.familyTiles.contains(tile),!OfficeReception.hildarelysRoute.contains(tile),tile != actorTile else{return false}
         let before=household
         var state=before;state.storage.remove(at:index);state.placed.append(PlacedHomeObject(id:state.nextID,kind:kind,tile:tile));state.nextID+=1;home=state
@@ -1143,6 +1143,7 @@ extension Motel {
             if business.police != nil {lastEvent="Resolve the police case before starting the next business day.";return}
             _=nextDay();return
         }
+        advancePersonalNeeds(hours:1)
         var s=simulation;s.hour += 1;s.absoluteHour=(day-1)*24+s.hour
         for i in rooms.indices {
             var h=rooms[i].health
@@ -1580,6 +1581,7 @@ extension Motel {
     @discardableResult mutating func orderFishMeal(_ meal:FishMeal)->Bool {
         guard canTrade(.fish),cash>=meal.price else{return false}
         initializeWorld();cash-=meal.price;world!.fishMeal=meal
+        nourishPlayer(amount:75)
         logMoney(-meal.price,category:"Restaurant",note:meal.title)
         lastEvent="Marina serves your "+meal.title.lowercased()+". Enjoy Coral Catch!"
         return true

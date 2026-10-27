@@ -1128,6 +1128,35 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["mapSelection"].waitForExistence(timeout:5))
         back(app);XCTAssertTrue(app.buttons["neglectAlarm"].exists)
     }
+    func testPersonalNeedsBathroomAndSavedCleanState() {
+        let app=launch("--ui-needs-bathroom")
+        let scene=app.descendants(matching:.any)["homeBedroomScene"].firstMatch
+        XCTAssertTrue(scene.waitForExistence(timeout:15));XCTAssertTrue((scene.value as? String ?? "").contains("dirty true"))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue((scene.value as? String ?? "").contains("bathroom 0"))
+        step("south",2,app);step("east",7,app)
+        XCTAssertTrue(app.buttons["bathroom_shower"].exists);app.buttons["bathroom_shower"].tap()
+        XCTAssertTrue((scene.value as? String ?? "").contains("hygiene 100"));XCTAssertTrue((scene.value as? String ?? "").contains("dirty false"))
+        capture(app,"Daily toilet and shower with clean character")
+        app.terminate();app.launchArguments=["--ui-testing"];app.launch()
+        XCTAssertTrue(scene.waitForExistence(timeout:15));XCTAssertTrue((scene.value as? String ?? "").contains("dirty false"));XCTAssertFalse((scene.value as? String ?? "").contains("hygiene 30"))
+    }
+    func testPersonalNeedsFoodAndDirtyNpcReaction() {
+        let app=launch("--ui-needs-food")
+        let home=app.descendants(matching:.any)["familyHouseScene"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout:15));app.buttons["office_fridge"].tap()
+        XCTAssertTrue((home.value as? String ?? "").contains("Food 80"))
+        step("west",4,app);step("north",2,app)
+        app.buttons["office_hildarelys"].tap()
+        XCTAssertTrue(app.staticTexts["npcHygieneRemark"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["Give her a kiss"].exists,"Hygiene comments preserve family conversation choices")
+        capture(app,"Dirty appearance and NPC shower reminder")
+        app.buttons["dialogueBack"].tap();openPause(app);app.buttons["openPersonalNeeds"].tap()
+        XCTAssertTrue(app.descendants(matching:.any)["needFood"].firstMatch.waitForExistence(timeout:5))
+        XCTAssertTrue(app.descendants(matching:.any)["needBathroom"].firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching:.any)["needHygiene"].firstMatch.exists)
+        back(app)
+    }
     private func back(_ app:XCUIApplication) {
         let menus=app.buttons.matching(identifier:"menuBack")
         XCTAssertTrue(menus.firstMatch.waitForExistence(timeout:5),app.debugDescription)

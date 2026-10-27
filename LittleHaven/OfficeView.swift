@@ -28,13 +28,13 @@ extension Motel {
     }
 }
 
-enum OfficeTap: String { case girlBedroom, parentsBedroom, computer, workbench, player, guest, door, basement, chichu, chichi, mochi, samhil, hildarelys, tools, paint, bed, save }
+enum OfficeTap: String { case fridge, bathroomDoor, girlBedroom, parentsBedroom, computer, workbench, player, guest, door, basement, chichu, chichi, mochi, samhil, hildarelys, tools, paint, bed, save }
 struct FamilyHouseView:View {
     @Environment(\.worldTouch) private var worldTouch
     let motel:Motel
     let tap:(OfficeTap)->Void
     private var actors:[RPGActor] {[
-        RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You"),
+        RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You",dirty:motel.isPlayerDirty),
         RPGActor(id:"hildarelys",tile:motel.reception.hildarelys,color:0x292A2C,variant:8,facing:motel.reception.tick%12<6 ? 2 : 1,name:"Hildarelys",duration:0.65),
         RPGActor(id:"samhil",tile:OfficeReception.samhil,color:0xD88BAA,variant:9,facing:3,name:"Samhil",displayScale:0.8,seated:true),
         ] + motel.havenHomeActors + motel.petActors + motel.policeActors}
@@ -50,6 +50,8 @@ struct FamilyHouseView:View {
                     target(OfficeTap(rawValue:pet.key)!,"Talk to \(motel.companionName(pet.key))",pet.value.tile,scale,origin)
                         .animation(.linear(duration:pet.value.following ? 0.14 : 0.65),value:pet.value.tile)
                 }
+                target(.fridge,"Eat from fridge",Motel.homeFridge,scale,origin)
+                target(.bathroomDoor,"Enter bathroom",HomeBedroom.bathroom.door,scale,origin).zIndex(3)
                 target(.girlBedroom,"Enter Samhil bedroom",HomeBedroom.samhil.door,scale,origin).zIndex(3)
                 target(.parentsBedroom,"Enter parents bedroom",HomeBedroom.parents.door,scale,origin).zIndex(3)
                 target(.basement,"Enter basement",BasementLayout.homeStairs,scale,origin)
@@ -58,7 +60,7 @@ struct FamilyHouseView:View {
                 target(.workbench,"Use workbench",FamilyHome.workbench,scale,origin)
             }
         }.accessibilityElement(children:.contain).accessibilityIdentifier("familyHouseScene")
-            .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
+            .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y). Food \(motel.playerNeeds.fullness), bathroom \(motel.playerNeeds.bladder), hygiene \(motel.playerNeeds.hygiene), dirty \(motel.isPlayerDirty).")
     }
     private func target(_ item:OfficeTap,_ label:String,_ tile:Tile,_ scale:CGFloat,_ origin:CGPoint)->some View {
         let bedroomDoor=item == .girlBedroom || item == .parentsBedroom
@@ -85,7 +87,7 @@ struct OfficeReceptionView: View {
     }
     private var actors: [RPGActor] {
         StartupTrace.stage("office_actors_begin")
-        var result = [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You")]
+        var result = [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You",dirty:motel.isPlayerDirty)]
         if motel.operationsState.workers.contains(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:motel.staffHome($0.role)) <= 1})  {
             result.append(RPGActor(id:"clerk-nora",tile:Tile(x:6,y:3),color:StaffRole.clerk.color,variant:204,name:"Nora"))
         }
@@ -139,7 +141,7 @@ struct ShopInteriorView:View {
     let trade:()->Void
     let exit:()->Void
     private var actors:[RPGActor] {
-        [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You"),
+        [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You",dirty:motel.isPlayerDirty),
          RPGActor(id:"shopkeeper-"+shop.rawValue,tile:ShopLayout.keeper,color:shop.keeperColor,variant:460+shop.uniform,name:shop.keeperName,shopUniform:shop.uniform)] + ((shop == .bar || shop == .fish) ? BarLayout.seats.enumerated().map { index,tile in
              RPGActor(id:(shop == .fish ? "fish-diner-" : "bar-patron-")+"\(index)",tile:tile,color:[UInt32(0xA58AAB),0x9CB69E,0xD1AD74][index%3],variant:(shop == .fish ? 560 : 520)+index,facing:index%2 == 0 ? 2 : 1,name:(shop == .fish ? ["Elena","Marcus","Priya","Bruno","Nadia","Felix"] : ["Cleo","Dante","Petra","Emil","Nia","Orson"])[index])
          } : []) + musicActors + motel.petActors + motel.policeActors
@@ -189,7 +191,7 @@ struct BasementView:View {
     let corral:(Int)->Void
     let exit:()->Void
     private var actors:[RPGActor] {
-        [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing)] +
+        [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,dirty:motel.isPlayerDirty)] +
         BasementLayout.residents.map {id in
             let tile=BasementLayout.creature(id,tick:motel.worldState.tick)
             let previous=BasementLayout.creature(id,tick:max(0,motel.worldState.tick-5))
@@ -247,10 +249,11 @@ struct HomeBedroomView:View {
     @Environment(\.worldTouch) private var worldTouch
     let motel:Motel
     let bedroom:HomeBedroom
+    var careAction:(PersonalCare)->Void = {_ in}
     let exit:()->Void
     let save:()->Void
     private var actors:[RPGActor] {
-        [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing)] + motel.petActors + motel.policeActors
+        [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,dirty:motel.isPlayerDirty)] + motel.petActors + motel.policeActors
     }
     var body:some View {
         GeometryReader {proxy in
@@ -262,6 +265,14 @@ struct HomeBedroomView:View {
                     Color.white.opacity(0.001).frame(width:30*scale,height:36*scale).contentShape(Rectangle())
                 }.buttonStyle(.plain).position(x:origin.x+120*scale,y:origin.y+220*scale)
                     .accessibilityLabel("Return to living room").accessibilityIdentifier("bedroomExit")
+                if bedroom == .bathroom {
+                    ForEach([PersonalCare.toilet,.shower],id:\.self) {care in
+                        let tile=care == .toilet ? Motel.homeToilet : Motel.homeShower
+                        Button {if let worldTouch {worldTouch(tile,{careAction(care)})} else {careAction(care)}} label:{Color.white.opacity(0.001).frame(width:max(44,(care == .toilet ? 32 : 64)*scale),height:max(44,(care == .toilet ? 32 : 64)*scale)).contentShape(Rectangle())}
+                            .buttonStyle(.plain).position(x:origin.x+(care == .toilet ? 48 : 176)*scale,y:origin.y+(care == .toilet ? 64 : 80)*scale)
+                            .accessibilityLabel(care.title).accessibilityIdentifier("bathroom_"+care.rawValue)
+                    }
+                }
                 if bedroom == .parents {
                     Button(action:save) {Color.white.opacity(0.001).frame(width:32*scale,height:24*scale).contentShape(Rectangle())}
                         .buttonStyle(.plain).position(x:origin.x+88*scale,y:origin.y+126*scale)
@@ -270,6 +281,6 @@ struct HomeBedroomView:View {
             }
         }.accessibilityElement(children:.contain).accessibilityIdentifier("homeBedroomScene")
             .accessibilityLabel(bedroom.title)
-            .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
+            .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y). Food \(motel.playerNeeds.fullness), bathroom \(motel.playerNeeds.bladder), hygiene \(motel.playerNeeds.hygiene), dirty \(motel.isPlayerDirty).")
     }
 }

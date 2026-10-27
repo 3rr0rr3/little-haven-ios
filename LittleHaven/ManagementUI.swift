@@ -112,6 +112,7 @@ struct NeighborhoodStoreView:View {
                 Text(shop.keeperName).font(.title2.bold())
                 Text("\(motel.cash) COINS").font(.headline.monospaced()).foregroundStyle(Color(hex:0xEFC977))
                 Text(shop.keeperName+" / "+shop.detail)
+                HygieneGreeting(dirty:motel.isPlayerDirty,speaker:shop.keeperName)
                 storeItems
             }.padding(24)
         }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x233E33)).tint(Color(hex:0xEFC977)).buttonStyle(.bordered).accessibilityIdentifier("neighborhoodShop")
@@ -331,6 +332,7 @@ struct GameDialogue: View {
     let portrait: AnyView
     let choices: [DialogueChoice]
     var dismissible=true
+    var hygieneDirty=false
     let close: () -> Void
     var body: some View {
         VStack(alignment:.leading,spacing:12) {
@@ -338,6 +340,7 @@ struct GameDialogue: View {
                 if dismissible {MenuBackButton(id:"dialogueBack",action:close)}
                 Text(speaker.uppercased()).font(.system(size:13,weight:.black,design:.monospaced)).foregroundStyle(Color(hex:0xF2CE7F)).frame(maxWidth:.infinity,alignment:.trailing)
             }
+            HygieneGreeting(dirty:hygieneDirty,speaker:speaker)
             HStack(alignment:.top,spacing:12) {
                 portrait.frame(width:64,height:76).background(Color(hex:0x344E40)).overlay(Rectangle().stroke(Color(hex:0xC4A96F),lineWidth:1))
                 Text(text).font(.system(size:15,weight:.medium,design:.rounded)).foregroundStyle(Color(hex:0xF5E7C8)).fixedSize(horizontal:false,vertical:true).frame(maxWidth:.infinity,alignment:.leading)
@@ -1416,6 +1419,7 @@ struct HavenLifeView:View {
             ForEach(0..<3,id:\.self) {id in
                 let n=motel.neighborState(id)
                 VStack(alignment:.leading,spacing:8) {
+                    if motel.nearHavenNeighbor == id {HygieneGreeting(dirty:motel.isPlayerDirty,speaker:ResidentialLayout.names[id])}
                     Text(ResidentialLayout.names[id]+" · friendship \(n.friendship)").font(.headline)
                     Text(id==0 ? "Nora loves peaceful evenings and thoughtful favors." : id==1 ? "Ben enjoys celebrations and repairing things." : "Elena values kindness and visiting friends.").font(.caption)
                     if n.favorPending {Text(n.parcel ? "Parcel collected. Bring it back here." : "Collect the parcel from Otis at Willow Home.").font(.caption)}
@@ -1456,6 +1460,7 @@ struct HavenLifeView:View {
                 let employee=motel.haven.employees[role.rawValue] ?? HavenEmployee()
                 let profile=motel.simulation.profiles[role.rawValue] ?? StaffProfile.make(role)
                 VStack(alignment:.leading,spacing:8) {
+                    HygieneGreeting(dirty:motel.isPlayerDirty,speaker:role.name)
                     Text(role.name+" · "+role.title).font(.headline)
                     Text(motel.employeePersonality(role)).font(.caption)
                     Text("Level \(employee.level) · experience \(employee.experience) · loyalty \(profile.loyalty) · fatigue \(profile.fatigue)").font(.caption)
@@ -1764,5 +1769,43 @@ struct HavenLifeView:View {
             if motel.haven.notes.isEmpty {Text("Your decisions will be recorded here.")}
             ForEach(Array(motel.haven.notes.enumerated()),id:\.offset) { _,note in Text(note).font(.caption).padding(.vertical,4)}
         }
+    }
+}
+
+// Randomize once per speaker encounter, never on every walking/render tick.
+struct HygieneGreeting:View {
+    let dirty:Bool
+    let speaker:String
+    @State private var remark=""
+    var body:some View {
+        Group {if dirty {Text(speaker+": "+remark).font(.caption).foregroundStyle(Color(hex:0xF0CF91)).fixedSize(horizontal:false,vertical:true).accessibilityIdentifier("npcHygieneRemark")}}
+            .onAppear {if dirty && remark.isEmpty {remark=PlayerNeeds.hygieneRemarks.randomElement()!}}
+            .onChange(of:dirty) {_,value in remark=value ? PlayerNeeds.hygieneRemarks.randomElement()! : ""}
+    }
+}
+struct PlayerNeedsPanel:View {
+    let motel:Motel
+    @Environment(\.dismiss) private var dismiss
+    var body:some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment:.leading,spacing:20) {
+                    Text(motel.playerNeedsSummary).font(.title2.bold())
+                    meter("Food",value:motel.playerNeeds.fullness,symbol:"fork.knife",id:"needFood")
+                    meter("Bathroom pressure",value:motel.playerNeeds.bladder,symbol:"toilet.fill",id:"needBathroom")
+                    meter("Hygiene",value:motel.playerNeeds.hygiene,symbol:"shower.fill",id:"needHygiene")
+                    Text(motel.playerNeeds.toiletDay==motel.day ? "Bathroom: done today" : "Bathroom: due today")
+                    Text(motel.playerNeeds.showerDay==motel.day ? "Shower: done today" : "Shower: due today")
+                    Text("Food: use your home fridge (one snack or a prepared garden dish), or order a meal at Coral Catch.")
+                    Text("Bathroom: enter the BATH door on the left side of your living room. Walk to the toilet or shower and interact.")
+                    Text("Eat regularly. Use the toilet and shower every day. After 24 game hours without a shower, your character looks dirty and people may comment. Time pauses in menus; needs never prevent walking or emergency responses.").font(.caption)
+                }.padding(22)
+            }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x20372F))
+                .navigationTitle("Personal needs").navigationBarTitleDisplayMode(.inline)
+                .toolbar {ToolbarItem(placement:.topBarLeading){MenuBackButton {dismiss()}}}
+        }
+    }
+    private func meter(_ title:String,value:Int,symbol:String,id:String)->some View {
+        VStack(alignment:.leading,spacing:7) {Label("\(title): \(value)/100",systemImage:symbol);ProgressView(value:Double(value),total:100).tint(Color(hex:(id=="needBathroom" ? value>=75 : value<=35) ? 0xD58B65 : 0xE9C77D))}.accessibilityElement(children:.combine).accessibilityIdentifier(id)
     }
 }

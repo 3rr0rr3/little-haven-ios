@@ -1912,7 +1912,7 @@ homeRoamingAndRearBathroomRules()
 
 func homeBedroomRules() {
     for room in HomeBedroom.allCases {
-        var home=Motel();home.initializeWorld();home.world!.place = .house;home.world!.player=Tile(x:room.door.x,y:3)
+        var home=Motel();home.initializeWorld();home.world!.place = .house;home.world!.player=room.homeApproach
         require(home.enterBedroom(room),"Each home bedroom has a working living-room entrance")
         require(home.currentBedroom==room && home.petMap==room.map,"Separate bedroom identity")
         require(HomeBedroom(map:room.map)==room,"Bedroom map identifiers round-trip")
@@ -1933,7 +1933,7 @@ func homeBedroomRules() {
         let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(home))
         require(saved.currentBedroom==room && saved.petMap==room.map,"Bedroom checkpoint survives relaunch")
         home.world!.player=HomeBedroom.arrival;home.moveActor(dx:0,dy:1)
-        require(home.currentBedroom==nil && home.isAtHome && home.actorTile==Tile(x:room.door.x,y:3),"Walking through bedroom exit returns to its living-room door")
+        require(home.currentBedroom==nil && home.isAtHome && home.actorTile==room.homeApproach,"Walking through bedroom exit returns to its living-room door")
     }
     var home=Motel();home.initializeWorld();home.world!.place = .house
     home.world!.player=home.reception.hildarelys
@@ -2042,3 +2042,53 @@ func overnightNeglectRules() {
     print("PASS: resting ages old dirt without penalizing newly checked-out rooms")
 }
 overnightNeglectRules()
+
+func personalNeedsRules() {
+    var m=Motel();m.initializeWorld();m.enableManagement();m.waiting=[]
+    require(m.playerNeeds.fullness==100 && !m.isPlayerDirty,"Old saves start nourished and clean")
+    let before=m.playerNeeds
+    m.tickManagement(advanceClock:false)
+    require(m.playerNeeds==before,"Walking ticks do not drain personal needs")
+    m.advancePersonalNeeds(hours:13)
+    require(m.playerNeeds.fullness==35 && m.playerNeeds.hungry && m.playerNeeds.bladder==65,"Time creates hunger and bathroom pressure")
+    m.advancePersonalNeeds(hours:11)
+    require(m.playerNeeds.fullness==0 && m.playerNeeds.bladder==100 && m.isPlayerDirty,"A full day without care is bounded and visibly dirty")
+    require(!m.performPersonalCare(.shower),"Remote showers cannot clear hygiene")
+    m.world!.place = .house;m.world!.player=HomeBedroom.bathroom.homeApproach
+    require(m.enterBedroom(.bathroom),"Bathroom has a physical home entrance")
+    var seen:Set<Tile>=[HomeBedroom.arrival],queue=[HomeBedroom.arrival],cursor=0
+    while cursor<queue.count {let t=queue[cursor];cursor+=1;for (dx,dy) in [(1,0),(-1,0),(0,1),(0,-1)] {let next=Tile(x:t.x+dx,y:t.y+dy);if !HomeBedroom.bathroom.blocked(next),seen.insert(next).inserted {queue.append(next)}}}
+    require(seen.contains(Motel.homeToilet) && seen.contains(Motel.homeShower) && seen.contains(HomeBedroom.exit),"Every bathroom fixture and exit stays reachable")
+    m.world!.player=Motel.homeToilet
+    require(m.performPersonalCare(.toilet) && m.playerNeeds.bladder==0 && m.playerNeeds.toiletDay==m.day,"Toilet relieves pressure and records today's routine")
+    m.world!.player=Motel.homeShower
+    var sim=m.simulation;sim.waterOut=true;m.simulation=sim
+    require(!m.performPersonalCare(.shower) && m.isPlayerDirty,"An outage does not grant a fake shower")
+    sim.waterOut=false;m.simulation=sim
+    require(m.performPersonalCare(.shower) && !m.isPlayerDirty && m.playerNeeds.hygiene==100,"Showering removes dirt and records freshness")
+    require(m.hygieneRemark().isEmpty,"Clean players receive no hygiene criticism")
+    let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(m))
+    require(saved.playerNeeds==m.playerNeeds && saved.currentBedroom == .bathroom,"Needs and bathroom location survive saving")
+    m.world!.player=HomeBedroom.exit;require(m.leaveBedroom() && m.actorTile==HomeBedroom.bathroom.homeApproach && !m.homeBlocked(m.actorTile),"Bathroom returns to a safe living-room approach")
+    m.world!.player=Tile(x:11,y:6);let snacks=m.simulation.stock["snacks",default:0]
+    require(m.performPersonalCare(.eat) && m.playerNeeds.fullness==60 && m.simulation.stock["snacks",default:0]==snacks-1,"A fridge meal consumes one real portion and restores hunger")
+    var n=m.playerNeeds;n.fullness=0;m.personalNeeds=n
+    var k=KitchenGarden();k.plates[GardenRecipe.herbToast.rawValue]=1;m.kitchenGarden=k
+    require(m.performPersonalCare(.eat) && m.kitchen.plates[GardenRecipe.herbToast.rawValue]==0 && m.simulation.stock["snacks",default:0]==snacks-1,"Cooked garden dishes are eaten before packaged snacks")
+    n=m.playerNeeds;n.fullness=100;m.personalNeeds=n
+    require(!m.performPersonalCare(.eat),"Full players cannot waste fridge portions")
+    m.world!.place = .grounds;m.world!.player=NeighborhoodShop.fish.door;require(m.enterShop(.fish),"Restaurant remains enterable")
+    m.world!.player=ShopLayout.counter;n=m.playerNeeds;n.fullness=0;m.personalNeeds=n
+    require(m.orderFishMeal(.grilledFish) && m.playerNeeds.fullness==75,"Restaurant meals feed the actual player")
+    var day=Motel();day.initializeWorld();day.enableManagement();let h=day.playerNeeds.elapsedHours;day.advanceHotelHour()
+    require(day.playerNeeds.elapsedHours==h+1,"Hotel hours drive the needs clock once")
+    var old=day.simulation;old.hour=23;day.simulation=old
+    let start=day.playerNeeds.elapsedHours;require(day.nextDay(),"Resting advances the day")
+    require(day.playerNeeds.elapsedHours==start+9 && day.playerNeeds.showerDay<day.day && day.playerNeeds.toiletDay<day.day,"Sleeping advances remaining hours and daily routine reminders")
+    let encoded=try! JSONEncoder().encode(day);var json=try! JSONSerialization.jsonObject(with:encoded) as! [String:Any];json.removeValue(forKey:"personalNeeds")
+    let legacy=try! JSONDecoder().decode(Motel.self,from:JSONSerialization.data(withJSONObject:json))
+    require(!legacy.isPlayerDirty && legacy.playerNeeds.showerDay==legacy.day,"Legacy saves receive a fresh first-day grace period")
+    require(Set(PlayerNeeds.hygieneRemarks).count>=8,"NPCs have varied hygiene reactions")
+    print("PASS: personal needs cadence, daily care, food, water outage, bathroom paths, visible dirt, reactions and old/new saves")
+}
+personalNeedsRules()
