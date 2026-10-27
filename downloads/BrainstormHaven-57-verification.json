@@ -1,0 +1,26 @@
+{
+  "source": "7876556239fadc79146e1eb7f8aea777b8e48fda",
+  "version": "57.0",
+  "build": "62",
+  "size": 18394921,
+  "sha256": "af0e136558577d7bcb6c972cdc79e8fae5b64ce3fc6e8d1b191dddc6d17e1690",
+  "startup_verification": {
+    "source": "7876556239fadc79146e1eb7f8aea777b8e48fda",
+    "production_and_tests_equal_to": "6fba06dde6b81987ef972d9b5eb188616faf0ec2",
+    "retained_run": 40539158093,
+    "verification_run": 40548403498,
+    "retained_ui_executions": 24,
+    "additional_ui_executions": 52,
+    "successful_ui_executions": 76,
+    "unique_ui_methods": 73,
+    "all_ui_methods_passed": true,
+    "startup_modes": [
+      "office-normal",
+      "office-fullscreen",
+      "saved-home-normal",
+      "saved-home-fullscreen"
+    ],
+    "prior_pending_build": "55.0 (60)",
+    "home_avoids_spritekit": true
+  }
+}
