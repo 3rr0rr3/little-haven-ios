@@ -249,7 +249,7 @@ extension Motel {
         if isAtHome {
             if player.distance(to:reception.hildarelys)<=1 {return .family("hildarelys")}
             if player.distance(to:OfficeReception.samhil)<=1 {return .family("samhil")}
-            if let bedroom=HomeBedroom.allCases.first(where:{player.distance(to:$0.door)<=1}) {return .bedroom(bedroom)}
+            if let bedroom=HomeBedroom.allCases.filter({player.distance(to:$0.door)<=1}).min(by:{player.distance(to:$0.door)<player.distance(to:$1.door)}) {return .bedroom(bedroom)}
             if player.distance(to:BasementLayout.homeStairs)<=1 {return .basement}
             if player.distance(to:FamilyHome.exit) <= 1 { return .exit }
             if player.distance(to:FamilyHome.workbench) <= 1 { return .homeDecor }

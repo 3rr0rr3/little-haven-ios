@@ -2056,6 +2056,9 @@ func personalNeedsRules() {
     require(!m.performPersonalCare(.shower),"Remote showers cannot clear hygiene")
     m.world!.place = .house;m.world!.player=HomeBedroom.bathroom.homeApproach
     require(HomeBedroom.bathroom.door.y==2 && !m.homeBlocked(HomeBedroom.bathroom.homeApproach),"Bathroom door is on the hallway wall with a clear approach")
+    m.world!.player=HomeBedroom.bathroom.door
+    require(m.nearbyAction == .bedroom(.bathroom),"Standing at the bathroom selects its door rather than the adjacent bedroom")
+    m.world!.player=HomeBedroom.bathroom.homeApproach
     require(m.homeBlocked(Motel.homeFridge) && m.homeBlocked(Tile(x:1,y:8)) && !m.homeBlocked(Tile(x:2,y:7)),"Kitchen fridge footprint and approach match the artwork")
     require(PersonalCare.allCases.allSatisfy{$0.animationDuration>2 && $0.animationDuration<4 && $0.animationKind.hasPrefix("care-")},"Each care routine has a bounded, distinct animation")
     require(m.enterBedroom(.bathroom),"Bathroom has a physical home entrance")
