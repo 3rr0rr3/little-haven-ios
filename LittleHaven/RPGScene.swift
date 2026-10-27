@@ -286,6 +286,7 @@ final class RPGScene: SKScene {
     private let weatherLayer = SKNode()
     private let nightSky=SKNode()
     private var skyNight=false
+    private var skyViewport=CGSize.zero
     private let ambientLayer=SKSpriteNode(color:.black,size:CGSize(width:1600,height:1600))
     private var weatherParticles: [SKShapeNode] = []
     private var weatherTime = 0.0
@@ -954,20 +955,32 @@ final class RPGScene: SKScene {
         if nightSky.parent == nil {nightSky.zPosition=60000;followCamera.addChild(nightSky)}
         nightSky.isHidden = !visible
         guard visible,let view else{return}
-        let w=view.bounds.width*followCamera.xScale,h=view.bounds.height*followCamera.yScale
-        nightSky.position=CGPoint(x:0,y:h/2-15)
+        // Camera children already use screen points. Applying camera zoom here
+        // places a HUD sky across the floor instead of at the screen's top edge.
+        let viewport=view.bounds.size
+        guard skyViewport != viewport || nightSky.children.isEmpty else{return}
+        skyViewport=viewport
+        let w=viewport.width,h=viewport.height
+        nightSky.position=CGPoint(x:0,y:h/2-32)
         if nightSky.children.isEmpty {
-            let band=SKSpriteNode(color:UIColor(red:0.06,green:0.11,blue:0.20,alpha:0.88),size:CGSize(width:2000,height:30));nightSky.addChild(band)
+            let image=UIGraphicsImageRenderer(size:CGSize(width:2,height:64)).image {renderer in
+                let colors=[UIColor(red:0.06,green:0.11,blue:0.20,alpha:0.98).cgColor,UIColor(red:0.06,green:0.11,blue:0.20,alpha:0).cgColor] as CFArray
+                if let gradient=CGGradient(colorsSpace:CGColorSpaceCreateDeviceRGB(),colors:colors,locations:[0,1]) {
+                    renderer.cgContext.drawLinearGradient(gradient,start:.zero,end:CGPoint(x:0,y:64),options:[])
+                }
+            }
+            let band=SKSpriteNode(texture:SKTexture(image:image),size:CGSize(width:2000,height:64));nightSky.addChild(band)
             for i in 0..<22 {
-                let star=SKShapeNode(circleOfRadius:i%4==0 ? 0.65 : 0.35);star.fillColor = .white;star.strokeColor = .clear
-                star.position=CGPoint(x:Double(i*43%240)-120,y:Double(i*11%22)-11);nightSky.addChild(star)
+                let star=SKShapeNode(circleOfRadius:i%4==0 ? 0.85 : 0.5);star.name="sky-star-\(i)";star.fillColor = .white;star.strokeColor = .clear
+                star.position.y=CGFloat(i*11%37)-18;nightSky.addChild(star)
                 if !UIAccessibility.isReduceMotionEnabled {star.run(.repeatForever(.sequence([.fadeAlpha(to:0.35,duration:1.6+Double(i%3)),.fadeAlpha(to:0.9,duration:1.8)])))}
             }
-            let moon=SKShapeNode(circleOfRadius:6);moon.name="moon";moon.fillColor=UIColor(red:1,green:0.94,blue:0.73,alpha:1);moon.strokeColor = .clear;nightSky.addChild(moon)
-            let crescent=SKShapeNode(circleOfRadius:5);crescent.name="crescent";crescent.fillColor=UIColor(red:0.06,green:0.11,blue:0.20,alpha:1);crescent.strokeColor = .clear;nightSky.addChild(crescent)
+            let crescent=CGMutablePath();crescent.addArc(center:.zero,radius:8,startAngle:.pi/2,endAngle:.pi*1.5,clockwise:false)
+            crescent.addQuadCurve(to:CGPoint(x:0,y:8),control:CGPoint(x:-5,y:0));crescent.closeSubpath()
+            let moon=SKShapeNode(path:crescent);moon.name="moon";moon.fillColor=UIColor(red:1,green:0.94,blue:0.73,alpha:1);moon.strokeColor = .clear;nightSky.addChild(moon)
         }
-        nightSky.childNode(withName:"moon")?.position=CGPoint(x:w/2-16,y:1)
-        nightSky.childNode(withName:"crescent")?.position=CGPoint(x:w/2-13,y:3)
+        for i in 0..<22 {nightSky.childNode(withName:"sky-star-\(i)")?.position.x=(CGFloat(i*43%240)/240-0.5)*w}
+        nightSky.childNode(withName:"moon")?.position=CGPoint(x:w/2-22,y:12)
     }
     private func configureAmbient(night:Bool,nightVision:Bool,powerOut:Bool) {
         skyNight=night;configureNightSky(night)

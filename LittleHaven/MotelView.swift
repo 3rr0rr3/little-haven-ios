@@ -596,12 +596,12 @@ struct MotelView: View {
                     }.contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityIdentifier("incidentAlarm")
                 HStack(spacing:9) {
-                    Button {stop();mapFocus="incident";showMap=true} label:{Label("Map",systemImage:"map.fill")}
+                    Button {stop();mapFocus="incident";showMap=true} label:{Label("Map",systemImage:"map.fill").padding(.horizontal,8).frame(minHeight:44).background(.white.opacity(0.12),in:RoundedRectangle(cornerRadius:8))}
                         .accessibilityIdentifier("emergencyShowLocation")
-                    Button {stop();change{_=$0.dispatchEmergencyResponder()}} label:{Label("Send staff",systemImage:"person.fill.checkmark")}
+                    Button {stop();change{_=$0.dispatchEmergencyResponder()}} label:{Label("Send staff",systemImage:"person.fill.checkmark").padding(.horizontal,8).frame(minHeight:44).background(.white.opacity(0.12),in:RoundedRectangle(cornerRadius:8))}
                         .disabled(motel.emergencyDispatchReason != nil).accessibilityIdentifier("emergencyDispatch")
                     Button {expandedAlarm.toggle()} label:{Image(systemName:expandedAlarm ? "chevron.up" : "info.circle").frame(minWidth:44,minHeight:44)}.accessibilityLabel("Emergency details")
-                }.font(.caption2.bold()).buttonStyle(.bordered).controlSize(.small).frame(minHeight:44)
+                }.font(.caption2.bold()).buttonStyle(.plain).frame(minHeight:44)
                 if expandedAlarm,let reason=motel.emergencyDispatchReason {Text(reason).font(.caption2).fixedSize(horizontal:false,vertical:true)}
             }.padding(8).foregroundStyle(.white).tint(.white)
                 .background(Color(hex:incident.remaining<=20 ? 0xA51F30 : 0x923D31),in:RoundedRectangle(cornerRadius:15))

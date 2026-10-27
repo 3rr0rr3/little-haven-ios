@@ -4,8 +4,8 @@ Vacant dirty rooms warn after 90 business ticks and acquire two squatters after 
 
 Willow Home goods catalogue includes Halloween pumpkins/ghost lanterns and Christmas trees/presents, each with its own native art and price. Existing storage, workbench, placement validation and save flow apply; year-round availability.
 
-Outdoor nights have a camera-attached navy sky strip, a crescent moon and 22 gently twinkling stars. It does not darken interiors, change collisions or allocate nodes on each frame. Reduced Motion suppresses twinkle.
+Outdoor nights have a camera-attached navy gradient at the top edge of the screen, a crescent moon and 22 gently twinkling stars. It does not darken interiors, change collisions or allocate nodes on each frame. Reduced Motion suppresses twinkle.
 
-Emergency cards hide coordinates/dispatch lock explanation under Details and use tighter spacing and shorter controls. Countdown, progress, map and staff dispatch stay visible with 44-point touch areas. Critical messages appear below 20 seconds. Existing response mechanics/startup composition stay intact.
+Emergency cards hide coordinates/dispatch lock explanation under Details and use tighter spacing and shorter controls. Countdown, progress, map and staff dispatch stay visible with plain 44-point touch areas and no oversized info-button border. Critical messages appear below 20 seconds. Existing response mechanics/startup composition stay intact.
 
 Validation: Foundation model cases cover grace period, cadence, occupied-room exclusion, cleanup, legacy/current save roundtrips and seasonal enum storage. Native UI/build/startup validation required before delivery.
