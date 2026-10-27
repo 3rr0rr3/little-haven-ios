@@ -1,0 +1,29 @@
+{
+  "source": "011918d3a73ba571e144688cd10d25089bfed2ac",
+  "version": "56.0",
+  "build": "61",
+  "size": 18383269,
+  "sha256": "3c5ecfdcfbffcb7e4c2acca0f7957dac6c9b2583bd4c6563e883132c4cd0a0a7",
+  "binary_source": "1232dffb4ad1b396e0d45ed1f2ac1e60a8f09bde",
+  "test_recovery": {
+    "binary_source": "1232dffb4ad1b396e0d45ed1f2ac1e60a8f09bde",
+    "verification_source": "011918d3a73ba571e144688cd10d25089bfed2ac",
+    "original_run": 40519529272,
+    "focused_run": 40532590540,
+    "production_tree_unchanged": true,
+    "original_successful_ui_executions": 72,
+    "focused_successful_ui_executions": 1,
+    "unique_ui_methods": 71,
+    "all_ui_methods_passed": true,
+    "startup_modes": [
+      "false",
+      "true"
+    ],
+    "door_modes": [
+      "normal",
+      "fullscreen"
+    ],
+    "sha256": "3c5ecfdcfbffcb7e4c2acca0f7957dac6c9b2583bd4c6563e883132c4cd0a0a7",
+    "tap_probe": "Home care tap-count probe: Column 4, row 3. Food 20, bathroom 90, hygiene 30, dirty true."
+  }
+}
