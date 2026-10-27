@@ -22,7 +22,7 @@ jobs:
       - name: Verify production equality and retained passing checks
         run: |
           set -euo pipefail
-          gh api "repos/$GITHUB_REPOSITORY/actions/jobs/122243245296/logs" > original-job.log
+          gh api --allow-escape-sequences "repos/$GITHUB_REPOSITORY/actions/jobs/122243245296/logs" > original-job.log
           python3 scripts/verify_home_care_recovery.py
           swiftc -frontend -parse LittleHaven/*.swift LittleHavenUITests/*.swift
           swiftc LittleHaven/NPCDesign.swift LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/home-care-model-tests
