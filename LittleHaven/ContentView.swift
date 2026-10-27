@@ -49,6 +49,21 @@ struct ContentView: View {
 
 
 
+        if args.contains("--ui-neglect") || args.contains("--ui-night-sky") || args.contains("--ui-seasonal") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement()
+            sample.motel!.cash=1200;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:12,y:20)
+            sample.motel!.operations!.weatherOverride = .sunny
+            if args.contains("--ui-night-sky") {var sim=sample.motel!.simulation;sim.hour=22;sample.motel!.simulation=sim}
+            if args.contains("--ui-neglect") {
+                sample.motel!.rooms[0].dirty=true;sample.motel!.rooms[0].cleanedTasks=[];sample.motel!.rooms[0].neglectedTicks=179;sample.motel!.tickRoomNeglect()
+                _=sample.motel!.enter(0);sample.motel!.visit!.player=Tile(x:4,y:7)
+            }
+            if args.contains("--ui-seasonal") {
+                sample.motel!.world!.player=NeighborhoodShop.furniture.door;_=sample.motel!.enterShop(.furniture);sample.motel!.world!.player=ShopLayout.counter
+            }
+            sample.save();return sample
+        }
         if args.contains(where:{$0.hasPrefix("--ui-occasion-")}) {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.initializeExpansion();sample.motel!.initializeKitchenGarden()
             sample.motel!.cash=500;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000

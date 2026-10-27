@@ -1982,3 +1982,52 @@ func menuNavigationRules() {
     print("PASS: contextual actions, named buttons, map filters/coordinates, safe dispatch and development requirements")
 }
 menuNavigationRules()
+
+func seasonalNeglectRules() {
+    var m=Motel();m.initializeWorld();m.rooms[0].dirty=true
+    for _ in 0..<179 {m.tickRoomNeglect()}
+    require(m.rooms[0].squatters != true,"Neglect gives time to clean before squatters arrive")
+    m.tickRoomNeglect()
+    require(m.rooms[0].squatters == true && !m.rooms[0].available,"Long-neglected rooms attract squatters and cannot be booked")
+    let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(m))
+    require(saved.rooms[0].squatters == true && saved.rooms[0].neglectedTicks == 180,"Neglect survives a checkpoint")
+    m.rooms[0].dirty=false;m.tickRoomNeglect()
+    require(m.rooms[0].squatters == nil && m.rooms[0].neglectedTicks == nil,"Restored rooms clear residents and neglect")
+    m.rooms[1].guest=Motel.arrivals(day:1,count:1,randomize:false)[0];m.rooms[1].dirty=true
+    for _ in 0..<200 {m.tickRoomNeglect()}
+    require(m.rooms[1].squatters != true,"Occupied rooms never spawn squatters")
+    let seasonal:[HomeObject]=[.pumpkin,.ghostLantern,.christmasTree,.giftStack]
+    require(seasonal.allSatisfy{HomeObject.allCases.contains($0) && $0.price>0},"Both seasonal collections are purchasable")
+    require(try! JSONDecoder().decode([HomeObject].self,from:JSONEncoder().encode(seasonal)) == seasonal,"Seasonal storage persists")
+    print("PASS: neglect grace period, occupied-room safety, cleaning reset, save compatibility and seasonal catalogue")
+}
+seasonalNeglectRules()
+
+func neglectClockRules() {
+    var m=Motel();m.initializeWorld();m.rooms[0].dirty=true
+    for _ in 0..<200 {m.tickManagement(advanceClock:false)}
+    require(m.rooms[0].neglectedTicks == nil,"Walking/render ticks do not accelerate neglect")
+    m.tickManagement(advanceClock:true)
+    require(m.rooms[0].neglectedTicks == 1,"Neglect advances only with the business clock")
+    let legacy=Data("{\"id\":0,\"theme\":0,\"furniture\":0,\"nightsLeft\":0,\"dirty\":true,\"stolen\":[]}".utf8)
+    let room=try! JSONDecoder().decode(MotelRoom.self,from:legacy)
+    require(room.squatters == nil && room.neglectedTicks == nil,"Legacy dirty rooms load with a fresh grace period")
+    print("PASS: neglect uses business cadence and legacy room saves remain valid")
+}
+neglectClockRules()
+
+func seasonalPurchaseRules() {
+    var m=Motel();m.initializeWorld();m.cash=500;m.world!.place = .grounds;m.world!.player=NeighborhoodShop.furniture.door
+    require(m.enterShop(.furniture),"Goods store is physically enterable")
+    m.world!.player=ShopLayout.counter
+    for kind:HomeObject in [.pumpkin,.ghostLantern,.christmasTree,.giftStack] {
+        let before=m.cash
+        require(m.buyHomeObject(kind) && m.cash==before-kind.price && m.household.storage.contains(kind),"Seasonal goods charge their listed price and enter storage")
+    }
+    m.cash=0
+    require(!m.buyHomeObject(.pumpkin),"Unaffordable seasonal purchases are rejected")
+    let copy=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(m))
+    require(copy.household.storage.count==4,"Purchased seasonal collection survives checkpoint reload")
+    print("PASS: seasonal purchase costs, storage, insufficient funds and saved catalogue")
+}
+seasonalPurchaseRules()

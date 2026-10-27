@@ -18,6 +18,8 @@ struct MotelRoom: Codable, Identifiable {
     var guest: MotelGuest?
     var nightsLeft = 0
     var dirty = false
+    var neglectedTicks:Int?
+    var squatters:Bool?
     var stolen: Set<Int> = []
     var cleanedTasks: Set<Int>?
     var hospitality: GuestRoomState?
@@ -122,6 +124,7 @@ struct Motel: Codable {
               rooms[index].guest == nil, rooms[index].dirty else { return false }
         guard useCleaningStock(full:true) else { return false }
         rooms[index].dirty = false
+        rooms[index].neglectedTicks=nil;rooms[index].squatters=nil
         if operationsState.simulation != nil { var health=rooms[index].health; health.cleanliness=100; health.faults.remove(.mattress); rooms[index].hospitality=health }
         countHavenGoal("clean")
         playVisual("mop")
@@ -212,6 +215,22 @@ struct Motel: Codable {
         guard canSave, let room = rooms.first(where: { $0.id == roomID }) else { return false }
         visit = RoomVisit(roomID: roomID, sneaking: room.guest != nil)
         return true
+    }
+    // Optional per-room fields keep older checkpoints compatible. Only vacant,
+    // dirty rooms accumulate neglect; no new per-frame timer or path search.
+    mutating func tickRoomNeglect() {
+        for i in rooms.indices {
+            guard rooms[i].dirty,rooms[i].guest == nil else {
+                rooms[i].neglectedTicks=nil;rooms[i].squatters=nil;continue
+            }
+            let ticks=min(180,(rooms[i].neglectedTicks ?? 0)+1)
+            rooms[i].neglectedTicks=ticks
+            if ticks == 90 {lastEvent="Room \(rooms[i].number) has been neglected. Clean it before squatters move in."}
+            if ticks == 180 && rooms[i].squatters != true {
+                rooms[i].squatters=true
+                lastEvent="CHAOS · Squatters moved into neglected room \(rooms[i].number). Restore the room with the three cleaning tasks; they will move on safely."
+            }
+        }
     }
     mutating func tick() {
         guard !caught, var roomVisit = visit, roomVisit.sneaking else { return }

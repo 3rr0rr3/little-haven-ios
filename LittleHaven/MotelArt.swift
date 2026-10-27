@@ -118,6 +118,11 @@ struct MotelRoomCanvas: View, Animatable {
             context.translateBy(x: (size.width - 144 * scale) / 2, y: (size.height - 144 * scale) / 2)
             context.scaleBy(x: scale, y: scale)
             InteriorArt.draw(context: &context, theme: room.theme, level: room.furniture, office: false)
+            if room.squatters == true {
+                PaintedArt.draw("travel-chest",in:CGRect(x:81,y:113,width:15,height:12),context:&context)
+                context.fill(Path(roundedRect:CGRect(x:50,y:112,width:27,height:8),cornerRadius:3),with:.color(Color(hex:0x958569)))
+                context.stroke(Path(CGRect(x:55,y:112,width:1,height:8)),with:.color(Color(hex:0x594F40)),lineWidth:1)
+            }
             if room.health.kind == .deluxe || room.health.kind == .suite {
                 context.fill(Path(roundedRect:CGRect(x:84,y:70,width:22,height:16),cornerRadius:3),with:.color(Color(hex:0x997887)))
                 context.fill(Path(CGRect(x:87,y:73,width:16,height:7)),with:.color(Color(hex:0xC0A3AD)))

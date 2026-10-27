@@ -1079,7 +1079,9 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["mapSelection"].waitForExistence(timeout:5))
         capture(app,"Filtered map with selected store")
         app.terminate();app.launchArguments=["--ui-menu-emergency","--ui-testing"];app.launch()
-        XCTAssertTrue(app.buttons["emergencyShowLocation"].waitForExistence(timeout:15));app.buttons["emergencyShowLocation"].tap()
+        XCTAssertTrue(app.buttons["emergencyShowLocation"].waitForExistence(timeout:15))
+        XCTAssertLessThan(app.buttons["incidentAlarm"].frame.height,110,"Collapsed emergency leaves the play area visible")
+        app.buttons["emergencyShowLocation"].tap()
         XCTAssertTrue(app.otherElements["mapSelection"].waitForExistence(timeout:5))
         XCTAssertTrue(app.buttons["mapPin_incident"].exists)
         back(app)
@@ -1101,6 +1103,27 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.buttons["restoreFullscreenToolbar"].waitForExistence(timeout:5),"Walking collapses the HUD without changing joystick controls")
         app.buttons["restoreFullscreenToolbar"].tap();XCTAssertTrue(app.buttons["fullscreenPause"].exists)
         capture(app,"Quiet fullscreen with one-tap toolbar reveal")
+    }
+    func testSeasonalGoodsCatalogueAndPurchase() {
+        let app=launch("--ui-seasonal")
+        XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:15));app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.scrollViews["neighborhoodShop"].waitForExistence(timeout:5))
+        for kind in ["pumpkin","ghostLantern","christmasTree","giftStack"] {
+            let buy=app.buttons["buy_home_"+kind]
+            for _ in 0..<12 where !buy.isHittable {app.swipeUp()}
+            XCTAssertTrue(buy.isHittable,"Seasonal item is reachable: "+kind)
+            if buy.isHittable {buy.tap()}
+        }
+        capture(app,"Year-round Halloween and Christmas goods")
+        back(app);XCTAssertTrue(app.buttons["worldAction"].exists)
+    }
+    func testNeglectedRoomShowsChaosAndSafeMap() {
+        let app=launch("--ui-neglect")
+        XCTAssertTrue(app.buttons["neglectAlarm"].waitForExistence(timeout:15))
+        capture(app,"Neglected room residents in patched clothes")
+        app.buttons["neglectAlarm"].tap()
+        XCTAssertTrue(app.otherElements["mapSelection"].waitForExistence(timeout:5))
+        back(app);XCTAssertTrue(app.buttons["neglectAlarm"].exists)
     }
     private func back(_ app:XCUIApplication) {
         let menus=app.buttons.matching(identifier:"menuBack")

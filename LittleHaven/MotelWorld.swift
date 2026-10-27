@@ -441,6 +441,7 @@ extension Motel {
         playVisual(target == 0 ? "bed" : target == 1 ? "trash" : "mop",target:MotelGrounds.cleaningTiles[target])
         if tasks.count == MotelGrounds.cleaningTiles.count {
             rooms[index].dirty = false
+            rooms[index].neglectedTicks=nil;rooms[index].squatters=nil
             lastEvent = "Room \(rooms[index].number) is spotless and ready for a guest."
         } else { lastEvent = "\(MotelGrounds.cleaningNames[target]) done. \(3 - tasks.count) tasks left in room \(rooms[index].number)." }
         return true

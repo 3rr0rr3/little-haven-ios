@@ -19,10 +19,10 @@ enum BarDrink:String,Codable,CaseIterable,Identifiable {
 }
 
 enum HomeObject:String,Codable,CaseIterable,Identifiable {
-    case plant, rug, lamp, bookshelf, table, armchair
+    case plant, rug, lamp, bookshelf, table, armchair, pumpkin, ghostLantern, christmasTree, giftStack
     var id:String {rawValue}
-    var price:Int {switch self {case .plant:return 30;case .rug:return 45;case .lamp:return 55;case .bookshelf:return 100;case .table:return 75;case .armchair:return 90}}
-    var title:String {rawValue.capitalized}
+    var price:Int {switch self {case .plant:return 30;case .rug:return 45;case .lamp:return 55;case .bookshelf:return 100;case .table:return 75;case .armchair:return 90;case .pumpkin:return 35;case .ghostLantern:return 50;case .christmasTree:return 95;case .giftStack:return 40}}
+    var title:String {switch self {case .pumpkin:return "Halloween pumpkin";case .ghostLantern:return "Halloween ghost lantern";case .christmasTree:return "Christmas tree";case .giftStack:return "Christmas presents";default:return rawValue.capitalized}}
 }
 struct PlacedHomeObject:Codable,Identifiable {
     let id:Int
@@ -343,6 +343,7 @@ extension Motel {
     }
     mutating func tickManagement(advanceClock:Bool = true) {
         guard !caught else { return }
+        if advanceClock {tickRoomNeglect()}
         expireGuestFavour()
         var state = operationsState
         // A relocated building must never leave a legacy emergency inside a wall.

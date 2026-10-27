@@ -23,6 +23,7 @@ struct RPGActor {
     var effect = 0
     var action = ""
     var expression = ""
+    var wornClothes = false
     var shopUniform = 0
     var beachwear = false
     var resting = false
@@ -255,6 +256,13 @@ private struct ActorArtwork: View {
                 var handlebar=Path();handlebar.move(to:CGPoint(x:6,y:21));handlebar.addLine(to:CGPoint(x:18,y:21))
                 context.stroke(handlebar,with:.color(Color(hex:0x344D48)),style:StrokeStyle(lineWidth:1.2,lineCap:.round))
             }
+            if actor.wornClothes {
+                // Visible elbow/knee patches and a shoulder bag, with direction-aware placement.
+                let patch=Path(roundedRect:CGRect(x:actor.facing == 1 ? 6 : 15,y:19,width:3,height:3),cornerRadius:0.3)
+                context.fill(patch,with:.color(Color(hex:0xB29B75)))
+                context.stroke(Path(CGRect(x:10,y:17,width:1,height:6)),with:.color(Color(hex:0x554B40)),lineWidth:0.5)
+                context.fill(Path(roundedRect:CGRect(x:actor.facing == 1 ? 16 : 3,y:20,width:5,height:5),cornerRadius:1),with:.color(Color(hex:0x786646)))
+            }
             if actor.shopUniform > 0 {ShopKeeperArt.uniform(context:&context,kind:actor.shopUniform,facing:actor.facing)}
         }.frame(width: 24, height: 28)
     }
@@ -276,6 +284,8 @@ final class RPGScene: SKScene {
     private var viewSize = CGSize.zero
     private var activeWeather: HotelWeather = .sunny
     private let weatherLayer = SKNode()
+    private let nightSky=SKNode()
+    private var skyNight=false
     private let ambientLayer=SKSpriteNode(color:.black,size:CGSize(width:1600,height:1600))
     private var weatherParticles: [SKShapeNode] = []
     private var weatherTime = 0.0
@@ -364,7 +374,7 @@ final class RPGScene: SKScene {
             node.userData?["targetX"] = actor.tile.x
             node.userData?["targetY"] = actor.tile.y
             let idle = sprite(actor, stride: 0)
-            let appearance = "\(actor.color)-\(actor.variant)-\(actor.effect)-\(actor.expression)-\(actor.facing)-\(actor.beachwear)-\(actor.seated)"
+            let appearance = "\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.effect)-\(actor.expression)-\(actor.facing)-\(actor.beachwear)-\(actor.seated)"
             if node.userData?["appearance"] as? String != appearance {
                 node.removeAction(forKey:"effect"); node.removeAction(forKey:"walk"); node.removeAction(forKey:"spar")
                 node.removeAction(forKey:"walkEnd")
@@ -417,7 +427,7 @@ final class RPGScene: SKScene {
                 node.addChild(ring)
             }
             let poseKind=actor.id == "player" && working ? workKind : actor.action
-            let poseKey=poseKind+"-\(actor.color)-\(actor.variant)-\(actor.facing)"
+            let poseKey=poseKind+"-\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.facing)"
             if node.userData?["poseKey"] as? String != poseKey {
                 node.removeAction(forKey:"working-pose")
                 node.userData?["poseKey"]=poseKey
@@ -497,7 +507,7 @@ final class RPGScene: SKScene {
     }
 
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
-        let key = "\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.cycling)-\(actor.bikeColor)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)-\(actor.beachwear)-\(actor.seated)"
+        let key = "\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.cycling)-\(actor.bikeColor)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)-\(actor.beachwear)-\(actor.seated)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
         renderer.scale = 4
@@ -940,7 +950,27 @@ final class RPGScene: SKScene {
             node.zPosition=CGFloat(bay.y*16+20)
         }
     }
+    private func configureNightSky(_ visible:Bool) {
+        if nightSky.parent == nil {nightSky.zPosition=60000;followCamera.addChild(nightSky)}
+        nightSky.isHidden = !visible
+        guard visible,let view else{return}
+        let w=view.bounds.width*followCamera.xScale,h=view.bounds.height*followCamera.yScale
+        nightSky.position=CGPoint(x:0,y:h/2-15)
+        if nightSky.children.isEmpty {
+            let band=SKSpriteNode(color:UIColor(red:0.06,green:0.11,blue:0.20,alpha:0.88),size:CGSize(width:2000,height:30));nightSky.addChild(band)
+            for i in 0..<22 {
+                let star=SKShapeNode(circleOfRadius:i%4==0 ? 0.65 : 0.35);star.fillColor = .white;star.strokeColor = .clear
+                star.position=CGPoint(x:Double(i*43%240)-120,y:Double(i*11%22)-11);nightSky.addChild(star)
+                if !UIAccessibility.isReduceMotionEnabled {star.run(.repeatForever(.sequence([.fadeAlpha(to:0.35,duration:1.6+Double(i%3)),.fadeAlpha(to:0.9,duration:1.8)])))}
+            }
+            let moon=SKShapeNode(circleOfRadius:6);moon.name="moon";moon.fillColor=UIColor(red:1,green:0.94,blue:0.73,alpha:1);moon.strokeColor = .clear;nightSky.addChild(moon)
+            let crescent=SKShapeNode(circleOfRadius:5);crescent.name="crescent";crescent.fillColor=UIColor(red:0.06,green:0.11,blue:0.20,alpha:1);crescent.strokeColor = .clear;nightSky.addChild(crescent)
+        }
+        nightSky.childNode(withName:"moon")?.position=CGPoint(x:w/2-16,y:1)
+        nightSky.childNode(withName:"crescent")?.position=CGPoint(x:w/2-13,y:3)
+    }
     private func configureAmbient(night:Bool,nightVision:Bool,powerOut:Bool) {
+        skyNight=night;configureNightSky(night)
         if ambientLayer.parent == nil {ambientLayer.zPosition=40000;world.addChild(ambientLayer)}
         ambientLayer.color=nightVision ? UIColor(red:0.16,green:0.75,blue:0.25,alpha:1) : .black
         ambientLayer.alpha=Motel.ambientOpacity(night:night,nightVision:nightVision,powerOut:powerOut)
@@ -1019,6 +1049,7 @@ final class RPGScene: SKScene {
         previousTime = currentTime
         updateWeather()
         ambientLayer.position=followCamera.position
+        configureNightSky(skyNight)
         if view?.bounds.size != viewSize { viewSize = view?.bounds.size ?? .zero; layoutCamera(jump: true) }
         for node in world.children where node.name?.hasPrefix("actor:") == true { node.zPosition = -node.position.y }
     }
@@ -1044,7 +1075,7 @@ struct MotelRPGView: View {
         let room = visit.flatMap { v in motel.rooms.first { $0.id == v.roomID } }
         let interior = visit != nil || motel.worldState.place == .office
         let mapID = visit.map { "room-\($0.roomID)" } ?? motel.worldState.place.rawValue
-        let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
+        let revision = room.map { "\($0.theme)-\($0.furniture)-\($0.squatters == true)-\($0.dirty)-\(($0.cleanedTasks ?? []).sorted())-\($0.stolen.sorted())-\(visit?.loot.sorted() ?? [])-\(visit?.sneaking ?? false)-\(motel.guestPresent(in: $0.id))" } ?? "\(motel.officeTheme)-\(motel.officeLevel)-\(motel.rooms.map { "\($0.theme):\($0.dirty):\($0.guest?.id ?? -1)" }.joined(separator: ","))"
         let layoutRevision=(motel.worldState.structureOffsets ?? [:]).keys.sorted().map{key in "\(key):\(motel.creativeOffset(key).x):\(motel.creativeOffset(key).y)"}.joined(separator:",")
         let worldRevision=layoutRevision+"facilities-world-29-\(motel.serviceAvailable(.repair))-" + motel.staffStations.map(\.rawValue).joined(separator:",") + "-\(motel.household.level)-"+revision+"-floor\(motel.viewingFloor)-facilities\(motel.simulation.facilities.count)-"+motel.rooms.map{"\($0.health.kind.rawValue):\($0.health.upgrades.count):\($0.health.faults.count)"}.joined(separator:",")
         var actors = [RPGActor(id: "player", tile: motel.relaxingTile ?? motel.actorTile, color: FamilyHome.outfitColors[motel.household.outfit], variant: 7, facing: motel.isRelaxing ? 0 : motel.actorFacing, resting:motel.isRelaxing)]
@@ -1102,6 +1133,12 @@ struct MotelRPGView: View {
             }
         } else if let room, let guest = room.guest, let visit, motel.guestPresent(in: room.id) {
             actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.appearanceSeed, danger: true))
+        }
+        if interior,let room,room.squatters == true {
+            for i in 0..<2 {
+                var resident=RPGActor(id:"squatter-\(room.id)-\(i)",tile:Tile(x:3+i*2,y:4),color:i==0 ? 0x827661 : 0x6C7565,variant:330+room.id*2+i,facing:i==0 ? 2 : 1)
+                resident.wornClothes=true;actors.append(resident)
+            }
         }
         for index in actors.indices where actors[index].id.hasPrefix("guest-") || actors[index].id.hasPrefix("routine-") {
             actors[index].beachwear=motel.guestUsesBeachwear(at:actors[index].tile)

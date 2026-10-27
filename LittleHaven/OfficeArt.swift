@@ -217,8 +217,9 @@ struct HomeInteriorArt:View {
     let home:FamilyHome
     static let floors:[UInt32]=[0xBC9E79,0xC6B7A2,0xA2AD9D,0x9C8071]
     static func object(context:inout GraphicsContext,kind:HomeObject,x:Double,y:Double) {
+        if [.pumpkin,.ghostLantern,.christmasTree,.giftStack].contains(kind) {seasonalObject(context:&context,kind:kind,x:x,y:y);return}
         let asset:String
-        switch kind {case .plant:asset="fern";case .rug:asset="rug";case .lamp:asset="lantern";case .bookshelf:asset="bookshelf";case .table:asset="dining-table";case .armchair:asset="sofa-front"}
+        switch kind {case .plant:asset="fern";case .rug:asset="rug";case .lamp:asset="lantern";case .bookshelf:asset="bookshelf";case .table:asset="dining-table";case .armchair:asset="sofa-front";default:return}
         if PaintedArt.draw(asset,in:CGRect(x:x,y:y,width:16,height:16),context:&context,fit:true) {return}
         func rect(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ c:UInt32){context.fill(Path(roundedRect:CGRect(x:x+dx,y:y+dy,width:w,height:h),cornerRadius:1),with:.color(Color(hex:c)))}
         switch kind {
@@ -228,6 +229,7 @@ struct HomeInteriorArt:View {
         case .bookshelf:rect(0,0,16,16,0x77573D);for row in 0..<2 {for col in 0..<4 {rect(Double(col*3+2),Double(row*7+1),2,5,Motel.themeColors[(col+row)%4])}}
         case .table:rect(2,7,2,9,0x76583E);rect(12,7,2,9,0x76583E);rect(0,1,16,9,0xBD9569);rect(4,3,8,1,0xDBC08E)
         case .armchair:rect(1,2,14,12,0x8B7D9B);rect(4,4,8,8,0xBEA9BC);rect(0,5,3,10,0x9E8BA8);rect(13,5,3,10,0x9E8BA8)
+        default:break
         }
     }
     var body:some View {
@@ -564,6 +566,8 @@ struct ShopInteriorArt:View {
             DecorArt.rug(&c,94,104,52,91,shop.keeperColor)
             PaintedArt.draw("desk",in:CGRect(x:78,y:58,width:84,height:31),context:&c)
             if shop == .furniture {
+                HomeInteriorArt.seasonalObject(context:&c,kind:.pumpkin,x:26,y:71)
+                HomeInteriorArt.seasonalObject(context:&c,kind:.christmasTree,x:184,y:77)
                 DecorArt.shelf(&c,19,50,41);DecorArt.sofa(&c,19,90,40,0x92AAA0)
                 DecorArt.sofa(&c,177,50,42,0xB994A3)
                 block(183,109,28,9,0xAD8763);block(186,118,3,10,0x705943);block(205,118,3,10,0x705943)
@@ -1248,5 +1252,29 @@ struct HomeBedroomArt:View {
             context.draw(Text(child ? "SAMHIL'S ROOM" : "YOUR & HILDARELYS'S ROOM").font(.system(size:5,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:120,y:39))
             context.draw(Text("LIVING ROOM").font(.system(size:3,weight:.bold)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:120,y:205))
         }.frame(width:240,height:240)
+    }
+}
+
+extension HomeInteriorArt {
+    static func seasonalObject(context:inout GraphicsContext,kind:HomeObject,x:Double,y:Double) {
+        func shape(_ p:Path,_ color:UInt32) {context.fill(p,with:.color(Color(hex:color)));context.stroke(p,with:.color(Color(hex:0x44382F)),lineWidth:0.45)}
+        func box(_ a:Double,_ b:Double,_ w:Double,_ h:Double,_ color:UInt32) {shape(Path(roundedRect:CGRect(x:x+a,y:y+b,width:w,height:h),cornerRadius:1),color)}
+        context.fill(Path(ellipseIn:CGRect(x:x+1,y:y+13,width:14,height:3)),with:.color(.black.opacity(0.18)))
+        switch kind {
+        case .pumpkin:
+            for a in [2.0,5.0,8.0] {shape(Path(ellipseIn:CGRect(x:x+a,y:y+5,width:6,height:9)),a==5 ? 0xEC9A32 : 0xCE6E27)}
+            box(7,2,2,4,0x66824B);box(5,8,2,2,0xFFF0AD);box(10,8,2,2,0xFFF0AD);box(6,12,5,1,0x553E2C)
+        case .ghostLantern:
+            box(7,1,2,3,0x755735);shape(Path(ellipseIn:CGRect(x:x+3,y:y+3,width:11,height:11)),0xF7EAC4)
+            box(5,7,2,3,0x44382F);box(10,7,2,3,0x44382F);box(7,11,3,2,0xE7B45F)
+        case .christmasTree:
+            box(7,10,3,6,0x885B36)
+            for b in [3.0,6.0,9.0] {var p=Path();p.move(to:CGPoint(x:x+8,y:y+b-3));p.addLine(to:CGPoint(x:x+1,y:y+b+4));p.addLine(to:CGPoint(x:x+15,y:y+b+4));p.closeSubpath();shape(p,b==6 ? 0x3F8056 : 0x366747)}
+            for (a,b) in [(5.0,7.0),(10.0,10.0),(6.0,12.0)] {box(a,b,2,2,0xD75447)}
+            shape(Path(ellipseIn:CGRect(x:x+7,y:y,width:3,height:3)),0xF4D16C)
+        case .giftStack:
+            box(1,7,8,8,0xBA5147);box(8,4,7,11,0x507D61);box(4,7,2,8,0xEDC773);box(10,4,2,11,0xEDC773);box(1,9,8,2,0xEDC773);box(8,7,7,2,0xEDC773)
+        default:break
+        }
     }
 }

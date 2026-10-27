@@ -82,6 +82,7 @@ struct MotelView: View {
     @State private var family: OfficeTap?
     @State private var showPolice = false
     @State private var showIncident = false
+    @State private var expandedAlarm=false
     @State private var talkingRoom: Int?
     @State private var storyGuest: MotelGuest?
     @State private var showStoryJournal = false
@@ -579,33 +580,38 @@ struct MotelView: View {
         if let incident=motel.operationsState.incident {
             VStack(alignment:.leading,spacing:5) {
                 Button {stop();showIncident=true} label:{
-                    VStack(alignment:.leading,spacing:6) {
-                        HStack(spacing:10) {
+                    VStack(alignment:.leading,spacing:3) {
+                        HStack(spacing:8) {
                             Image(systemName:incident.kind == .fire ? "flame.fill" : incident.kind == .pool ? "figure.pool.swim" : "exclamationmark.shield.fill").font(.title2)
                             VStack(alignment:.leading,spacing:3) {
-                                Text("EMERGENCY").font(.system(size:10,weight:.black)).tracking(1)
+                                Text("EMERGENCY").font(.system(size:8,weight:.black)).tracking(1)
                                 Text(incident.kind.title).font(.subheadline.bold())
-                                Text("Motel grounds · Column \(incident.tile.x), row \(incident.tile.y)").font(.caption2)
+                                if expandedAlarm {Text("Motel grounds · Column \(incident.tile.x), row \(incident.tile.y)").font(.caption2)}
                             }
                             Spacer(minLength:0)
                             Text("\(incident.remaining)s").font(.headline.monospaced())
                         }
                         ProgressView(value:Double(incident.remaining),total:Double(incident.limit)).tint(.white)
-                        Text(incident.remaining<=20 ? "CRITICAL · A guest could die" : "Respond before someone is hurt").font(.caption2.bold())
+                        if incident.remaining<=20 {Text("CRITICAL · Respond now").font(.caption2.bold())}
                     }.contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityIdentifier("incidentAlarm")
                 HStack(spacing:9) {
-                    Button {stop();mapFocus="incident";showMap=true} label:{Label("Show location",systemImage:"map.fill")}
+                    Button {stop();mapFocus="incident";showMap=true} label:{Label("Map",systemImage:"map.fill")}
                         .accessibilityIdentifier("emergencyShowLocation")
-                    Button {stop();change{_=$0.dispatchEmergencyResponder()}} label:{Label("Send "+(motel.emergencyDispatchReason==nil ? incident.kind.responder.name : "employee"),systemImage:"person.fill.checkmark")}
+                    Button {stop();change{_=$0.dispatchEmergencyResponder()}} label:{Label("Send staff",systemImage:"person.fill.checkmark")}
                         .disabled(motel.emergencyDispatchReason != nil).accessibilityIdentifier("emergencyDispatch")
-                }.font(.caption.bold()).buttonStyle(.bordered).controlSize(.regular).frame(minHeight:44)
-                if let reason=motel.emergencyDispatchReason {Text(reason).font(.caption2).fixedSize(horizontal:false,vertical:true)}
-            }.padding(11).foregroundStyle(.white).tint(.white)
+                    Button {expandedAlarm.toggle()} label:{Image(systemName:expandedAlarm ? "chevron.up" : "info.circle").frame(minWidth:44,minHeight:44)}.accessibilityLabel("Emergency details")
+                }.font(.caption2.bold()).buttonStyle(.bordered).controlSize(.small).frame(minHeight:44)
+                if expandedAlarm,let reason=motel.emergencyDispatchReason {Text(reason).font(.caption2).fixedSize(horizontal:false,vertical:true)}
+            }.padding(8).foregroundStyle(.white).tint(.white)
                 .background(Color(hex:incident.remaining<=20 ? 0xA51F30 : 0x923D31),in:RoundedRectangle(cornerRadius:15))
         } else if let police=motel.business.police {
             Button {stop();showPolice=true} label:{HotelNoticeCard(title:police.arrived ? "POLICE HERE" : "OFFICER ON THE WAY",message:police.arrived ? "Speak to the officer to settle your case" : "An officer is looking for you",symbol:"light.beacon.max.fill",tint:Color(hex:0xF4BA9E))}
                 .buttonStyle(.plain).accessibilityIdentifier("policeAlarm")
+        } else if let room=motel.rooms.first(where:{$0.squatters == true}) {
+            Button {stop();mapFocus="care-\(room.id)";showMap=true} label:{
+                Label("Room \(room.number) · Squatters moved in. Clean the room.",systemImage:"person.2.fill").font(.caption.bold()).padding(9).frame(maxWidth:.infinity,alignment:.leading).background(Color(hex:0x80552E),in:RoundedRectangle(cornerRadius:10))
+            }.buttonStyle(.plain).foregroundStyle(.white).accessibilityIdentifier("neglectAlarm")
         } else if motel.managementEnabled,let issue=motel.simulation.issues.first {
             VStack(spacing:4) {
                 Button {stop();managementFocus = .events;showManagement=true} label:{

@@ -135,6 +135,8 @@ struct NeighborhoodStoreView:View {
                         Button("Collect neighbor parcels") {change{_=$0.collectNeighborParcels()};game.save()}
                             .disabled(!motel.canTrade(.furniture)).accessibilityIdentifier("collectNeighborParcels")
                     }
+                    Text("Furniture & seasonal goods").font(.headline)
+                    Text("Halloween: pumpkins and ghost lanterns. Christmas: trees and presents. Available year-round.").font(.caption)
                     ForEach(HomeObject.allCases) {kind in
                         VStack(alignment:.leading,spacing:10) {
                             HStack {HomeItemIcon(kind:kind).frame(width:46,height:46);Text(kind.title).font(.headline);Spacer()}
