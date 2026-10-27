@@ -2055,6 +2055,9 @@ func personalNeedsRules() {
     require(m.playerNeeds.fullness==0 && m.playerNeeds.bladder==100 && m.isPlayerDirty,"A full day without care is bounded and visibly dirty")
     require(!m.performPersonalCare(.shower),"Remote showers cannot clear hygiene")
     m.world!.place = .house;m.world!.player=HomeBedroom.bathroom.homeApproach
+    require(HomeBedroom.bathroom.door.y==2 && !m.homeBlocked(HomeBedroom.bathroom.homeApproach),"Bathroom door is on the hallway wall with a clear approach")
+    require(m.homeBlocked(Motel.homeFridge) && m.homeBlocked(Tile(x:1,y:8)) && !m.homeBlocked(Tile(x:2,y:7)),"Kitchen fridge footprint and approach match the artwork")
+    require(PersonalCare.allCases.allSatisfy{$0.animationDuration>2 && $0.animationDuration<4 && $0.animationKind.hasPrefix("care-")},"Each care routine has a bounded, distinct animation")
     require(m.enterBedroom(.bathroom),"Bathroom has a physical home entrance")
     var seen:Set<Tile>=[HomeBedroom.arrival],queue=[HomeBedroom.arrival],cursor=0
     while cursor<queue.count {let t=queue[cursor];cursor+=1;for (dx,dy) in [(1,0),(-1,0),(0,1),(0,-1)] {let next=Tile(x:t.x+dx,y:t.y+dy);if !HomeBedroom.bathroom.blocked(next),seen.insert(next).inserted {queue.append(next)}}}
@@ -2070,7 +2073,7 @@ func personalNeedsRules() {
     let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(m))
     require(saved.playerNeeds==m.playerNeeds && saved.currentBedroom == .bathroom,"Needs and bathroom location survive saving")
     m.world!.player=HomeBedroom.exit;require(m.leaveBedroom() && m.actorTile==HomeBedroom.bathroom.homeApproach && !m.homeBlocked(m.actorTile),"Bathroom returns to a safe living-room approach")
-    m.world!.player=Tile(x:11,y:6);let snacks=m.simulation.stock["snacks",default:0]
+    m.world!.player=Tile(x:2,y:7);let snacks=m.simulation.stock["snacks",default:0]
     require(m.performPersonalCare(.eat) && m.playerNeeds.fullness==60 && m.simulation.stock["snacks",default:0]==snacks-1,"A fridge meal consumes one real portion and restores hunger")
     var n=m.playerNeeds;n.fullness=0;m.personalNeeds=n
     var k=KitchenGarden();k.plates[GardenRecipe.herbToast.rawValue]=1;m.kitchenGarden=k

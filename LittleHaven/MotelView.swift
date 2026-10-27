@@ -70,7 +70,7 @@ struct MotelView: View {
     @State private var showMap = false
     @State private var mapFocus:String?
     @State private var managementFocus:ManagementTab?
-    @State private var showActionPicker=false
+    @State private var activeCare:PersonalCare?
     @State private var pauseDestination:PauseDestination?
     @AppStorage("littlehaven.autoHideHUD") private var autoHideHUD=true
     @State private var showPause = false
@@ -103,7 +103,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { needsAfterPause || showNeeds || showActionPicker || pauseDestination != nil || showHavenLife || lifeAfterPause || journalAfterPause || storyGuest != nil || showStoryJournal || motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { needsAfterPause || showNeeds || activeCare != nil || pauseDestination != nil || showHavenLife || lifeAfterPause || journalAfterPause || storyGuest != nil || showStoryJournal || motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         StartupTrace.stage("hotel_body_begin")
@@ -200,6 +200,7 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains("--ui-menu-purchases") {neighborhood = .furniture}
             for id in BasementLayout.residents where ProcessInfo.processInfo.arguments.contains("--ui-corral-\(id)") {corral=id}
             if ProcessInfo.processInfo.arguments.contains("--ui-creative-preview") {showCreative=true}
+            for care in PersonalCare.allCases where ProcessInfo.processInfo.arguments.contains("--ui-needs-animation-"+care.rawValue) {beginPersonalCare(care)}
             if ProcessInfo.processInfo.arguments.contains("--ui-needs-panel") {showNeeds=true}
             if ProcessInfo.processInfo.arguments.contains("--ui-needs-npc") {family = .hildarelys}
             if ProcessInfo.processInfo.arguments.contains("--ui-creature-portrait") { family = .mochi }
@@ -299,6 +300,14 @@ struct MotelView: View {
             working = false
             workProgress = 0
         }
+        .task(id:activeCare) {
+            guard let care=activeCare else{return}
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("--ui-care-preview") {return}
+            #endif
+            do {try await Task.sleep(for:.seconds(care.animationDuration))} catch {return}
+            if activeCare==care {activeCare=nil}
+        }
         .task(id: toast) {
             guard let text = toast else { return }
             try? await Task.sleep(for: .seconds(3))
@@ -313,20 +322,20 @@ struct MotelView: View {
             if arrived == true {
                 stop();panel=nil;family=nil;talkingRoom=nil;corral=nil
                 showIncident=false;showCreative=false;showManagement=false;showHome=false
-                neighborhood=nil;showOptions=false;showNeeds=false;needsAfterPause=false;showPause=false;showMap=false;showActionPicker=false;pauseDestination=nil;lifeAfterPause=false;journalAfterPause=false
+                neighborhood=nil;showOptions=false;showNeeds=false;needsAfterPause=false;showPause=false;showMap=false;activeCare=nil;pauseDestination=nil;lifeAfterPause=false;journalAfterPause=false
                 confirmRest=false;showSneak=false;confirmRestore=false;showPolice=true
                 game.save()
             }
         }
-        .onChange(of: mapIdentity) { _, _ in stop() }
+        .onChange(of: mapIdentity) { _, _ in stop();activeCare=nil }
         .onChange(of: motel.actorTile) { _, _ in
             working=false;workProgress=0
             if fullscreenTouch,autoHideHUD,!paused {hideFullscreenToolbar=true}
         }
         .onChange(of: motel.caught) { _, caught in if caught { stop(); panel = nil } }
         .onChange(of: paused) { _, value in if value { stop() } }
-        .onChange(of: scenePhase) { _, phase in if phase != .active { stop() } }
-        .onDisappear { stop() }
+        .onChange(of: scenePhase) { _, phase in if phase != .active { stop();activeCare=nil } }
+        .onDisappear { stop();activeCare=nil }
         )
     }
 
@@ -363,20 +372,7 @@ struct MotelView: View {
                 }
             }
         }) { pauseSheet.presentationDetents([.large]).presentationDragIndicator(.visible) }
-        .sheet(isPresented:$showActionPicker) {
-            NavigationStack {
-                List {
-                    Section("Nearby actions") {
-                        ForEach(Array(motel.contextActions.enumerated()),id:\.offset) {_,action in
-                            Button(motel.actionTitle(action)) {showActionPicker=false;performAction(action)}
-                                .frame(minHeight:44).accessibilityIdentifier("chooseContext_"+motel.actionTitle(action))
-                        }
-                    }
-                }.scrollContentBackground(.hidden).background(Color(hex:0x172F29))
-                    .navigationTitle("Choose an action").navigationBarTitleDisplayMode(.inline)
-                    .toolbar {ToolbarItem(placement:.topBarLeading){MenuBackButton {showActionPicker=false}}}
-            }.tint(gold).presentationDetents([.medium,.large])
-        }
+
         )
     }
 
@@ -489,7 +485,6 @@ struct MotelView: View {
                 Spacer()
                 if working {ProgressView(value:workProgress).tint(gold)}
                 nearbyTouchActions.fixedSize(horizontal:false,vertical:true)
-                contextActionChooser
                 HStack(alignment:.bottom) {
                     FullscreenJoystick(diagonals:true,direction:steer).disabled(paused || motel.caught)
                         .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y).")
@@ -559,7 +554,6 @@ struct MotelView: View {
             }
             Text(showHints ? (motel.isAtReception ? "Walk freely. Tap guests, family and office objects to interact." : hint) : "").font(.system(size: 11, weight: .medium)).foregroundStyle(cream.opacity(0.8)).lineLimit(2).frame(maxWidth: .infinity, minHeight: 29, alignment: .leading)
             nearbyTouchActions.frame(height:44).clipped()
-            contextActionChooser
             HStack(spacing: 16) {
                 MotelJoystick(direction: { direction in
                     if let direction, !paused && !motel.caught {
@@ -630,12 +624,6 @@ struct MotelView: View {
         } else if motel.managementEnabled && (motel.simulation.powerOut || motel.simulation.waterOut) {
             Button {stop();managementFocus = .events;showManagement=true} label:{HotelNoticeCard(title:"SERVICE OUTAGE",message:"Review power and water under Overview → Events",symbol:"bolt.slash.fill",tint:gold)}
                 .buttonStyle(.plain).accessibilityIdentifier("utilityNotification")
-        }
-    }
-    @ViewBuilder private var contextActionChooser:some View {
-        if motel.contextActions.count>1 {
-            Button {stop();showActionPicker=true} label:{Label("Nearby actions (\(motel.contextActions.count))",systemImage:"list.bullet.circle")}
-                .font(.caption.bold()).frame(minHeight:44).disabled(paused || motel.caught).accessibilityIdentifier("otherNearbyActions")
         }
     }
     private func noticeTitle(_ message:String)->String {
@@ -725,9 +713,9 @@ struct MotelView: View {
         } else if motel.isAtBasement {
             BasementView(motel:motel,corral:openCorral,exit:{stop();change{_=$0.leaveBasement()}}).id(mapIdentity)
         } else if let bedroom=motel.currentBedroom {
-            HomeBedroomView(motel:motel,bedroom:bedroom,careAction:{care in stop();change{_=$0.performPersonalCare(care)};game.save()},exit:{stop();change{_=$0.leaveBedroom()}},save:saveHere).id(mapIdentity)
+            HomeBedroomView(motel:motel,bedroom:bedroom,care:activeCare,careAction:beginPersonalCare,exit:{stop();change{_=$0.leaveBedroom()}},save:saveHere).id(mapIdentity)
         } else if motel.isAtHome {
-            FamilyHouseView(motel:motel,tap:officeTap).id(mapIdentity)
+            FamilyHouseView(motel:motel,tap:officeTap,care:activeCare).id(mapIdentity)
         } else if motel.isAtReception {
             OfficeReceptionView(motel: motel, tap: officeTap).id(mapIdentity)
         } else {
@@ -841,7 +829,7 @@ struct MotelView: View {
         stop()
         if haptics { UIImpactFeedbackGenerator(style:.light).impactOccurred() }
         switch selected ?? motel.nearbyAction {
-        case .personal(let care):change{_=$0.performPersonalCare(care)};game.save()
+        case .personal(let care):beginPersonalCare(care)
         case .bedroom(let bedroom):change{_=$0.enterBedroom(bedroom)}
         case .family(let person):family=OfficeTap(rawValue:person)
         case .basement:change{_=$0.enterBasement()}
@@ -1051,7 +1039,7 @@ struct MotelView: View {
         guard !paused, motel.isAtReception || motel.isAtHome else { return }
         stop()
         switch item {
-        case .fridge:change{_=$0.performPersonalCare(.eat)};game.save()
+        case .fridge:beginPersonalCare(.eat)
         case .bathroomDoor:change{_=$0.enterBedroom(.bathroom)}
         case .girlBedroom:change{_=$0.enterBedroom(.samhil)}
         case .parentsBedroom:change{_=$0.enterBedroom(.parents)}
@@ -1097,6 +1085,16 @@ struct MotelView: View {
     private func saveHere() {
         guard motel.atSavePoint else { return }
         stop(); game.save(); panel = nil; toast = "Checkpoint saved."
+    }
+    private func beginPersonalCare(_ care:PersonalCare) {
+        guard activeCare==nil,!paused else{return}
+        stop()
+        var succeeded=false
+        change {succeeded=$0.performPersonalCare(care)}
+        // Commit once before presentation. Backgrounding cannot consume a second meal
+        // or leave a saved character stuck in an animation.
+        if succeeded {activeCare=care;game.save()}
+        else {toast=motel.lastEvent}
     }
     private func stop() { movement = nil; working = false; workProgress = 0; joystickDirection=nil }
     private func change(_ action: (inout Motel) -> Void) {

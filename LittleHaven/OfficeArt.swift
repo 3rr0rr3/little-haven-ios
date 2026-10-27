@@ -259,16 +259,12 @@ struct HomeInteriorArt:View {
             PaintedArt.draw("workbench",in:CGRect(x:62,y:174,width:20,height:14),context:&context)
             PaintedArt.draw("door",in:CGRect(x:111,y:208,width:18,height:32),context:&context)
             HomeBathroomArt.fridge(context:&context)
-            context.draw(Text("FOOD").font(.system(size:2.5,weight:.bold)).foregroundColor(Color(hex:0x34493E)),at:CGPoint(x:200,y:105))
+            context.draw(Text("FOOD").font(.system(size:2.5,weight:.bold)).foregroundColor(Color(hex:0x34493E)),at:CGPoint(x:25,y:105))
             for item in home.placed {Self.object(context:&context,kind:item.kind,x:Double(item.tile.x*16),y:Double(item.tile.y*16))}
             for bedroom in HomeBedroom.allCases {
-                if bedroom == .bathroom {
-                    PaintedArt.draw("door",in:CGRect(x:17,y:116,width:17,height:30),context:&context)
-                    context.draw(Text("BATH").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:25,y:113));continue
-                }
                 let x=Double(bedroom.door.x*16-2)
                 PaintedArt.draw("door",in:CGRect(x:x,y:12,width:20,height:30),context:&context)
-                context.draw(Text(bedroom == .samhil ? "SAMHIL" : "OUR ROOM").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x+10,y:9))
+                context.draw(Text(bedroom == .bathroom ? "BATH" : bedroom == .samhil ? "SAMHIL" : "OUR ROOM").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x+10,y:9))
             }
             rect(154,7,62,20,0x70513B)
             context.draw(Text("HOME SWEET HOME").font(.system(size:4.5,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:185,y:17))
@@ -1288,9 +1284,15 @@ extension HomeInteriorArt {
 
 enum HomeBathroomArt {
     static func fridge(context:inout GraphicsContext) {
-        CozyScenery.block(context:&context,x:193,y:96,w:14,h:16,color:0xDBD9C4,depth:1)
-        context.stroke(Path(CGRect(x:194,y:102,width:12,height:0.5)),with:.color(Color(hex:0x677E74)),lineWidth:0.5)
-        for y in [98.0,105.0] {context.fill(Path(roundedRect:CGRect(x:203,y:y,width:1.5,height:4),cornerRadius:0.4),with:.color(Color(hex:0x52675D)))}
+        // Kitchen nook on the left wall, clear of the TV, sofa and main walkway.
+        CozyScenery.block(context:&context,x:18,y:110,w:14,h:24,color:0xDBD9C4,depth:1)
+        context.stroke(Path(CGRect(x:19,y:118,width:12,height:0.5)),with:.color(Color(hex:0x677E74)),lineWidth:0.5)
+        for y in [112.0,122.0] {context.fill(Path(roundedRect:CGRect(x:28,y:y,width:1.5,height:4),cornerRadius:0.4),with:.color(Color(hex:0x52675D)))}
+        CozyScenery.block(context:&context,x:36,y:108,w:27,h:5,color:0x896347,depth:1)
+        context.fill(Path(ellipseIn:CGRect(x:39,y:108,width:8,height:3)),with:.color(Color(hex:0xBDCBC4)))
+        var faucet=Path();faucet.move(to:CGPoint(x:43,y:109));faucet.addLine(to:CGPoint(x:43,y:105));faucet.addLine(to:CGPoint(x:46,y:105))
+        context.stroke(faucet,with:.color(Color(hex:0x687D77)),style:StrokeStyle(lineWidth:0.9,lineCap:.round))
+        context.fill(Path(ellipseIn:CGRect(x:52,y:107,width:6,height:3)),with:.color(Color(hex:0xF1D795)))
     }
     static func draw(context:inout GraphicsContext) {
         CozyScenery.interior(context:&context,width:240,height:240,floor:0xB8C7BD,wall:0x8FB6AC)
@@ -1322,5 +1324,74 @@ enum PlayerDirtArt {
             var p=Path();p.move(to:CGPoint(x:21+Double(i*2),y:14));p.addQuadCurve(to:CGPoint(x:22+Double(i*2),y:8),control:CGPoint(x:18+Double(i*2),y:11))
             context.stroke(p,with:.color(Color(hex:0x8D9A63).opacity(0.8)),lineWidth:0.6)
         }
+    }
+}
+
+// Twelve cached frames, at the same small scale as the original player.
+// Shower curtain and toilet privacy screen keep these routines discreet.
+enum PersonalCareArt {
+    static func draw(context:inout GraphicsContext,kind:String,frame:Int,color:UInt32,variant:Int) {
+        let lift=(1-cos(Double(frame)*Double.pi/6))/2
+        let skin:UInt32=0xE3B38E
+        func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ tint:UInt32) {
+            context.fill(Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:tint)))
+        }
+        func line(_ points:[CGPoint],_ tint:UInt32,_ width:Double) {
+            var p=Path();for (i,v) in points.enumerated() {if i==0 {p.move(to:v)} else {p.addLine(to:v)}}
+            context.stroke(p,with:.color(Color(hex:tint)),style:StrokeStyle(lineWidth:width,lineCap:.round,lineJoin:.round))
+        }
+        func panel(_ r:CGRect,_ tint:UInt32) {
+            let p=Path(roundedRect:r,cornerRadius:2)
+            context.fill(p,with:.color(Color(hex:tint)));context.stroke(p,with:.color(Color(hex:0x40554A)),lineWidth:0.6)
+        }
+        if kind == "care-shower" {
+            oval(9,38,30,5,0xB5D6CF)
+            for i in 0..<7 {
+                let x=13+Double(i*4),y=9+Double((frame*3+i*5)%28)
+                line([CGPoint(x:x,y:y),CGPoint(x:x-1,y:y+4)],0xC0E4E2,0.7)
+            }
+        }
+        PaperPerson.draw(context:&context,x:16,y:19,color:color,variant:variant,facing:0,walk:0,hands:false,kneeling:kind == "care-toilet")
+        if kind == "care-eat" {
+            // One hand supports a plate; the other brings a fork to the mouth.
+            line([CGPoint(x:20,y:25),CGPoint(x:17,y:31),CGPoint(x:24,y:32)],skin,2.7)
+            oval(21,30,14,4,0xF1EBD5);oval(24,30,8,2,0xB48149)
+            oval(25,29,3,2,0x7BA16A);oval(29,29,3,2,0xD49765)
+            let hand=CGPoint(x:34-lift*6,y:31-lift*9)
+            line([CGPoint(x:28,y:25),CGPoint(x:35,y:28),hand],0x3A4039,3)
+            line([CGPoint(x:28,y:25),CGPoint(x:35,y:28),hand],skin,2.4)
+            line([hand,CGPoint(x:hand.x-2,y:hand.y-5)],0xCAD0C4,0.9)
+            oval(hand.x-3,hand.y-6,2.5,2,0xD1A865)
+            if lift>0.8 {oval(25,22,2,1,0xAF7460)}
+        } else if kind == "care-shower" {
+            // Washing motion is visible above a moving, opaque curtain.
+            line([CGPoint(x:20,y:25),CGPoint(x:15,y:18),CGPoint(x:21+lift*4,y:13)],skin,2.4)
+            for i in 0..<4 {
+                let size=2+Double(i%2),y=17-Double((frame+i*3)%10)
+                context.stroke(Path(ellipseIn:CGRect(x:18+Double(i*4),y:y,width:size,height:size)),with:.color(Color(hex:0xF0FAEE)),lineWidth:0.8)
+            }
+            line([CGPoint(x:8,y:27),CGPoint(x:40,y:27)],0x697F76,1)
+            for i in 0..<7 {
+                let x=8+Double(i)*4.5+sin(Double(frame+i)*0.5)*0.4
+                panel(CGRect(x:x,y:28,width:5,height:15),i%2==0 ? 0x8BB6A8 : 0xBDD5C7)
+            }
+        } else {
+            panel(CGRect(x:7,y:29,width:34,height:14),0xAA9473)
+            for x in [17.0,29] {line([CGPoint(x:x,y:30),CGPoint(x:x,y:42)],0xD8C8A4,0.7)}
+            // A folded tissue and small flush ripple, without changing body size.
+            line([CGPoint(x:28,y:25),CGPoint(x:33,y:27),CGPoint(x:35,y:26-lift)],skin,2.5)
+            panel(CGRect(x:33,y:23-lift,width:5,height:5),0xF2ECD8)
+            context.stroke(Path(ellipseIn:CGRect(x:8-lift,y:41,width:7+lift*2,height:2)),with:.color(Color(hex:0xA9D4CB)),lineWidth:0.6)
+        }
+    }
+}
+
+struct CareAnimationBadge:View {
+    let care:PersonalCare
+    var body:some View {
+        Label(care.title,systemImage:care.symbol).font(.caption2.bold())
+            .padding(.horizontal,10).padding(.vertical,5)
+            .foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x29473B).opacity(0.93),in:Capsule())
+            .allowsHitTesting(false).accessibilityIdentifier("careAnimation_"+care.rawValue)
     }
 }

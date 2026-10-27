@@ -266,8 +266,8 @@ enum HomeBedroom:String,Codable,CaseIterable,Hashable {
     case samhil,parents,bathroom
     var title:String {switch self {case .samhil:return "Samhil's bedroom";case .parents:return "Your & Hildarelys's bedroom";case .bathroom:return "Bathroom"}}
     var map:String {"home-bedroom-"+rawValue}
-    var door:Tile {self == .bathroom ? Tile(x:1,y:8) : Tile(x:self == .samhil ? 5 : 8,y:2)}
-    var homeApproach:Tile {self == .bathroom ? Tile(x:2,y:8) : Tile(x:door.x,y:3)}
+    var door:Tile {self == .bathroom ? Tile(x:4,y:2) : Tile(x:self == .samhil ? 5 : 8,y:2)}
+    var homeApproach:Tile {Tile(x:door.x,y:3)}
     static let exit=Tile(x:7,y:13)
     static let arrival=Tile(x:7,y:12)
     init?(map:String) {

@@ -1,0 +1,7 @@
+# Home care presentation — 56.0 (61)
+
+Bathroom entrance moves from the living-room floor to the upper hallway wall at column 4, beside the two existing bedrooms. Its return approach is column 4, row 3. Fridge moves from beneath the TV to a small left-wall kitchen nook at column 1, row 7, with counter, sink and bowl. The two-tile tall fridge is solid; column 2, row 7 remains accessible. Existing furnishing migration returns obstructing placed objects to storage. Save identities and all three rooms are unchanged.
+
+Eating, showering and toilet use start distinct twelve-frame native cached character poses. Eating carries a plate and raises a fork. Showering shows falling water, washing motion, foam and an opaque curtain. Toilet use shows a seated pose, privacy screen, tissue and flush ripple. The original small character and outfit are preserved. Routines last 2.7–3.6 seconds, temporarily stop movement/simulation, and restore controls. Successful model effects save exactly once before presentation; no meal is consumed for failed interactions. Backgrounding, map changes and view removal clear transient presentation without corrupting needs or saving a stuck animation.
+
+Removed the Nearby actions button and its sheet from both control modes. Direct physical targets, contextual main action, existing named touch actions and Pause destinations remain available. Regression tests use direct family interactions and verify the actual relocated door, food consumption, care completion, toilet/shower, saved clean state and menu access.

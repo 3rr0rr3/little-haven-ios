@@ -1544,10 +1544,12 @@ struct PlayerNeeds:Codable,Equatable {
 enum PersonalCare:String,CaseIterable,Hashable {
     case eat,toilet,shower
     var title:String {switch self {case .eat:return "Eat a meal";case .toilet:return "Use toilet";case .shower:return "Take a shower"}}
+    var animationKind:String {"care-"+rawValue}
+    var animationDuration:Double {self == .eat ? 2.7 : 3.6}
     var symbol:String {switch self {case .eat:return "fork.knife";case .toilet:return "toilet.fill";case .shower:return "shower.fill"}}
 }
 extension Motel {
-    static let homeFridge=Tile(x:12,y:6)
+    static let homeFridge=Tile(x:1,y:7)
     static let homeToilet=Tile(x:3,y:5)
     static let homeShower=Tile(x:10,y:7)
     var playerNeeds:PlayerNeeds {personalNeeds ?? PlayerNeeds(day:day)}

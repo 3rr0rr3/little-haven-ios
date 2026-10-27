@@ -33,8 +33,9 @@ struct FamilyHouseView:View {
     @Environment(\.worldTouch) private var worldTouch
     let motel:Motel
     let tap:(OfficeTap)->Void
+    var care:PersonalCare? = nil
     private var actors:[RPGActor] {[
-        RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You",dirty:motel.isPlayerDirty),
+        RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You",action:care?.animationKind ?? "",dirty:motel.isPlayerDirty),
         RPGActor(id:"hildarelys",tile:motel.reception.hildarelys,color:0x292A2C,variant:8,facing:motel.reception.tick%12<6 ? 2 : 1,name:"Hildarelys",duration:0.65),
         RPGActor(id:"samhil",tile:OfficeReception.samhil,color:0xD88BAA,variant:9,facing:3,name:"Samhil",displayScale:0.8,seated:true),
         ] + motel.havenHomeActors + motel.petActors + motel.policeActors}
@@ -43,7 +44,8 @@ struct FamilyHouseView:View {
             let scale=min(proxy.size.width/240,proxy.size.height/240)
             let origin=CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-house",revision:"decorated-home-26-\(motel.household.level)-\(motel.household.wallpaper)-\(motel.household.floor)-\(motel.household.placed.map{"\($0.id):\($0.tile.x):\($0.tile.y)"}.joined())",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeInteriorArt(home:motel.household))}
+                RPGSceneView(mapID:"family-house",revision:"decorated-home-56-\(motel.household.level)-\(motel.household.wallpaper)-\(motel.household.floor)-\(motel.household.placed.map{"\($0.id):\($0.tile.x):\($0.tile.y)"}.joined())",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeInteriorArt(home:motel.household))}
+                if let care {CareAnimationBadge(care:care).position(x:proxy.size.width/2,y:origin.y+46*scale)}
                 target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin).animation(.linear(duration:0.65),value:motel.reception.hildarelys).zIndex(2)
                 target(.samhil,"Talk to Samhil",OfficeReception.samhil,scale,origin).zIndex(2)
                 ForEach(motel.visiblePets, id: \.key) { pet in
@@ -63,7 +65,7 @@ struct FamilyHouseView:View {
             .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y). Food \(motel.playerNeeds.fullness), bathroom \(motel.playerNeeds.bladder), hygiene \(motel.playerNeeds.hygiene), dirty \(motel.isPlayerDirty).")
     }
     private func target(_ item:OfficeTap,_ label:String,_ tile:Tile,_ scale:CGFloat,_ origin:CGPoint)->some View {
-        let bedroomDoor=item == .girlBedroom || item == .parentsBedroom
+        let bedroomDoor=item == .girlBedroom || item == .parentsBedroom || item == .bathroomDoor
         // Bedroom doors extend up the wall. Keep their target on the actual door,
         // above the family patrol, instead of centering it on the floor approach.
         return Button {if item == .hildarelys || item == .samhil {tap(item)} else if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).frame(width:max(item == .hildarelys ? 64 : 44,24*scale),height:max(item == .hildarelys ? 64 : 44,(bedroomDoor ? 30 : 26)*scale)).contentShape(Rectangle())}.buttonStyle(.plain).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+(bedroomDoor ? 27 : CGFloat(tile.y*16+5))*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
@@ -249,11 +251,12 @@ struct HomeBedroomView:View {
     @Environment(\.worldTouch) private var worldTouch
     let motel:Motel
     let bedroom:HomeBedroom
+    var care:PersonalCare? = nil
     var careAction:(PersonalCare)->Void = {_ in}
     let exit:()->Void
     let save:()->Void
     private var actors:[RPGActor] {
-        [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,dirty:motel.isPlayerDirty)] + motel.petActors + motel.policeActors
+        [RPGActor(id:"player",tile:care == .toilet ? Tile(x:3,y:4) : care == .shower ? Tile(x:10,y:4) : motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,action:care?.animationKind ?? "",dirty:motel.isPlayerDirty)] + motel.petActors + motel.policeActors
     }
     var body:some View {
         GeometryReader {proxy in
@@ -261,6 +264,7 @@ struct HomeBedroomView:View {
             let origin=CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
                 RPGSceneView(mapID:bedroom.map,revision:"bedroom-50",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeBedroomArt(bedroom:bedroom))}
+                if let care {CareAnimationBadge(care:care).position(x:proxy.size.width/2,y:origin.y+180*scale)}
                 Button {if let worldTouch {worldTouch(HomeBedroom.exit,exit)} else {exit()}} label:{
                     Color.white.opacity(0.001).frame(width:30*scale,height:36*scale).contentShape(Rectangle())
                 }.buttonStyle(.plain).position(x:origin.x+120*scale,y:origin.y+220*scale)

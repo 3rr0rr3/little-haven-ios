@@ -55,10 +55,10 @@ struct ContentView: View {
             sample.motel!.world!.place = .house;sample.motel!.world!.player=Tile(x:7,y:8)
             var n=PlayerNeeds(day:0);n.elapsedHours=26;n.fullness=20;n.bladder=90;n.hygiene=30;sample.motel!.personalNeeds=n
             if args.contains("--ui-needs-fresh") {sample.motel!.personalNeeds=PlayerNeeds(day:sample.motel!.day)}
-            if args.contains("--ui-needs-food") {sample.motel!.world!.player=Tile(x:11,y:6)}
+            if args.contains("--ui-needs-food") || args.contains("--ui-needs-animation-eat") {sample.motel!.world!.player=Tile(x:2,y:7)}
             if args.contains("--ui-needs-npc") {sample.motel!.world!.player=Tile(x:7,y:4)}
-            if args.contains("--ui-needs-bathroom") {
-                sample.motel!.world!.player=HomeBedroom.bathroom.homeApproach;_=sample.motel!.enterBedroom(.bathroom);sample.motel!.world!.player=Motel.homeToilet
+            if args.contains("--ui-needs-bathroom") || args.contains("--ui-needs-animation-toilet") || args.contains("--ui-needs-animation-shower") {
+                sample.motel!.world!.player=HomeBedroom.bathroom.homeApproach;_=sample.motel!.enterBedroom(.bathroom);sample.motel!.world!.player=args.contains("--ui-needs-animation-shower") ? Motel.homeShower : Motel.homeToilet
             }
             sample.save();return sample
         }

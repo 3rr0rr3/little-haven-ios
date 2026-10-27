@@ -16,7 +16,7 @@ except urllib.error.HTTPError as error:
     if error.code!=404:raise
 entries=[]
 images=list(Path('.').glob('LittleHaven-npc-gallery.png'))+list(Path('.').glob('LittleHaven-response-painted-*.png'))+list(Path('.').glob('LittleHaven-character-turns.png'))+list(Path('.').glob('LittleHaven-app-icon.png'))+list(Path('/tmp/art-ui-diagnostics').rglob('*.png'))
-priority=[Path('LittleHaven-response-painted-'+mode+'.png') for mode in ['needs-dirty','needs-bathroom','needs-panel','needs-npc','night-sky','neglect','seasonal','menu-emergency']]
+priority=[Path('LittleHaven-response-painted-'+mode+'.png') for mode in ['needs-animation-eat','needs-animation-toilet','needs-animation-shower','needs-dirty','needs-bathroom','needs-panel','needs-npc','night-sky','neglect','seasonal','menu-emergency']]
 images=[p for p in priority if p.exists()]+[p for p in images if p not in priority]
 for index,image in enumerate(images[:30]):
     target=Path('/tmp')/('art-review-'+str(index)+'.jpg')

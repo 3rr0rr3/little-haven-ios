@@ -120,9 +120,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          for MODE in needs-dirty needs-bathroom needs-panel needs-npc neglect night-sky seasonal menu-emergency sanctuary-juan sanctuary-pink sanctuary-inferno sanctuary-cosmic menu-pause menu-map menu-staff menu-purchases management-dashboard management-growth basement family-home bedroom-samhil bedroom-parents office-preview beach water-pool street home-store home-exterior neighborhood motel-room bar fish creative; do
+          for MODE in needs-animation-eat needs-animation-toilet needs-animation-shower needs-dirty needs-bathroom needs-panel needs-npc neglect night-sky seasonal menu-emergency sanctuary-juan sanctuary-pink sanctuary-inferno sanctuary-cosmic menu-pause menu-map menu-staff menu-purchases management-dashboard management-growth basement family-home bedroom-samhil bedroom-parents office-preview beach water-pool street home-store home-exterior neighborhood motel-room bar fish creative; do
             xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
-            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch --ui-painted-check
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch --ui-painted-check --ui-care-preview
             sleep 5
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-$MODE.png"
           done
@@ -132,11 +132,12 @@ jobs:
             sleep 7
             xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-action-$MODE.png"
           done
-          for MOTION_MODE in beach family-home; do
+          for MOTION_MODE in beach family-home needs-animation-eat needs-animation-toilet needs-animation-shower; do
             xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
-            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MOTION_MODE" --ui-testing --ui-touch
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MOTION_MODE" --ui-testing --ui-touch --ui-care-preview
             sleep 4
-            MOTION_NAME=water
+            MOTION_NAME="$MOTION_MODE"
+            if [ "$MOTION_MODE" = beach ]; then MOTION_NAME=water; fi
             if [ "$MOTION_MODE" = family-home ]; then MOTION_NAME=home-cats; fi
             xcrun simctl io "$SIM_DEVICE" recordVideo --codec=h264 "LittleHaven-$MOTION_NAME-motion.mp4" &
             MOTION_VIDEO_PID=$!

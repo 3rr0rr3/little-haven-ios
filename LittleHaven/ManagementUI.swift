@@ -1256,6 +1256,10 @@ struct WorkingCharacterArtwork:View {
     var facing=2
     var body:some View {
         Canvas { c,_ in
+            if kind.hasPrefix("care-") {
+                PersonalCareArt.draw(context:&c,kind:kind,frame:frame,color:color,variant:variant)
+                return
+            }
             let wave=sin(Double(frame) * .pi/6)
             let press=(1-cos(Double(frame) * .pi/3))/2
             let skin:UInt32=variant == 7 ? 0xE3B38E : [UInt32(0xF0C9A0),0xD6A477,0xA87350,0x734A37,0xE9B693][abs(variant)%5]
@@ -1797,7 +1801,7 @@ struct PlayerNeedsPanel:View {
                     Text(motel.playerNeeds.toiletDay==motel.day ? "Bathroom: done today" : "Bathroom: due today")
                     Text(motel.playerNeeds.showerDay==motel.day ? "Shower: done today" : "Shower: due today")
                     Text("Food: use your home fridge (one snack or a prepared garden dish), or order a meal at Coral Catch.")
-                    Text("Bathroom: enter the BATH door on the left side of your living room. Walk to the toilet or shower and interact.")
+                    Text("Bathroom: enter the BATH door on the upper hallway wall, beside the bedrooms. Walk to the toilet or shower and interact.")
                     Text("Eat regularly. Use the toilet and shower every day. After 24 game hours without a shower, your character looks dirty and people may comment. Time pauses in menus; needs never prevent walking or emergency responses.").font(.caption)
                 }.padding(22)
             }.foregroundStyle(Color(hex:0xF5E7C8)).background(Color(hex:0x20372F))

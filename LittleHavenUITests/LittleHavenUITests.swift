@@ -1058,11 +1058,8 @@ final class LittleHavenUITests: XCTestCase {
         let app=launch("--ui-menu-actions")
         XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:15))
         XCTAssertFalse(app.buttons["openCreative"].exists);XCTAssertFalse(app.buttons["openReviews"].exists)
-        XCTAssertTrue(app.buttons["otherNearbyActions"].exists)
-        app.buttons["otherNearbyActions"].tap()
-        XCTAssertTrue(app.buttons["chooseContext_Talk to Hildarelys"].waitForExistence(timeout:5))
-        XCTAssertTrue(app.buttons["chooseContext_Talk to Tuki"].exists)
-        app.buttons["chooseContext_Talk to Hildarelys"].tap()
+        XCTAssertFalse(app.buttons["otherNearbyActions"].exists)
+        app.buttons["office_hildarelys"].tap()
         XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5));app.buttons["dialogueBack"].tap()
         openPause(app)
         for id in ["pauseMap","openReviews","openCreative","pauseOptions"] {XCTAssertTrue(app.buttons[id].exists)}
@@ -1133,9 +1130,11 @@ final class LittleHavenUITests: XCTestCase {
         let scene=app.descendants(matching:.any)["homeBedroomScene"].firstMatch
         XCTAssertTrue(scene.waitForExistence(timeout:15));XCTAssertTrue((scene.value as? String ?? "").contains("dirty true"))
         app.buttons["worldAction"].tap()
+        waitForCare(.toilet,app)
         XCTAssertTrue((scene.value as? String ?? "").contains("bathroom 0"))
         step("south",2,app);step("east",7,app)
         XCTAssertTrue(app.buttons["bathroom_shower"].exists);app.buttons["bathroom_shower"].tap()
+        waitForCare(.shower,app)
         XCTAssertTrue((scene.value as? String ?? "").contains("hygiene 100"));XCTAssertTrue((scene.value as? String ?? "").contains("dirty false"))
         capture(app,"Daily toilet and shower with clean character")
         app.terminate();app.launchArguments=["--ui-testing"];app.launch()
@@ -1145,8 +1144,9 @@ final class LittleHavenUITests: XCTestCase {
         let app=launch("--ui-needs-food")
         let home=app.descendants(matching:.any)["familyHouseScene"].firstMatch
         XCTAssertTrue(home.waitForExistence(timeout:15));app.buttons["office_fridge"].tap()
+        waitForCare(.eat,app)
         XCTAssertTrue((home.value as? String ?? "").contains("Food 80"))
-        step("west",4,app);step("north",2,app)
+        step("east",5,app);step("north",3,app)
         app.buttons["office_hildarelys"].tap()
         XCTAssertTrue(app.staticTexts["npcHygieneRemark"].waitForExistence(timeout:5))
         XCTAssertTrue(app.buttons["Give her a kiss"].exists,"Hygiene comments preserve family conversation choices")
@@ -1156,6 +1156,27 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching:.any)["needBathroom"].firstMatch.exists)
         XCTAssertTrue(app.descendants(matching:.any)["needHygiene"].firstMatch.exists)
         back(app)
+    }
+    private enum CareRoutine:String {case eat,toilet,shower}
+    private func waitForCare(_ care:CareRoutine,_ app:XCUIApplication) {
+        let badge=app.descendants(matching:.any)["careAnimation_"+care.rawValue].firstMatch
+        let finished=XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == false"),object:badge)
+        XCTAssertEqual(XCTWaiter.wait(for:[finished],timeout:8),.completed,"Routine must finish and restore controls")
+    }
+    func testRelocatedHomeBathroomDoorAndFridge() {
+        let app=launch("--ui-needs-food")
+        let home=app.descendants(matching:.any)["familyHouseScene"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout:15))
+        XCTAssertFalse(app.buttons["otherNearbyActions"].exists)
+        step("east",2,app);step("north",4,app)
+        XCTAssertTrue((home.value as? String ?? "").contains("Column 4, row 3"))
+        app.buttons["office_bathroomDoor"].tap()
+        let bath=app.descendants(matching:.any)["homeBedroomScene"].firstMatch
+        XCTAssertTrue(bath.waitForExistence(timeout:5))
+        step("south",1,app)
+        XCTAssertTrue(home.waitForExistence(timeout:5))
+        XCTAssertTrue((home.value as? String ?? "").contains("Column 4, row 3"))
+        capture(app,"Bathroom entrance on hallway wall and kitchen nook")
     }
     private func back(_ app:XCUIApplication) {
         let menus=app.buttons.matching(identifier:"menuBack")
