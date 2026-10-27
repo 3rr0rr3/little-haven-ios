@@ -943,6 +943,9 @@ final class LittleHavenUITests: XCTestCase {
 
 
     func testManagementDashboardFiltersAndQuickActions() {
+        // Two system menus may each wait for animation idle on a loaded simulator.
+        // Keep every assertion; allow the existing workflow maximum for this path.
+        executionTimeAllowance=180
         let app=launch("--ui-management-dashboard")
         XCTAssertTrue(app.staticTexts["managementOverview"].waitForExistence(timeout:10))
         let attention=app.buttons["quickAttention"]
