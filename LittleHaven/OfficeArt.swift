@@ -1358,7 +1358,7 @@ enum PersonalCareArt {
             line([CGPoint(x:20,y:25),CGPoint(x:17,y:31),CGPoint(x:24,y:32)],skin,2.7)
             oval(21,30,14,4,0xF1EBD5);oval(24,30,8,2,0xB48149)
             oval(25,29,3,2,0x7BA16A);oval(29,29,3,2,0xD49765)
-            let hand=CGPoint(x:34-lift*6,y:31-lift*9)
+            let hand=CGPoint(x:34-lift*6,y:33-lift*4)
             line([CGPoint(x:28,y:25),CGPoint(x:35,y:28),hand],0x3A4039,3)
             line([CGPoint(x:28,y:25),CGPoint(x:35,y:28),hand],skin,2.4)
             line([hand,CGPoint(x:hand.x-2,y:hand.y-5)],0xCAD0C4,0.9)
