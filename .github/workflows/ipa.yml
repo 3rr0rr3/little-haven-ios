@@ -120,7 +120,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          for MODE in sanctuary-pink sanctuary-inferno sanctuary-cosmic menu-pause menu-map menu-emergency menu-staff menu-purchases management-dashboard management-growth basement family-home bedroom-samhil bedroom-parents office-preview beach water-pool street home-store home-exterior neighborhood motel-room bar fish creative; do
+          for MODE in sanctuary-juan sanctuary-pink sanctuary-inferno sanctuary-cosmic menu-pause menu-map menu-emergency menu-staff menu-purchases management-dashboard management-growth basement family-home bedroom-samhil bedroom-parents office-preview beach water-pool street home-store home-exterior neighborhood motel-room bar fish creative; do
             xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
             xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch --ui-painted-check
             sleep 5

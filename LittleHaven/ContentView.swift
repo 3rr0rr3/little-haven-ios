@@ -251,7 +251,7 @@ struct ContentView: View {
                 _=sample.motel!.enterBasement();sample.motel!.world!.player=Tile(x:12,y:23)
                 for id in BasementLayout.residents where args.contains("--ui-corral-\(id)") {sample.motel!.world!.player=BasementLayout.gate(id)}
             }
-            for (flag,id) in [("--ui-sanctuary-pink",8),("--ui-sanctuary-inferno",9),("--ui-sanctuary-cosmic",10)] where args.contains(flag) {sample.motel!.world!.player=BasementLayout.gate(id)}
+            for (flag,id) in [("--ui-sanctuary-pink",8),("--ui-sanctuary-inferno",9),("--ui-sanctuary-cosmic",10),("--ui-sanctuary-juan",11)] where args.contains(flag) {sample.motel!.world!.player=BasementLayout.gate(id)}
             sample.save();return sample
         }
         if args.contains("--ui-creature") {

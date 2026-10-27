@@ -140,7 +140,7 @@ struct PaintedSanctuary:View {
             for id in BasementLayout.residents {
                 let p=BasementLayout.pen(id),x=Double(p.x*16),y=Double(p.y*16)
                 let pen=CGRect(x:x,y:y,width:128,height:64)
-                c.fill(Path(pen),with:.color(Color(hex:[UInt32(0xBDA785),0xCDBB94,0x9DAF9A,0xA5B18C,0xCEC4AA,0xAEA38E,0xB89F95,0x9EAF9A,0xCEB3BE,0xB7A298,0xA1B69C][id])))
+                c.fill(Path(pen),with:.color(Color(hex:[UInt32(0xBDA785),0xCDBB94,0x9DAF9A,0xA5B18C,0xCEC4AA,0xAEA38E,0xB89F95,0x9EAF9A,0xCEB3BE,0xB7A298,0xA1B69C,0xCBB98D][id])))
                 var bed=c;bed.opacity=0.10;PaintedArt.texture("straw",in:pen.insetBy(dx:3,dy:4),context:&bed,unit:32)
                 PaintedArt.draw("bedding",in:CGRect(x:x+7,y:y+14,width:28,height:26),context:&c,fit:true)
                 PaintedArt.draw("feed-bowl",in:CGRect(x:x+98,y:y+15,width:15,height:8),context:&c)
@@ -160,7 +160,10 @@ struct PaintedSanctuary:View {
                     c.fill(Path(ellipseIn:CGRect(x:x+17,y:y+47,width:4,height:4)),with:.color(Color(hex:0x49473D)))
                 case 8:PaintedArt.draw("rug",in:CGRect(x:x+8,y:y+42,width:27,height:13),context:&c)
                 case 9:PaintedArt.draw("spellbook",in:CGRect(x:x+9,y:y+43,width:25,height:12),context:&c,fit:true)
-                default:PaintedArt.draw("fern",in:CGRect(x:x+7,y:y+34,width:26,height:23),context:&c,fit:true)
+                case 10:PaintedArt.draw("fern",in:CGRect(x:x+7,y:y+34,width:26,height:23),context:&c,fit:true)
+                default:
+                    PaintedArt.draw("bedding",in:CGRect(x:x+8,y:y+38,width:30,height:20),context:&c,fit:true)
+                    var hay=c;hay.opacity=0.55;PaintedArt.texture("straw",in:CGRect(x:x+11,y:y+43,width:23,height:10),context:&hay,unit:16)
                 }
                 // Rails, plates and posts stay on the original blocked pen boundary.
                 for edge in [0.0,57] {

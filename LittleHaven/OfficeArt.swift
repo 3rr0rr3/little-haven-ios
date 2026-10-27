@@ -898,6 +898,7 @@ struct BasementArt:View {
 
 enum CorralCreatureArt {
     static func draw(context:inout GraphicsContext,kind:Int,facing:Int,walk:Double) {
+        if kind == 12 {drawJuan(context:&context,facing:facing,walk:walk);return}
         if (9...11).contains(kind) {drawNewResident(context:&context,kind:kind,facing:facing,walk:walk);return}
         if (1...8).contains(kind),PaintedArt.creature(context:&context,name:PaintedArt.creatures[kind-1],facing:facing,walk:walk) {return}
         var c=context
@@ -995,6 +996,63 @@ struct CorralCreaturePortrait:View {
 }
 
 extension CorralCreatureArt {
+    static func drawJuan(context:inout GraphicsContext,facing:Int,walk:Double) {
+        var c=context
+        let step=max(-1,min(1,walk))*0.65
+        let edge=Color(hex:0x493930)
+        func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
+            let p=Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h));c.fill(p,with:.color(Color(hex:color)));c.stroke(p,with:.color(edge),lineWidth:0.4)
+        }
+        func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
+            let p=Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:0.7);c.fill(p,with:.color(Color(hex:color)));c.stroke(p,with:.color(edge),lineWidth:0.35)
+        }
+        func curve(_ a:CGPoint,_ control:CGPoint,_ b:CGPoint,_ color:UInt32,_ width:Double) {
+            var p=Path();p.move(to:a);p.addQuadCurve(to:b,control:control);c.stroke(p,with:.color(Color(hex:color)),lineWidth:width)
+        }
+        c.fill(Path(ellipseIn:CGRect(x:0.8,y:25,width:23,height:2.8)),with:.color(Color.black.opacity(0.22)))
+        if facing == 1 || facing == 2 {
+            if facing == 2 {c.translateBy(x:24,y:0);c.scaleBy(x:-1,y:1)}
+            // The reference's broad chestnut barrel and tiny legs define the silhouette.
+            curve(CGPoint(x:20,y:12),CGPoint(x:25,y:14),CGPoint(x:22.5,y:24+step),0x625449,2)
+            for (x,shift) in [(7.0,step),(10.2,-step),(16.4,-step),(19.2,step)] {
+                box(x,21.5+shift,2.8,5.3,0xAA713D);box(x-0.3,25+shift,3.6,2,0x6B6458)
+            }
+            oval(5.2,9,18.1,17.2,0xB98043)
+            oval(7.2,10.5,14.1,14.7,0xD19A54)
+            oval(8.2,12,10.8,11.3,0xD8A563)
+            oval(3.2,7,7.9,15.3,0xC79253)
+            oval(1.5,3.6,7.3,13.4,0xB99B74)
+            oval(0,11.4,6.8,6.5,0xABA58C)
+            oval(2.4,1.3,2.2,6,0xB99870);oval(6,1.8,2.1,5.5,0xB99870)
+            oval(2.9,2.2,0.9,3.5,0x8B7867);oval(6.5,2.7,0.8,3.3,0x8B7867)
+            curve(CGPoint(x:7.8,y:4),CGPoint(x:6.4,y:9),CGPoint(x:8.8,y:16),0xB9B6A0,2.5)
+            curve(CGPoint(x:7.5,y:4),CGPoint(x:7.3,y:9),CGPoint(x:8.4,y:13),0xDDD4B8,0.6)
+            oval(2.2,7.6,1.5,2,0x3B352F);oval(2.5,7.8,0.45,0.55,0xF8EBC9)
+            oval(0.8,13.2,1,1.4,0x706F60)
+            return
+        }
+        for (x,shift) in [(4.5,step),(9.0,-step),(13.0,-step),(17.5,step)] {
+            box(x,21.3+shift,3,5.3,0xAC763F);box(x-0.2,25+shift,3.4,2,0x6B6458)
+        }
+        oval(0.6,9,22.8,17.4,0xB98043)
+        oval(2.4,10.6,19.2,15,0xD09B57)
+        oval(4.6,13,14.8,11.8,0xD9A866)
+        oval(7.4,3,9.2,15.8,0xC59964)
+        oval(7.6,0.8,2.6,6.3,0xBA996E);oval(14,0.8,2.6,6.3,0xBA996E)
+        oval(8.3,2,1,3.7,0x8D7E68);oval(14.8,2,1,3.7,0x8D7E68)
+        if facing == 3 {
+            curve(CGPoint(x:12,y:4),CGPoint(x:9.8,y:9),CGPoint(x:12,y:17),0xBDBBA4,3.6)
+            curve(CGPoint(x:12,y:15),CGPoint(x:14+step,y:21),CGPoint(x:11+step,y:26),0x716455,2.2)
+        } else {
+            oval(7.2,4.3,9.6,10.4,0xC2A47C)
+            oval(6.8,11,10.4,7.6,0xB1AD92)
+            for x in [8.7,14.3] {oval(x,8.2,1.3,2,0x38342E);oval(x+0.25,8.4,0.45,0.6,0xF7EAC9)}
+            for x in [8.8,13.9] {oval(x,13.7,1.3,1.8,0x787461)}
+            curve(CGPoint(x:9.2,y:16.3),CGPoint(x:12,y:17.5),CGPoint(x:15,y:16.3),0x80755F,0.4)
+            curve(CGPoint(x:10,y:4.3),CGPoint(x:13,y:1.8),CGPoint(x:14,y:6.8),0xC4C0A8,3)
+        }
+    }
+
     /// Native layered art shares the original residents' 24 x 28 coordinate system.
     /// All facial features turn with the body; the normal actor cache supplies walking frames.
     static func drawNewResident(context:inout GraphicsContext,kind:Int,facing:Int,walk:Double) {

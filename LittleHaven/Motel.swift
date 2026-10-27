@@ -706,13 +706,13 @@ extension Motel {
         return true
     }
     static let adventureClues=["a keepsake near the north neighborhood path","a ribbon in the shop plaza","a lure outside Coral Catch","a seed pouch by the cove",
-        "a shell on the east beach","a training buckle near the neighbors' homes","a grooming brush beside the laundry","a lost football near the south motel path","a pink ribbon by the neighborhood gardens","an ember charm near the motel fountain","a moonstone beside the cove palms"]
+        "a shell on the east beach","a training buckle near the neighbors' homes","a grooming brush beside the laundry","a lost football near the south motel path","a pink ribbon by the neighborhood gardens","an ember charm in the motel courtyard","a moonstone beside the cove palms","a lucky horseshoe by the neighborhood path"]
     static let adventureSites=[Tile(x:45,y:17),Tile(x:54,y:33),Tile(x:47,y:36),Tile(x:56,y:45),
-        Tile(x:62,y:48),Tile(x:62,y:17),Tile(x:12,y:8),Tile(x:36,y:31),Tile(x:48,y:16),Tile(x:17,y:13),Tile(x:56,y:47)]
+        Tile(x:62,y:48),Tile(x:62,y:17),Tile(x:12,y:8),Tile(x:36,y:31),Tile(x:48,y:16),Tile(x:17,y:13),Tile(x:56,y:47),Tile(x:44,y:21)]
     static let creatureAbilities=["Wizard's insight · +1 toiletry each morning","Twin-tail courier · +1 towel each morning",
         "Blue's lucky cast · +2 fishing score","Shrek's green thumb · +2 snacks each morning",
         "Shark's sea sense · +2 fishing score","Mighty's encouragement · staff fatigue -5 each morning",
-        "Fang's pest patrol · +1 pesticide each morning","Messi's team spirit · +2 activity score","Pink-ear's welcome · +1 snack each morning","Inferno's forge · +1 spare part each morning","Cosmic's clean orbit · +1 towel each morning"]
+        "Fang's pest patrol · +1 pesticide each morning","Messi's team spirit · +2 activity score","Kawai Tom's welcome · +1 snack each morning","Inferno Cat's forge · +1 spare part each morning","cosmic cat's clean orbit · +1 towel each morning","Juan's steady pace · +1 toiletry each morning"]
     func adventure(_ id:Int)->HavenAdventure {haven.adventures[id] ?? HavenAdventure()}
     func adventureTile(_ id:Int)->Tile {groundNearestWalkable(to:groundTile(Self.adventureSites[id]))}
     @discardableResult mutating func startCreatureAdventure(_ id:Int)->Bool {
@@ -850,6 +850,7 @@ extension Motel {
             case 8:s.stock["snacks",default:0]+=1
             case 9:s.stock["parts",default:0]+=1
             case 10:s.stock["towels",default:0]+=1
+            case 11:s.stock["toiletries",default:0]+=1
             default:break
             }
         }
