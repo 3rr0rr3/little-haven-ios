@@ -269,6 +269,7 @@ struct HomeInteriorArt:View {
             }
             rect(154,7,62,20,0x70513B)
             context.draw(Text("HOME SWEET HOME").font(.system(size:4.5,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:185,y:17))
+            StartupTrace.stage("home_art_draw_complete")
         }.frame(width:240,height:240)
     }
 }

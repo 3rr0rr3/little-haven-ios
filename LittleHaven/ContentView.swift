@@ -60,7 +60,7 @@ struct ContentView: View {
             if args.contains("--ui-needs-bathroom") || args.contains("--ui-needs-animation-toilet") || args.contains("--ui-needs-animation-shower") {
                 sample.motel!.world!.player=HomeBedroom.bathroom.homeApproach;_=sample.motel!.enterBedroom(.bathroom);sample.motel!.world!.player=args.contains("--ui-needs-animation-shower") ? Motel.homeShower : Motel.homeToilet
             }
-            sample.save();return sample
+            sample.save();UserDefaults.standard.synchronize();return sample
         }
         if args.contains("--ui-neglect") || args.contains("--ui-night-sky") || args.contains("--ui-seasonal") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement()

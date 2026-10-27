@@ -50,7 +50,19 @@ enum StartupTrace {
             begin("simulated interrupted startup");stage("before_hotel_view");return true
         }
         #endif
-        if record?.pending == true {return true}
+        if let previous=record,previous.pending {
+            if previous.build != version {
+                // A prior build's unfinished attempt must not trap an updated app
+                // in recovery. Preserve its evidence, then try this build once.
+                if let url,let data=try? JSONEncoder().encode(previous) {
+                    try? data.write(to:url.deletingLastPathComponent().appendingPathComponent("startup-report-previous.json"),options:.atomic)
+                }
+                begin("app update retry")
+                stage("previous_build_startup_preserved")
+                return false
+            }
+            return true
+        }
         begin("app launch");return false
     }()
     static func begin(_ reason: String) {
@@ -83,6 +95,7 @@ enum StartupTrace {
 }
 
 private struct StartupRecoveryRoot: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var recovery = StartupTrace.needsRecovery
     var body: some View {
         Group {
@@ -92,6 +105,14 @@ private struct StartupRecoveryRoot: View {
                     recovery=false
                 }
             } else { ContentView() }
+        }.onChange(of:scenePhase) {_,phase in
+            guard phase == .background,!recovery else{return}
+            #if DEBUG
+            let args=ProcessInfo.processInfo.arguments
+            if args.contains("--ui-recovery-preview") || args.contains("--ui-recovery-inspect") {return}
+            #endif
+            // Leaving the app normally during the grace period is not a crash.
+            StartupTrace.finish("startup_backgrounded")
         }
     }
 }

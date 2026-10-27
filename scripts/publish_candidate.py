@@ -22,35 +22,35 @@ with zipfile.ZipFile(io.BytesIO(data)) as archive:
 assert info['CFBundleDisplayName'] == 'Brainstorm Haven'
 assert info['CFBundleSupportedPlatforms'] == ['iPhoneOS']
 version = info['CFBundleShortVersionString'].split('.')[0]
-assert version == '56' and info['CFBundleVersion'] == '61'
-branch = 'codex/download-v56-' + source[:8]
+assert version == '57' and info['CFBundleVersion'] == '62'
+branch = 'codex/download-v57-' + source[:8]
 entries = []
 def blob(path, content):
     result = api('/git/blobs', {'content': base64.b64encode(content).decode(), 'encoding':'base64'})
     expected = hashlib.sha1(b'blob ' + str(len(content)).encode() + b'\0' + content).hexdigest()
     assert result['sha'] == expected
     entries.append({'path':path, 'mode':'100644', 'type':'blob', 'sha':result['sha']})
-blob('downloads/BrainstormHaven-56.ipa', data)
-verification = {'source':source, 'version':'56.0', 'build':'61', 'size':len(data), 'sha256':digest}
+blob('downloads/BrainstormHaven-57.ipa', data)
+verification = {'source':source, 'version':'57.0', 'build':'62', 'size':len(data), 'sha256':digest}
 if os.environ.get('BINARY_SOURCE_SHA'):
     verification['binary_source']=os.environ['BINARY_SOURCE_SHA']
     verification['test_recovery']=json.loads(Path('home-care-recovery.json').read_text())
-blob('downloads/BrainstormHaven-56-verification.json', json.dumps(verification, indent=2).encode())
+blob('downloads/BrainstormHaven-57-verification.json', json.dumps(verification, indent=2).encode())
 if Path('home-care-recovery.json').exists():
-    blob('verification/v56/home-care-recovery.json',Path('home-care-recovery.json').read_bytes())
+    blob('verification/v57/home-care-recovery.json',Path('home-care-recovery.json').read_bytes())
 for report in sorted(Path('.').glob('ReleaseStartup-*-report.json')):
-    blob('verification/v56/' + report.name, report.read_bytes())
+    blob('verification/v57/' + report.name, report.read_bytes())
 for image in sorted(Path('.').glob('LittleHaven-response-painted-*.png')):
     reduced = Path('/tmp') / (image.stem+'.jpg')
     subprocess.run(['sips','-s','format','jpeg','-s','formatOptions','90','-Z','1100',str(image),'--out',str(reduced)],check=True,stdout=subprocess.DEVNULL)
-    blob('previews/v56/' + image.stem+'.jpg', reduced.read_bytes())
+    blob('previews/v57/' + image.stem+'.jpg', reduced.read_bytes())
 for motion in sorted(Path('.').glob('LittleHaven-*-motion.mp4')):
-    blob('previews/v56/'+motion.name,motion.read_bytes())
+    blob('previews/v57/'+motion.name,motion.read_bytes())
 
 tree = api('/git/trees', {'base_tree':api('/git/commits/' + source)['tree']['sha'], 'tree':entries})
-commit = api('/git/commits', {'message':'Verified Brainstorm Haven v56 build61 [skip ci]', 'tree':tree['sha'], 'parents':[source]})
+commit = api('/git/commits', {'message':'Verified Brainstorm Haven v57 build62 [skip ci]', 'tree':tree['sha'], 'parents':[source]})
 api('/git/refs', {'ref':'refs/heads/' + branch, 'sha':commit['sha']})
-url = 'https://raw.githubusercontent.com/' + repo + '/' + commit['sha'] + '/downloads/BrainstormHaven-56.ipa'
+url = 'https://raw.githubusercontent.com/' + repo + '/' + commit['sha'] + '/downloads/BrainstormHaven-57.ipa'
 with urllib.request.urlopen(url, timeout=90) as response:
     downloaded = response.read()
     assert response.status == 200

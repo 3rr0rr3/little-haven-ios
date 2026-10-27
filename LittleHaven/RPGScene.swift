@@ -132,6 +132,12 @@ private final class LayoutReadyRPGView: SKView {
 }
 
 enum OfficeRenderPolicy {
+    static var homeCompatibility:Bool {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--ui-home-compatibility") {return true}
+        #endif
+        return compatibility
+    }
     static var compatibility: Bool {
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--ui-office-compatibility") { return true }
@@ -189,11 +195,72 @@ struct CompatibleOfficeScene: View {
     }
 }
 
+// The iOS 27 home path shares the proven direct reception renderer. No SKView,
+// SKCropNode, ImageRenderer snapshot or texture upload is involved in this room.
+struct CompatibleHomeScene:View {
+    let actors:[RPGActor]
+    var livingRoom=false
+    let scenery:AnyView
+    var body:some View {
+        GeometryReader {proxy in
+            let scale=max(0,min(proxy.size.width/240,proxy.size.height/240))
+            ZStack(alignment:.topLeading) {
+                scenery.frame(width:240,height:240)
+                if livingRoom {
+                    CompatibleHomeTV().frame(width:38,height:20).clipShape(RoundedRectangle(cornerRadius:2)).position(x:186,y:57)
+                }
+                ForEach(actors,id:\.id) {actor in
+                    CompatibleOfficeActor(actor:actor)
+                        .position(x:CGFloat(actor.tile.x*16+8),y:CGFloat(actor.tile.y*16+5))
+                        .animation(.linear(duration:actor.duration),value:actor.tile)
+                        .zIndex(Double(actor.tile.y*16))
+                }
+                if livingRoom {CompatibleHomeSofaFront().zIndex(159)}
+            }.frame(width:240,height:240).scaleEffect(scale,anchor:.topLeading)
+                .offset(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
+        }.allowsHitTesting(false).accessibilityElement(children:.ignore)
+            .accessibilityLabel(livingRoom ? "Home compatibility renderer" : "Bedroom compatibility renderer")
+            .accessibilityIdentifier(livingRoom ? "homeCompatibilityRenderer" : "bedroomCompatibilityRenderer")
+            .onAppear {StartupTrace.stage(livingRoom ? "compatible_home_appeared" : "compatible_bedroom_appeared")}
+    }
+}
+private struct CompatibleHomeSofaFront:View {
+    var body:some View {
+        Canvas {context,_ in
+            guard let image=PaintedArt.image("bh-sofa-back")?.cgImage else{return}
+            let top=Int(Double(image.height)*0.52)
+            guard let piece=image.cropping(to:CGRect(x:0,y:top,width:image.width,height:image.height-top)) else{return}
+            let fraction=Double(top)/Double(image.height)
+            context.draw(Image(decorative:piece,scale:1),in:CGRect(x:161,y:141+34*fraction,width:54,height:34*(1-fraction)))
+        }.frame(width:240,height:240)
+    }
+}
+private struct CompatibleHomeTV:View {
+    var body:some View {
+        TimelineView(.animation(minimumInterval:0.12)) {timeline in
+            Canvas {context,_ in
+                let t=timeline.date.timeIntervalSinceReferenceDate
+                context.fill(Path(CGRect(x:0,y:0,width:38,height:20)),with:.color(Color(hex:0xA3D1DB)))
+                context.fill(Path(CGRect(x:0,y:11,width:38,height:9)),with:.color(Color(hex:0x52A6B2)))
+                context.fill(Path(ellipseIn:CGRect(x:27,y:2,width:5,height:5)),with:.color(Color(hex:0xFFE39A)))
+                for i in 0..<2 {
+                    let x=(t*Double(i+2)+Double(i*16)).truncatingRemainder(dividingBy:47)-9
+                    context.fill(Path(ellipseIn:CGRect(x:x,y:3+Double(i*3),width:9,height:3)),with:.color(.white))
+                }
+                let x=(t*8).truncatingRemainder(dividingBy:49)-8,y=13+sin(t*7)*0.6
+                context.fill(Path(roundedRect:CGRect(x:x,y:y,width:8,height:2),cornerRadius:0.6),with:.color(Color(hex:0xC27657)))
+                var sail=Path();sail.move(to:CGPoint(x:x+3,y:y));sail.addLine(to:CGPoint(x:x+3,y:y-7));sail.addLine(to:CGPoint(x:x+8,y:y));sail.closeSubpath()
+                context.fill(sail,with:.color(Color(hex:0xFFF2C7)))
+            }
+        }
+    }
+}
+
 private struct CompatibleOfficeActor: View {
     let actor: RPGActor
     @State private var walkingUntil = Date.distantPast
     var body: some View {
-        TimelineView(.animation(minimumInterval:0.095,paused:Date()>walkingUntil && actor.action.isEmpty)) { timeline in
+        TimelineView(.animation(minimumInterval:actor.action.hasPrefix("care-") ? 0.075 : 0.095,paused:Date()>walkingUntil && actor.action.isEmpty)) { timeline in
             let walking = timeline.date < walkingUntil
             let phase = Int(timeline.date.timeIntervalSinceReferenceDate/0.095)%4
             let stride = walking ? [1.0,0,-1,0][phase] : 0
@@ -202,7 +269,7 @@ private struct CompatibleOfficeActor: View {
                     ActorArtwork(actor:actor,stride:stride).scaleEffect(actor.displayScale)
                         .offset(y:(actor.animal > 0 || actor.creature) ? 11*(1-actor.displayScale) : 0)
                 } else {
-                    WorkingCharacterArtwork(kind:actor.action,frame:phase*3,color:actor.color,variant:actor.variant,facing:actor.facing)
+                    WorkingCharacterArtwork(kind:actor.action,frame:actor.action.hasPrefix("care-") ? Int(timeline.date.timeIntervalSinceReferenceDate/0.075)%12 : phase*3,color:actor.color,variant:actor.variant,facing:actor.facing)
                 }
                 if !actor.marker.isEmpty {
                     Text(actor.marker).font(.system(size:3.5,weight:.bold,design:.monospaced))

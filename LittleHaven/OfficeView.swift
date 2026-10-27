@@ -39,12 +39,18 @@ struct FamilyHouseView:View {
         RPGActor(id:"hildarelys",tile:motel.reception.hildarelys,color:0x292A2C,variant:8,facing:motel.reception.tick%12<6 ? 2 : 1,name:"Hildarelys",duration:0.65),
         RPGActor(id:"samhil",tile:OfficeReception.samhil,color:0xD88BAA,variant:9,facing:3,name:"Samhil",displayScale:0.8,seated:true),
         ] + motel.havenHomeActors + motel.petActors + motel.policeActors}
+    @inline(never) private func renderHome()->AnyView {
+        if OfficeRenderPolicy.homeCompatibility {
+            return AnyView(CompatibleHomeScene(actors:actors,livingRoom:true,scenery:AnyView(HomeInteriorArt(home:motel.household))))
+        }
+        return AnyView(RPGSceneView(mapID:"family-house",revision:"decorated-home-56-\(motel.household.level)-\(motel.household.wallpaper)-\(motel.household.floor)-\(motel.household.placed.map{"\($0.id):\($0.tile.x):\($0.tile.y)"}.joined())",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeInteriorArt(home:motel.household))})
+    }
     var body:some View {
         GeometryReader {proxy in
             let scale=min(proxy.size.width/240,proxy.size.height/240)
             let origin=CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:"family-house",revision:"decorated-home-56-\(motel.household.level)-\(motel.household.wallpaper)-\(motel.household.floor)-\(motel.household.placed.map{"\($0.id):\($0.tile.x):\($0.tile.y)"}.joined())",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeInteriorArt(home:motel.household))}
+                renderHome()
                 if let care {CareAnimationBadge(care:care).position(x:proxy.size.width/2,y:origin.y+46*scale)}
                 target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin).animation(.linear(duration:0.65),value:motel.reception.hildarelys).zIndex(2)
                 target(.samhil,"Talk to Samhil",OfficeReception.samhil,scale,origin).zIndex(2)
@@ -258,12 +264,18 @@ struct HomeBedroomView:View {
     private var actors:[RPGActor] {
         [RPGActor(id:"player",tile:care == .toilet ? Tile(x:3,y:4) : care == .shower ? Tile(x:10,y:4) : motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,action:care?.animationKind ?? "",dirty:motel.isPlayerDirty)] + motel.petActors + motel.policeActors
     }
+    @inline(never) private func renderBedroom()->AnyView {
+        if OfficeRenderPolicy.homeCompatibility {
+            return AnyView(CompatibleHomeScene(actors:actors,scenery:AnyView(HomeBedroomArt(bedroom:bedroom))))
+        }
+        return AnyView(RPGSceneView(mapID:bedroom.map,revision:"bedroom-50",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeBedroomArt(bedroom:bedroom))})
+    }
     var body:some View {
         GeometryReader {proxy in
             let scale=min(proxy.size.width/240,proxy.size.height/240)
             let origin=CGPoint(x:(proxy.size.width-240*scale)/2,y:(proxy.size.height-240*scale)/2)
             ZStack(alignment:.topLeading) {
-                RPGSceneView(mapID:bedroom.map,revision:"bedroom-50",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:motel.isNight) {AnyView(HomeBedroomArt(bedroom:bedroom))}
+                renderBedroom()
                 if let care {CareAnimationBadge(care:care).position(x:proxy.size.width/2,y:origin.y+180*scale)}
                 Button {if let worldTouch {worldTouch(HomeBedroom.exit,exit)} else {exit()}} label:{
                     Color.white.opacity(0.001).frame(width:30*scale,height:36*scale).contentShape(Rectangle())

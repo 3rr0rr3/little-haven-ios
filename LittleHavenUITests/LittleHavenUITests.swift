@@ -28,6 +28,23 @@ final class LittleHavenUITests: XCTestCase {
         Thread.sleep(forTimeInterval:12)
         XCTAssertEqual(app.state,.runningForeground)
     }
+    func testActualReleaseSavedHomeContinue() {
+        let app=XCUIApplication();app.launchArguments=[];app.launch()
+        XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:20),app.debugDescription)
+        XCTAssertFalse(app.buttons["copyStartupReport"].exists,"A prior build's pending report must not trap the update")
+        app.buttons["CONTINUE GAME"].tap()
+        let home=app.descendants(matching:.any)["familyHouseScene"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout:30),app.debugDescription)
+        XCTAssertTrue(app.descendants(matching:.any)["homeCompatibilityRenderer"].firstMatch.exists)
+        XCTAssertTrue((home.value as? String ?? "").contains("dirty true"),"The saved owner's needs remain intact")
+        Thread.sleep(forTimeInterval:12);XCTAssertEqual(app.state,.runningForeground)
+        capture(app,"Optimized saved home continue with archived old-version report")
+        app.terminate();app.launch()
+        XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:20))
+        app.buttons["CONTINUE GAME"].tap()
+        XCTAssertTrue(home.waitForExistence(timeout:30));XCTAssertTrue(app.descendants(matching:.any)["homeCompatibilityRenderer"].firstMatch.exists)
+        Thread.sleep(forTimeInterval:12);XCTAssertEqual(app.state,.runningForeground)
+    }
     #endif
     override func setUp() { continueAfterFailure = false }
 
@@ -74,6 +91,25 @@ final class LittleHavenUITests: XCTestCase {
         }
     }
 
+    func testCompatibleHomeCareAndSavedContinue() {
+        for touch in [false,true] {
+            let app=XCUIApplication()
+            app.launchArguments=["--ui-needs-food","--ui-testing","--ui-home-compatibility"]+(touch ? ["--ui-touch"] : [])
+            app.launch()
+            let home=app.descendants(matching:.any)["familyHouseScene"].firstMatch
+            XCTAssertTrue(home.waitForExistence(timeout:20))
+            XCTAssertTrue(app.descendants(matching:.any)["homeCompatibilityRenderer"].firstMatch.exists)
+            app.buttons["office_fridge"].tap();waitForCare(.eat,app)
+            XCTAssertTrue((home.value as? String ?? "").contains("Food 80"))
+            app.buttons["office_hildarelys"].tap();XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5));app.buttons["dialogueBack"].tap()
+            capture(app,touch ? "Compatible home fullscreen food and family" : "Compatible home food and family")
+            app.terminate();app.launchArguments=["--ui-title","--ui-testing","--ui-home-compatibility"]+(touch ? ["--ui-touch"] : []);app.launch()
+            XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:15));app.buttons["CONTINUE GAME"].tap()
+            XCTAssertTrue(home.waitForExistence(timeout:20));XCTAssertTrue(app.descendants(matching:.any)["homeCompatibilityRenderer"].firstMatch.exists)
+            XCTAssertTrue((home.value as? String ?? "").contains("Food 80"))
+            app.terminate()
+        }
+    }
     func testCompatibleOfficeGuestInteraction() {
         let app=XCUIApplication()
         app.launchArguments=["--ui-world","--ui-testing","--ui-office-compatibility"]
@@ -1126,9 +1162,9 @@ final class LittleHavenUITests: XCTestCase {
         back(app);XCTAssertTrue(app.buttons["neglectAlarm"].exists)
     }
     func testPersonalNeedsBathroomAndSavedCleanState() {
-        let app=launch("--ui-needs-bathroom")
+        let app=launch("--ui-needs-bathroom",homeCompatibility:true)
         let scene=app.descendants(matching:.any)["homeBedroomScene"].firstMatch
-        XCTAssertTrue(scene.waitForExistence(timeout:15));XCTAssertTrue((scene.value as? String ?? "").contains("dirty true"))
+        XCTAssertTrue(scene.waitForExistence(timeout:15));XCTAssertTrue(app.descendants(matching:.any)["bedroomCompatibilityRenderer"].firstMatch.exists);XCTAssertTrue((scene.value as? String ?? "").contains("dirty true"))
         app.buttons["worldAction"].tap()
         waitForCare(.toilet,app)
         XCTAssertTrue((scene.value as? String ?? "").contains("bathroom 0"))
@@ -1141,7 +1177,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(scene.waitForExistence(timeout:15));XCTAssertTrue((scene.value as? String ?? "").contains("dirty false"));XCTAssertFalse((scene.value as? String ?? "").contains("hygiene 30"))
     }
     func testPersonalNeedsFoodAndDirtyNpcReaction() {
-        let app=launch("--ui-needs-food")
+        let app=launch("--ui-needs-food",homeCompatibility:true)
         let home=app.descendants(matching:.any)["familyHouseScene"].firstMatch
         XCTAssertTrue(home.waitForExistence(timeout:15));app.buttons["office_fridge"].tap()
         waitForCare(.eat,app)
@@ -1216,9 +1252,9 @@ final class LittleHavenUITests: XCTestCase {
         openPause(app);app.buttons[id].tap()
     }
 
-    private func launch(_ fixture: String) -> XCUIApplication {
+    private func launch(_ fixture: String,homeCompatibility:Bool=false) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = [fixture, "--ui-testing", "--ui-painted-check"]
+        app.launchArguments = [fixture, "--ui-testing", "--ui-painted-check"]+(homeCompatibility ? ["--ui-home-compatibility"] : [])
         app.launch()
         return app
     }
