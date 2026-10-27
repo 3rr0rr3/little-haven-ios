@@ -32,10 +32,14 @@ def blob(path, content):
     entries.append({'path':path, 'mode':'100644', 'type':'blob', 'sha':result['sha']})
 blob('downloads/BrainstormHaven-57.ipa', data)
 verification = {'source':source, 'version':'57.0', 'build':'62', 'size':len(data), 'sha256':digest}
+if Path('home-startup-verification.json').exists():
+    verification['startup_verification']=json.loads(Path('home-startup-verification.json').read_text())
 if os.environ.get('BINARY_SOURCE_SHA'):
     verification['binary_source']=os.environ['BINARY_SOURCE_SHA']
     verification['test_recovery']=json.loads(Path('home-care-recovery.json').read_text())
 blob('downloads/BrainstormHaven-57-verification.json', json.dumps(verification, indent=2).encode())
+if Path('home-startup-verification.json').exists():
+    blob('verification/v57/home-startup-verification.json',Path('home-startup-verification.json').read_bytes())
 if Path('home-care-recovery.json').exists():
     blob('verification/v57/home-care-recovery.json',Path('home-care-recovery.json').read_bytes())
 for report in sorted(Path('.').glob('ReleaseStartup-*-report.json')):

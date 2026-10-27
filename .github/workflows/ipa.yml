@@ -73,10 +73,14 @@ jobs:
           set -euo pipefail
           xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
           xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-needs-dirty --ui-home-compatibility --ui-testing
-          sleep 4
-          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
           CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
-          python3 scripts/seed_release_startup.py "$CONTAINER" false export-home
+          HOME_FIXTURE_READY=0
+          for ATTEMPT in $(seq 1 30); do
+            if python3 scripts/seed_release_startup.py "$CONTAINER" false export-home; then HOME_FIXTURE_READY=1; break; fi
+            sleep 1
+          done
+          test "$HOME_FIXTURE_READY" = 1
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
           xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-startup-build CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES build-for-testing
           xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
           xcrun simctl install "$SIM_DEVICE" release-startup-build/Build/Products/Release-iphonesimulator/LittleHaven.app

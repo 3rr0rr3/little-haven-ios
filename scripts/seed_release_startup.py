@@ -5,9 +5,15 @@ preferences = container / 'Library/Preferences/com.littlehaven.town.plist'
 preferences.parent.mkdir(parents=True, exist_ok=True)
 mode=sys.argv[3] if len(sys.argv)>3 else 'prologue'
 if mode=='export-home':
-    data=plistlib.loads(preferences.read_bytes())['littlehaven.save.v1']
-    saved=json.loads(data)
-    assert saved['motel']['world']['place']=='house',saved
+    try:
+        data=plistlib.loads(preferences.read_bytes())['littlehaven.save.v1']
+        saved=json.loads(data)
+        ready=saved.get('motel',{}).get('world',{}).get('place')=='house'
+    except (OSError,ValueError,KeyError):
+        ready=False
+    if not ready:
+        print('Waiting for the isolated simulator home checkpoint')
+        raise SystemExit(2)
     pathlib.Path('release-home-checkpoint.bin').write_bytes(data)
     print('Exported isolated simulator home checkpoint; player save files are untouched')
     raise SystemExit(0)
