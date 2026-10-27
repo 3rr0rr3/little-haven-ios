@@ -175,6 +175,7 @@ struct Motel: Codable {
     }
     @discardableResult mutating func nextDay() -> Bool {
         guard !caught, (visit == nil || managementEnabled), business.police == nil else { return false }
+        tickRoomNeglect(elapsed:480)
         settleOccasionEvening()
         prepareGardenNight()
         day += 1
@@ -218,14 +219,15 @@ struct Motel: Codable {
     }
     // Optional per-room fields keep older checkpoints compatible. Only vacant,
     // dirty rooms accumulate neglect; no new per-frame timer or path search.
-    mutating func tickRoomNeglect() {
+    mutating func tickRoomNeglect(elapsed:Int=1) {
         for i in rooms.indices {
             guard rooms[i].dirty,rooms[i].guest == nil else {
                 rooms[i].neglectedTicks=nil;rooms[i].squatters=nil;continue
             }
-            let ticks=min(180,(rooms[i].neglectedTicks ?? 0)+1)
+            let old=rooms[i].neglectedTicks ?? 0
+            let ticks=min(180,old+max(0,elapsed))
             rooms[i].neglectedTicks=ticks
-            if ticks == 90 {lastEvent="Room \(rooms[i].number) has been neglected. Clean it before squatters move in."}
+            if old<90 && ticks>=90 && ticks<180 {lastEvent="Room \(rooms[i].number) has been neglected. Clean it before squatters move in."}
             if ticks == 180 && rooms[i].squatters != true {
                 rooms[i].squatters=true
                 lastEvent="CHAOS · Squatters moved into neglected room \(rooms[i].number). Restore the room with the three cleaning tasks; they will move on safely."

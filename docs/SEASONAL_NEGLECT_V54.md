@@ -1,6 +1,6 @@
 # Brainstorm Haven 54.0 (59)
 
-Vacant dirty rooms warn after 90 business ticks and acquire two squatters after 180 (roughly nine in-game hours). Worn coats have patches and shoulder bags; the room gains a bedroll and belongings. Cleaning all three normal tasks or existing housekeeping clears the event. Occupied/clean rooms never trigger it. Optional room fields preserve legacy saves; movement ticks do not speed it up. Residents are nonblocking and have no effect on emergency deaths or police.
+Vacant dirty rooms warn after 90 business ticks and acquire two squatters after 180 (roughly nine in-game hours; sleeping also ages existing dirt, while fresh checkouts retain their grace period). Worn coats have patches and shoulder bags; the room gains a bedroll and belongings. Cleaning all three normal tasks or existing housekeeping clears the event. Occupied/clean rooms never trigger it. Optional room fields preserve legacy saves; movement ticks do not speed it up. Residents are nonblocking and have no effect on emergency deaths or police.
 
 Willow Home goods catalogue includes Halloween pumpkins/ghost lanterns and Christmas trees/presents, each with its own native art and price. Existing storage, workbench, placement validation and save flow apply; year-round availability.
 

@@ -2031,3 +2031,14 @@ func seasonalPurchaseRules() {
     print("PASS: seasonal purchase costs, storage, insufficient funds and saved catalogue")
 }
 seasonalPurchaseRules()
+
+func overnightNeglectRules() {
+    var m=Motel();m.initializeWorld();m.rooms[0].dirty=true
+    require(m.nextDay(),"Can rest with a vacant dirty room")
+    require(m.rooms[0].squatters == true,"Skipping a night also advances prolonged neglect")
+    var fresh=Motel();fresh.initializeWorld();fresh.rooms[0].guest=Motel.arrivals(day:1,count:1,randomize:false)[0];fresh.rooms[0].nightsLeft=1
+    require(fresh.nextDay(),"Normal checkout day advances")
+    require(fresh.rooms[0].dirty && fresh.rooms[0].squatters != true,"New checkouts receive their own full cleaning grace period")
+    print("PASS: resting ages old dirt without penalizing newly checked-out rooms")
+}
+overnightNeglectRules()
