@@ -32,7 +32,12 @@ def blob(path, content):
     entries.append({'path':path, 'mode':'100644', 'type':'blob', 'sha':result['sha']})
 blob('downloads/BrainstormHaven-56.ipa', data)
 verification = {'source':source, 'version':'56.0', 'build':'61', 'size':len(data), 'sha256':digest}
+if os.environ.get('BINARY_SOURCE_SHA'):
+    verification['binary_source']=os.environ['BINARY_SOURCE_SHA']
+    verification['test_recovery']=json.loads(Path('home-care-recovery.json').read_text())
 blob('downloads/BrainstormHaven-56-verification.json', json.dumps(verification, indent=2).encode())
+if Path('home-care-recovery.json').exists():
+    blob('verification/v56/home-care-recovery.json',Path('home-care-recovery.json').read_bytes())
 for report in sorted(Path('.').glob('ReleaseStartup-*-report.json')):
     blob('verification/v56/' + report.name, report.read_bytes())
 for image in sorted(Path('.').glob('LittleHaven-response-painted-*.png')):

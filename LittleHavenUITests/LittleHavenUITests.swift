@@ -1164,19 +1164,41 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for:[finished],timeout:8),.completed,"Routine must finish and restore controls")
     }
     func testRelocatedHomeBathroomDoorAndFridge() {
-        let app=launch("--ui-needs-food")
-        let home=app.descendants(matching:.any)["familyHouseScene"].firstMatch
-        XCTAssertTrue(home.waitForExistence(timeout:15))
-        XCTAssertFalse(app.buttons["otherNearbyActions"].exists)
-        step("east",2,app);step("north",4,app)
-        XCTAssertTrue((home.value as? String ?? "").contains("Column 4, row 3"))
-        app.buttons["office_bathroomDoor"].tap()
-        let bath=app.descendants(matching:.any)["homeBedroomScene"].firstMatch
-        XCTAssertTrue(bath.waitForExistence(timeout:5))
-        step("south",1,app)
-        XCTAssertTrue(home.waitForExistence(timeout:5))
-        XCTAssertTrue((home.value as? String ?? "").contains("Column 4, row 3"))
-        capture(app,"Bathroom entrance on hallway wall and kitchen nook")
+        // Record the old tap-count assumption for diagnosis, then exercise actual
+        // doors from the same controlled approach used by the bedroom tests.
+        let probe=launch("--ui-needs-food")
+        let initial=probe.descendants(matching:.any)["familyHouseScene"].firstMatch
+        XCTAssertTrue(initial.waitForExistence(timeout:15))
+        step("east",2,probe);step("north",4,probe)
+        print("Home care tap-count probe: \(initial.value as? String ?? "missing")")
+        probe.terminate()
+        for touch in [false,true] {
+            let app=XCUIApplication()
+            app.launchArguments=["--ui-bedroom-doors","--ui-testing"]+(touch ? ["--ui-touch"] : [])
+            app.launch()
+            let home=app.descendants(matching:.any)["familyHouseScene"].firstMatch
+            XCTAssertTrue(home.waitForExistence(timeout:15))
+            XCTAssertTrue(app.buttons["office_fridge"].exists)
+            XCTAssertFalse(app.buttons["otherNearbyActions"].exists)
+            if touch {
+                app.buttons["hideFullscreenToolbar"].tap()
+                let stick=app.descendants(matching:.any)["fullscreenJoystick"].firstMatch
+                let center=stick.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5))
+                center.press(forDuration:0.05,thenDragTo:stick.coordinate(withNormalizedOffset:CGVector(dx:0.1,dy:0.5)),withVelocity:.slow,thenHoldForDuration:0.2)
+            } else {step("west",1,app)}
+            // The shelf at column 3 blocks any hold-repeat beyond column 4.
+            let approach=XCTNSPredicateExpectation(predicate:NSPredicate(format:"value CONTAINS %@","Column 4, row 3"),object:home)
+            XCTAssertEqual(XCTWaiter.wait(for:[approach],timeout:5),.completed,"Actual approach: \(home.value as? String ?? "missing")")
+            app.buttons["office_bathroomDoor"].coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+            let bath=app.descendants(matching:.any)["homeBedroomScene"].firstMatch
+            XCTAssertTrue(bath.waitForExistence(timeout:5),app.debugDescription)
+            XCTAssertTrue(bath.label.contains("Bathroom"))
+            app.buttons["bedroomExit"].coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+            XCTAssertTrue(home.waitForExistence(timeout:5))
+            XCTAssertTrue((home.value as? String ?? "").contains("Column 4, row 3"),"Return: \(home.value as? String ?? "missing")")
+            capture(app,touch ? "Fullscreen physical bathroom door and safe return" : "Physical bathroom door and kitchen fridge")
+            app.terminate()
+        }
     }
     private func back(_ app:XCUIApplication) {
         let menus=app.buttons.matching(identifier:"menuBack")
