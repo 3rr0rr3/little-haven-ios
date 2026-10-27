@@ -262,9 +262,10 @@ struct HomeInteriorArt:View {
             context.draw(Text("FOOD").font(.system(size:2.5,weight:.bold)).foregroundColor(Color(hex:0x34493E)),at:CGPoint(x:25,y:105))
             for item in home.placed {Self.object(context:&context,kind:item.kind,x:Double(item.tile.x*16),y:Double(item.tile.y*16))}
             for bedroom in HomeBedroom.allCases {
-                let x=Double(bedroom.door.x*16-2)
-                PaintedArt.draw("door",in:CGRect(x:x,y:12,width:20,height:30),context:&context)
-                context.draw(Text(bedroom == .bathroom ? "BATH" : bedroom == .samhil ? "SAMHIL" : "OUR ROOM").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x+10,y:9))
+                // Keep each door inside its tile so adjacent hallway doors never overlap.
+                let x=Double(bedroom.door.x*16+1)
+                PaintedArt.draw("door",in:CGRect(x:x,y:16,width:14,height:26),context:&context)
+                context.draw(Text(bedroom == .bathroom ? "BATH" : bedroom == .samhil ? "SAMHIL" : "OUR ROOM").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x+7,y:12))
             }
             rect(154,7,62,20,0x70513B)
             context.draw(Text("HOME SWEET HOME").font(.system(size:4.5,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:185,y:17))
