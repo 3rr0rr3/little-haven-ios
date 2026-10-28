@@ -104,6 +104,22 @@ final class LittleHavenUITests: XCTestCase {
         capture(app,"Arrival finishes while normal movement remains available")
     }
 
+    func testCatMotionPhasesRenderInGallery() {
+        let app=launch("--ui-life-gallery")
+        XCTAssertTrue(app.staticTexts["lifeReview"].waitForExistence(timeout:15))
+        let cat=app.staticTexts["Home cat 1"]
+        for _ in 0..<6 {
+            if cat.exists && cat.isHittable {break}
+            app.swipeUp()
+        }
+        XCTAssertTrue(cat.exists && cat.isHittable,app.debugDescription)
+        for frame in 0..<5 {
+            capture(app,"Cat motion phase \(frame): grooming stretch pounce curl")
+            Thread.sleep(forTimeInterval:1)
+        }
+        XCTAssertEqual(app.state,.runningForeground)
+    }
+
     func testLivingHavenAnimationGallery() {
         let app=launch("--ui-life-gallery")
         XCTAssertTrue(app.staticTexts["lifeReview"].waitForExistence(timeout:15))

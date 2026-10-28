@@ -18,7 +18,7 @@ entries=[]
 images=list(Path('.').glob('LittleHaven-npc-gallery.png'))+list(Path('.').glob('LittleHaven-response-painted-*.png'))+list(Path('.').glob('LittleHaven-character-turns.png'))+list(Path('.').glob('LittleHaven-app-icon.png'))+list(Path('/tmp/art-ui-diagnostics').rglob('*.png'))
 priority=[Path('LittleHaven-response-painted-'+mode+'.png') for mode in ['needs-animation-eat','needs-animation-toilet','needs-animation-shower','needs-dirty','needs-bathroom','needs-panel','needs-npc','night-sky','neglect','seasonal','menu-emergency']]
 images=[p for p in priority if p.exists()]+[p for p in images if p not in priority]
-for index,image in enumerate(images[:30]):
+for index,image in enumerate(images[:48]):
     target=Path('/tmp')/('art-review-'+str(index)+'.jpg')
     subprocess.run(['sips','-s','format','jpeg','-s','formatOptions','90','-Z','1100',str(image),'--out',str(target)],check=True,stdout=subprocess.DEVNULL)
     data=target.read_bytes();blob=api('/git/blobs',{'content':base64.b64encode(data).decode(),'encoding':'base64'})

@@ -1428,17 +1428,18 @@ enum HavenLifeArt {
             let original=context
             let cat=actor.animal>0, character=actor.corralCreature
             let mode=cat ? frame/4 : character%4
+            let catPulse=sin(Double(frame%4) * .pi / 3)
             let stretch=cat && mode==1, curl=cat && mode==3
-            let hop=cat && mode==2 ? max(0,wave)*2 : !cat && active ? abs(wave)*0.8 : 0
+            let hop=cat && mode==2 ? catPulse*2 : !cat && active ? abs(wave)*0.8 : 0
             context.translateBy(x:12,y:25-hop)
             context.scaleBy(x:stretch ? 1.12 : curl ? 0.90 : 1,y:stretch ? 0.78 : curl ? 0.72 : 1)
             context.translateBy(x:-12,y:-25)
             if character>0 {CorralCreatureArt.draw(context:&context,kind:character,facing:actor.facing,walk:wave*0.7)}
             else if actor.creature {MochiArt.draw(context:&context,facing:actor.facing,walk:wave*0.6)}
             else {CatArt.draw(context:&context,gray:actor.animal==1,walk:wave,facing:actor.facing)}
-            if cat && mode==0 && active {
+            if cat && mode==0 {
                 // A paw comes up to the cheek for grooming.
-                oval(CGRect(x:6+lift,y:17-lift*4,width:3,height:3),actor.animal==1 ? 0x85817C : 0xE9E2D0)
+                oval(CGRect(x:6+catPulse,y:17-catPulse*4,width:3,height:3),actor.animal==1 ? 0x85817C : 0xE9E2D0)
             }
             if curl {line([CGPoint(x:19,y:23),CGPoint(x:13,y:26),CGPoint(x:7,y:24)],actor.animal==1 ? 0x625E59 : 0xAC7148,2)}
             context=original
