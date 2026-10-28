@@ -32,6 +32,8 @@ def blob(path, content):
     entries.append({'path':path, 'mode':'100644', 'type':'blob', 'sha':result['sha']})
 blob('downloads/BrainstormHaven-61.ipa', data)
 verification = {'source':source, 'version':info['CFBundleShortVersionString'], 'build':info['CFBundleVersion'], 'size':len(data), 'sha256':digest}
+if os.environ.get('VERIFIED_BINARY_SOURCE'):
+    verification['binary_source']=os.environ['VERIFIED_BINARY_SOURCE']
 if Path('home-startup-verification.json').exists():
     verification['startup_verification']=json.loads(Path('home-startup-verification.json').read_text())
 if os.environ.get('BINARY_SOURCE_SHA'):

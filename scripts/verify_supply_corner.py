@@ -12,6 +12,6 @@ for mode in ['false','true','home-false','home-true']:
  if mode.startswith('home'):
   assert 'compatible_home_appeared' in r['steps'] and 'home_art_draw_complete' in r['steps']
   assert not any(s.startswith('spritekit_configure_family-house') for s in r['steps'])
-proof={'source':os.environ['GITHUB_SHA'],'run':int(os.environ['GITHUB_RUN_ID']),'version':'61.0','build':'66','passed_ui_executions':len(passed),'unique_ui_methods':len(set(passed)),'ui_methods':sorted(set(passed)),'optimized_startup_paths':4,'previous_identity_features':['authored presentation','consistent staff portraits','consistent story walkers','20 hairstyles','4 face shapes','3 body shapes','8 outfits','8 accessory categories'],'cache_limit':48,'new_frame_sets_per_scene_update':2}
+proof={'source':os.environ['GITHUB_SHA'],'binary_source':os.environ.get('VERIFIED_BINARY_SOURCE',os.environ['GITHUB_SHA']),'production_diff_verified':bool(os.environ.get('VERIFIED_BINARY_SOURCE')),'run':int(os.environ['GITHUB_RUN_ID']),'version':'61.0','build':'66','passed_ui_executions':len(passed),'unique_ui_methods':len(set(passed)),'ui_methods':sorted(set(passed)),'optimized_startup_paths':4,'previous_identity_features':['authored presentation','consistent staff portraits','consistent story walkers','20 hairstyles','4 face shapes','3 body shapes','8 outfits','8 accessory categories'],'cache_limit':48,'new_frame_sets_per_scene_update':2}
 Path('living-animations-verification.json').write_text(json.dumps(proof,indent=2))
 print(json.dumps(proof))
