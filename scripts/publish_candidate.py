@@ -34,6 +34,10 @@ blob('downloads/BrainstormHaven-61.ipa', data)
 verification = {'source':source, 'version':info['CFBundleShortVersionString'], 'build':info['CFBundleVersion'], 'size':len(data), 'sha256':digest}
 if os.environ.get('VERIFIED_BINARY_SOURCE'):
     verification['binary_source']=os.environ['VERIFIED_BINARY_SOURCE']
+if os.environ.get('VERIFIED_UI_SOURCE'):
+    verification['ui_source']=os.environ['VERIFIED_UI_SOURCE']
+    verification['ui_run']=40723514311
+    verification['native_build_and_home_run']=40716806941
 if Path('home-startup-verification.json').exists():
     verification['startup_verification']=json.loads(Path('home-startup-verification.json').read_text())
 if os.environ.get('BINARY_SOURCE_SHA'):
