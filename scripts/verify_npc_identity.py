@@ -8,7 +8,7 @@ assert not re.findall(r"Test Case .* failed",logs)
 assert set(passed)==set(expected) and len(passed)==21,(passed,set(expected)-set(passed))
 for mode in ['false','true','home-false','home-true']:
  r=json.loads(Path('ReleaseStartup-'+mode+'-report.json').read_text())
- assert r['build']=='60.0 (64)' and r['pending'] is False and 'hotel_stable' in r['steps']
+ assert r['build']=='60.0 (65)' and r['pending'] is False and 'hotel_stable' in r['steps']
  if mode.startswith('home'):
   assert 'compatible_home_appeared' in r['steps'] and 'home_art_draw_complete' in r['steps']
   assert not any(s.startswith('spritekit_configure_family-house') for s in r['steps'])
