@@ -45,8 +45,7 @@ jobs:
           fetch-depth: 0
       - name: Audit identical production and Foundation sources
         run: |
-          git diff --exit-code "$VERIFIED_BINARY_SOURCE" "$GITHUB_SHA" -- LittleHaven LittleHaven.xcodeproj Tests/main.swift
-          echo 'Production app and Foundation rules are byte-identical to the native device/home build.'
+          python3 scripts/verify_supply_sources.py
       - uses: actions/download-artifact@v4
         with:
           name: Living-world

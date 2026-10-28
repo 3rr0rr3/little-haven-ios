@@ -50,7 +50,7 @@ struct ContentView: View {
 
 
         if args.contains("--ui-supply-buyer") {
-            var sample=Game();sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.cash=700;sample.motel!.guestsServed=12;sample.motel!.waiting=[]
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.cash=700;sample.motel!.guestsServed=12;sample.motel!.waiting=[]
             for item in Supply.allCases {sample.motel!.operations!.simulation!.stock[item.rawValue]=8}
             sample.motel!.operations!.simulation!.stock[Supply.detergent.rawValue]=0
             sample.motel!.world!.place = .office;sample.motel!.world!.player=Tile(x:7,y:8)
