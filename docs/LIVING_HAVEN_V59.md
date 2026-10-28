@@ -12,6 +12,8 @@ Seven presentation groups extend the approved small cut-paper art:
 
 No save fields, progression, guest schedules, navigation rules or collision boundaries are added. Movement, emergency poses and real tasks override ambient poses. Standing portraits/actors use the same proportions and directional artwork.
 
+Explicit checkpoint saving synchronizes the existing preferences write before confirming completion. Care routines keep an absolute end time, so view recomposition cannot restart their duration. Compatible idle motion uses independent periodic actor canvases hidden from accessibility rather than keeping the containing animation timeline active.
+
 SpriteKit renders sixteen small cached frames per active appearance, limits the cache to 48 sets, clears it on map changes, builds at most two new sets per scene update and animates only actors near the camera. Palms share eight small cached frames. No animation frame rerasterizes the map or updates business state. Compatible iOS 27 home/reception draws only independent actor views at bounded cadence. New motion respects Reduce Motion. Existing bounded AnyView startup structure remains intact; the review gallery route is DEBUG-only.
 
 Native verification covers fifteen focused UI methods, four actual optimized office/home startup executions in both controls, game-state rules, art resources and an arm64 device build. A DEBUG gallery renders every new human/creature pose and work tool for native visual review; gameplay captures include home, conversation, restaurant, bar, beach and sanctuary.

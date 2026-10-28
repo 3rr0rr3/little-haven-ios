@@ -279,7 +279,7 @@ final class LittleHavenUITests: XCTestCase {
                     app.buttons["bedroomSave"].tap()
                     app.terminate();app.launchArguments=["--ui-title","--ui-testing"]+(touch ? ["--ui-touch"] : []);app.launch()
                     XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:10));app.buttons["CONTINUE GAME"].tap()
-                    XCTAssertTrue(app.otherElements["homeBedroomScene"].waitForExistence(timeout:10),"Saved bedroom reloads in its own map")
+                    XCTAssertTrue(app.otherElements["homeBedroomScene"].waitForExistence(timeout:10),"Saved bedroom reloads in its own map: "+app.debugDescription)
                 }
                 app.buttons["bedroomExit"].coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
                 XCTAssertTrue(app.otherElements["familyHouseScene"].waitForExistence(timeout:5))

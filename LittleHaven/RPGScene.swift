@@ -286,7 +286,7 @@ private struct CompatibleOfficeActor: View {
     @State private var walkingUntil = Date.distantPast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
-        TimelineView(.animation(minimumInterval:actor.action.hasPrefix("care-") ? 0.075 : (Date()>walkingUntil && !actor.lifeKind.isEmpty ? 0.25 : 0.095),paused:Date()>walkingUntil && actor.action.isEmpty && (actor.lifeKind.isEmpty || reduceMotion))) { timeline in
+        TimelineView(.animation(minimumInterval:actor.action.hasPrefix("care-") ? 0.075 : 0.095,paused:Date()>walkingUntil && actor.action.isEmpty)) { timeline in
             let walking = timeline.date < walkingUntil
             let phase = Int(timeline.date.timeIntervalSinceReferenceDate/0.095)%4
             let stride = walking ? [1.0,0,-1,0][phase] : 0
@@ -294,7 +294,9 @@ private struct CompatibleOfficeActor: View {
                 if actor.action.isEmpty {
                     Group {
                         if !walking,!reduceMotion,!actor.lifeKind.isEmpty {
-                            HavenLifeArtwork(actor:actor,kind:actor.lifeKind,frame:(Int(timeline.date.timeIntervalSinceReferenceDate/(actor.animal>0 ? 0.6 : 0.25))+actor.lifeOffset)%16)
+                            TimelineView(.periodic(from:.now,by:actor.animal>0 ? 0.6 : 0.25)) {idleTime in
+                                HavenLifeArtwork(actor:actor,kind:actor.lifeKind,frame:(Int(idleTime.date.timeIntervalSinceReferenceDate/(actor.animal>0 ? 0.6 : 0.25))+actor.lifeOffset)%16)
+                            }
                         } else {ActorArtwork(actor:actor,stride:stride)}
                     }.scaleEffect(actor.displayScale)
                         .offset(y:(actor.animal > 0 || actor.creature) ? 11*(1-actor.displayScale) : 0)

@@ -1533,7 +1533,7 @@ struct HavenLifeArtwork:View {
     let actor:RPGActor
     let kind:String
     let frame:Int
-    var body:some View {Canvas {c,_ in HavenLifeArt.draw(context:&c,actor:actor,kind:kind,frame:frame)}.frame(width:24,height:28)}
+    var body:some View {Canvas {c,_ in HavenLifeArt.draw(context:&c,actor:actor,kind:kind,frame:frame)}.frame(width:24,height:28).accessibilityHidden(true)}
 }
 
 private struct DialogueMotionKey:EnvironmentKey {static let defaultValue=""}

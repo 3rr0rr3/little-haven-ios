@@ -71,6 +71,7 @@ struct MotelView: View {
     @State private var mapFocus:String?
     @State private var managementFocus:ManagementTab?
     @State private var activeCare:PersonalCare?
+    @State private var careDeadline=Date.distantPast
     @State private var pauseDestination:PauseDestination?
     @AppStorage("littlehaven.autoHideHUD") private var autoHideHUD=true
     @State private var showPause = false
@@ -305,7 +306,9 @@ struct MotelView: View {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--ui-care-preview") {return}
             #endif
-            do {try await Task.sleep(for:.seconds(care.animationDuration))} catch {return}
+            // Recomposition may restart this task; never restart the entire routine.
+            let remaining=max(0,careDeadline.timeIntervalSinceNow)
+            do {try await Task.sleep(for:.seconds(remaining))} catch {return}
             if activeCare==care {activeCare=nil}
         }
         .task(id: toast) {
@@ -1084,7 +1087,7 @@ struct MotelView: View {
     }
     private func saveHere() {
         guard motel.atSavePoint else { return }
-        stop(); game.save(); panel = nil; toast = "Checkpoint saved."
+        stop(); game.save(); UserDefaults.standard.synchronize(); panel = nil; toast = "Checkpoint saved."
     }
     private func beginPersonalCare(_ care:PersonalCare) {
         guard activeCare==nil,!paused else{return}
@@ -1093,7 +1096,7 @@ struct MotelView: View {
         change {succeeded=$0.performPersonalCare(care)}
         // Commit once before presentation. Backgrounding cannot consume a second meal
         // or leave a saved character stuck in an animation.
-        if succeeded {activeCare=care;game.save()}
+        if succeeded {careDeadline=Date().addingTimeInterval(care.animationDuration);activeCare=care;game.save()}
         else {toast=motel.lastEvent}
     }
     private func stop() { movement = nil; working = false; workProgress = 0; joystickDirection=nil }
