@@ -431,9 +431,9 @@ func managementRules() {
     _ = theft.nextDay()
     require(theft.operationsState.reviews.first?.stars == 1, "Stolen belongings lead to a one star review")
     var staff = Motel()
-    staff.initializeWorld(); staff.cash = 1000
+    staff.initializeWorld(); staff.cash = 2000
     for role in StaffRole.allCases { require(staff.hireEstablishedStaff(role), "Each staff role can be hired") }
-    require(staff.cash == 1000-StaffRole.allCases.reduce(0){$0+$1.hireCost} && !staff.hireEstablishedStaff(.cleaner), "Hiring charges once and prevents duplicate employees")
+    require(staff.cash == 2000-StaffRole.allCases.reduce(0){$0+$1.hireCost} && !staff.hireEstablishedStaff(.cleaner), "Hiring charges once and prevents duplicate employees")
     staff.rooms[0].dirty = true
     for _ in 0..<80 { staff.tickManagement() }
     require(!staff.rooms[0].dirty && staff.rooms[0].cleanedTasks?.count == 3, "Housekeeper walks to and cleans a vacant room")
@@ -2152,7 +2152,7 @@ func supplyBuyerAndShadyCornerRules() {
     require(poor.cash==54 && poor.simulation.stock["pesticide"]==2,"Orders scale down to available funds")
     var manual=restored;manual.operations!.simulation!.stock["detergent"]=8;let cash=manual.cash
     manual.completeProcurement(.detergent);require(manual.cash==cash,"A manual restock cancels duplicate incoming orders")
-    var alley=Motel();alley.initializeWorld();alley.cash=100;alley.home=FamilyHome();alley.home!.stolen=[1,2];alley.world!.player=NeighborhoodShop.pawn.door
+    var alley=Motel();alley.initializeWorld();alley.cash=100;alley.home=FamilyHome();alley.home!.stolen=[1,2];alley.world!.place = .grounds;alley.world!.player=NeighborhoodShop.pawn.door
     require(alley.canTrade(.pawn) && alley.sellBelonging(1),"Stolen goods can be sold physically at the shady corner")
     require(alley.cash==170 && alley.household.stolen==[2],"Only the selected carried item is sold")
     require(!alley.groundBlocked(Tile(x:67,y:28)) && alley.groundBlocked(Tile(x:66,y:26)),"Alley floor is walkable and merchandise counter has real collision")
