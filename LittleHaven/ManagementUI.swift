@@ -333,6 +333,13 @@ struct GameDialogue: View {
     let choices: [DialogueChoice]
     var dismissible=true
     var hygieneDirty=false
+    private var reaction:String {
+        let words=text.lowercased()
+        if speaker.contains("Officer") {return "cross"}
+        if ["sorry","problem","complaint","unhappy"].contains(where:words.contains) {return "shrug"}
+        if ["love","thank","happy","celebrat"].contains(where:words.contains) {return "laugh"}
+        return "nod"
+    }
     let close: () -> Void
     var body: some View {
         VStack(alignment:.leading,spacing:12) {
@@ -342,7 +349,7 @@ struct GameDialogue: View {
             }
             HygieneGreeting(dirty:hygieneDirty,speaker:speaker)
             HStack(alignment:.top,spacing:12) {
-                portrait.frame(width:64,height:76).background(Color(hex:0x344E40)).overlay(Rectangle().stroke(Color(hex:0xC4A96F),lineWidth:1))
+                portrait.environment(\.dialogueMotion,hygieneDirty ? "dirty" : reaction).frame(width:64,height:76).background(Color(hex:0x344E40)).overlay(Rectangle().stroke(Color(hex:0xC4A96F),lineWidth:1))
                 Text(text).font(.system(size:15,weight:.medium,design:.rounded)).foregroundStyle(Color(hex:0xF5E7C8)).fixedSize(horizontal:false,vertical:true).frame(maxWidth:.infinity,alignment:.leading)
             }
             ForEach(choices) { choice in
@@ -1286,18 +1293,18 @@ struct WorkingCharacterArtwork:View {
             let bodyY=kind == "cpr" ? 21.0+press*0.7 : 19.0
             PaperPerson.draw(context:&c,x:bodyX,y:bodyY,color:color,variant:variant,
                 facing:kind == "calm" || kind == "swim" ? 0 : 2,walk:0,hands:false,kneeling:kind == "cpr" || kind == "swim")
-            switch kind {
+            switch kind == "breakfast" && frame>=8 ? "wipe" : kind {
             case "extinguish":
                 PaintedArt.draw("extinguisher",in:CGRect(x:26,y:23,width:10,height:15),context:&c,fit:true)
                 line([CGPoint(x:27,y:24),CGPoint(x:33,y:24+press*0.7)],0x343D3D,1.2)
                 var hose=Path();hose.move(to:CGPoint(x:32,y:26))
                 hose.addCurve(to:CGPoint(x:37,y:25+wave),control1:CGPoint(x:38,y:36),control2:CGPoint(x:40,y:29))
                 c.stroke(hose,with:.color(Color(hex:0x303B39)),style:StrokeStyle(lineWidth:1.3,lineCap:.round))
-                arm(20,25,23,27,29,24.7+press*0.5);arm(28,25,31,28,36,25+wave)
+                arm(19,28,23,27,29,24.7+press*0.5);arm(29,28,31,28,36,25+wave)
                 line([CGPoint(x:36,y:25+wave),CGPoint(x:40,y:23+wave)],0x303B39,2)
             case "swim","rescue":
-                arm(20,25,16-wave*3,28,13-wave*2,31+wave*3)
-                arm(28,25,32+wave*3,28,35+wave*2,31-wave*3)
+                arm(19,28,16-wave*3,28,13-wave*2,31+wave*3)
+                arm(29,28,32+wave*3,28,35+wave*2,31-wave*3)
                 for side in [13.0,34] {
                     c.stroke(Path(ellipseIn:CGRect(x:side-4,y:32+wave,width:8,height:2)),with:.color(.white.opacity(0.65)),lineWidth:0.6)
                 }
@@ -1306,45 +1313,58 @@ struct WorkingCharacterArtwork:View {
                 arm(29,27,37,29+press,45.5,33+press*1.5)
                 oval(43.5,32+press*1.5,4,2.2,skin)
             case "calm":
-                arm(20,25,15,25-wave,11,21-wave);arm(28,25,33,25-wave,37,21-wave)
+                arm(19,28,15,25-wave,11,21-wave);arm(29,28,33,25-wave,37,21-wave)
                 box(9.5,17-wave,3,5,skin);box(35.5,17-wave,3,5,skin)
             case "repair","build":
                 box(34,31,10,7,0x75857C)
                 let tip=CGPoint(x:38,y:32),handle=CGPoint(x:31+wave*3,y:25-wave)
                 line([handle,tip],0xCBD3CE,1.8)
                 c.stroke(Path(ellipseIn:CGRect(x:36.4,y:30.4,width:3.2,height:3.2)),with:.color(Color(hex:0xD5DBD6)),lineWidth:1)
-                arm(20,25,25,29,34,34);arm(28,25,30,27,handle.x,handle.y)
+                arm(19,28,25,29,34,34);arm(29,28,30,27,handle.x,handle.y)
             case "pest":
                 box(27,29,6,9,0xD3B46F);box(29,26,2,3,0x4B6457)
                 line([CGPoint(x:30,y:27),CGPoint(x:37,y:28+wave)],0x485B50,1.1)
-                arm(20,25,24,29,29,28);arm(28,25,33,29,36,28+wave)
+                arm(19,28,24,29,29,28);arm(29,28,33,29,36,28+wave)
                 for i in 0..<5 {let t=Double((frame+i)%12)/12;oval(37+t*9,29+t*6,0.8+t,0.8+t,0xD7DCC2)}
             case "mop","carwash":
+                for i in 0..<3 {
+                    let fade=Double((frame+i*3)%12)/12
+                    var dust=c;dust.opacity=1-fade
+                    dust.fill(Path(ellipseIn:CGRect(x:34+Double(i*3)+fade*3,y:39-fade*4,width:1.8,height:1)),with:.color(Color(hex:0xCCBD97)))
+                }
                 let head=CGPoint(x:35+wave*5,y:40)
                 line([CGPoint(x:28,y:24),head],0xB7986A,1.5);oval(head.x-5,head.y-1,10,3,0xB9D1BD)
                 for i in 0..<4 {line([CGPoint(x:head.x-4+Double(i)*2,y:40),CGPoint(x:head.x-4+Double(i)*2,y:42)],0xDAE1CF,0.6)}
-                arm(20,25,23,29,29+wave,29);arm(28,25,30,29,32+wave*2,33)
+                arm(19,28,23,29,29+wave,29);arm(29,28,30,29,32+wave*2,33)
             case "garden":
                 box(31,29,8,7,0x8EAA70);line([CGPoint(x:38,y:31),CGPoint(x:43,y:29)],0x8EAA70,2)
-                arm(20,25,25,29,32,29);arm(28,25,31,27,35,28)
+                arm(19,28,25,29,32,29);arm(29,28,31,27,35,28)
                 for i in 0..<4 {oval(42+Double(i),31+Double((frame+i)%6),0.7,1.4,0xD5E8D5)}
             case "paint":
                 let ry=28+wave*4
                 line([CGPoint(x:31,y:35),CGPoint(x:37,y:ry)],0xB39262,1.4)
-                box(34,ry-3,8,3,0xB0C7A4);arm(28,25,30,29,32,32);arm(20,25,22,29,24,32)
+                box(34,ry-3,8,3,0xB0C7A4);arm(29,28,30,29,32,32);arm(19,28,22,29,24,32)
+            case "supplies","restock":
+                for i in 0..<3 {box(33+Double(i)*3,30,2.5,7,UInt32(0x9DBAA8)+UInt32(i*0x090400))}
+                box(32,37,13,1,0x947454)
+                arm(19,28,24,30,31+press*7,30);arm(29,28,32,30,35,33)
+            case "wipe":
+                box(29,34,17,2,0x947454)
+                box(32+wave*4,32,6,2,0xD8DFCA)
+                arm(19,28,24,30,29,33);arm(29,28,33,30,35+wave*4,32)
             case "bed","laundry":
                 var sheet=Path();sheet.move(to:CGPoint(x:27,y:28-wave))
                 sheet.addQuadCurve(to:CGPoint(x:43,y:28+wave),control:CGPoint(x:35,y:24-wave*3))
                 sheet.addLine(to:CGPoint(x:43,y:36));sheet.addLine(to:CGPoint(x:27,y:36));sheet.closeSubpath()
                 c.fill(sheet,with:.color(Color(hex:0xF0EBD8)));c.stroke(sheet,with:.color(Color(hex:0xADBBA6)),lineWidth:0.5)
-                arm(20,25,23,28,27,28-wave);arm(28,25,35,27,42,28+wave)
+                arm(19,28,23,28,27,28-wave);arm(29,28,35,27,42,28+wave)
             case "trash","luggage":
                 box(34,32-wave*2,8,9,kind == "trash" ? 0x46584C : 0xAA7856)
                 line([CGPoint(x:36,y:32-wave*2),CGPoint(x:36,y:30-wave*2),CGPoint(x:40,y:30-wave*2),CGPoint(x:40,y:32-wave*2)],0x33453C,1)
-                arm(28,25,32,28,38,30-wave*2);arm(20,25,19,28,19,31)
+                arm(29,28,32,28,38,30-wave*2);arm(19,28,19,28,19,31)
             default:
                 box(27,31,16,1.5,0xB18C60);box(32,27,4,4,0xEEE1C4);oval(38,28,5,3,0xCEAB6E)
-                arm(20,25,24,29,28,31);arm(28,25,33,29,40,31)
+                arm(19,28,24,29,28,31);arm(29,28,33,29,40,31)
             }
         }.frame(width:48,height:48)
     }

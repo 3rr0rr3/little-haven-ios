@@ -1,0 +1,190 @@
+name: Living Haven seven animation groups v59
+on:
+  push:
+    branches: ['codex/living-haven-animations']
+permissions:
+  contents: write
+jobs:
+  device:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Swift and game rules
+        run: |
+          set -euo pipefail
+          swiftc -frontend -parse LittleHaven/*.swift LittleHavenUITests/*.swift
+          swiftc LittleHaven/NPCDesign.swift LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
+          /tmp/little-haven-tests
+      - name: Validate art resources
+        run: |
+          python3 scripts/validate_painted_art.py
+      - name: Render app icon
+        run: |
+          set -euo pipefail
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath device-build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Build iPhone
+        run: |
+          set -euo pipefail
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath device-build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package iPhone
+        run: |
+          set -euo pipefail
+          APP=device-build/Build/Products/Release-iphoneos/LittleHaven.app
+          test -x "$APP/LittleHaven"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleSupportedPlatforms:0' "$APP/Info.plist")" = "iPhoneOS"
+          xcrun lipo "$APP/LittleHaven" -verify_arch arm64
+          xcrun vtool -show-build "$APP/LittleHaven" | tee platform.txt
+          grep -Eq 'platform[[:space:]]+IOS$' platform.txt
+          mkdir -p package/Payload
+          ditto "$APP" package/Payload/LittleHaven.app
+          cd package
+          zip -qry ../LittleHaven-unsigned.ipa Payload
+          cd ..
+          unzip -t LittleHaven-unsigned.ipa
+          shasum -a 256 LittleHaven-unsigned.ipa > LittleHaven-unsigned.ipa.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Living-device
+          path: |
+            LittleHaven-unsigned.ipa
+            LittleHaven-unsigned.ipa.sha256
+  home:
+    runs-on: macos-15
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - name: Home family creature gallery and needs regressions
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
+          echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testLivingHavenAnimationGallery -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleHomeCareAndSavedContinue -only-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenHomeFamilyConversations -only-testing:LittleHavenUITests/LittleHavenUITests/testHomeBedroomsEnterExitAndSavedReturn -only-testing:LittleHavenUITests/LittleHavenUITests/testPersonalNeedsFoodAndDirtyNpcReaction -only-testing:LittleHavenUITests/LittleHavenUITests/testPersonalNeedsBathroomAndSavedCleanState -resultBundlePath HomeLifeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test 2>&1 | tee HomeLifeResults.xcresult.log
+      - name: Optimized office and saved home startup in both control modes
+        run: |
+          set -euo pipefail
+          exec > >(tee release-startup.log) 2>&1
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-needs-dirty --ui-home-compatibility --ui-testing
+          CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+          HOME_FIXTURE_READY=0
+          for ATTEMPT in $(seq 1 30); do
+            if python3 scripts/seed_release_startup.py "$CONTAINER" false export-home; then HOME_FIXTURE_READY=1; break; fi
+            sleep 1
+          done
+          test "$HOME_FIXTURE_READY" = 1
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-startup-build CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES build-for-testing
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl install "$SIM_DEVICE" release-startup-build/Build/Products/Release-iphonesimulator/LittleHaven.app
+          for TOUCH in false true; do
+            CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+            python3 scripts/seed_release_startup.py "$CONTAINER" "$TOUCH"
+            xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-startup-build -parallel-testing-enabled NO -only-testing:LittleHavenUITests/LittleHavenUITests/testActualReleaseWakeAndFirstShift -resultBundlePath "ReleaseStartup-$TOUCH.xcresult" CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test-without-building
+            CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+            python3 scripts/verify_startup_report.py "$CONTAINER" "$TOUCH" "ReleaseStartup-$TOUCH-report.json"
+          done
+          for TOUCH in false true; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+            python3 scripts/seed_release_startup.py "$CONTAINER" "$TOUCH" home
+            xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-startup-build -parallel-testing-enabled NO -only-testing:LittleHavenUITests/LittleHavenUITests/testActualReleaseSavedHomeContinue -resultBundlePath "ReleaseStartup-home-$TOUCH.xcresult" CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test-without-building
+            CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+            python3 scripts/verify_startup_report.py "$CONTAINER" "$TOUCH" "ReleaseStartup-home-$TOUCH-report.json" home
+          done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl install "$SIM_DEVICE" sim-build/Build/Products/Debug-iphonesimulator/LittleHaven.app
+      - name: Capture home motion
+        run: |
+          set -euo pipefail
+          for MODE in family-home needs-npc life-gallery; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch --ui-home-compatibility
+            sleep 5
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-life-$MODE.png"
+            xcrun simctl io "$SIM_DEVICE" recordVideo --codec=h264 "LittleHaven-life-$MODE-motion.mp4" &
+            VIDEO_PID=$!
+            sleep 4
+            kill -INT "$VIDEO_PID"
+            wait "$VIDEO_PID"
+          done
+          xcrun xcresulttool export attachments --path HomeLifeResults.xcresult --output-path art-ui-diagnostics
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Living-home
+          path: |
+            HomeLifeResults.xcresult.log
+            release-startup.log
+            ReleaseStartup-*-report.json
+            LittleHaven-response-painted-*.png
+            LittleHaven-*-motion.mp4
+            art-ui-diagnostics
+  world:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: World work dialogue shops sanctuary and joystick regressions
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
+          echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testPhysicalRoomCleaning -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenJoystickReleaseAndPause -only-testing:LittleHavenUITests/LittleHavenUITests/testGuestConversationCanAcceptAPersonalRequest -only-testing:LittleHavenUITests/LittleHavenUITests/testBeachIsReachableAndDecorated -only-testing:LittleHavenUITests/LittleHavenUITests/testBarBartenderServesDrinks -only-testing:LittleHavenUITests/LittleHavenUITests/testFishRestaurantServesMeal -only-testing:LittleHavenUITests/LittleHavenUITests/testNewSanctuaryResidentsCareAndAdventure -only-testing:LittleHavenUITests/LittleHavenUITests/testOutdoorChaosCanBeHandled -resultBundlePath WorldLifeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test 2>&1 | tee WorldLifeResults.xcresult.log
+      - name: Capture seven groups in gameplay
+        run: |
+          set -euo pipefail
+          for MODE in bar fish beach basement action-response-fire; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch --ui-home-compatibility
+            sleep 5
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-life-$MODE.png"
+            xcrun simctl io "$SIM_DEVICE" recordVideo --codec=h264 "LittleHaven-life-$MODE-motion.mp4" &
+            VIDEO_PID=$!
+            sleep 4
+            kill -INT "$VIDEO_PID"
+            wait "$VIDEO_PID"
+          done
+          xcrun xcresulttool export attachments --path WorldLifeResults.xcresult --output-path art-ui-diagnostics
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Living-world
+          path: |
+            WorldLifeResults.xcresult.log
+            LittleHaven-response-painted-*.png
+            LittleHaven-*-motion.mp4
+            art-ui-diagnostics
+  publish:
+    needs: [device, home, world]
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Living-*
+          merge-multiple: true
+      - name: Verify native results and startup records
+        run: python3 scripts/verify_living_animations.py
+      - name: Publish native visual review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/art-ui-diagnostics
+          cp -R art-ui-diagnostics/. /tmp/art-ui-diagnostics/
+          python3 scripts/publish_art_previews.py
+      - name: Publish verified v59 installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish_candidate.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Living-verification
+          path: |
+            candidate-verification.json
+            living-animations-verification.json

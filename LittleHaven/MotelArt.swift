@@ -266,7 +266,7 @@ struct MotelGroundsCanvas: View, Animatable {
             }
             // Terrain stays behind every relocatable building and furnishing.
             rect(240,472,365,80,0x747E78)
-            BeachArt.draw(context:&context,motel:motel)
+            BeachArt.draw(context:&context,motel:motel,animatedPalms:sceneryOnly)
             NeighborhoodArt.draw(context:&context,level:motel.household.level,motel:motel)
             // Employee facilities appear only after that employee is hired.
             for role in motel.staffStations {

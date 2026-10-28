@@ -92,14 +92,23 @@ struct TownCanvas: View, Animatable {
 }
 
 struct PaperPortrait: View {
+    @Environment(\.dialogueMotion) private var motion
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let color: UInt32
     let variant: Int
     var body: some View {
+        TimelineView(.animation(minimumInterval:0.25,paused:motion.isEmpty || reduceMotion)) {timeline in
         Canvas { context, size in
             let scale = min(size.width / 24, size.height / 28)
             context.translateBy(x: (size.width - 24 * scale) / 2, y: (size.height-28*scale)/2)
             context.scaleBy(x: scale, y: scale)
-            PaperPerson.draw(context: &context, x: 4, y: 9, color: color, variant: variant, facing: 0, walk: 0)
+            if motion.isEmpty || reduceMotion {
+                PaperPerson.draw(context: &context, x: 4, y: 9, color: color, variant: variant, facing: 0, walk: 0)
+            } else {
+                let actor=RPGActor(id:"dialogue",tile:Tile(x:0,y:0),color:color,variant:variant)
+                HavenLifeArt.draw(context:&context,actor:actor,kind:motion,frame:Int(timeline.date.timeIntervalSinceReferenceDate/0.25)%16)
+            }
+        }
         }
     }
 }

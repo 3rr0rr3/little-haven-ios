@@ -91,6 +91,21 @@ final class LittleHavenUITests: XCTestCase {
         }
     }
 
+    func testLivingHavenAnimationGallery() {
+        let app=launch("--ui-life-gallery")
+        XCTAssertTrue(app.staticTexts["lifeReview"].waitForExistence(timeout:15))
+        capture(app,"Living Haven guest routines and expressions")
+        Thread.sleep(forTimeInterval:2)
+        app.swipeUp();capture(app,"Living Haven family and first creatures")
+        Thread.sleep(forTimeInterval:2)
+        app.swipeUp();capture(app,"Living Haven creature personalities")
+        Thread.sleep(forTimeInterval:2)
+        app.swipeUp();capture(app,"Living Haven work tools and nature")
+        for _ in 0..<3 where !app.staticTexts["lifeReviewEnd"].isHittable {app.swipeUp()}
+        XCTAssertTrue(app.staticTexts["lifeReviewEnd"].exists)
+        XCTAssertEqual(app.state,.runningForeground)
+    }
+
     func testCompatibleHomeCareAndSavedContinue() {
         for touch in [false,true] {
             let app=XCUIApplication()

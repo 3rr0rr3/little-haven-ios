@@ -104,7 +104,14 @@ private struct StartupRecoveryRoot: View {
                     StartupTrace.begin("recovery retry")
                     recovery=false
                 }
-            } else { ContentView() }
+            } else {
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("--ui-life-gallery") {LifeAnimationReview()}
+                else {ContentView()}
+                #else
+                ContentView()
+                #endif
+            }
         }.onChange(of:scenePhase) {_,phase in
             guard phase == .background,!recovery else{return}
             #if DEBUG

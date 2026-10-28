@@ -1115,7 +1115,8 @@ struct MotelView: View {
         }
         if current.lastEvent != before && current.operationsState.visual?.id == game.motel?.operationsState.visual?.id {
             let message = current.lastEvent.lowercased()
-            if message.contains("paint") { current.playVisual("paint") }
+            if message.hasPrefix("supplies delivered:") { current.playVisual("restock") }
+            else if message.contains("paint") { current.playVisual("paint") }
             else if message.contains("built") || message.contains("furnish") || message.contains("upgraded") { current.playVisual("build") }
             else if message.contains("tools collected") || message.contains("fresh sheets collected") { current.playVisual("laundry") }
         }

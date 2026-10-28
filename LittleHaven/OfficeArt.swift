@@ -641,7 +641,7 @@ enum BeachArt {
         water.addLine(to:CGPoint(x:1152,y:1024));water.addLine(to:CGPoint(x:1152,y:672));water.closeSubpath()
         return water
     }
-    static func draw(context c:inout GraphicsContext,motel:Motel?=nil) {
+    static func draw(context c:inout GraphicsContext,motel:Motel?=nil,animatedPalms:Bool=false) {
         for row in stride(from:40,to:64,by:2) {for col in stride(from:0,to:39,by:2) {CozyScenery.tree(context:&c,x:Double(col*16),y:Double(row*16+8))}}
         let sand=CGRect(x:640,y:640,width:512,height:384)
         c.fill(Path(sand),with:.color(Color(hex:0xEBDBB1)))
@@ -651,7 +651,7 @@ enum BeachArt {
         c.stroke(coast,with:.color(Color(hex:0xB7DCD0).opacity(0.7)),style:StrokeStyle(lineWidth:7,lineCap:.round,lineJoin:.round))
         c.stroke(coast,with:.color(Color(hex:0xF4EBD2).opacity(0.8)),style:StrokeStyle(lineWidth:1.3,lineCap:.round,lineJoin:.round))
         for col in 40..<58 {CozyScenery.block(context:&c,x:Double(col*16),y:641,w:15.8,h:13,color:0xBC9C75,depth:0.6)}
-        for (id,tile) in BeachLayout.palms.enumerated() {
+        for (id,tile) in BeachLayout.palms.enumerated() where !animatedPalms {
             let saved=c,d=motel?.creativeOffset("palm-\(id)") ?? Tile(x:0,y:0)
             c.translateBy(x:Double(d.x*16),y:Double(d.y*16))
             DecorArt.palm(&c,Double(tile.x*16),Double(tile.y*16));c=saved
@@ -1402,3 +1402,196 @@ struct CareAnimationBadge:View {
             .allowsHitTesting(false).accessibilityIdentifier("careAnimation_"+care.rawValue)
     }
 }
+
+// Small, reusable 24x28 poses. Only actors redraw; maps and game state do not.
+enum HavenLifeArt {
+    static func draw(context:inout GraphicsContext,actor:RPGActor,kind:String,frame:Int) {
+        let phase=Double(frame%16)/16, wave=sin(phase * .pi * 2)
+        let active=frame>=8, lift=active ? sin(Double(frame-8)/7 * .pi) : 0
+        let ink:UInt32=0x302D2D
+        let skin:UInt32=[7,8,9].contains(actor.variant) ? (actor.variant==8 ? 0xD79F77 : 0xE3B38E) : NPCDesign.skinColors[NPCDesign(variant:actor.variant).skin]
+        func oval(_ r:CGRect,_ color:UInt32) {context.fill(Path(ellipseIn:r),with:.color(Color(hex:color)))}
+        func line(_ points:[CGPoint],_ color:UInt32,_ width:Double) {
+            var path=Path();for (i,p) in points.enumerated() {if i==0 {path.move(to:p)} else {path.addLine(to:p)}}
+            context.stroke(path,with:.color(Color(hex:color)),style:StrokeStyle(lineWidth:width,lineCap:.round,lineJoin:.round))
+        }
+        func box(_ r:CGRect,_ color:UInt32) {
+            let p=Path(roundedRect:r,cornerRadius:0.6);context.fill(p,with:.color(Color(hex:color)));context.stroke(p,with:.color(Color(hex:ink)),lineWidth:0.3)
+        }
+        func arm(_ sx:Double,_ ex:Double,_ ey:Double,_ hx:Double,_ hy:Double) {
+            let p=[CGPoint(x:sx,y:18.5),CGPoint(x:ex,y:ey),CGPoint(x:hx,y:hy)]
+            line(p,ink,2.6);line(p,skin,2)
+            line([p[0],CGPoint(x:(sx+ex)/2,y:(18.5+ey)/2)],actor.color,2.3)
+            oval(CGRect(x:hx-1.15,y:hy-1.15,width:2.3,height:2.3),skin)
+        }
+        if actor.animal>0 || actor.creature || actor.corralCreature>0 {
+            let original=context
+            let cat=actor.animal>0, character=actor.corralCreature
+            let mode=cat ? frame/4 : character%4
+            let stretch=cat && mode==1, curl=cat && mode==3
+            let hop=cat && mode==2 ? max(0,wave)*2 : !cat && active ? abs(wave)*0.8 : 0
+            context.translateBy(x:12,y:25-hop)
+            context.scaleBy(x:stretch ? 1.12 : curl ? 0.90 : 1,y:stretch ? 0.78 : curl ? 0.72 : 1)
+            context.translateBy(x:-12,y:-25)
+            if character>0 {CorralCreatureArt.draw(context:&context,kind:character,facing:actor.facing,walk:wave*0.7)}
+            else if actor.creature {MochiArt.draw(context:&context,facing:actor.facing,walk:wave*0.6)}
+            else {CatArt.draw(context:&context,gray:actor.animal==1,walk:wave,facing:actor.facing)}
+            if cat && mode==0 && active {
+                // A paw comes up to the cheek for grooming.
+                oval(CGRect(x:6+lift,y:17-lift*4,width:3,height:3),actor.animal==1 ? 0x85817C : 0xE9E2D0)
+            }
+            if curl {line([CGPoint(x:19,y:23),CGPoint(x:13,y:26),CGPoint(x:7,y:24)],actor.animal==1 ? 0x625E59 : 0xAC7148,2)}
+            context=original
+            if !cat && active {
+                switch character {
+                case 1,11: // Wizard spell and cosmic antenna glow.
+                    for i in 0..<3 {oval(CGRect(x:4+Double(i*7),y:4-wave*2-Double(i%2)*3,width:1.2,height:1.2),character==1 ? 0xEFD37C : 0x8BCC85)}
+                case 2: line([CGPoint(x:18,y:22),CGPoint(x:22,y:19-wave)],0xE8B75D,1.2)
+                case 3: oval(CGRect(x:3,y:21,width:2,height:1),0xB9CCD9)
+                case 4: line([CGPoint(x:17,y:18),CGPoint(x:20,y:15-lift)],0x91A34D,1.6)
+                case 5: line([CGPoint(x:2,y:23),CGPoint(x:5,y:23-wave)],0x8CAEB8,1)
+                case 6: // A flex, using this creature's original grey paws.
+                    oval(CGRect(x:2,y:15-lift*3,width:3,height:3),0x85817C);oval(CGRect(x:19,y:15-lift*3,width:3,height:3),0x85817C)
+                case 7: line([CGPoint(x:17,y:19),CGPoint(x:19,y:17-lift)],0x85817C,1.2)
+                case 8: // Foot taps a small practice ball, without moving the actor.
+                    oval(CGRect(x:17+wave,y:24,width:3,height:3),0xF5E7C8);oval(CGRect(x:18+wave,y:25,width:1,height:1),ink)
+                case 9: oval(CGRect(x:2,y:12,width:1.5,height:1.5),0xDDA0BA)
+                case 10: oval(CGRect(x:19,y:22-lift*2,width:1.4,height:2.5),0xE5A653)
+                case 12: line([CGPoint(x:18,y:23),CGPoint(x:21,y:23-wave)],0x9B6B45,1.4)
+                default:break
+                }
+            }
+            return
+        }
+        let unmirrored=context
+        defer {context=unmirrored}
+        if actor.facing==1 {context.translateBy(x:24,y:0);context.scaleBy(x:-1,y:1)}
+        let human=context
+        if kind=="laugh" {context.translateBy(x:0,y:-abs(wave)*0.55)}
+        if kind=="nod" || kind=="dirty" {context.translateBy(x:0,y:lift*0.45)}
+        let facing=(kind=="family" && frame<8) || kind=="legs" ? 3 : kind=="sleep" ? 0 : actor.facing==1 || (actor.facing==3 && ["phone","sip","eat"].contains(kind)) ? 2 : actor.facing
+        if actor.seated || kind=="sit" || kind=="legs" {
+            var body=context;body.clip(to:Path(CGRect(x:0,y:0,width:24,height:22)))
+            PaperPerson.draw(context:&body,x:4,y:9,color:actor.color,variant:actor.variant,facing:facing,walk:0,hands:false,kneeling:true)
+            if kind=="legs" {
+                line([CGPoint(x:9,y:20),CGPoint(x:9+wave,y:24)],0xB36F8F,2)
+                line([CGPoint(x:15,y:20),CGPoint(x:15-wave,y:24)],0xB36F8F,2)
+            }
+        } else {
+            PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:facing,walk:kind=="serve" ? wave*0.5 : 0,hands:false,beachwear:actor.beachwear)
+        }
+        context=human
+        switch kind {
+        case "phone","luggage":
+            arm(7,6,20,10,19);arm(17,18,20,14,19)
+            box(CGRect(x:10,y:16.5,width:4,height:6),0x465C60);box(CGRect(x:10.6,y:17.2,width:2.8,height:3.6),0xACCFCA)
+            if active {line([CGPoint(x:15,y:19),CGPoint(x:12.6,y:19+lift)],skin,1.1)}
+            if kind=="luggage" {box(CGRect(x:18,y:23,width:5,height:5),0xAA7856)}
+        case "knock":
+            arm(7,5,20,5,22);arm(17,20,16-lift,20,12-lift*2)
+        case "wave","family":
+            arm(7,5,20,5,22)
+            arm(17,20,17-lift*3,20+wave*1.1,14-lift*4)
+        case "shrug":
+            arm(7,4,19-lift*2,2,18-lift*2);arm(17,20,19-lift*2,22,18-lift*2)
+        case "cross":
+            arm(7,6,20,15,19);arm(17,18,20,9,19)
+        case "dirty":
+            arm(7,6,20,6,22);arm(17,20,19,13,12.5)
+            line([CGPoint(x:18,y:6),CGPoint(x:19,y:4),CGPoint(x:18,y:2)],0x8EA274,0.5)
+        case "sip","eat":
+            arm(7,5,21,10,22);arm(17,20,20,15-lift*2,20-lift*5)
+            if kind=="sip" {box(CGRect(x:12-lift*2,y:18-lift*5,width:4,height:4),0xC79B5D);line([CGPoint(x:12-lift*2,y:18-lift*5),CGPoint(x:16-lift*2,y:18-lift*5)],0xF5E7C8,0.7)}
+            else {oval(CGRect(x:6,y:22,width:12,height:2.5),0xEEE4CD);line([CGPoint(x:15-lift*2,y:19-lift*5),CGPoint(x:13-lift*2,y:15-lift*3)],0xCDD3C9,0.7)}
+        case "pour":
+            arm(7,7,21,12,21);arm(17,21,17,18-lift,17-lift*2)
+            box(CGRect(x:10,y:21,width:4,height:5),0xDBBD83)
+            box(CGRect(x:16-lift,y:13-lift*2,width:3,height:7),0x6E9074)
+            if active {line([CGPoint(x:16,y:18),CGPoint(x:13,y:22)],0xD6B277,0.6)}
+        case "serve","clear":
+            arm(7,5,20,8,22);arm(17,20,20,17,22)
+            box(CGRect(x:7,y:21,width:15,height:1.5),0x9A7754)
+            oval(CGRect(x:9,y:19.5,width:6,height:2),0xE8E2D0)
+            box(CGRect(x:17,y:17.5,width:3,height:4),0xE7D7B9)
+            if kind=="clear" {line([CGPoint(x:7,y:21),CGPoint(x:13+lift*4,y:21)],0xEEE3CC,1.2)}
+        case "sleep":
+            oval(CGRect(x:7.4,y:8,width:3.8,height:4.2),skin)
+            oval(CGRect(x:12.3,y:8,width:3.8,height:4.2),skin)
+            arm(7,8,20,10,21);arm(17,16,20,14,21)
+            line([CGPoint(x:7,y:10),CGPoint(x:11,y:10)],ink,0.6);line([CGPoint(x:13,y:10),CGPoint(x:17,y:10)],ink,0.6)
+            if active {context.draw(Text("z").font(.system(size:3,weight:.bold)).foregroundColor(Color(hex:0xD8DFCE)),at:CGPoint(x:20,y:4-lift*3))}
+        default:
+            arm(7,5,20,5,22);arm(17,19,20,19,22)
+            if kind=="laugh" && active {oval(CGRect(x:10.5,y:13,width:3,height:1.2),0x7D4D45)}
+        }
+        if actor.shopUniform>0 {ShopKeeperArt.uniform(context:&context,kind:actor.shopUniform,facing:facing)}
+        if actor.dirty {PlayerDirtArt.draw(context:&context,facing:actor.facing)}
+    }
+}
+
+struct HavenLifeArtwork:View {
+    let actor:RPGActor
+    let kind:String
+    let frame:Int
+    var body:some View {Canvas {c,_ in HavenLifeArt.draw(context:&c,actor:actor,kind:kind,frame:frame)}.frame(width:24,height:28)}
+}
+
+private struct DialogueMotionKey:EnvironmentKey {static let defaultValue=""}
+extension EnvironmentValues {
+    var dialogueMotion:String {get {self[DialogueMotionKey.self]} set {self[DialogueMotionKey.self]=newValue}}
+}
+
+struct NatureMotionArtwork:View {
+    let frame:Int
+    var body:some View {
+        Canvas {c,_ in
+            let turn=sin(Double(frame) * .pi / 4)*0.022
+            c.translateBy(x:32,y:57);c.rotate(by:.radians(turn));c.translateBy(x:-32,y:-57)
+            DecorArt.palm(&c,32,48)
+        }.frame(width:64,height:72)
+    }
+}
+
+#if DEBUG
+private struct LifeReviewSpec:Identifiable {
+    let id:String
+    let actor:RPGActor
+    let kind:String
+}
+struct LifeAnimationReview:View {
+    private var samples:[LifeReviewSpec] {
+        let kinds=["phone","knock","wave","sit","sleep","nod","shrug","laugh","cross","dirty","eat","sip","pour","serve","clear"]
+        var result=kinds.enumerated().map{i,kind in LifeReviewSpec(id:kind,actor:RPGActor(id:kind,tile:Tile(x:0,y:0),color:Motel.themeColors[i%4],variant:510+i,facing:0),kind:kind)}
+        result.append(LifeReviewSpec(id:"Family wave / TV",actor:RPGActor(id:"hildarelys",tile:Tile(x:0,y:0),color:0x292A2C,variant:8),kind:"family"))
+        result.append(LifeReviewSpec(id:"Samhil legs",actor:RPGActor(id:"samhil",tile:Tile(x:0,y:0),color:0xD88BAA,variant:9,seated:true),kind:"legs"))
+        for id in 0..<12 {result.append(LifeReviewSpec(id:BasementLayout.titles[id],actor:RPGActor(id:"creature-\(id)",tile:Tile(x:0,y:0),color:0x999999,variant:id,corralCreature:id+1),kind:"creature"))}
+        for id in 1...2 {result.append(LifeReviewSpec(id:"Home cat \(id)",actor:RPGActor(id:"cat-\(id)",tile:Tile(x:0,y:0),color:0x85817C,variant:0,animal:id),kind:"creature"))}
+        result.append(LifeReviewSpec(id:"Tuki",actor:RPGActor(id:"mochi",tile:Tile(x:0,y:0),color:0xBB89B2,variant:0,creature:true),kind:"creature"))
+        return result
+    }
+    var body:some View {
+        ScrollView {
+            Text("Living Haven motion review").font(.headline).padding().accessibilityIdentifier("lifeReview")
+            TimelineView(.animation(minimumInterval:0.25)) {timeline in
+                let frame=Int(timeline.date.timeIntervalSinceReferenceDate/0.25)%16
+                LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:4),spacing:12) {
+                    ForEach(samples) {sample in
+                        VStack {
+                            HavenLifeArtwork(actor:sample.actor,kind:sample.kind,frame:frame).scaleEffect(2.5).frame(height:80)
+                            Text(sample.id).font(.caption2).lineLimit(2).frame(height:30)
+                        }.frame(maxWidth:.infinity).padding(.vertical,4).background(Color.white.opacity(0.04))
+                    }
+                    ForEach(["bed","mop","repair","supplies","wipe","breakfast"],id:\.self) {kind in
+                        VStack {
+                            WorkingCharacterArtwork(kind:kind,frame:frame%12).scaleEffect(1.7).frame(height:80)
+                            Text(kind).font(.caption2).frame(height:30)
+                        }
+                    }
+                    NatureMotionArtwork(frame:frame%8).frame(height:100)
+                }.padding(12)
+            }
+            Text("End of motion review").padding().accessibilityIdentifier("lifeReviewEnd")
+        }.background(Color(hex:0x20372F)).foregroundStyle(Color(hex:0xF5E7C8))
+    }
+}
+#endif

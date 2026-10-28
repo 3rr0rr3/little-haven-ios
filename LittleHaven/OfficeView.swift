@@ -99,7 +99,7 @@ struct OfficeReceptionView: View {
         if motel.operationsState.workers.contains(where:{$0.role == .clerk && $0.active && $0.tile.distance(to:motel.staffHome($0.role)) <= 1})  {
             result.append(RPGActor(id:"clerk-nora",tile:Tile(x:6,y:3),color:StaffRole.clerk.color,variant:204,name:"Nora"))
         }
-        if let visitor { result.append(RPGActor(id:"reception-guest",tile:visitor.tile,color:visitor.guest.color,variant:visitor.guest.appearanceSeed,facing:visitor.phase == .leaving ? 0 : 3,name:visitor.guest.name,duration:0.3)) }
+        if let visitor { result.append(RPGActor(id:"reception-guest",tile:visitor.tile,color:visitor.guest.color,variant:visitor.guest.appearanceSeed,facing:visitor.phase == .leaving ? 0 : 3,name:visitor.guest.name,duration:0.3,ambient:visitor.phase == .leaving ? "wave" : "nod")) }
         if let event=motel.occasions.celebration,event.day==motel.day,event.completed,
            let guest=motel.rooms.compactMap(\.guest).first(where:{$0.id==event.guestID}) {
             result.append(RPGActor(id:"celebration-host-guest",tile:Tile(x:5,y:9),color:guest.color,variant:guest.appearanceSeed,facing:0,expression:"cheerful"))
@@ -152,7 +152,15 @@ struct ShopInteriorView:View {
         [RPGActor(id:"player",tile:motel.actorTile,color:FamilyHome.outfitColors[motel.household.outfit],variant:7,facing:motel.actorFacing,name:"You",dirty:motel.isPlayerDirty),
          RPGActor(id:"shopkeeper-"+shop.rawValue,tile:ShopLayout.keeper,color:shop.keeperColor,variant:460+shop.uniform,name:shop.keeperName,shopUniform:shop.uniform)] + ((shop == .bar || shop == .fish) ? BarLayout.seats.enumerated().map { index,tile in
              RPGActor(id:(shop == .fish ? "fish-diner-" : "bar-patron-")+"\(index)",tile:tile,color:[UInt32(0xA58AAB),0x9CB69E,0xD1AD74][index%3],variant:(shop == .fish ? 560 : 520)+index,facing:index%2 == 0 ? 2 : 1,name:(shop == .fish ? ["Elena","Marcus","Priya","Bruno","Nadia","Felix"] : ["Cleo","Dante","Petra","Emil","Nia","Orson"])[index])
-         } : []) + musicActors + motel.petActors + motel.policeActors
+         } : []) + serviceActors + musicActors + motel.petActors + motel.policeActors
+    }
+    private var lampProps:[HavenWorldProp] {
+        guard shop == .bar || shop == .fish else{return []}
+        return [HavenWorldProp(id:"counter-lamp-left",tile:Tile(x:2,y:3),kind:91),HavenWorldProp(id:"counter-lamp-right",tile:Tile(x:12,y:3),kind:91)]
+    }
+    private var serviceActors:[RPGActor] {
+        guard shop == .bar || shop == .fish else{return []}
+        return [RPGActor(id:"shop-server",tile:Tile(x:7,y:5),color:shop == .bar ? 0x9A6979 : 0x729D99,variant:shop == .bar ? 585 : 586,facing:0,ambient:"serve")]
     }
     private var musicActors:[RPGActor] {
         guard shop == .bar, motel.lanternShowAvailable || motel.storyBook.performedDay == motel.day else {return []}
@@ -164,7 +172,7 @@ struct ShopInteriorView:View {
             let scale=min(proxy.size.width/240,proxy.size.height/240)
             let ox=(proxy.size.width-240*scale)/2,oy=(proxy.size.height-240*scale)/2
             ZStack {
-                RPGSceneView(mapID:"shop-"+shop.rawValue,revision:"store-28",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:false) {shop == .fish ? AnyView(FishInteriorArt()) : shop == .bar ? AnyView(BarInteriorArt()) : AnyView(ShopInteriorArt(shop:shop))}
+                RPGSceneView(mapID:"shop-"+shop.rawValue,revision:"store-28",mapSize:CGSize(width:240,height:240),columns:15,interior:true,actors:actors,night:false,lifeProps:lampProps) {shop == .fish ? AnyView(FishInteriorArt()) : shop == .bar ? AnyView(BarInteriorArt()) : AnyView(ShopInteriorArt(shop:shop))}
                 if shop == .bar, !musicActors.isEmpty {
                     LanternMusicProp(playing:motel.storyBook.performedDay == motel.day)
                         .frame(width:42*scale,height:32*scale)
@@ -208,7 +216,7 @@ struct BasementView:View {
     }
     var body:some View {
         VStack(spacing:4) {
-            RPGSceneView(mapID:"basement",revision:"sanctuary-53",mapSize:CGSize(width:BasementLayout.width*16,height:BasementLayout.height*16),columns:15,interior:false,actors:actors) {AnyView(BasementArt())}
+            RPGSceneView(mapID:"basement",revision:"sanctuary-53",mapSize:CGSize(width:BasementLayout.width*16,height:BasementLayout.height*16),columns:15,interior:false,actors:actors,lifeProps:motel.natureMotionProps) {AnyView(BasementArt())}
                 .accessibilityIdentifier("basementScene")
             ScrollView(.horizontal) {
                 HStack {

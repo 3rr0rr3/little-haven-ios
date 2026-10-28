@@ -30,6 +30,31 @@ struct RPGActor {
     var routine = ""
     var celebrating = false
     var dirty = false
+    var ambient = ""
+    var lifeKind:String {
+        guard action.isEmpty,effect==0,!cycling,expression != "scared",(!danger || ambient=="sleep") else{return ""}
+        if !ambient.isEmpty {return ambient}
+        if animal>0 || creature || corralCreature>0 {return "creature"}
+        if id=="hildarelys" {return "family"}
+        if id=="samhil" {return "legs"}
+        if id.hasPrefix("fish-diner-") {return "eat"}
+        if id.hasPrefix("bar-patron-") {return "sip"}
+        if id=="shopkeeper-bar" {return "pour"}
+        if id=="shopkeeper-fish" {return "clear"}
+        if id.hasPrefix("shopkeeper-") {return "wave"}
+        if id=="reception-guest" {return "nod"}
+        if expression=="scared" || id=="player" {return ""}
+        switch routine {
+        case "breakfast":return "eat"
+        case "bar":return "sip"
+        case "beach":return "sit"
+        case "room":return "knock"
+        case "complaint":return "shrug"
+        case "walk","shelter","luggage":return "phone"
+        default:return id.hasPrefix("guest-") ? "phone" : ""
+        }
+    }
+    var lifeOffset:Int {id.utf8.reduce(0){($0+Int($1))%16}}
 }
 
 private struct WorldTouchKey: EnvironmentKey {
@@ -259,14 +284,19 @@ private struct CompatibleHomeTV:View {
 private struct CompatibleOfficeActor: View {
     let actor: RPGActor
     @State private var walkingUntil = Date.distantPast
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
-        TimelineView(.animation(minimumInterval:actor.action.hasPrefix("care-") ? 0.075 : 0.095,paused:Date()>walkingUntil && actor.action.isEmpty)) { timeline in
+        TimelineView(.animation(minimumInterval:actor.action.hasPrefix("care-") ? 0.075 : (Date()>walkingUntil && !actor.lifeKind.isEmpty ? 0.25 : 0.095),paused:Date()>walkingUntil && actor.action.isEmpty && (actor.lifeKind.isEmpty || reduceMotion))) { timeline in
             let walking = timeline.date < walkingUntil
             let phase = Int(timeline.date.timeIntervalSinceReferenceDate/0.095)%4
             let stride = walking ? [1.0,0,-1,0][phase] : 0
             ZStack {
                 if actor.action.isEmpty {
-                    ActorArtwork(actor:actor,stride:stride).scaleEffect(actor.displayScale)
+                    Group {
+                        if !walking,!reduceMotion,!actor.lifeKind.isEmpty {
+                            HavenLifeArtwork(actor:actor,kind:actor.lifeKind,frame:(Int(timeline.date.timeIntervalSinceReferenceDate/(actor.animal>0 ? 0.6 : 0.25))+actor.lifeOffset)%16)
+                        } else {ActorArtwork(actor:actor,stride:stride)}
+                    }.scaleEffect(actor.displayScale)
                         .offset(y:(actor.animal > 0 || actor.creature) ? 11*(1-actor.displayScale) : 0)
                 } else {
                     WorkingCharacterArtwork(kind:actor.action,frame:actor.action.hasPrefix("care-") ? Int(timeline.date.timeIntervalSinceReferenceDate/0.075)%12 : phase*3,color:actor.color,variant:actor.variant,facing:actor.facing)
@@ -364,6 +394,9 @@ final class RPGScene: SKScene {
     private var visualMapSeen = ""
     private var actionTextures: [String:[SKTexture]] = [:]
     private var carTextures: [String:SKTexture] = [:]
+    private var lifeTextures:[String:[SKTexture]]=[:]
+    private var lifeBuildBudget=2
+    private var palmFrames:[SKTexture]=[]
 
     override func didMove(to view: SKView) {
         if !configured {
@@ -381,6 +414,8 @@ final class RPGScene: SKScene {
                              scenery: () -> AnyView) {
         StartupTrace.stage("spritekit_configure_"+mapID)
         let changedMap = worldID != mapID
+        if changedMap {lifeTextures.removeAll(keepingCapacity:true)}
+        lifeBuildBudget=2
         dimensions = mapSize
         visibleColumns = columns
         indoors = interior
@@ -410,6 +445,7 @@ final class RPGScene: SKScene {
         configureAmbient(night:night && !interior,nightVision:nightVision,powerOut:powerOut)
         configureWeather(interior ? .sunny : weather)
         configureLifeProps(lifeProps)
+        configureDiningService(mapID:mapID)
         if !interior { configureCars(cars,day:day,positions:bikePositions) }
         if let visual, visual.map == mapID, visual.id != visualSeen || visual.map != visualMapSeen {
             visualSeen = visual.id; visualMapSeen = visual.map
@@ -450,7 +486,7 @@ final class RPGScene: SKScene {
                 node.removeAction(forKey:"walkEnd")
                 node.zRotation = 0; node.texture = idle; node.userData?["appearance"] = appearance
             }
-            if actor.effect == 0 && node.action(forKey:"walk") == nil && node.action(forKey:"working-pose") == nil { node.texture = idle }
+            if actor.effect == 0 && node.action(forKey:"walk") == nil && node.action(forKey:"working-pose") == nil && node.action(forKey:"life-pose") == nil { node.texture = idle }
             if moving {
                 let frames = [sprite(actor, stride: 1), idle, sprite(actor, stride: -1), idle]
                 if node.action(forKey:"walk") == nil {node.run(.repeatForever(.animate(with:frames,timePerFrame:actor.id == "player" ? 0.095 : stepDuration/4)),withKey:"walk")}
@@ -462,28 +498,6 @@ final class RPGScene: SKScene {
                 node.run(.move(to: target, duration: stepDuration), withKey: "move")
             }
             configureEverydayAnimation(actor,node:node,moving:moving)
-            if actor.id.hasPrefix("fish-diner-") && node.childNode(withName:"dining-fork") == nil {
-                let fork=SKShapeNode(rectOf:CGSize(width:0.7,height:4),cornerRadius:0.2)
-                fork.name="dining-fork";fork.fillColor=UIColor(white:0.85,alpha:1);fork.strokeColor = .clear
-                fork.position=CGPoint(x:6,y:-3);fork.zPosition=2
-                fork.run(.repeatForever(.sequence([.wait(forDuration:1+Double(actor.variant%3)),.moveBy(x:-2,y:5,duration:0.5),.wait(forDuration:0.4),.moveBy(x:2,y:-5,duration:0.5)])))
-                node.addChild(fork)
-            }
-            if actor.id.hasPrefix("bar-patron-") && node.childNode(withName:"social-drink") == nil {
-                let mug=SKShapeNode(rectOf:CGSize(width:3,height:4),cornerRadius:0.6)
-                mug.name="social-drink";mug.fillColor=UIColor(red:0.86,green:0.69,blue:0.4,alpha:1)
-                mug.strokeColor=UIColor(white:0.95,alpha:1);mug.lineWidth=0.35
-                mug.position=CGPoint(x:actor.facing == 1 ? -6 : 6,y:-3);mug.zPosition=2
-                let delay=Double(actor.variant%4)+1.2
-                mug.run(.repeatForever(.sequence([.wait(forDuration:delay),.group([.moveBy(x:0,y:5,duration:0.5),.rotate(byAngle:0.25,duration:0.5)]),.wait(forDuration:0.7),.group([.moveBy(x:0,y:-5,duration:0.5),.rotate(byAngle:-0.25,duration:0.5)])])))
-                node.addChild(mug)
-                let chat=SKLabelNode(fontNamed:"AvenirNext-Bold")
-                chat.text=actor.variant%2 == 0 ? "Cheers!" : "Good company!"
-                chat.fontSize=3;chat.fontColor=UIColor(red:1,green:0.9,blue:0.68,alpha:1)
-                chat.position=CGPoint(x:0,y:19);chat.alpha=0;chat.zPosition=3
-                chat.run(.repeatForever(.sequence([.wait(forDuration:delay+2),.fadeIn(withDuration:0.3),.wait(forDuration:1.5),.fadeOut(withDuration:0.4),.wait(forDuration:4)])))
-                node.addChild(chat)
-            }
             if actor.effect > 0 && node.action(forKey:"effect") == nil {
                 node.run(.repeatForever(.animate(with:(0..<8).map { sprite(actor,stride:Double($0)) },timePerFrame:0.1)),withKey:"effect")
             }
@@ -516,6 +530,8 @@ final class RPGScene: SKScene {
             if actor.effect == 3 && node.action(forKey:"spar") == nil {
                 node.run(.repeatForever(.sequence([.rotate(toAngle:0.18,duration:0.12),.rotate(toAngle:-0.18,duration:0.12),.rotate(toAngle:0,duration:0.16)])),withKey:"spar")
             }
+            configureLifePose(actor,node:node,moving:moving,working:!poseKind.isEmpty)
+            configureServiceRoute(actor,node:node)
             if actor.effect == 0 {node.zRotation=actor.resting ? -0.12 : 0}
             node.zPosition = CGFloat(actor.tile.y * 16)
             if actor.id == "player" {node.alpha=world.childNode(withName:"player-response") == nil ? 1 : 0}
@@ -548,20 +564,10 @@ final class RPGScene: SKScene {
         node.userData?["everyday"]=key
         node.childNode(withName:"everyday")?.removeFromParent()
         let detail=SKNode();detail.name="everyday";detail.zPosition=3
-        if actor.routine=="breakfast" || actor.routine=="bar" {
-            let cup=SKShapeNode(rectOf:CGSize(width:3,height:4),cornerRadius:0.5)
-            cup.fillColor=UIColor(Color(hex:actor.routine=="bar" ? 0xC68A51 : 0xF5E7C8));cup.strokeColor = .clear
-            cup.position=CGPoint(x:6,y:-3);detail.addChild(cup)
-            if !UIAccessibility.isReduceMotionEnabled {cup.run(.repeatForever(.sequence([.wait(forDuration:1.5),.moveBy(x:-1,y:5,duration:0.5),.wait(forDuration:0.5),.moveBy(x:1,y:-5,duration:0.5)])))}
-        } else if actor.routine=="luggage" {
+        if actor.routine=="luggage" {
             let bag=SKShapeNode(rectOf:CGSize(width:5,height:7),cornerRadius:1)
             bag.fillColor=UIColor(Color(hex:0xB58B63));bag.strokeColor=UIColor(Color(hex:0x69523E));bag.lineWidth=0.6
             bag.position=CGPoint(x:8,y:-8);detail.addChild(bag)
-        }
-        if actor.expression=="cheerful" && !moving && actor.routine != "breakfast" && actor.routine != "bar" {
-            let hand=SKShapeNode(circleOfRadius:2);hand.fillColor=UIColor(Color(hex:0xD9B18C));hand.strokeColor = .clear
-            hand.position=CGPoint(x:8,y:-2);detail.addChild(hand)
-            if !UIAccessibility.isReduceMotionEnabled {hand.run(.repeatForever(.sequence([.wait(forDuration:3),.moveBy(x:0,y:6,duration:0.4),.moveBy(x:-2,y:0,duration:0.2),.moveBy(x:2,y:0,duration:0.2),.moveBy(x:0,y:-6,duration:0.4)])))}
         }
         if actor.celebrating {
             let star=SKShapeNode(circleOfRadius:1.6);star.fillColor=UIColor(Color(hex:0xEFC977));star.strokeColor = .clear
@@ -574,6 +580,50 @@ final class RPGScene: SKScene {
             breath.run(.repeatForever(.sequence([.fadeAlpha(to:0,duration:1.4),.fadeAlpha(to:0.5,duration:1.4)])))
         }
         if !detail.children.isEmpty {node.addChild(detail)}
+    }
+
+    @MainActor private func configureLifePose(_ actor:RPGActor,node:SKSpriteNode,moving:Bool,working:Bool) {
+        let kind=actor.lifeKind
+        let nearby=abs(node.position.x-followCamera.position.x)<CGFloat(visibleColumns*20) && abs(node.position.y-followCamera.position.y)<CGFloat(visibleColumns*30)
+        guard !kind.isEmpty,!moving,!working,node.childNode(withName:"temporary-work")==nil,node.action(forKey:"walk")==nil,node.action(forKey:"walkEnd")==nil,nearby,!UIAccessibility.isReduceMotionEnabled else {
+            node.removeAction(forKey:"life-pose");node.userData?["life-key"]=nil;return
+        }
+        let key="\(kind)-\(actor.color)-\(actor.variant)-\(actor.facing)-\(actor.animal)-\(actor.corralCreature)-\(actor.creature)-\(actor.seated)-\(actor.beachwear)-\(actor.shopUniform)-\(actor.dirty)"
+        guard node.userData?["life-key"] as? String != key else{return}
+        var frames=lifeTextures[key]
+        if frames==nil {
+            guard lifeBuildBudget>0 else{return};lifeBuildBudget-=1
+            if lifeTextures.count>=48 {lifeTextures.removeAll(keepingCapacity:true)}
+            frames=(0..<16).map {frame in
+                let renderer=ImageRenderer(content:HavenLifeArtwork(actor:actor,kind:kind,frame:frame));renderer.scale=3
+                let texture=renderer.uiImage.map{SKTexture(image:$0)} ?? SKTexture();texture.filteringMode = .linear;return texture
+            }
+            lifeTextures[key]=frames
+        }
+        guard let frames else{return}
+        node.removeAction(forKey:"life-pose");node.userData?["life-key"]=key
+        let stagger=(0..<16).map{frames[($0+actor.lifeOffset)%16]}
+        node.run(.repeatForever(.animate(with:stagger,timePerFrame:actor.animal>0 ? 0.6 : 0.25)),withKey:"life-pose")
+    }
+    private func configureDiningService(mapID:String) {
+        guard mapID=="shop-bar" || mapID=="shop-fish" else{return}
+        guard world.childNode(withName:"dining-service")==nil else{return}
+        let root=SKNode();root.name="dining-service";root.zPosition=300;world.addChild(root)
+        for (index,table) in BarLayout.tables.enumerated() {
+            let cup=SKShapeNode(rectOf:CGSize(width:2.5,height:3.5),cornerRadius:0.4)
+            cup.fillColor=UIColor(Color(hex:0xD7C5A2));cup.strokeColor=UIColor(Color(hex:0x6A5944));cup.lineWidth=0.3
+            cup.position=CGPoint(x:table.x*16+20,y:-(table.y*16+4));root.addChild(cup)
+            if !UIAccessibility.isReduceMotionEnabled {
+                cup.run(.repeatForever(.sequence([.wait(forDuration:5+Double(index)*3),.fadeOut(withDuration:0.6),.wait(forDuration:4),.fadeIn(withDuration:0.6)])))
+            }
+        }
+    }
+    private func configureServiceRoute(_ actor:RPGActor,node:SKSpriteNode) {
+        guard actor.id=="shop-server",node.action(forKey:"service-route")==nil,!UIAccessibility.isReduceMotionEnabled else{return}
+        // Central aisles avoid tables, seats and the entrance. This actor is decorative.
+        let tiles=[Tile(x:7,y:7),Tile(x:8,y:7),Tile(x:7,y:7),Tile(x:7,y:10),Tile(x:7,y:7),Tile(x:7,y:5)]
+        let route=tiles.flatMap{tile in [SKAction.move(to:CGPoint(x:tile.x*16+8,y:-(tile.y*16+5)),duration:1.8),SKAction.wait(forDuration:1.6)]}
+        node.run(.repeatForever(.sequence(route)),withKey:"service-route")
     }
 
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
@@ -910,7 +960,30 @@ final class RPGScene: SKScene {
                 func block(_ rect:CGRect,_ color:UInt32,_ radius:CGFloat=1) {
                     let shape=SKShapeNode(rect:rect,cornerRadius:radius);shape.fillColor=UIColor(Color(hex:color));shape.strokeColor = .clear;node.addChild(shape)
                 }
-                if prop.kind==41 {
+                if prop.kind==90 {
+                    if palmFrames.isEmpty {
+                        palmFrames=(0..<8).map{frame in
+                            let renderer=ImageRenderer(content:NatureMotionArtwork(frame:frame));renderer.scale=2
+                            let texture=renderer.uiImage.map{SKTexture(image:$0)} ?? SKTexture();return texture
+                        }
+                    }
+                    let palm=SKSpriteNode(texture:palmFrames[0]);palm.size=CGSize(width:64,height:72);palm.position=CGPoint(x:-8,y:20)
+                    node.addChild(palm);node.zPosition=CGFloat(prop.tile.y*16+12)
+                    if !UIAccessibility.isReduceMotionEnabled {palm.run(.repeatForever(.animate(with:palmFrames,timePerFrame:0.42)))}
+                } else if prop.kind==91 {
+                    let glow=SKShapeNode(ellipseOf:CGSize(width:22,height:30));glow.fillColor=UIColor(Color(hex:0xF1C16B)).withAlphaComponent(0.12);glow.strokeColor = .clear;glow.blendMode = .add
+                    node.addChild(glow);node.zPosition=CGFloat(prop.tile.y*16+9)
+                    if !UIAccessibility.isReduceMotionEnabled {glow.run(.repeatForever(.sequence([.fadeAlpha(to:0.5,duration:0.8),.fadeAlpha(to:1,duration:1.2)])))}
+                } else if prop.kind==92 {
+                    let leaf=SKShapeNode(ellipseOf:CGSize(width:3,height:1.2));leaf.fillColor=UIColor(Color(hex:0xBFC376));leaf.strokeColor = .clear;leaf.alpha=0;node.addChild(leaf)
+                    if !UIAccessibility.isReduceMotionEnabled {leaf.run(.repeatForever(.sequence([.wait(forDuration:Double(prop.tile.x%5)+3),.fadeIn(withDuration:0.5),.group([.moveBy(x:9,y:-14,duration:3),.rotate(byAngle:2,duration:3),.sequence([.wait(forDuration:2),.fadeOut(withDuration:1)])]),.run{[weak leaf] in leaf?.position = .zero}])))}
+                } else if prop.kind==93 {
+                    for i in 0..<3 {
+                        let blade=SKShapeNode();var path=CGMutablePath();path.move(to:.zero);path.addQuadCurve(to:CGPoint(x:Double(i-1)*2,y:4+Double(i%2)),control:CGPoint(x:Double(i-1),y:3))
+                        blade.path=path;blade.strokeColor=UIColor(Color(hex:0x7C9B59));blade.lineWidth=0.8;blade.fillColor = .clear;node.addChild(blade)
+                        if !UIAccessibility.isReduceMotionEnabled {blade.run(.repeatForever(.sequence([.rotate(toAngle:0.12,duration:1.6+Double(i)*0.2),.rotate(toAngle:-0.08,duration:1.8)])))}
+                    }
+                } else if prop.kind==41 {
                     block(CGRect(x:-17,y:-6,width:34,height:14),0xF5E7C8,3)
                     block(CGRect(x:-16,y:-5,width:32,height:3),0xD99B7E,1)
                     for x in [-12,12] {
@@ -1175,7 +1248,7 @@ struct MotelRPGView: View {
                     expression:incident == nil ? "" : "scared")
             }
             actors += motel.worldState.travellers.map {
-                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.appearanceSeed, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: incident == nil ? MotelCadence.guestWalk : MotelCadence.travel,expression:incident == nil ? "" : "scared",routine:"luggage")
+                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.appearanceSeed, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: incident == nil ? MotelCadence.guestWalk : MotelCadence.travel,expression:incident == nil ? "" : "scared",routine:"luggage",ambient:$0.player.distance(to:$0.destination)<=1 ? "knock" : "")
             }
             for worker in motel.operationsState.workers where worker.role != .clerk || worker.tile.distance(to:motel.staffHome(worker.role))>1 {
                 var workerActor = RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:200+(StaffRole.allCases.firstIndex(of:worker.role) ?? 0),facing:worker.tile.x < (worker.previous?.x ?? worker.tile.x) ? 1 : worker.tile.x > (worker.previous?.x ?? worker.tile.x) ? 2 : worker.tile.y < (worker.previous?.y ?? worker.tile.y) ? 3 : 0,name:worker.role.name,duration:MotelCadence.travel)
@@ -1214,7 +1287,7 @@ struct MotelRPGView: View {
                 if kind == .fight { actors.append(RPGActor(id:"chaos-other",tile:Tile(x:incident.tile.x+1,y:incident.tile.y),color:other?.color ?? 0x82AFC1,variant:other?.appearanceSeed ?? 104,facing:1,marker:"!",effect:3)) }
             }
         } else if let room, let guest = room.guest, let visit, motel.guestPresent(in: room.id) {
-            actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.appearanceSeed, danger: true))
+            actors.append(RPGActor(id: "guest-\(guest.id)", tile: visit.guestTile, color: guest.color, variant: guest.appearanceSeed, danger: true,ambient:motel.isNight ? "sleep" : ""))
         }
         if interior,let room,room.squatters == true {
             for i in 0..<2 {
@@ -1234,7 +1307,7 @@ struct MotelRPGView: View {
         return RPGSceneView(mapID: mapID, revision: worldRevision, mapSize: CGSize(width: interior ? 144 : MotelGrounds.width*16, height: interior ? 144 : MotelGrounds.height*16), columns: 14, interior: interior, actors: actors, working: workProgress > 0,
                             workKind:motel.cleaningTarget == 0 ? "bed" : motel.cleaningTarget == 1 ? "trash" : "mop",
                             visual:motel.operationsState.visual,weather:motel.weather,cars:motel.parkedBikes,bikePositions:motel.bikeParking,day:motel.day,
-                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),poolOffset:motel.creativeOffset("pool"),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps+motel.expansionWorldProps+motel.gardenWorldProps+motel.celebrationWorldProps) {
+                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),poolOffset:motel.creativeOffset("pool"),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps+motel.expansionWorldProps+motel.gardenWorldProps+motel.celebrationWorldProps+motel.natureMotionProps) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }
             if motel.worldState.place == .office { return AnyView(MotelOfficeCanvas(sceneryOnly: true, motel: motel, x: 0, y: 0)) }
             return AnyView(MotelGroundsCanvas(motel: motel, x: 0, y: 0, npcTick: 0, sceneryOnly: true, fullMap: true))
@@ -1245,6 +1318,22 @@ struct MotelRPGView: View {
 
 
 extension Motel {
+    var natureMotionProps:[HavenWorldProp] {
+        if worldState.place == .basement {
+            return BasementLayout.residents.map{id in let p=BasementLayout.pen(id);return HavenWorldProp(id:"lantern-glow-\(id)",tile:Tile(x:p.x+(id%2==0 ? 7 : 0),y:p.y+2),kind:91)}
+        }
+        guard worldState.place == .grounds,visit==nil else{return []}
+        var props=BeachLayout.palms.enumerated().map{id,tile in
+            let d=creativeOffset("palm-\(id)")
+            return HavenWorldProp(id:"living-palm-\(id)",tile:Tile(x:tile.x+d.x,y:tile.y+d.y),kind:90)
+        }
+        for id in ResidentialLayout.origins.indices {
+            let t=ResidentialLayout.origins[id]
+            props.append(HavenWorldProp(id:"falling-leaf-\(id)",tile:Tile(x:t.x-1,y:t.y+1),kind:92))
+            props.append(HavenWorldProp(id:"swaying-grass-\(id)",tile:Tile(x:t.x-2,y:t.y+4),kind:93))
+        }
+        return props
+    }
     var routineActors:[RPGActor] {
         guard havenExpansion != nil,worldState.place == .grounds,visit==nil else{return []}
         return rooms.compactMap {room in
