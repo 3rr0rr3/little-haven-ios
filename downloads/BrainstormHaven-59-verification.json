@@ -1,0 +1,48 @@
+{
+  "source": "8918b61519f266f91309d9597fcbce97fde96223",
+  "version": "59.0",
+  "build": "64",
+  "size": 18376145,
+  "sha256": "a090de8a2b85202e0ab224fc162f1ebb982bd291034ec21dc1930475dfc781f3",
+  "animation_verification": {
+    "source": "8918b61519f266f91309d9597fcbce97fde96223",
+    "run": 40631703703,
+    "version": "59.0",
+    "build": "64",
+    "passed_ui_executions": 21,
+    "unique_ui_methods": 19,
+    "ui_methods": [
+      "testActualReleaseSavedHomeContinue",
+      "testActualReleaseWakeAndFirstShift",
+      "testAmbientArrivalKeepsMovementResponsive",
+      "testBarBartenderServesDrinks",
+      "testBeachIsReachableAndDecorated",
+      "testCompatibleHomeCareAndSavedContinue",
+      "testCompatibleOfficeGuestInteraction",
+      "testFamilyAndCatsAreTappable",
+      "testFishRestaurantServesMeal",
+      "testFullscreenHomeFamilyConversations",
+      "testFullscreenJoystickReleaseAndPause",
+      "testGuestConversationCanAcceptAPersonalRequest",
+      "testHomeBedroomsEnterExitAndSavedReturn",
+      "testLivingHavenAnimationGallery",
+      "testNewSanctuaryResidentsCareAndAdventure",
+      "testOutdoorChaosCanBeHandled",
+      "testPersonalNeedsBathroomAndSavedCleanState",
+      "testPersonalNeedsFoodAndDirtyNpcReaction",
+      "testPhysicalRoomCleaning"
+    ],
+    "optimized_startup_paths": 4,
+    "groups": [
+      "guest routines",
+      "conversation reactions",
+      "visible work",
+      "family moments",
+      "creature personality",
+      "environment motion",
+      "restaurant and bar service"
+    ],
+    "cache_limit": 48,
+    "new_frame_sets_per_scene_update": 2
+  }
+}

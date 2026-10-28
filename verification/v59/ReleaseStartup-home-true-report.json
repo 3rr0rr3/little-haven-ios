@@ -1,0 +1,32 @@
+{
+  "reason": "continue game",
+  "steps": [
+    "begin: continue game",
+    "continue_checkpoint_read",
+    "continue_state_assigned",
+    "hotel_body_begin",
+    "hotel_screen_deferred",
+    "hotelChrome_constructed",
+    "hotelStartupTasks_constructed",
+    "hotelMovementTasks_constructed",
+    "hotelSimulationTasks_constructed",
+    "hotelObservers_constructed",
+    "hotelSheets_constructed",
+    "hotel_content_constructed",
+    "hotel_screen_begin",
+    "hotel_fullscreen_begin",
+    "hotel_fullscreen_constructed",
+    "hotel_map_begin",
+    "hotel_map_constructed",
+    "compatible_home_appeared",
+    "home_art_draw_complete",
+    "hotel_initialization_begin",
+    "hotel_initialization_complete",
+    "hotel_mounted",
+    "hotel_stable"
+  ],
+  "build": "59.0 (64)",
+  "system": "18.5",
+  "pending": false,
+  "id": "350B0CDE-AFA9-431C-AB06-B2A5792444C7"
+}
