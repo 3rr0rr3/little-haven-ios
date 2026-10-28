@@ -592,7 +592,7 @@ final class RPGScene: SKScene {
     }
 
     private func lifeTextureKey(_ actor:RPGActor,kind:String)->String {
-        "\(kind)-\(actor.color)-\(actor.variant)-\(actor.facing)-\(actor.animal)-\(actor.corralCreature)-\(actor.creature)-\(actor.seated)-\(actor.beachwear)-\(actor.shopUniform)-\(actor.dirty)"
+        "\(kind)-\(actor.color)-\(actor.variant)-\(actor.facing)-\(actor.animal)-\(actor.corralCreature)-\(actor.creature)-\(actor.seated)-\(actor.beachwear)-\(actor.shopUniform)-\(actor.dirty)-\(actor.expression)"
     }
     @MainActor private func cachedLifeFrames(_ actor:RPGActor,kind:String)->[SKTexture]? {
         let key=lifeTextureKey(actor,kind:kind)

@@ -1421,7 +1421,7 @@ enum HavenLifeArt {
         func arm(_ sx:Double,_ ex:Double,_ ey:Double,_ hx:Double,_ hy:Double) {
             let p=[CGPoint(x:sx,y:18.5),CGPoint(x:ex,y:ey),CGPoint(x:hx,y:hy)]
             line(p,ink,2.6);line(p,skin,2)
-            line([p[0],CGPoint(x:(sx+ex)/2,y:(18.5+ey)/2)],actor.color,2.3)
+            line([p[0],CGPoint(x:(sx+ex)/2,y:(18.5+ey)/2)],actor.beachwear ? skin : actor.color,2.3)
             oval(CGRect(x:hx-1.15,y:hy-1.15,width:2.3,height:2.3),skin)
         }
         if actor.animal>0 || actor.creature || actor.corralCreature>0 {
@@ -1472,13 +1472,13 @@ enum HavenLifeArt {
         let facing=(kind=="family" && frame<8) || kind=="legs" ? 3 : kind=="sleep" ? 0 : actor.facing==1 || (actor.facing==3 && ["phone","sip","eat"].contains(kind)) ? 2 : actor.facing
         if actor.seated || kind=="sit" || kind=="legs" || kind=="sleep" {
             var body=context;body.clip(to:Path(CGRect(x:0,y:0,width:24,height:22)))
-            PaperPerson.draw(context:&body,x:4,y:9,color:actor.color,variant:actor.variant,facing:facing,walk:0,hands:false,kneeling:true)
+            PaperPerson.draw(context:&body,x:4,y:9,color:actor.color,variant:actor.variant,facing:facing,walk:0,expression:actor.expression,hands:false,kneeling:true,beachwear:actor.beachwear)
             if kind=="legs" {
                 line([CGPoint(x:9,y:20),CGPoint(x:9+wave,y:24)],0xB36F8F,2)
                 line([CGPoint(x:15,y:20),CGPoint(x:15-wave,y:24)],0xB36F8F,2)
             }
         } else {
-            PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:facing,walk:kind=="serve" ? sin(Double(frame) * .pi / 2)*0.6 : 0,hands:false,beachwear:actor.beachwear)
+            PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:facing,walk:kind=="serve" ? sin(Double(frame) * .pi / 2)*0.6 : 0,expression:actor.expression,hands:false,beachwear:actor.beachwear)
         }
         context=human
         switch kind {
@@ -1564,6 +1564,9 @@ struct LifeAnimationReview:View {
         var result=kinds.enumerated().map{i,kind in LifeReviewSpec(id:kind,actor:RPGActor(id:kind,tile:Tile(x:0,y:0),color:Motel.themeColors[i%4],variant:510+i,facing:0),kind:kind)}
         result.append(LifeReviewSpec(id:"Family wave / TV",actor:RPGActor(id:"hildarelys",tile:Tile(x:0,y:0),color:0x292A2C,variant:8),kind:"family"))
         result.append(LifeReviewSpec(id:"Samhil legs",actor:RPGActor(id:"samhil",tile:Tile(x:0,y:0),color:0xD88BAA,variant:9,seated:true),kind:"legs"))
+        result.append(LifeReviewSpec(id:"Beach outfit seated",actor:RPGActor(id:"beach-review",tile:Tile(x:0,y:0),color:0x91B7B1,variant:592,beachwear:true),kind:"sit"))
+        result.append(LifeReviewSpec(id:"Happy guest",actor:RPGActor(id:"happy-review",tile:Tile(x:0,y:0),color:0xB7A1C4,variant:593,expression:"cheerful"),kind:"laugh"))
+        result.append(LifeReviewSpec(id:"Upset guest",actor:RPGActor(id:"upset-review",tile:Tile(x:0,y:0),color:0xC4A16F,variant:594,expression:"angry"),kind:"cross"))
         for id in 0..<12 {result.append(LifeReviewSpec(id:BasementLayout.titles[id],actor:RPGActor(id:"creature-\(id)",tile:Tile(x:0,y:0),color:0x999999,variant:id,corralCreature:id+1),kind:"creature"))}
         for id in 1...2 {result.append(LifeReviewSpec(id:"Home cat \(id)",actor:RPGActor(id:"cat-\(id)",tile:Tile(x:0,y:0),color:0x85817C,variant:0,animal:id),kind:"creature"))}
         result.append(LifeReviewSpec(id:"Tuki",actor:RPGActor(id:"mochi",tile:Tile(x:0,y:0),color:0xBB89B2,variant:0,creature:true),kind:"creature"))
