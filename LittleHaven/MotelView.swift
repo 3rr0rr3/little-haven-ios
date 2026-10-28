@@ -658,7 +658,7 @@ struct MotelView: View {
         }
         let detail = police.arrived ? "\(police.guest) died in the \(police.cause.rawValue) emergency. Your fine is \(police.fine) coins. Bribery may be refused and increase the fine. Unpaid fines are deducted from future room income. \(police.message)" : "An officer is looking for you and will approach wherever you are. You must settle the case when the officer speaks to you."
         let report=police.reason.map {police.arrived ? $0+" Fine: \(police.fine) coins. "+police.message : "An officer is on the way after complaints about night operations."} ?? detail
-        return GameDialogue(speaker:"Officer Vega",text:report,portrait:AnyView(PaperPortrait(color:0x54739C,variant:0)),choices:choices,dismissible:!police.arrived,hygieneDirty:motel.isPlayerDirty) { if !police.arrived {showPolice=false} }
+        return GameDialogue(speaker:"Officer Vega",text:report,portrait:AnyView(PaperPortrait(color:0x54739C,variant:700)),choices:choices,dismissible:!police.arrived,hygieneDirty:motel.isPlayerDirty) { if !police.arrived {showPolice=false} }
     }
 
     @ViewBuilder private var worldOverlay: some View {

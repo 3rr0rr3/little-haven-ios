@@ -472,7 +472,7 @@ enum ChaosArt {
             swimmer.translateBy(x:0,y:bob+4)
             PaperPerson.draw(context:&swimmer,x:4,y:9,color:color,variant:variant,facing:0,walk:0,expression:"scared")
             oval(2,21,21,5,0x71B2BA)
-            let skin:UInt32 = [UInt32(0xF0C9A0),0xD6A477,0xA87350,0x734A37,0xE9B693][abs(variant)%5]
+            let skin:UInt32 = NPCDesign.skinColors[NPCDesign(variant:variant).skin]
             line([CGPoint(x:8,y:21),CGPoint(x:3,y:14+bob),CGPoint(x:2,y:7+sin(phase)*4)],skin,3)
             line([CGPoint(x:17,y:21),CGPoint(x:21,y:13-bob),CGPoint(x:22,y:7-sin(phase)*4)],skin,3)
             for i in 0..<4 {
@@ -1269,7 +1269,8 @@ struct WorkingCharacterArtwork:View {
             }
             let wave=sin(Double(frame) * .pi/6)
             let press=(1-cos(Double(frame) * .pi/3))/2
-            let skin:UInt32=variant == 7 ? 0xE3B38E : [UInt32(0xF0C9A0),0xD6A477,0xA87350,0x734A37,0xE9B693][abs(variant)%5]
+            let skin:UInt32=[7,8,9].contains(variant) ? (variant==8 ? 0xD79F77 : 0xE3B38E) : NPCDesign.skinColors[NPCDesign(variant:variant).skin]
+            let garment=[7,8,9].contains(variant) ? color : NPCDesign(variant:variant).shirtColor(base:color)
             if facing == 1 {c.translateBy(x:48,y:0);c.scaleBy(x:-1,y:1)}
             func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ tint:UInt32) {
                 c.fill(Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h)),with:.color(Color(hex:tint)))
@@ -1285,7 +1286,7 @@ struct WorkingCharacterArtwork:View {
             }
             func arm(_ sx:Double,_ sy:Double,_ ex:Double,_ ey:Double,_ hx:Double,_ hy:Double) {
                 line([CGPoint(x:sx,y:sy),CGPoint(x:ex,y:ey),CGPoint(x:hx,y:hy)],0x393733,3.1)
-                line([CGPoint(x:sx,y:sy),CGPoint(x:ex,y:ey)],color,2.7)
+                line([CGPoint(x:sx,y:sy),CGPoint(x:ex,y:ey)],garment,2.7)
                 line([CGPoint(x:ex,y:ey),CGPoint(x:hx,y:hy)],skin,2.5)
                 oval(hx-1.5,hy-1.5,3,3,skin)
             }
