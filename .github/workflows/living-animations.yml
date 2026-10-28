@@ -4,12 +4,23 @@ on:
     branches: ['codex/living-haven-animations']
 permissions:
   contents: write
+  actions: write
+concurrency:
+  group: living-haven-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   device:
     runs-on: macos-15
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - name: Cancel older verification runs for this branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for STALE_RUN in $(gh api 'repos/3rr0rr3/little-haven-ios/actions/runs?branch=codex%2Fliving-haven-animations&per_page=10' --jq ".workflow_runs[] | select(.id < $GITHUB_RUN_ID and (.status == \"in_progress\" or .status == \"queued\")) | .id"); do
+            gh api -X POST "repos/3rr0rr3/little-haven-ios/actions/runs/$STALE_RUN/cancel" || true
+          done
       - name: Validate Swift and game rules
         run: |
           set -euo pipefail

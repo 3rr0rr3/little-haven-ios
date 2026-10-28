@@ -623,7 +623,7 @@ final class RPGScene: SKScene {
     private func configureServiceRoute(_ actor:RPGActor,node:SKSpriteNode) {
         guard actor.id=="shop-server",node.action(forKey:"service-route")==nil,!UIAccessibility.isReduceMotionEnabled else{return}
         // Central aisles avoid tables, seats and the entrance. This actor is decorative.
-        let tiles=[Tile(x:7,y:7),Tile(x:8,y:7),Tile(x:7,y:7),Tile(x:7,y:10),Tile(x:7,y:7),Tile(x:7,y:5)]
+        let tiles=[Tile(x:7,y:7),Tile(x:8,y:7),Tile(x:7,y:7),Tile(x:7,y:10),Tile(x:7,y:7)]
         let route=tiles.flatMap{tile in [SKAction.move(to:CGPoint(x:tile.x*16+8,y:-(tile.y*16+5)),duration:1.8),SKAction.wait(forDuration:1.6)]}
         node.run(.repeatForever(.sequence(route)),withKey:"service-route")
     }

@@ -160,7 +160,7 @@ struct ShopInteriorView:View {
     }
     private var serviceActors:[RPGActor] {
         guard shop == .bar || shop == .fish else{return []}
-        return [RPGActor(id:"shop-server",tile:Tile(x:7,y:5),color:shop == .bar ? 0x9A6979 : 0x729D99,variant:shop == .bar ? 585 : 586,facing:0,ambient:"serve")]
+        return [RPGActor(id:"shop-server",tile:Tile(x:7,y:7),color:shop == .bar ? 0x9A6979 : 0x729D99,variant:shop == .bar ? 585 : 586,facing:0,ambient:"serve")]
     }
     private var musicActors:[RPGActor] {
         guard shop == .bar, motel.lanternShowAvailable || motel.storyBook.performedDay == motel.day else {return []}

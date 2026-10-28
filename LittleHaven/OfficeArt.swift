@@ -1478,7 +1478,7 @@ enum HavenLifeArt {
                 line([CGPoint(x:15,y:20),CGPoint(x:15-wave,y:24)],0xB36F8F,2)
             }
         } else {
-            PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:facing,walk:kind=="serve" ? wave*0.5 : 0,hands:false,beachwear:actor.beachwear)
+            PaperPerson.draw(context:&context,x:4,y:9,color:actor.color,variant:actor.variant,facing:facing,walk:kind=="serve" ? sin(Double(frame) * .pi / 2)*0.6 : 0,hands:false,beachwear:actor.beachwear)
         }
         context=human
         switch kind {
