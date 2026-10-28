@@ -1,0 +1,49 @@
+{
+  "source": "20a757c8161ff44c30493ee004114fcca393d08d",
+  "version": "60.0",
+  "build": "65",
+  "size": 18379829,
+  "sha256": "b5e22b14ba579790b654cf22b863b621f38c14543ea4fc9ad2b90244a481c7e2",
+  "animation_verification": {
+    "source": "20a757c8161ff44c30493ee004114fcca393d08d",
+    "run": 40706447628,
+    "version": "60.0",
+    "build": "65",
+    "passed_ui_executions": 21,
+    "unique_ui_methods": 19,
+    "ui_methods": [
+      "testActualReleaseSavedHomeContinue",
+      "testActualReleaseWakeAndFirstShift",
+      "testAmbientArrivalKeepsMovementResponsive",
+      "testBarBartenderServesDrinks",
+      "testBeachIsReachableAndDecorated",
+      "testCompatibleHomeCareAndSavedContinue",
+      "testCompatibleOfficeGuestInteraction",
+      "testFamilyAndCatsAreTappable",
+      "testFishRestaurantServesMeal",
+      "testFullscreenHomeFamilyConversations",
+      "testFullscreenJoystickReleaseAndPause",
+      "testGuestConversationCanAcceptAPersonalRequest",
+      "testHomeBedroomsEnterExitAndSavedReturn",
+      "testNPCIdentityGallery",
+      "testNewSanctuaryResidentsCareAndAdventure",
+      "testOutdoorChaosCanBeHandled",
+      "testPersonalNeedsBathroomAndSavedCleanState",
+      "testPersonalNeedsFoodAndDirtyNpcReaction",
+      "testStaffReviewsAndDeskUpgrades"
+    ],
+    "optimized_startup_paths": 4,
+    "identity_changes": [
+      "authored presentation",
+      "consistent staff portraits",
+      "consistent story walkers",
+      "20 hairstyles",
+      "4 face shapes",
+      "3 body shapes",
+      "8 outfits",
+      "8 accessory categories"
+    ],
+    "cache_limit": 48,
+    "new_frame_sets_per_scene_update": 2
+  }
+}
