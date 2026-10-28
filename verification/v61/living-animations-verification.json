@@ -1,0 +1,41 @@
+{
+  "source": "6ee21f1b91228ecbc1ac4f08b42e90c040e84be0",
+  "binary_source": "d5da144a7aa14716b48f77b3ad719647c70e45bb",
+  "production_diff_verified": true,
+  "run": 40725675464,
+  "version": "61.0",
+  "build": "66",
+  "passed_ui_executions": 18,
+  "unique_ui_methods": 16,
+  "ui_methods": [
+    "testActualReleaseSavedHomeContinue",
+    "testActualReleaseWakeAndFirstShift",
+    "testCompatibleHomeCareAndSavedContinue",
+    "testCompatibleOfficeGuestInteraction",
+    "testFamilyAndCatsAreTappable",
+    "testFullscreenHomeFamilyConversations",
+    "testFullscreenJoystickReleaseAndPause",
+    "testHomeBedroomsEnterExitAndSavedReturn",
+    "testLivingHavenAnimationGallery",
+    "testNPCIdentityGallery",
+    "testOutdoorChaosCanBeHandled",
+    "testPawnShopRequiresExplicitSale",
+    "testPersonalNeedsBathroomAndSavedCleanState",
+    "testPersonalNeedsFoodAndDirtyNpcReaction",
+    "testStaffReviewsAndDeskUpgrades",
+    "testSupplyBuyerCanBeHired"
+  ],
+  "optimized_startup_paths": 4,
+  "previous_identity_features": [
+    "authored presentation",
+    "consistent staff portraits",
+    "consistent story walkers",
+    "20 hairstyles",
+    "4 face shapes",
+    "3 body shapes",
+    "8 outfits",
+    "8 accessory categories"
+  ],
+  "cache_limit": 48,
+  "new_frame_sets_per_scene_update": 2
+}
