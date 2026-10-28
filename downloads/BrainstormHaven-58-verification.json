@@ -1,7 +1,22 @@
 {
   "source": "4f172196345e1265a1fcb81b94e4b658d4192824",
   "version": "58.0",
-  "build": "62",
+  "build": "63",
   "size": 18395211,
-  "sha256": "2136189717fd2fe8feba01216b5e8a1495a23696fd5445b8ca5c354a43620816"
+  "sha256": "2136189717fd2fe8feba01216b5e8a1495a23696fd5445b8ca5c354a43620816",
+  "binary_commit": "b63fd7c0ccba721e3fcfc929ae4883ffc0902401",
+  "url": "https://raw.githubusercontent.com/3rr0rr3/little-haven-ios/b63fd7c0ccba721e3fcfc929ae4883ffc0902401/downloads/BrainstormHaven-58.ipa",
+  "public_http_status": 200,
+  "zip_verified": true,
+  "ui_tests": [
+    "testCompatibleHomeCareAndSavedContinue",
+    "testFullscreenHomeFamilyConversations",
+    "testHomeBedroomsEnterExitAndSavedReturn",
+    "testPersonalNeedsBathroomAndSavedCleanState",
+    "testPersonalNeedsFoodAndDirtyNpcReaction"
+  ],
+  "run": 40610661042,
+  "job": 122561115474,
+  "visual_review_commit": "ad88d6c6586cd9a39f5740115cf96715b3be4113",
+  "note": "Build 63 confirmed by app Info.plist assertion in successful native publication; corrected stale verification label. IPA bytes unchanged."
 }
