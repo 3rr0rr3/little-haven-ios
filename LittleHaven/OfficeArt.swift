@@ -264,8 +264,8 @@ struct HomeInteriorArt:View {
             for bedroom in HomeBedroom.allCases {
                 // Keep each door inside its tile so adjacent hallway doors never overlap.
                 let x=Double(bedroom.door.x*16+1)
-                PaintedArt.draw("door",in:CGRect(x:x,y:16,width:14,height:26),context:&context)
-                context.draw(Text(bedroom == .bathroom ? "BATH" : bedroom == .samhil ? "SAMHIL" : "OUR ROOM").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x+7,y:12))
+                PaintedArt.draw("door",in:CGRect(x:x,y:5,width:14,height:26),context:&context)
+                context.draw(Text(bedroom == .bathroom ? "BATH" : bedroom == .samhil ? "SAMHIL" : "OUR ROOM").font(.system(size:3,weight:.black)).foregroundColor(Color(hex:0xF5E7C8)),at:CGPoint(x:x+7,y:2.5))
             }
             rect(154,7,62,20,0x70513B)
             context.draw(Text("HOME SWEET HOME").font(.system(size:4.5,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E6C6)),at:CGPoint(x:185,y:17))
@@ -1355,16 +1355,21 @@ enum PersonalCareArt {
         }
         PaperPerson.draw(context:&context,x:16,y:19,color:color,variant:variant,facing:0,walk:0,hands:false,kneeling:kind == "care-toilet")
         if kind == "care-eat" {
-            // One hand supports a plate; the other brings a fork to the mouth.
-            line([CGPoint(x:20,y:25),CGPoint(x:17,y:31),CGPoint(x:24,y:32)],skin,2.7)
-            oval(21,30,14,4,0xF1EBD5);oval(24,30,8,2,0xB48149)
-            oval(25,29,3,2,0x7BA16A);oval(29,29,3,2,0xD49765)
-            let hand=CGPoint(x:34-lift*6,y:33-lift*4)
-            line([CGPoint(x:28,y:25),CGPoint(x:35,y:28),hand],0x3A4039,3)
-            line([CGPoint(x:28,y:25),CGPoint(x:35,y:28),hand],skin,2.4)
+            // Shoulders sit below the chin (y=26.5), on the shirt at y=28.
+            // Sleeves stay attached to the torso while the forearm lifts the fork.
+            let left=[CGPoint(x:19,y:28),CGPoint(x:16.5,y:33),CGPoint(x:22,y:35)]
+            line(left,0x302D2D,3.1);line(left,skin,2.4)
+            line([left[0],CGPoint(x:17.7,y:30.5)],color,2.8)
+            oval(20.6,33.6,2.8,2.8,skin)
+            oval(20,33,14,4,0xF1EBD5);oval(23,33,8,2,0xB48149)
+            oval(24,32,3,2,0x7BA16A);oval(28,32,3,2,0xD49765)
+            let hand=CGPoint(x:34-lift*7.5,y:35-lift*7)
+            let right=[CGPoint(x:29,y:28),CGPoint(x:34,y:32),hand]
+            line(right,0x302D2D,3.1);line(right,skin,2.4)
+            line([right[0],CGPoint(x:31.5,y:30)],color,2.8)
+            oval(hand.x-1.4,hand.y-1.4,2.8,2.8,skin)
             line([hand,CGPoint(x:hand.x-2,y:hand.y-5)],0xCAD0C4,0.9)
             oval(hand.x-3,hand.y-6,2.5,2,0xD1A865)
-            if lift>0.8 {oval(25,22,2,1,0xAF7460)}
         } else if kind == "care-shower" {
             // Washing motion is visible above a moving, opaque curtain.
             line([CGPoint(x:20,y:25),CGPoint(x:15,y:18),CGPoint(x:21+lift*4,y:13)],skin,2.4)
