@@ -1277,13 +1277,14 @@ struct MotelRPGView: View {
             actors += motel.worldState.travellers.map {
                 RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.appearanceSeed, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: incident == nil ? MotelCadence.guestWalk : MotelCadence.travel,expression:incident == nil ? "" : "scared",routine:"luggage",ambient:$0.player.distance(to:$0.destination)<=1 ? "knock" : "",arrivalDoor:$0.destination)
             }
+            actors.append(RPGActor(id:"shady-dealer",tile:motel.groundTile(Tile(x:67,y:27)),color:0x38413F,variant:463,facing:0,name:"Sal",ambient:"cross"))
             for worker in motel.operationsState.workers where worker.role != .clerk || worker.tile.distance(to:motel.staffHome(worker.role))>1 {
                 var workerActor = RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:200+(StaffRole.allCases.firstIndex(of:worker.role) ?? 0),facing:worker.tile.x < (worker.previous?.x ?? worker.tile.x) ? 1 : worker.tile.x > (worker.previous?.x ?? worker.tile.x) ? 2 : worker.tile.y < (worker.previous?.y ?? worker.tile.y) ? 3 : 0,name:worker.role.name,duration:MotelCadence.travel)
                 if let incident {
                     workerActor.expression = worker.role == incident.kind.responder ? (incident.kind == .pool ? "concerned" : "determined") : "scared"
                 }
                 if worker.progress > 0 && (worker.previous == nil || worker.previous == worker.tile) && !(worker.status?.hasPrefix("NEED") ?? false) {
-                    workerActor.action = worker.role == .valet ? "carwash" : (worker.role == .maintenance || worker.role == .repair) ? "repair" : worker.role == .pestControl ? "pest" : worker.role == .security ? "calm" : "mop"
+                    workerActor.action = worker.role == .buyer ? "restock" : worker.role == .valet ? "carwash" : (worker.role == .maintenance || worker.role == .repair) ? "repair" : worker.role == .pestControl ? "pest" : worker.role == .security ? "calm" : "mop"
                 }
                 if incident == nil {workerActor.marker=worker.status ?? "AT POST"}
                 if let incident=motel.operationsState.incident,incident.kind.responder == worker.role,

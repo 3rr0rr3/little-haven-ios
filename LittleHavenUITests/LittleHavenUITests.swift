@@ -389,14 +389,26 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Chichi"].exists)
         capture(app,"Chichi follows outside while Chichu waits near home")
     }
+    func testSupplyBuyerCanBeHired() {
+        let app=launch("--ui-supply-buyer")
+        XCTAssertTrue(app.buttons["hireEmployees"].waitForExistence(timeout:15))
+        app.buttons["hireEmployees"].tap()
+        let hire=app.buttons["hire_buyer"]
+        for _ in 0..<7 {if hire.exists && hire.isHittable {break};app.swipeUp()}
+        XCTAssertTrue(hire.exists && hire.isHittable,app.debugDescription)
+        hire.tap()
+        XCTAssertFalse(app.buttons["hire_buyer"].exists)
+        capture(app,"Mina hired as supply buyer with budget and reserve explained")
+        app.buttons["closeInteraction"].tap()
+        XCTAssertTrue(cash(app).contains("520"))
+    }
+
     func testPawnShopRequiresExplicitSale() {
         let app=launch("--ui-pawn-store")
         XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
         XCTAssertTrue(cash(app).contains("2500"))
         app.buttons["worldAction"].tap()
-        XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
-        step("north",6,app)
-        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.otherElements["neighborhoodShop"].waitForExistence(timeout:10))
         XCTAssertTrue(app.buttons["pawn_sell_1"].waitForExistence(timeout:5))
         app.buttons["pawn_sell_1"].tap()
         XCTAssertFalse(app.buttons["pawn_sell_1"].exists)

@@ -136,7 +136,9 @@ enum RPGMaps {
         obstacles.append(RPGRegion(x:51,y:9,width:7,height:5))
         for shop in NeighborhoodShop.allCases {
             let height=(shop == .bar || shop == .fish) ? 4 : 6
-            obstacles.append(RPGRegion(x:shop.door.x-3,y:shop.door.y-height,width:7,height:height))
+            if shop == .pawn {
+                obstacles += [RPGRegion(x:64,y:23,width:7,height:1),RPGRegion(x:64,y:24,width:1,height:5),RPGRegion(x:70,y:24,width:1,height:5),RPGRegion(x:66,y:26,width:3,height:1)]
+            } else {obstacles.append(RPGRegion(x:shop.door.x-3,y:shop.door.y-height,width:7,height:height))}
         }
         for origin in ResidentialLayout.origins {obstacles.append(RPGRegion(x:origin.x,y:origin.y,width:7,height:5))}
         obstacles.append(contentsOf:FacilityLayout.obstacles)

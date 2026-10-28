@@ -368,7 +368,7 @@ extension Motel {
         case .computer:return "Use reception computer"
         case .home:return "Enter family home"
         case .homeDecor:return "Use home workbench"
-        case .shop(let shop):return isAtShop ? "Browse "+shop.title : "Enter "+shop.title
+        case .shop(let shop):return shop == .pawn ? "Trade at Shady Corner" : isAtShop ? "Browse "+shop.title : "Enter "+shop.title
         case .office:return "Enter reception"
         case .room(let id):return "Enter room \(rooms.first(where:{$0.id==id})?.number ?? 101+id)"
         case .guest(let id):return "Talk to "+(waiting.first(where:{$0.id==id})?.name ?? "guest")

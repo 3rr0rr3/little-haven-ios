@@ -415,7 +415,33 @@ struct ExpandedOfficeArt: View {
 }
 
 enum DecorArt {
+    static func shadyCorner(_ c:inout GraphicsContext) {
+        let x=1024.0,y=368.0,ink:UInt32=0x343333
+        func box(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ color:UInt32) {
+            let p=Path(roundedRect:CGRect(x:x+dx,y:y+dy,width:w,height:h),cornerRadius:1.4)
+            c.fill(p,with:.color(Color(hex:color)));c.stroke(p,with:.color(Color(hex:ink)),lineWidth:0.6)
+        }
+        // Local canopy shadow and solid masonry match the alley collision walls.
+        c.fill(Path(CGRect(x:x,y:y,width:112,height:96)),with:.color(Color(hex:0x424B47)))
+        for row in 0..<6 {for col in 0..<7 {box(Double(col*16),Double(row*16),15,15,((row+col)%2==0 ? 0x5B625C : 0x555C56))}}
+        box(0,0,112,16,0x414845);box(0,16,16,80,0x48504B);box(96,16,16,80,0x48504B)
+        for yy in [3.0,9] {for xx in stride(from:3.0,to:110,by:15) {box(xx,yy,13,4,0x657066)}}
+        box(19,2,74,11,0x453D35)
+        c.draw(Text("SHADY CORNER").font(.system(size:5,weight:.black,design:.rounded)).foregroundStyle(Color(hex:0xD5C69C)),at:CGPoint(x:x+56,y:y+7))
+        // Crates, discreet merchandise and a warm wall lamp rather than a house facade.
+        box(32,48,48,16,0x81684A);box(34,49,44,3,0xAF8E5E)
+        box(38,41,10,8,0x354B50);box(40,42,5,4,0x8DA3A0)
+        box(54,43,5,6,0xAD829C);box(55,41,3,2,0xD5BA78)
+        c.stroke(Path(ellipseIn:CGRect(x:x+65,y:y+42,width:8,height:5)),with:.color(Color(hex:0xD8B46B)),lineWidth:1)
+        box(18,72,10,13,0x836848);box(18,77,10,2,0xBC9363)
+        box(85,68,9,17,0x4D6059);box(86,70,7,2,0x85938A)
+        var glow=c;glow.opacity=0.2;glow.fill(Path(ellipseIn:CGRect(x:x+74,y:y+12,width:23,height:32)),with:.color(Color(hex:0xE5B65E)))
+        box(84,19,5,9,0xE5BE6B);box(83,17,7,2,ink)
+        c.fill(Path(CGRect(x:x+16,y:y+16,width:80,height:72)),with:.color(Color.black.opacity(0.15)))
+    }
+
     static func storefront(_ c:inout GraphicsContext,shop:NeighborhoodShop) {
+        if shop == .pawn {shadyCorner(&c);return}
         if shop == .fish {fishFacade(&c);return}
         let x=Double((shop.door.x-3)*16),y=Double((shop.door.y-(shop == .bar ? 4 : 6))*16)
         let original=c
@@ -1495,7 +1521,9 @@ enum HavenLifeArt {
             arm(7,5,20,5,22)
             arm(17,20,17-lift*3,20+wave*1.1,14-lift*4)
         case "shrug":
-            arm(7,4,19-lift*2,2,18-lift*2);arm(17,20,19-lift*2,22,18-lift*2)
+            let gesture=frame%16<3 ? sin(Double(frame%16) * .pi / 3) : 0
+            arm(7,5-gesture,21-gesture,5-gesture*2,23-gesture*2)
+            arm(17,19+gesture,21-gesture,19+gesture*2,23-gesture*2)
         case "cross":
             arm(7,6,20,15,19);arm(17,18,20,9,19)
         case "dirty":
@@ -1562,7 +1590,7 @@ private struct LifeReviewSpec:Identifiable {
 }
 struct NPCIdentityReview:View {
     @State private var group=0
-    private var ids:[Int] {switch group {case 0:return Array(100..<112);case 1:return Array(112..<124);case 2:return Array(200..<207)+Array(180..<183);default:return Array(520..<526)+Array(560..<566)}}
+    private var ids:[Int] {switch group {case 0:return Array(100..<112);case 1:return Array(112..<124);case 2:return Array(200..<208)+Array(180..<183);default:return Array(520..<526)+Array(560..<566)}}
     var body:some View {
         VStack(spacing:8) {
             Text("Character identity review").font(.headline).accessibilityIdentifier("npcReview")
@@ -1592,7 +1620,7 @@ struct NPCIdentityReview:View {
 }
 struct LifeAnimationReview:View {
     private var samples:[LifeReviewSpec] {
-        let kinds=["phone","knock","wave","sit","sleep","nod","shrug","laugh","cross","dirty","eat","sip","pour","serve","clear"]
+        let kinds=["shrug","phone","knock","wave","sit","sleep","nod","laugh","cross","dirty","eat","sip","pour","serve","clear"]
         var result=kinds.enumerated().map{i,kind in LifeReviewSpec(id:kind,actor:RPGActor(id:kind,tile:Tile(x:0,y:0),color:Motel.themeColors[i%4],variant:510+i,facing:0),kind:kind)}
         result.append(LifeReviewSpec(id:"Family wave / TV",actor:RPGActor(id:"hildarelys",tile:Tile(x:0,y:0),color:0x292A2C,variant:8),kind:"family"))
         result.append(LifeReviewSpec(id:"Samhil legs",actor:RPGActor(id:"samhil",tile:Tile(x:0,y:0),color:0xD88BAA,variant:9,seated:true),kind:"legs"))

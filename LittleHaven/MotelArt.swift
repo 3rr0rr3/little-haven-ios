@@ -296,6 +296,10 @@ struct MotelGroundsCanvas: View, Animatable {
                 case .valet:
                     rect(px+17,py-7,12,20,0x659CA1);rect(px+19,py-5,8,8,0xC4DFD7)
                     rect(px+20,py+6,7,5,0xC5AC72);rect(px-7,py+5,6,8,0x99C3BD)
+                case .buyer:
+                    rect(px+17,py-5,14,18,0x78634F)
+                    for yy in [0.0,7] {rect(px+18,py-4+yy,12,6,0xC59D68);rect(px+23,py-4+yy,2,6,0xE3CC9E)}
+                    rect(px-5,py+8,9,6,0xBD996D)
                 case .clerk:
                     rect(px+17,py-7,14,18,0x8E7859);rect(px+19,py-5,10,4,0xF2E6C4)
                     rect(px+19,py+1,10,4,0xADC6B3);rect(px+19,py+7,10,3,0xD5B873)

@@ -290,7 +290,7 @@ struct Motel: Codable {
         home=belongings
         totalStolen += roomVisit.pocket
 
-        lastEvent = roomVisit.pocket > 0 ? "You slipped out with \(roomVisit.pocket) coins worth of belongings. Visit the pawn shop to sell them." : "Back outside. The desk is waiting."
+        lastEvent = roomVisit.pocket > 0 ? "You slipped out with \(roomVisit.pocket) coins worth of belongings. Visit the Shady Corner to sell them." : "Back outside. The desk is waiting."
         visit = nil
         if world != nil {
             let door = groundRoomDoor(roomVisit.roomID)
@@ -707,7 +707,8 @@ extension Motel {
         case .valet:return "Sociable · enjoys community activities"
         case .clerk:return "Ambitious · values training and career progress"
         case .repair:return "Methodical · dislikes exhausting shifts"
-        case .pestControl:return "Patient · values rest and steady support"}
+        case .pestControl:return "Patient · values rest and steady support"
+        case .buyer:return "Organized · protects the hotel supply budget"}
     }
     @discardableResult mutating func supportHavenEmployee(_ role:StaffRole,choice:Int)->Bool {
         guard canSave,operationsState.workers.contains(where:{$0.role==role}) else{return false}

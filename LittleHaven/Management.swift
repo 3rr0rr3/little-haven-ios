@@ -3,13 +3,13 @@ import Foundation
 enum NeighborhoodShop:String,Codable,CaseIterable,Identifiable {
     case furniture, clothing, pawn, bar, fish
     var id:String {rawValue}
-    var title:String {switch self {case .furniture:return "Willow Home";case .clothing:return "Thread & Co.";case .pawn:return "Second Chance Pawn";case .fish:return "Coral Catch";case .bar:return "The Lantern Bar"}}
+    var title:String {switch self {case .furniture:return "Willow Home";case .clothing:return "Thread & Co.";case .pawn:return "Shady Corner";case .fish:return "Coral Catch";case .bar:return "The Lantern Bar"}}
     var door:Tile {switch self {case .furniture:return Tile(x:47,y:29);case .clothing:return Tile(x:57,y:29);case .pawn:return Tile(x:67,y:29);case .fish:return Tile(x:47,y:35);case .bar:return Tile(x:57,y:35)}}
     var keeperName:String {switch self {case .furniture:return "Otis";case .clothing:return "Mira";case .pawn:return "Sal";case .fish:return "Marina";case .bar:return "Jules"}}
     var keeperColor:UInt32 {switch self {case .furniture:return 0x748A67;case .clothing:return 0xAF7695;case .pawn:return 0x57718E;case .fish:return 0x669B9E;case .bar:return 0x8B5860}}
     var uniform:Int {switch self {case .furniture:return 1;case .clothing:return 2;case .pawn:return 3;case .fish:return 5;case .bar:return 4}}
     var symbol:String {switch self {case .furniture:return "sofa";case .clothing:return "scissors";case .pawn:return "key";case .fish:return "fish";case .bar:return "wineglass"}}
-    var detail:String {switch self {case .furniture:return "Buy furniture here, then place it at your family home.";case .clothing:return "Buy and wear new outfits.";case .pawn:return "Sell carried belongings here.";case .fish:return "Fresh fish, warm meals and friendly company. Order at Marina\'s counter.";case .bar:return "Walk to Jules at the counter to order a freshly served drink."}}
+    var detail:String {switch self {case .furniture:return "Buy furniture here, then place it at your family home.";case .clothing:return "Buy and wear new outfits.";case .pawn:return "Find Sal in the shaded alley east of Thread & Co. Sell stolen belongings individually; nothing is sold automatically.";case .fish:return "Fresh fish, warm meals and friendly company. Order at Marina\'s counter.";case .bar:return "Walk to Jules at the counter to order a freshly served drink."}}
 }
 enum BarDrink:String,Codable,CaseIterable,Identifiable {
     case sparklingWater,citrusSoda,houseCocktail
@@ -77,7 +77,10 @@ extension Motel {
         return true
     }
     func canTrade(_ shop:NeighborhoodShop)->Bool {
-        !caught && currentShop == shop && actorTile.distance(to:ShopLayout.counter)<=1
+        if shop == .pawn,visit == nil,worldState.place == .grounds {
+            return !caught && actorTile.distance(to:groundTile(shop.door))<=2
+        }
+        return !caught && currentShop == shop && actorTile.distance(to:ShopLayout.counter)<=1
     }
     @discardableResult mutating func enterShop(_ shop:NeighborhoodShop)->Bool {
         guard !caught,!isRidingBike,visit == nil,worldState.place == .grounds,actorTile.distance(to:groundTile(shop.door))<=1 else{return false}
@@ -137,7 +140,7 @@ extension Motel {
     @discardableResult mutating func sellBelonging(_ item:Int)->Bool {
         guard canTrade(.pawn),RoomVisit.lootValues.indices.contains(item),let index=household.stolen.firstIndex(of:item) else{return false}
         var state=household;state.stolen.remove(at:index);home=state;let value=RoomVisit.lootValues[item];cash+=value
-        logMoney(value,category:"Pawn shop",note:RoomVisit.lootNames[item]);lastEvent="Sold \(RoomVisit.lootNames[item]) for \(value) coins.";return true
+        logMoney(value,category:"Shady Corner",note:RoomVisit.lootNames[item]);lastEvent="Sold \(RoomVisit.lootNames[item]) for \(value) coins.";return true
     }
 }
 
@@ -148,17 +151,17 @@ enum MotelCadence {
 }
 
 enum StaffRole: String, Codable, CaseIterable, Identifiable {
-    case cleaner, maintenance, security, valet, clerk, repair, pestControl
+    case cleaner, maintenance, security, valet, clerk, repair, pestControl, buyer
     var id: String { rawValue }
     var appearanceVariant:Int {200+(Self.allCases.firstIndex(of:self) ?? 0)}
-    var title: String { switch self { case .cleaner: return "Housekeeper"; case .maintenance: return "Groundskeeper"; case .security: return "Security guard"; case .valet: return "Bike attendant"; case .clerk: return "Front-desk clerk"; case .repair: return "Repair technician"; case .pestControl: return "Pest-control specialist" } }
-    var name: String { switch self { case .cleaner: return "Luna"; case .maintenance: return "Mateo"; case .security: return "Riley"; case .valet: return "Diego"; case .clerk: return "Nora"; case .repair: return "Alex"; case .pestControl: return "Iris" } }
-    var hireCost: Int { switch self { case .cleaner: return 100; case .maintenance: return 140; case .security: return 160; case .valet: return 120; case .clerk: return 130; case .repair: return 150; case .pestControl: return 170 } }
-    var wage: Int { switch self { case .cleaner: return 15; case .maintenance: return 20; case .security: return 25; case .valet: return 18; case .clerk: return 22; case .repair: return 23; case .pestControl: return 24 } }
-    var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office."; case .valet: return "Walks to parked guest bikes, scrubs and rinses them. Each bike earns 35 coins once per day."; case .clerk: return "Handles daytime arrivals, assigns suitable rooms and collects payments while you work outside."; case .repair: return "Repairs room fixtures, leaks, outages and temperature problems using spare parts. Also services the pool pump."; case .pestControl: return "Treats bedbugs and roaches using pesticide. Inspects guest rooms after treatment." } }
-    var home: Tile { switch self { case .clerk:return Tile(x:6,y:10);case .cleaner:return FacilityLayout.laundry;case .maintenance:return Tile(x:11,y:22);case .security:return Tile(x:11,y:12);case .valet:return Tile(x:15,y:32); case .repair:return Tile(x:20,y:11);case .pestControl:return Tile(x:28,y:11) } }
-    var station: String { switch self {case .clerk:return "RECEPTION";case .cleaner:return "HOUSEKEEPING";case .maintenance:return "MAINTENANCE";case .security:return "SECURITY";case .valet:return "BIKE CARE"; case .repair:return "REPAIR WORKSHOP";case .pestControl:return "PEST CONTROL"} }
-    var color: UInt32 { switch self { case .cleaner: return 0xB4A1C5; case .maintenance: return 0xD8AC66; case .security: return 0x718DA9; case .valet: return 0x5DA6B0; case .clerk: return 0xD0B777; case .repair: return 0xCF885C; case .pestControl: return 0x88A78B } }
+    var title: String { switch self { case .cleaner: return "Housekeeper"; case .maintenance: return "Groundskeeper"; case .security: return "Security guard"; case .valet: return "Bike attendant"; case .clerk: return "Front-desk clerk"; case .repair: return "Repair technician"; case .pestControl: return "Pest-control specialist";case .buyer:return "Supply buyer" } }
+    var name: String { switch self { case .cleaner: return "Luna"; case .maintenance: return "Mateo"; case .security: return "Riley"; case .valet: return "Diego"; case .clerk: return "Nora"; case .repair: return "Alex"; case .pestControl: return "Iris";case .buyer:return "Mina" } }
+    var hireCost: Int { switch self { case .cleaner: return 100; case .maintenance: return 140; case .security: return 160; case .valet: return 120; case .clerk: return 130; case .repair: return 150; case .pestControl: return 170;case .buyer:return 180 } }
+    var wage: Int { switch self { case .cleaner: return 15; case .maintenance: return 20; case .security: return 25; case .valet: return 18; case .clerk: return 22; case .repair: return 23; case .pestControl: return 24;case .buyer:return 22 } }
+    var duty: String { switch self { case .cleaner: return "Walks to vacant dirty rooms and cleans them."; case .maintenance: return "Responds to fires and pool accidents."; case .security: return "Breaks up fights outside the office."; case .valet: return "Walks to parked guest bikes, scrubs and rinses them. Each bike earns 35 coins once per day."; case .clerk: return "Handles daytime arrivals, assigns suitable rooms and collects payments while you work outside."; case .repair: return "Repairs room fixtures, leaks, outages and temperature problems using spare parts. Also services the pool pump."; case .pestControl: return "Treats bedbugs and roaches using pesticide. Inspects guest rooms after treatment.";case .buyer:return "Buys supplies when stock falls to 3 or less. Walks to Willow Home and brings orders back. Maximum 25 coins per trip; keeps 50 coins in reserve. All purchases appear in the ledger." } }
+    var home: Tile { switch self { case .clerk:return Tile(x:6,y:10);case .cleaner:return FacilityLayout.laundry;case .maintenance:return Tile(x:11,y:22);case .security:return Tile(x:11,y:12);case .valet:return Tile(x:15,y:32); case .repair:return Tile(x:20,y:11);case .pestControl:return Tile(x:28,y:11);case .buyer:return Tile(x:35,y:10) } }
+    var station: String { switch self {case .clerk:return "RECEPTION";case .cleaner:return "HOUSEKEEPING";case .maintenance:return "MAINTENANCE";case .security:return "SECURITY";case .valet:return "BIKE CARE"; case .repair:return "REPAIR WORKSHOP";case .pestControl:return "PEST CONTROL";case .buyer:return "SUPPLY RECEIVING"} }
+    var color: UInt32 { switch self { case .cleaner: return 0xB4A1C5; case .maintenance: return 0xD8AC66; case .security: return 0x718DA9; case .valet: return 0x5DA6B0; case .clerk: return 0xD0B777; case .repair: return 0xCF885C; case .pestControl: return 0x88A78B;case .buyer:return 0x688E9C } }
 }
 struct MotelWorker: Codable, Identifiable {
     let role: StaffRole
@@ -267,7 +270,7 @@ extension Motel {
         StaffRole.allCases.filter { role in operationsState.workers.contains { $0.role == role } }
     }
     func hiringMilestone(_ role:StaffRole)->Int {
-        switch role {case .cleaner:return 3;case .maintenance:return 5;case .security:return 7;case .valet:return 9;case .clerk:return 12; case .repair:return 6;case .pestControl:return 8}
+        switch role {case .cleaner:return 3;case .maintenance:return 5;case .security:return 7;case .valet:return 9;case .clerk:return 12; case .repair:return 6;case .pestControl:return 8;case .buyer:return 10}
     }
     func hiringUnlocked(_ role:StaffRole)->Bool {
         guestsServed >= hiringMilestone(role) || operationsState.workers.contains { $0.role == role }
@@ -357,6 +360,7 @@ extension Motel {
         var completedIssues:[Int]=[]
         var staffRepairs:[String]=[]
         var pumpServiced=false
+        var supplyDelivery:Supply?
         if advanceClock {
         state.tick += 1
         tickParking(&state)
@@ -407,6 +411,9 @@ extension Motel {
             } else if responding, let incident = state.incident {
                 worker.roomID = nil
                 target = incident.approach
+            } else if worker.role == .buyer && (worker.roomID != nil || procurementOrder != nil) {
+                if worker.roomID == nil,let order=procurementOrder {worker.roomID=Supply.allCases.firstIndex(of:order.0);worker.progress=0}
+                target=worker.progress<0 ? staffHome(.buyer) : groundTile(NeighborhoodShop.furniture.door)
             } else if worker.role == .valet, let car = state.cars?.first(where: { $0.arrival >= 8 && $0.washedDay != day }) {
                 if worker.roomID != car.id { worker.progress = 0 }
                 worker.roomID = car.id
@@ -456,6 +463,13 @@ extension Motel {
                     state.incidentsResolved += 1
                     state.nextIncidentTick = state.tick + 30
                     lastEvent = "\(worker.role.name) handled the emergency. Your guests are safe."
+                }
+            } else if worker.role == .buyer,workerCanWork(worker,tick:state.tick),let supplyID=worker.roomID,Supply.allCases.indices.contains(supplyID) {
+                if worker.progress<0 {
+                    supplyDelivery=Supply.allCases[supplyID];worker.roomID=nil;worker.progress=0;worker.status="DELIVERING SUPPLIES"
+                } else {
+                    worker.status="ORDERING SUPPLIES";worker.progress += 1
+                    if worker.progress>=6 {worker.progress = -1;worker.status="BRINGING SUPPLIES"}
                 }
             } else if worker.role == .valet, let carID = worker.roomID,
                       let carIndex = state.cars?.firstIndex(where: { $0.id == carID }) {
@@ -537,6 +551,7 @@ extension Motel {
             state.consequences!.police=police
         }
         operations = state
+        if let item=supplyDelivery {completeProcurement(item)}
         for job in staffRepairs {logMoney(-15,category:"Staff maintenance",note:job);lastEvent=job+" inspected and treated."}
         if pumpServiced {logMoney(HotelService.repair.reward,category:"Service",note:"Alex repaired the pool pump");lastEvent="Alex repaired the pool pump."}
         for issueID in completedIssues {_=respondToIssue(issueID,choice:0)}
@@ -893,6 +908,7 @@ struct StaffProfile:Codable {
         case .clerk:return StaffProfile(speed:70,honesty:70,skill:75)
         case .repair:return StaffProfile(speed:70,honesty:85,skill:90)
         case .pestControl:return StaffProfile(speed:65,honesty:90,skill:85)
+        case .buyer:return StaffProfile(speed:75,honesty:95,skill:85)
         }
     }
 }
@@ -1024,6 +1040,27 @@ extension Motel {
         guard managementEnabled else{return};var s=simulation;s.serial += 1
         s.ledger.insert(LedgerLine(id:s.serial,day:day,hour:s.hour,amount:amount,category:category,note:note),at:0)
         s.ledger=Array(s.ledger.prefix(100));simulation=s
+    }
+    var procurementOrder:(Supply,Int)? {
+        guard managementEnabled,cash>50 else{return nil}
+        let items=Supply.allCases.sorted {a,b in
+            let aa=simulation.stock[a.rawValue,default:0],bb=simulation.stock[b.rawValue,default:0]
+            return aa != bb ? aa<bb : a.rawValue<b.rawValue
+        }
+        for item in items where simulation.stock[item.rawValue,default:0]<=3 {
+            let count=min(8-simulation.stock[item.rawValue,default:0],min(25,cash-50)/item.price)
+            if count>0 {return (item,count)}
+        }
+        return nil
+    }
+    mutating func completeProcurement(_ item:Supply) {
+        let stock=simulation.stock[item.rawValue,default:0]
+        guard stock<=3 else{return} // A manual purchase during the trip cancels the duplicate order.
+        let count=min(8-stock,min(25,max(0,cash-50))/item.price)
+        guard count>0 else {lastEvent="Mina needs supply funds. The 50-coin reserve is protected.";return}
+        let price=count*item.price;cash -= price;var s=simulation;s.stock[item.rawValue,default:0] += count;simulation=s
+        logMoney(-price,category:"Staff supplies",note:"Mina delivered \(count) \(item.title)")
+        lastEvent="Mina delivered \(count) \(item.title.lowercased()) for \(price) coins."
     }
     @discardableResult mutating func buyStock(_ item:Supply,count:Int=5)->Bool {
         guard managementEnabled,count>0,count<=100,cash>=item.price*count else{return false}

@@ -38,12 +38,12 @@ struct NPCDesign:Hashable {
     // Only actual visible traits participate; no raw ID masks repeated artwork.
     var fingerprint:String {"\(presentation.rawValue):\(hairStyle):\(hairColor):\(skin):\(outfit):\(accessory):\(facialHair):\(faceShape):\(build):\(eyeStyle):\(nose):\(collar)"}
     func shirtColor(base:UInt32)->UInt32 {
-        if (200...206).contains(variant) || (461...465).contains(variant) || variant==700 {return base}
+        if (200...207).contains(variant) || (461...465).contains(variant) || variant==700 {return base}
         let tint=Self.clothingColors[(outfit+hairColor)%Self.clothingColors.count]
         func mix(_ shift:UInt32)->UInt32 {(((base>>shift)&255)*2+((tint>>shift)&255)*3)/5}
         return (mix(16)<<16)|(mix(8)<<8)|mix(0)
     }
-    static let feminine:Set<Int>=[1,3,6,110,112,114,116,118,120,122,181,182,200,204,206,311,313,315,462,465,520,522,524,560,562,564,610,612]
+    static let feminine:Set<Int>=[1,3,6,110,112,114,116,118,120,122,181,182,200,204,206,207,311,313,315,462,465,520,522,524,560,562,564,610,612]
     static let masculine:Set<Int>=[0,2,4,111,113,115,117,119,121,123,201,203,312,314,316,461,521,523,525,561,563,565,611,700]
     static let names:[Int:String] = {
         var result:[Int:String]=[:]
@@ -51,7 +51,7 @@ struct NPCDesign:Hashable {
         add(0,["Milo","June","Theo","Fern","Otis","Pip","Rose"])
         add(100,["Robin","Sasha","Ellis","Alex","Morgan","Casey","Jamie","Blair","Drew","Quinn","Camila","Mateo","Luna","Diego","Amara","Noah","Valentina","Leo","Zoe","Hugo","Isabel","Finn","Lucia","Oscar"])
         add(180,["Rowan","Celeste","Emilia"])
-        add(200,["Luna","Mateo","Riley","Diego","Nora","Alex","Iris"])
+        add(200,["Luna","Mateo","Riley","Diego","Nora","Alex","Iris","Mina"])
         add(310,["Avery","Mila","Theo","Iris","Leon","Rosa","Nico"])
         add(461,["Otis","Mira","Sal","Jules","Marina"])
         add(520,["Cleo","Dante","Petra","Emil","Nia","Orson"])

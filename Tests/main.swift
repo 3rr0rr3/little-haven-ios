@@ -2126,3 +2126,37 @@ func authoredNPCIdentityRules() {
     print("PASS: authored NPC presentation, matching named staff/story portraits and visible face body hair clothing variety")
 }
 authoredNPCIdentityRules()
+
+func supplyBuyerAndShadyCornerRules() {
+    var m=Motel();m.initializeWorld();m.enableManagement();m.cash=700;m.guestsServed=12;m.waiting=[]
+    for item in Supply.allCases {m.operations!.simulation!.stock[item.rawValue]=8}
+    m.operations!.simulation!.stock[Supply.detergent.rawValue]=0
+    require(m.hire(.buyer),"Supply buyer unlocks and hires normally")
+    require(m.staffStations.contains(.buyer) && !m.groundBlocked(m.staffHome(.buyer)),"Buyer gets a reachable receiving station")
+    require(m.procurementOrder?.0 == .detergent,"Buyer prioritizes needed supplies")
+    let before=m.cash;let ledger=m.simulation.ledger.count
+    var bought=false
+    for _ in 0..<600 {
+        m.operations!.nextIncidentTick=Int.max;m.operations!.simulation!.hour=12
+        m.tickManagement()
+        if m.simulation.stock["detergent",default:0]>0 {bought=true;break}
+    }
+    require(bought,"Buyer completes a physical supplier and delivery round trip")
+    require(m.cash==before-16 && m.simulation.stock["detergent"]==8,"Delivery charges real supply prices exactly once")
+    require(m.simulation.ledger.count>ledger && m.simulation.ledger.contains{$0.category=="Staff supplies" && $0.amount == -16},"Staff purchases appear in the actual ledger")
+    let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(m))
+    require(restored.operationsState.workers.contains{$0.role == .buyer},"New worker survives saves")
+    var poor=restored;poor.cash=51;poor.operations!.simulation!.stock["pesticide"]=0
+    require(poor.procurementOrder?.1==nil,"Buyer never spends the protected reserve or goes into debt")
+    poor.cash=70;poor.completeProcurement(.pesticide)
+    require(poor.cash==54 && poor.simulation.stock["pesticide"]==2,"Orders scale down to available funds")
+    var manual=restored;manual.operations!.simulation!.stock["detergent"]=8;let cash=manual.cash
+    manual.completeProcurement(.detergent);require(manual.cash==cash,"A manual restock cancels duplicate incoming orders")
+    var alley=Motel();alley.initializeWorld();alley.cash=100;alley.home=FamilyHome();alley.home!.stolen=[1,2];alley.world!.player=NeighborhoodShop.pawn.door
+    require(alley.canTrade(.pawn) && alley.sellBelonging(1),"Stolen goods can be sold physically at the shady corner")
+    require(alley.cash==170 && alley.household.stolen==[2],"Only the selected carried item is sold")
+    require(!alley.groundBlocked(Tile(x:67,y:28)) && alley.groundBlocked(Tile(x:66,y:26)),"Alley floor is walkable and merchandise counter has real collision")
+    alley.world!.player=MotelGrounds.gate;require(!alley.sellBelonging(2),"Stolen goods cannot be sold remotely")
+    print("PASS: supply buyer round trips, real capped purchases, reserve, ledger, save compatibility and physical shady trading")
+}
+supplyBuyerAndShadyCornerRules()

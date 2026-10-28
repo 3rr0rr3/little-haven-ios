@@ -842,7 +842,7 @@ struct MotelView: View {
         case .pet(let id): family=OfficeTap(rawValue:id)
         case .homeDecor: showHome=true
         case .shop(let shop):
-            if motel.isAtShop {neighborhood=shop} else {change {_=$0.enterShop(shop)}}
+            if motel.isAtShop || shop == .pawn {neighborhood=shop} else {change {_=$0.enterShop(shop)}}
         case .incident: showIncident = true
         case .office, .exit: change { _ = $0.useEntrance() }
         case .room(let id):
