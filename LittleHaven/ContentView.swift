@@ -49,6 +49,18 @@ struct ContentView: View {
 
 
 
+        if args.contains("--ui-life-arrival") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement()
+            let guest=Motel.arrivals(day:1,count:1)[0]
+            let door=sample.motel!.groundRoomDoor(0)
+            let start=sample.motel!.groundNearestWalkable(to:Tile(x:door.x,y:door.y+8))
+            sample.motel!.waiting=[];sample.motel!.rooms[0].guest=guest
+            sample.motel!.operations!.nextIncidentTick=100000
+            sample.motel!.world!.place = .grounds
+            sample.motel!.world!.player=sample.motel!.groundNearestWalkable(to:Tile(x:door.x-2,y:door.y+3))
+            sample.motel!.world!.travellers=[MotelWalker(id:guest.id,name:guest.name,color:guest.color,roomID:0,player:start,previous:start,destination:door)]
+            sample.save();return sample
+        }
         if args.contains(where:{$0.hasPrefix("--ui-needs-")}) {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement()
             sample.motel!.cash=1200;sample.motel!.waiting=[];sample.motel!.operations!.nextIncidentTick=100000

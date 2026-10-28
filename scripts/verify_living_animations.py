@@ -1,11 +1,11 @@
 """Validate actual native tests and optimized startup; no gameplay data is edited."""
 import json,os,re
 from pathlib import Path
-expected=['testLivingHavenAnimationGallery', 'testCompatibleHomeCareAndSavedContinue', 'testFamilyAndCatsAreTappable', 'testFullscreenHomeFamilyConversations', 'testHomeBedroomsEnterExitAndSavedReturn', 'testPersonalNeedsFoodAndDirtyNpcReaction', 'testPersonalNeedsBathroomAndSavedCleanState', 'testPhysicalRoomCleaning', 'testFullscreenJoystickReleaseAndPause', 'testGuestConversationCanAcceptAPersonalRequest', 'testBeachIsReachableAndDecorated', 'testBarBartenderServesDrinks', 'testFishRestaurantServesMeal', 'testNewSanctuaryResidentsCareAndAdventure', 'testOutdoorChaosCanBeHandled', 'testActualReleaseWakeAndFirstShift', 'testActualReleaseSavedHomeContinue']
+expected=['testCompatibleOfficeGuestInteraction', 'testAmbientArrivalKeepsMovementResponsive', 'testLivingHavenAnimationGallery', 'testCompatibleHomeCareAndSavedContinue', 'testFamilyAndCatsAreTappable', 'testFullscreenHomeFamilyConversations', 'testHomeBedroomsEnterExitAndSavedReturn', 'testPersonalNeedsFoodAndDirtyNpcReaction', 'testPersonalNeedsBathroomAndSavedCleanState', 'testPhysicalRoomCleaning', 'testFullscreenJoystickReleaseAndPause', 'testGuestConversationCanAcceptAPersonalRequest', 'testBeachIsReachableAndDecorated', 'testBarBartenderServesDrinks', 'testFishRestaurantServesMeal', 'testNewSanctuaryResidentsCareAndAdventure', 'testOutdoorChaosCanBeHandled', 'testActualReleaseWakeAndFirstShift', 'testActualReleaseSavedHomeContinue']
 logs='\n'.join(Path(p).read_text() for p in ['HomeLifeResults.xcresult.log','WorldLifeResults.xcresult.log','release-startup.log'])
 passed=re.findall(r"Test Case '-\[LittleHavenUITests\.LittleHavenUITests (\w+)\]' passed",logs)
 assert not re.findall(r"Test Case .* failed",logs)
-assert set(passed)==set(expected) and len(passed)==19,(passed,set(expected)-set(passed))
+assert set(passed)==set(expected) and len(passed)==21,(passed,set(expected)-set(passed))
 for mode in ['false','true','home-false','home-true']:
  r=json.loads(Path('ReleaseStartup-'+mode+'-report.json').read_text())
  assert r['build']=='59.0 (64)' and r['pending'] is False and 'hotel_stable' in r['steps']

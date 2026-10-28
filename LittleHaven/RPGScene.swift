@@ -31,6 +31,7 @@ struct RPGActor {
     var celebrating = false
     var dirty = false
     var ambient = ""
+    var arrivalDoor:Tile? = nil
     var lifeKind:String {
         guard action.isEmpty,effect==0,!cycling,expression != "scared",(!danger || ambient=="sleep") else{return ""}
         if !ambient.isEmpty {return ambient}
@@ -351,7 +352,8 @@ private struct ActorArtwork: View {
                 var sitter=context;sitter.clip(to:Path(CGRect(x:0,y:0,width:24,height:22)))
                 PaperPerson.draw(context:&sitter,x:4,y:9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:0,kneeling:true)
             }
-            else { PaperPerson.draw(context:&context,x:4,y:actor.cycling ? 7.5 : 9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:actor.cycling ? stride*0.4 : stride,expression:actor.expression,beachwear:actor.beachwear) }
+            else { PaperPerson.draw(context:&context,x:4,y:actor.cycling ? 7.5 : 9,color:actor.color,variant:actor.variant,facing:actor.facing,walk:actor.cycling ? stride*0.4 : stride,expression:actor.expression,hands:actor.ambient != "wave",beachwear:actor.beachwear) }
+            if actor.ambient=="wave" {HavenLifeArt.walkingWave(context:&context,actor:actor,stride:stride)}
             if actor.cycling && (actor.facing == 0 || actor.facing == 3) {
                 var handlebar=Path();handlebar.move(to:CGPoint(x:6,y:21));handlebar.addLine(to:CGPoint(x:18,y:21))
                 context.stroke(handlebar,with:.color(Color(hex:0x344D48)),style:StrokeStyle(lineWidth:1.2,lineCap:.round))
@@ -398,6 +400,8 @@ final class RPGScene: SKScene {
     private var carTextures: [String:SKTexture] = [:]
     private var lifeTextures:[String:[SKTexture]]=[:]
     private var lifeBuildBudget=2
+    private var lifeTextureOrder:[String]=[]
+    private var lastActors:[String:RPGActor]=[:]
     private var palmFrames:[SKTexture]=[]
 
     override func didMove(to view: SKView) {
@@ -416,7 +420,7 @@ final class RPGScene: SKScene {
                              scenery: () -> AnyView) {
         StartupTrace.stage("spritekit_configure_"+mapID)
         let changedMap = worldID != mapID
-        if changedMap {lifeTextures.removeAll(keepingCapacity:true)}
+        if changedMap {lifeTextures.removeAll(keepingCapacity:true);lifeTextureOrder.removeAll(keepingCapacity:true);lastActors.removeAll(keepingCapacity:true)}
         lifeBuildBudget=2
         dimensions = mapSize
         visibleColumns = columns
@@ -455,7 +459,9 @@ final class RPGScene: SKScene {
         }
         let ids = Set(actors.map { "actor:" + $0.id })
         for node in world.children where node.name?.hasPrefix("actor:") == true && !ids.contains(node.name!) {
-            node.removeFromParent()
+            let id=String((node.name ?? "").dropFirst(6))
+            let counterpart=id.hasPrefix("guest-") ? "routine-"+String(id.dropFirst(6)) : ""
+            if let sprite=node as? SKSpriteNode,let previous=lastActors[id],!actors.contains(where:{$0.id=="chaos" || $0.id==counterpart}),showArrival(previous,node:sprite) {} else {node.removeFromParent()}
         }
         for actor in actors {
             let name = "actor:" + actor.id
@@ -482,7 +488,7 @@ final class RPGScene: SKScene {
             node.userData?["targetX"] = actor.tile.x
             node.userData?["targetY"] = actor.tile.y
             let idle = sprite(actor, stride: 0)
-            let appearance = "\(actor.dirty)-\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.effect)-\(actor.expression)-\(actor.facing)-\(actor.beachwear)-\(actor.seated)"
+            let appearance = "\(actor.dirty)-\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.effect)-\(actor.expression)-\(actor.facing)-\(actor.beachwear)-\(actor.seated)-\(actor.ambient)"
             if node.userData?["appearance"] as? String != appearance {
                 node.removeAction(forKey:"effect"); node.removeAction(forKey:"walk"); node.removeAction(forKey:"spar")
                 node.removeAction(forKey:"walkEnd")
@@ -555,6 +561,7 @@ final class RPGScene: SKScene {
 
             }
         }
+        lastActors=actors.reduce(into:[:]){$0[$1.id]=$1}
         layoutCamera(jump: changedMap)
         StartupTrace.stage("spritekit_ready_"+mapID)
     }
@@ -584,28 +591,46 @@ final class RPGScene: SKScene {
         if !detail.children.isEmpty {node.addChild(detail)}
     }
 
+    private func lifeTextureKey(_ actor:RPGActor,kind:String)->String {
+        "\(kind)-\(actor.color)-\(actor.variant)-\(actor.facing)-\(actor.animal)-\(actor.corralCreature)-\(actor.creature)-\(actor.seated)-\(actor.beachwear)-\(actor.shopUniform)-\(actor.dirty)"
+    }
+    @MainActor private func cachedLifeFrames(_ actor:RPGActor,kind:String)->[SKTexture]? {
+        let key=lifeTextureKey(actor,kind:kind)
+        if let frames=lifeTextures[key] {
+            lifeTextureOrder.removeAll{$0==key};lifeTextureOrder.append(key);return frames
+        }
+        guard lifeBuildBudget>0 else{return nil};lifeBuildBudget-=1
+        while lifeTextureOrder.count>=48 {lifeTextures.removeValue(forKey:lifeTextureOrder.removeFirst())}
+        let frames=(0..<16).map {frame in
+            let renderer=ImageRenderer(content:HavenLifeArtwork(actor:actor,kind:kind,frame:frame));renderer.scale=3
+            let texture=renderer.uiImage.map{SKTexture(image:$0)} ?? SKTexture();texture.filteringMode = .linear;return texture
+        }
+        lifeTextures[key]=frames;lifeTextureOrder.append(key);return frames
+    }
     @MainActor private func configureLifePose(_ actor:RPGActor,node:SKSpriteNode,moving:Bool,working:Bool) {
         let kind=actor.lifeKind
         let nearby=abs(node.position.x-followCamera.position.x)<CGFloat(visibleColumns*20) && abs(node.position.y-followCamera.position.y)<CGFloat(visibleColumns*30)
         guard !kind.isEmpty,!moving,!working,node.childNode(withName:"temporary-work")==nil,node.action(forKey:"walk")==nil,node.action(forKey:"walkEnd")==nil,nearby,!UIAccessibility.isReduceMotionEnabled else {
             node.removeAction(forKey:"life-pose");node.userData?["life-key"]=nil;return
         }
-        let key="\(kind)-\(actor.color)-\(actor.variant)-\(actor.facing)-\(actor.animal)-\(actor.corralCreature)-\(actor.creature)-\(actor.seated)-\(actor.beachwear)-\(actor.shopUniform)-\(actor.dirty)"
+        let key=lifeTextureKey(actor,kind:kind)
         guard node.userData?["life-key"] as? String != key else{return}
-        var frames=lifeTextures[key]
-        if frames==nil {
-            guard lifeBuildBudget>0 else{return};lifeBuildBudget-=1
-            if lifeTextures.count>=48 {lifeTextures.removeAll(keepingCapacity:true)}
-            frames=(0..<16).map {frame in
-                let renderer=ImageRenderer(content:HavenLifeArtwork(actor:actor,kind:kind,frame:frame));renderer.scale=3
-                let texture=renderer.uiImage.map{SKTexture(image:$0)} ?? SKTexture();texture.filteringMode = .linear;return texture
-            }
-            lifeTextures[key]=frames
-        }
-        guard let frames else{return}
+        guard let frames=cachedLifeFrames(actor,kind:kind) else{return}
         node.removeAction(forKey:"life-pose");node.userData?["life-key"]=key
         let stagger=(0..<16).map{frames[($0+actor.lifeOffset)%16]}
         node.run(.repeatForever(.animate(with:stagger,timePerFrame:actor.animal>0 ? 0.6 : 0.25)),withKey:"life-pose")
+    }
+    @MainActor private func showArrival(_ actor:RPGActor,node:SKSpriteNode)->Bool {
+        guard let door=actor.arrivalDoor,actor.tile.distance(to:door)<=1,actor.expression != "scared",!UIAccessibility.isReduceMotionEnabled,
+              abs(node.position.x-followCamera.position.x)<CGFloat(visibleColumns*20),abs(node.position.y-followCamera.position.y)<CGFloat(visibleColumns*30) else{return false}
+        var knocking=actor;knocking.facing=3
+        guard let frames=cachedLifeFrames(knocking,kind:"knock") else{return false}
+        // The simulation has already admitted this guest. This short farewell node
+        // cannot block a sidewalk, a door, player movement or the next arrival.
+        node.removeAllActions();node.removeAllChildren();node.name="arrival:"+actor.id
+        node.texture=frames[8];node.size=CGSize(width:24,height:28);node.zPosition=CGFloat(door.y*16)
+        node.run(.sequence([.move(to:CGPoint(x:door.x*16+8,y:-(door.y*16+5)),duration:0.18),.repeat(.animate(with:Array(frames[8..<16]),timePerFrame:0.09),count:2),.fadeOut(withDuration:0.18),.removeFromParent()]))
+        return true
     }
     private func configureDiningService(mapID:String) {
         guard mapID=="shop-bar" || mapID=="shop-fish" else{return}
@@ -629,7 +654,7 @@ final class RPGScene: SKScene {
     }
 
     @MainActor private func sprite(_ actor: RPGActor, stride: Double) -> SKTexture {
-        let key = "\(actor.dirty)-\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.cycling)-\(actor.bikeColor)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)-\(actor.beachwear)-\(actor.seated)"
+        let key = "\(actor.dirty)-\(actor.wornClothes)-\(actor.color)-\(actor.variant)-\(actor.facing)-\(stride)-\(actor.animal)-\(actor.cycling)-\(actor.bikeColor)-\(actor.corralCreature)-\(actor.creature)-\(actor.effect)-\(actor.expression)-\(actor.shopUniform)-\(actor.beachwear)-\(actor.seated)-\(actor.ambient)"
         if let texture = textures[key] { return texture }
         let renderer = ImageRenderer(content: ActorArtwork(actor: actor, stride: stride))
         renderer.scale = 4
@@ -1250,7 +1275,7 @@ struct MotelRPGView: View {
                     expression:incident == nil ? "" : "scared")
             }
             actors += motel.worldState.travellers.map {
-                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.appearanceSeed, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: incident == nil ? MotelCadence.guestWalk : MotelCadence.travel,expression:incident == nil ? "" : "scared",routine:"luggage",ambient:$0.player.distance(to:$0.destination)<=1 ? "knock" : "")
+                RPGActor(id: "guest-\($0.id)", tile: $0.player, color: $0.color, variant: $0.appearanceSeed, facing: $0.player.y > $0.previous.y ? 0 : $0.player.x < $0.previous.x ? 1 : $0.player.x > $0.previous.x ? 2 : 3, duration: incident == nil ? MotelCadence.guestWalk : MotelCadence.travel,expression:incident == nil ? "" : "scared",routine:"luggage",ambient:$0.player.distance(to:$0.destination)<=1 ? "knock" : "",arrivalDoor:$0.destination)
             }
             for worker in motel.operationsState.workers where worker.role != .clerk || worker.tile.distance(to:motel.staffHome(worker.role))>1 {
                 var workerActor = RPGActor(id:"worker-"+worker.id,tile:worker.tile,color:worker.role.color,variant:200+(StaffRole.allCases.firstIndex(of:worker.role) ?? 0),facing:worker.tile.x < (worker.previous?.x ?? worker.tile.x) ? 1 : worker.tile.x > (worker.previous?.x ?? worker.tile.x) ? 2 : worker.tile.y < (worker.previous?.y ?? worker.tile.y) ? 3 : 0,name:worker.role.name,duration:MotelCadence.travel)
@@ -1344,7 +1369,7 @@ extension Motel {
             return RPGActor(id:"routine-\(guest.id)",tile:r.tile,color:guest.color,variant:guest.appearanceSeed,
                 facing:r.tile.x<r.previous.x ? 1 : r.tile.x>r.previous.x ? 2 : r.tile.y<r.previous.y ? 3 : 0,
                 duration:MotelCadence.guestWalk,expression:operationsState.incident == nil ? happy>=70 ? "cheerful" : happy<35 ? "angry" : "calm" : "scared",
-                routine:r.tile==routineDestination(guest,room:room) ? r.activity.rawValue : "luggage")
+                routine:r.tile==routineDestination(guest,room:room) ? r.activity.rawValue : "luggage",arrivalDoor:r.activity == .room ? groundRoomDoor(room.id) : nil)
         }
     }
     var expansionWorldProps:[HavenWorldProp] {

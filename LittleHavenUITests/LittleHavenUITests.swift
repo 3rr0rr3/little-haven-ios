@@ -91,6 +91,19 @@ final class LittleHavenUITests: XCTestCase {
         }
     }
 
+    func testAmbientArrivalKeepsMovementResponsive() {
+        let app=launch("--ui-life-arrival")
+        let world=app.otherElements["motelWorld"]
+        XCTAssertTrue(world.waitForExistence(timeout:15))
+        capture(app,"Guest arrives with a nonblocking door-knock transition")
+        let before=world.label
+        app.buttons["Walk east"].press(forDuration:0.25)
+        XCTAssertNotEqual(world.label,before,"Arrival visuals must not delay walking")
+        Thread.sleep(forTimeInterval:2)
+        XCTAssertEqual(app.state,.runningForeground)
+        capture(app,"Arrival finishes while normal movement remains available")
+    }
+
     func testLivingHavenAnimationGallery() {
         let app=launch("--ui-life-gallery")
         XCTAssertTrue(app.staticTexts["lifeReview"].waitForExistence(timeout:15))

@@ -1470,7 +1470,7 @@ enum HavenLifeArt {
         if kind=="laugh" {context.translateBy(x:0,y:-abs(wave)*0.55)}
         if kind=="nod" || kind=="dirty" {context.translateBy(x:0,y:lift*0.45)}
         let facing=(kind=="family" && frame<8) || kind=="legs" ? 3 : kind=="sleep" ? 0 : actor.facing==1 || (actor.facing==3 && ["phone","sip","eat"].contains(kind)) ? 2 : actor.facing
-        if actor.seated || kind=="sit" || kind=="legs" {
+        if actor.seated || kind=="sit" || kind=="legs" || kind=="sleep" {
             var body=context;body.clip(to:Path(CGRect(x:0,y:0,width:24,height:22)))
             PaperPerson.draw(context:&body,x:4,y:9,color:actor.color,variant:actor.variant,facing:facing,walk:0,hands:false,kneeling:true)
             if kind=="legs" {
@@ -1595,3 +1595,17 @@ struct LifeAnimationReview:View {
     }
 }
 #endif
+
+extension HavenLifeArt {
+    static func walkingWave(context:inout GraphicsContext,actor:RPGActor,stride:Double) {
+        let skin=NPCDesign.skinColors[NPCDesign(variant:actor.variant).skin]
+        for points in [[CGPoint(x:7,y:18.5),CGPoint(x:5,y:20),CGPoint(x:5,y:22)],
+                       [CGPoint(x:17,y:18.5),CGPoint(x:20,y:15),CGPoint(x:20+stride,y:10)]] {
+            var path=Path();path.move(to:points[0]);path.addLine(to:points[1]);path.addLine(to:points[2])
+            context.stroke(path,with:.color(Color(hex:0x302D2D)),style:StrokeStyle(lineWidth:2.6,lineCap:.round,lineJoin:.round))
+            context.stroke(path,with:.color(Color(hex:skin)),style:StrokeStyle(lineWidth:2,lineCap:.round,lineJoin:.round))
+            var sleeve=Path();sleeve.move(to:points[0]);sleeve.addLine(to:CGPoint(x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2))
+            context.stroke(sleeve,with:.color(Color(hex:actor.color)),style:StrokeStyle(lineWidth:2.3,lineCap:.round))
+        }
+    }
+}

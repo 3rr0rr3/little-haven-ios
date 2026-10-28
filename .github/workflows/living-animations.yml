@@ -72,7 +72,7 @@ jobs:
           echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testLivingHavenAnimationGallery -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleHomeCareAndSavedContinue -only-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenHomeFamilyConversations -only-testing:LittleHavenUITests/LittleHavenUITests/testHomeBedroomsEnterExitAndSavedReturn -only-testing:LittleHavenUITests/LittleHavenUITests/testPersonalNeedsFoodAndDirtyNpcReaction -only-testing:LittleHavenUITests/LittleHavenUITests/testPersonalNeedsBathroomAndSavedCleanState -resultBundlePath HomeLifeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test 2>&1 | tee HomeLifeResults.xcresult.log
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeGuestInteraction -only-testing:LittleHavenUITests/LittleHavenUITests/testLivingHavenAnimationGallery -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleHomeCareAndSavedContinue -only-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenHomeFamilyConversations -only-testing:LittleHavenUITests/LittleHavenUITests/testHomeBedroomsEnterExitAndSavedReturn -only-testing:LittleHavenUITests/LittleHavenUITests/testPersonalNeedsFoodAndDirtyNpcReaction -only-testing:LittleHavenUITests/LittleHavenUITests/testPersonalNeedsBathroomAndSavedCleanState -resultBundlePath HomeLifeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test 2>&1 | tee HomeLifeResults.xcresult.log
       - name: Optimized office and saved home startup in both control modes
         run: |
           set -euo pipefail
@@ -146,7 +146,7 @@ jobs:
           echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testPhysicalRoomCleaning -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenJoystickReleaseAndPause -only-testing:LittleHavenUITests/LittleHavenUITests/testGuestConversationCanAcceptAPersonalRequest -only-testing:LittleHavenUITests/LittleHavenUITests/testBeachIsReachableAndDecorated -only-testing:LittleHavenUITests/LittleHavenUITests/testBarBartenderServesDrinks -only-testing:LittleHavenUITests/LittleHavenUITests/testFishRestaurantServesMeal -only-testing:LittleHavenUITests/LittleHavenUITests/testNewSanctuaryResidentsCareAndAdventure -only-testing:LittleHavenUITests/LittleHavenUITests/testOutdoorChaosCanBeHandled -resultBundlePath WorldLifeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test 2>&1 | tee WorldLifeResults.xcresult.log
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testAmbientArrivalKeepsMovementResponsive -only-testing:LittleHavenUITests/LittleHavenUITests/testPhysicalRoomCleaning -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenJoystickReleaseAndPause -only-testing:LittleHavenUITests/LittleHavenUITests/testGuestConversationCanAcceptAPersonalRequest -only-testing:LittleHavenUITests/LittleHavenUITests/testBeachIsReachableAndDecorated -only-testing:LittleHavenUITests/LittleHavenUITests/testBarBartenderServesDrinks -only-testing:LittleHavenUITests/LittleHavenUITests/testFishRestaurantServesMeal -only-testing:LittleHavenUITests/LittleHavenUITests/testNewSanctuaryResidentsCareAndAdventure -only-testing:LittleHavenUITests/LittleHavenUITests/testOutdoorChaosCanBeHandled -resultBundlePath WorldLifeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test 2>&1 | tee WorldLifeResults.xcresult.log
       - name: Capture seven groups in gameplay
         if: always()
         run: |
@@ -162,6 +162,16 @@ jobs:
             kill -INT "$VIDEO_PID"
             wait "$VIDEO_PID"
           done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl io "$SIM_DEVICE" recordVideo --codec=h264 LittleHaven-life-arrival-motion.mp4 &
+          VIDEO_PID=$!
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-life-arrival --ui-testing --ui-touch
+          for FRAME in 1 2 3 4 5; do
+            sleep 0.7
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-life-arrival-$FRAME.png"
+          done
+          kill -INT "$VIDEO_PID"
+          wait "$VIDEO_PID"
           xcrun xcresulttool export attachments --path WorldLifeResults.xcresult --output-path art-ui-diagnostics
       - uses: actions/upload-artifact@v4
         if: always()
