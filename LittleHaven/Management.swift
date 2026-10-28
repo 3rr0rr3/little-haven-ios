@@ -150,6 +150,7 @@ enum MotelCadence {
 enum StaffRole: String, Codable, CaseIterable, Identifiable {
     case cleaner, maintenance, security, valet, clerk, repair, pestControl
     var id: String { rawValue }
+    var appearanceVariant:Int {200+(Self.allCases.firstIndex(of:self) ?? 0)}
     var title: String { switch self { case .cleaner: return "Housekeeper"; case .maintenance: return "Groundskeeper"; case .security: return "Security guard"; case .valet: return "Bike attendant"; case .clerk: return "Front-desk clerk"; case .repair: return "Repair technician"; case .pestControl: return "Pest-control specialist" } }
     var name: String { switch self { case .cleaner: return "Luna"; case .maintenance: return "Mateo"; case .security: return "Riley"; case .valet: return "Diego"; case .clerk: return "Nora"; case .repair: return "Alex"; case .pestControl: return "Iris" } }
     var hireCost: Int { switch self { case .cleaner: return 100; case .maintenance: return 140; case .security: return 160; case .valet: return 120; case .clerk: return 130; case .repair: return 150; case .pestControl: return 170 } }

@@ -2100,3 +2100,29 @@ func personalNeedsRules() {
     print("PASS: personal needs cadence, daily care, food, water outage, bathroom paths, visible dirt, reactions and old/new saves")
 }
 personalNeedsRules()
+
+func authoredNPCIdentityRules() {
+    let guests=Array(100..<124).map{NPCDesign(variant:$0)}
+    for (i,name) in Motel.guestNames.enumerated() {
+        require(NPCDesign.names[100+i]==name,"Guest roster and authored appearance registry agree")
+        require(Motel.appearanceSeed(name:name,id:999)==100+i,"Guest identity is independent of arrival order")
+    }
+    for role in StaffRole.allCases {
+        require(NPCDesign.names[role.appearanceVariant]==role.name,"Staff portraits use the named map identity")
+        require(NPCDesign(variant:role.appearanceVariant).shirtColor(base:role.color)==role.color,"Staff retain recognizable role uniforms")
+    }
+    for id in GuestStoryID.allCases {
+        require(Motel.appearanceSeed(name:id.name,id:999)==id.appearance,"Story guest walkers and dialogue share one identity")
+    }
+    for id in NPCDesign.feminine {
+        require(NPCDesign(variant:id).presentation == .feminine && NPCDesign(variant:id).facialHair==0,"Authored feminine characters do not receive randomly generated beards")
+    }
+    for id in NPCDesign.masculine {require(NPCDesign(variant:id).presentation == .masculine,"Authored masculine characters retain their presentation")}
+    require(Set(guests.map(\.hairStyle)).count>=10,"Guests vary their silhouettes rather than cycling through hats")
+    require(Set(guests.map(\.faceShape)).count==4 && Set(guests.map(\.build)).count==3,"Face and body proportions visibly vary")
+    require(Set(guests.map(\.outfit)).count>=7 && Set(guests.map(\.skin)).count==6,"Guest outfits and skin palettes vary")
+    require(guests.filter{[1,2].contains($0.accessory)}.count<=8,"Glasses do not dominate the cast")
+    require(guests.filter{[10,11].contains($0.hairStyle)}.count<=3,"Hats do not dominate the cast")
+    print("PASS: authored NPC presentation, matching named staff/story portraits and visible face body hair clothing variety")
+}
+authoredNPCIdentityRules()

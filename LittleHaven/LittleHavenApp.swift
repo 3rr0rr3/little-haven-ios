@@ -106,7 +106,8 @@ private struct StartupRecoveryRoot: View {
                 }
             } else {
                 #if DEBUG
-                if ProcessInfo.processInfo.arguments.contains("--ui-life-gallery") {LifeAnimationReview()}
+                if ProcessInfo.processInfo.arguments.contains("--ui-npc-gallery") {NPCIdentityReview()}
+                else if ProcessInfo.processInfo.arguments.contains("--ui-life-gallery") {LifeAnimationReview()}
                 else {ContentView()}
                 #else
                 ContentView()

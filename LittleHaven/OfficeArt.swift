@@ -1409,6 +1409,7 @@ enum HavenLifeArt {
         let phase=Double(frame%16)/16, wave=sin(phase * .pi * 2)
         let active=frame>=8, lift=active ? sin(Double(frame-8)/7 * .pi) : 0
         let ink:UInt32=0x302D2D
+        let garment=[7,8,9].contains(actor.variant) ? actor.color : NPCDesign(variant:actor.variant).shirtColor(base:actor.color)
         let skin:UInt32=[7,8,9].contains(actor.variant) ? (actor.variant==8 ? 0xD79F77 : 0xE3B38E) : NPCDesign.skinColors[NPCDesign(variant:actor.variant).skin]
         func oval(_ r:CGRect,_ color:UInt32) {context.fill(Path(ellipseIn:r),with:.color(Color(hex:color)))}
         func line(_ points:[CGPoint],_ color:UInt32,_ width:Double) {
@@ -1421,7 +1422,7 @@ enum HavenLifeArt {
         func arm(_ sx:Double,_ ex:Double,_ ey:Double,_ hx:Double,_ hy:Double) {
             let p=[CGPoint(x:sx,y:18.5),CGPoint(x:ex,y:ey),CGPoint(x:hx,y:hy)]
             line(p,ink,2.6);line(p,skin,2)
-            line([p[0],CGPoint(x:(sx+ex)/2,y:(18.5+ey)/2)],actor.beachwear ? skin : actor.color,2.3)
+            line([p[0],CGPoint(x:(sx+ex)/2,y:(18.5+ey)/2)],actor.beachwear ? skin : garment,2.3)
             oval(CGRect(x:hx-1.15,y:hy-1.15,width:2.3,height:2.3),skin)
         }
         if actor.animal>0 || actor.creature || actor.corralCreature>0 {
@@ -1559,6 +1560,36 @@ private struct LifeReviewSpec:Identifiable {
     let actor:RPGActor
     let kind:String
 }
+struct NPCIdentityReview:View {
+    @State private var group=0
+    private var ids:[Int] {switch group {case 0:return Array(100..<112);case 1:return Array(112..<124);case 2:return Array(200..<207)+Array(180..<183);default:return Array(520..<526)+Array(560..<566)}}
+    var body:some View {
+        VStack(spacing:8) {
+            Text("Character identity review").font(.headline).accessibilityIdentifier("npcReview")
+            Picker("Group",selection:$group) {
+                Text("Guests 1").tag(0);Text("Guests 2").tag(1);Text("Staff").tag(2);Text("Diners").tag(3)
+            }.pickerStyle(.segmented).accessibilityIdentifier("npcGroup")
+            ScrollView {
+                LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:3),spacing:14) {
+                    ForEach(ids,id:\.self) {id in
+                        VStack(spacing:4) {
+                            HStack(spacing:2) {
+                                ForEach([0,1,3],id:\.self) {direction in
+                                    Canvas {ctx,_ in
+                                        ctx.scaleBy(x:1.6,y:1.6)
+                                        PaperPerson.draw(context:&ctx,x:4,y:10,color:Motel.themeColors[id%4],variant:id,facing:direction,walk:0)
+                                    }.frame(width:39,height:45)
+                                }
+                            }
+                            Text(NPCDesign.names[id] ?? "Person").font(.caption.bold())
+                        }.padding(.vertical,9).frame(maxWidth:.infinity).background(Color.white.opacity(0.08))
+                    }
+                }
+                Text("Player and family keep their original artwork").font(.caption).padding()
+            }
+        }.padding(10).background(Color(hex:0x30483D)).foregroundStyle(Color(hex:0xF5E7C8))
+    }
+}
 struct LifeAnimationReview:View {
     private var samples:[LifeReviewSpec] {
         let kinds=["phone","knock","wave","sit","sleep","nod","shrug","laugh","cross","dirty","eat","sip","pour","serve","clear"]
@@ -1609,7 +1640,7 @@ extension HavenLifeArt {
             context.stroke(path,with:.color(Color(hex:0x302D2D)),style:StrokeStyle(lineWidth:2.6,lineCap:.round,lineJoin:.round))
             context.stroke(path,with:.color(Color(hex:skin)),style:StrokeStyle(lineWidth:2,lineCap:.round,lineJoin:.round))
             var sleeve=Path();sleeve.move(to:points[0]);sleeve.addLine(to:CGPoint(x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2))
-            context.stroke(sleeve,with:.color(Color(hex:actor.color)),style:StrokeStyle(lineWidth:2.3,lineCap:.round))
+            context.stroke(sleeve,with:.color(Color(hex:NPCDesign(variant:actor.variant).shirtColor(base:actor.color))),style:StrokeStyle(lineWidth:2.3,lineCap:.round))
         }
     }
 }

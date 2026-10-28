@@ -126,6 +126,10 @@ enum PaperPerson {
         let hair = NPCDesign.hairColors[design.hairColor]
         let style = design.hairStyle
         let accent = NPCDesign.accentColors[design.outfit]
+        let cloth=design.shirtColor(base:color)
+        let lower=[1.8,0.7,2.8][design.build]
+        let faceWidth=[12.6,11.6,13.4,12.2][design.faceShape]
+        let faceHeight=[12.5,13.1,11.8,12.7][design.faceShape]
         let bob = abs(walk) * 0.35
         func shape(_ path: Path, _ fill: UInt32, _ outline: Bool = true) {
             context.fill(path, with: .color(Color(hex: fill)))
@@ -150,31 +154,31 @@ enum PaperPerson {
         if facing == 1 || facing == 2 {
             context.translateBy(x:x+8,y:0);context.scaleBy(x:0.72,y:1);context.translateBy(x:-x-8,y:0)
         }
-        box(3.7, 12, 4.1, 3.1 + walk * 0.4, beachwear ? skin : [UInt32(0x3D4754),0x54453C,0x40544C,0x5A4B65,0x5F5043,0x324C5C][design.outfit])
-        box(8.2, 12, 4.1, 3.1 - walk * 0.4, beachwear ? skin : [UInt32(0x3D4754),0x54453C,0x40544C,0x5A4B65,0x5F5043,0x324C5C][design.outfit])
+        box(3.7, 12, 4.1, 3.1 + walk * 0.4, beachwear ? skin : [UInt32(0x3D4754),0x54453C,0x40544C,0x5A4B65,0x5F5043,0x324C5C,0x565568,0x45645B][design.outfit])
+        box(8.2, 12, 4.1, 3.1 - walk * 0.4, beachwear ? skin : [UInt32(0x3D4754),0x54453C,0x40544C,0x5A4B65,0x5F5043,0x324C5C,0x565568,0x45645B][design.outfit])
         oval(2.8, 14 + walk * 0.4, 5.2, 1.8, beachwear ? 0x9D7752 : 0x302F30)
         oval(8, 14 - walk * 0.4, 5.2, 1.8, beachwear ? 0x9D7752 : 0x302F30)
         var coat = Path()
         coat.move(to: CGPoint(x: x + 4, y: y + 5 - bob))
-        coat.addQuadCurve(to: CGPoint(x: x + 1.8, y: y + 13 - bob), control: CGPoint(x: x + 1, y: y + 8 - bob))
-        coat.addQuadCurve(to: CGPoint(x: x + 14.2, y: y + 13 - bob), control: CGPoint(x: x + 8, y: y + 15 - bob))
+        coat.addQuadCurve(to: CGPoint(x: x + lower, y: y + 13 - bob), control: CGPoint(x: x + 1, y: y + 8 - bob))
+        coat.addQuadCurve(to: CGPoint(x: x + 16-lower, y: y + 13 - bob), control: CGPoint(x: x + 8, y: y + 15 - bob))
         coat.addQuadCurve(to: CGPoint(x: x + 12, y: y + 5 - bob), control: CGPoint(x: x + 15, y: y + 8 - bob))
         coat.closeSubpath()
-        shape(coat, beachwear ? skin : color)
+        shape(coat, beachwear ? skin : cloth)
         if beachwear {
             let swim:UInt32=[UInt32(0xE99478),0x67B6A2,0xE3BF68,0xA698C4][seed%4]
             box(2.8,10.8,10.4,3.1,swim)
             line([CGPoint(x:3,y:11.2),CGPoint(x:13,y:11.2)],0xFFF0CB,0.55)
             if seed%3==0 {
-                if facing==3 {box(3.2,5.7,9.6,5.4,color)}
-                else {box(3.2,5.7,3.1,5.4,color);box(9.7,5.7,3.1,5.4,color)}
+                if facing==3 {box(3.2,5.7,9.6,5.4,cloth)}
+                else {box(3.2,5.7,3.1,5.4,cloth);box(9.7,5.7,3.1,5.4,cloth)}
                 for (fx,fy) in [(4.5,7.0),(11.2,9.0)] {oval(fx,fy,1.3,1.3,0xFFF0CB,false)}
             } else if seed%3==1 {
                 box(3.7,7.3,8.6,2.4,swim)
                 line([CGPoint(x:4.4,y:7.3),CGPoint(x:5,y:5.2)],swim,0.8)
                 line([CGPoint(x:11.6,y:7.3),CGPoint(x:11,y:5.2)],swim,0.8)
             } else {
-                box(4.2,5.7,7.6,5.1,color)
+                box(4.2,5.7,7.6,5.1,cloth)
                 box(4.3,8.3,7.4,1,0xFFF0CB)
             }
             if facing==0 {line([CGPoint(x:8,y:11.8),CGPoint(x:8,y:13.7)],ink,0.2)}
@@ -198,21 +202,45 @@ enum PaperPerson {
             let seam=facing == 1 ? 5.0 : 11.0
             line([CGPoint(x:seam,y:7),CGPoint(x:seam,y:13)],ink,0.3)
         }
+        if !beachwear {
+            if design.presentation == .feminine && design.outfit%3==0 {
+                var skirt=Path();skirt.move(to:CGPoint(x:x+3,y:y+10-bob));skirt.addLine(to:CGPoint(x:x+13,y:y+10-bob));skirt.addLine(to:CGPoint(x:x+15,y:y+14-bob));skirt.addLine(to:CGPoint(x:x+1,y:y+14-bob));skirt.closeSubpath();shape(skirt,cloth)
+            }
+            if facing != 3 {
+                if design.outfit==6 {for yy in [7.5,9.5,11.5] {box(3,yy,10,0.7,accent)}}
+                if design.outfit==7 {for dx in [4.0,8,12] {oval(dx,8+Double(Int(dx)%3),1,1,accent,false)}}
+                if design.collar==1 {line([CGPoint(x:4,y:5.5),CGPoint(x:8,y:8),CGPoint(x:12,y:5.5)],accent,0.7)}
+                if design.collar==2 {box(4,5.5,8,1.4,accent)}
+                if design.collar==3 {box(7,6,2,5.5,accent)}
+            }
+            if design.accessory==4 {line([CGPoint(x:5,y:6),CGPoint(x:8,y:8),CGPoint(x:11,y:6)],0xD7B968,0.5);oval(7.3,7.5,1.4,1.4,0xD7B968,false)}
+            if design.accessory==5 {box(3,5.4,10,1.5,accent);box(facing==1 ? 3 : 10,6.5,2,4,accent)}
+            if design.accessory==6 && facing != 3 {oval(10.5,7.2,1.7,1.7,0xE8C978)}
+        }
         if hands {
             oval(0.6, 9 + walk * 0.7, 3.5, 3.7, skin)
             oval(11.9, 9 - walk * 0.7, 3.5, 3.7, skin)
         }
         context=bodyContext
         if [1,3,6,8,9].contains(style) { oval(1, -4.5, 14, 13.5, hair) }
-        oval(1.7, -5, 12.6, 12.5, skin)
+        oval(8-faceWidth/2, -5, faceWidth, faceHeight, skin)
         if facing == 3 {
-            oval(1.8, -5, 12.4, 11.6, hair)
+            oval(8-faceWidth/2+0.1, -5, faceWidth-0.2, faceHeight-0.9, hair)
         } else {
-            oval(3.2, -1.6, 4.6, 5.1, 0xFFFCED)
-            oval(8.1, -1.6, 4.6, 5.1, 0xFFFCED)
+            let ew=[4.6,4.1,4.8][design.eyeStyle],eh=[5.1,4.1,4.6][design.eyeStyle]
+            oval(5.5-ew/2,0.8-eh/2,ew,eh,0xFFFCED)
+            oval(10.4-ew/2,0.8-eh/2,ew,eh,0xFFFCED)
             let look = facing == 1 ? -0.55 : facing == 2 ? 0.55 : 0
             oval(5.5 + look, 0.5, 0.75, 1, ink, false)
-            oval(9.3 + look, 0.5, 0.75, 1, ink, false)
+            oval(10.4 + look, 0.5, 0.75, 1, ink, false)
+            if design.nose==0 {oval(7.6,2,1.2,1.5,0xC19172,false)}
+            else if design.nose==1 {line([CGPoint(x:8,y:1.8),CGPoint(x:8.8,y:3),CGPoint(x:7.8,y:3.2)],0xB88569,0.4)}
+            else {oval(7,2.2,2.2,1.1,0xB88569,false)}
+            if design.presentation == .feminine {
+                if design.eyeStyle != 1 {line([CGPoint(x:3.2,y:-1),CGPoint(x:2.6,y:-1.8)],ink,0.4);line([CGPoint(x:12.6,y:-1),CGPoint(x:13.2,y:-1.8)],ink,0.4)}
+                oval(6.7,4.9,2.7,0.7,0xA9676E,false)
+            }
+            if design.accessory==3 {for dx in [1.5,13.5] {oval(dx,3.4,1.2,1.6,0xE7C878)}}
             let mood = expression.isEmpty ? ["happy","calm","curious","sleepy","serious","cheerful"][seed % 6] : expression
             if mood == "scared" || mood == "concerned" {
                 line([CGPoint(x:4,y:-2.8),CGPoint(x:7,y:-3.7)],ink,0.65)
@@ -248,6 +276,10 @@ enum PaperPerson {
             for dx in [3.0,8] {context.stroke(Path(roundedRect:CGRect(x:x+dx,y:y-1.7-bob,width:4.8,height:5.1),cornerRadius:0.6),with:.color(Color(hex:ink)),lineWidth:0.6)}
             box(7.5,0,1,0.5,ink)
         }
+        if design.accessory==7 {
+            line([CGPoint(x:1,y:1),CGPoint(x:1,y:-4),CGPoint(x:8,y:-7),CGPoint(x:15,y:-4),CGPoint(x:15,y:1)],accent,0.9)
+            box(0,0,2.4,4,accent);box(13.6,0,2.4,4,accent)
+        }
         switch style {
         case 0: oval(2,-5.5,12,3.7,hair);box(2,-3,3,3,hair)
         case 1: oval(1.5,-5.5,13,4,hair);box(1,-3,3,11,hair);box(12,-3,3,11,hair)
@@ -261,7 +293,15 @@ enum PaperPerson {
         case 8: oval(2,-5.5,12,3.7,hair);for yy in [0.0,3,6] {oval(12,yy,3.5,4,hair)}
         case 9: oval(2,-5.5,12,3.7,hair);oval(5,-8,6,5,hair)
         case 10: box(2,-6,12,4.5,accent);box(facing == 1 ? -2 : 3,-2.5,15,1.5,accent)
-        default: box(3,-7,10,5,accent);box(0,-2.5,16,1.5,accent);box(3,-4,10,1,0xEEE3BA)
+        case 11: box(3,-7,10,5,accent);box(0,-2.5,16,1.5,accent);box(3,-4,10,1,0xEEE3BA)
+        case 12: oval(1,-5.7,14,5,hair);box(1,-2,2.7,7,hair);box(12.3,-2,2.7,7,hair)
+        case 13: oval(2,-5.5,12,3,hair);oval(2,-4.5,7,4,hair)
+        case 14: oval(2,-5.7,12,3.5,hair);line([CGPoint(x:3,y:-4),CGPoint(x:10,y:-2)],hair,2)
+        case 15: oval(1,-5,14,3.7,hair);oval(-1,-5,5,6,hair);oval(12,-5,5,6,hair)
+        case 16: for dx in [1.0,4,7,10,13] {line([CGPoint(x:dx,y:-4),CGPoint(x:dx-0.5,y:2)],hair,2)}
+        case 17: oval(2,-5.5,12,3.7,hair);for yy in [0.0,3,6] {oval(0,yy,3.5,4,hair);oval(12.5,yy,3.5,4,hair)}
+        case 18: for dx in [1.0,4,7,10,13] {oval(dx,-5,3.8,4.2,hair)}
+        default: oval(2,-5.5,12,3.5,hair);line([CGPoint(x:10,y:-5),CGPoint(x:11,y:-2)],0xC2AD89,0.4)
         }
     }
 }

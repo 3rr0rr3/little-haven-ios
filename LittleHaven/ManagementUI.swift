@@ -379,7 +379,7 @@ struct StaffPanel: View {
             ForEach(StaffRole.allCases) { role in
                 let worker = motel.operationsState.workers.first { $0.role == role }
                 HStack(alignment:.top,spacing:10) {
-                    PaperPortrait(color:role.color,variant:role == .cleaner ? 1 : role == .maintenance ? 4 : 0).frame(width:40,height:52)
+                    PaperPortrait(color:role.color,variant:role.appearanceVariant).frame(width:40,height:52)
                     VStack(alignment:.leading,spacing:5) {
                         Text(role.name+" / "+role.title).font(.subheadline.bold())
                         Text(role.duty).font(.caption)

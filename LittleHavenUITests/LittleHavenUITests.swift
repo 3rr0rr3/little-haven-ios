@@ -120,6 +120,17 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertEqual(app.state,.runningForeground)
     }
 
+    func testNPCIdentityGallery() {
+        let app=launch("--ui-npc-gallery")
+        XCTAssertTrue(app.staticTexts["npcReview"].waitForExistence(timeout:15))
+        for (tab,name) in [("Guests 1","Camila"),("Guests 2","Valentina"),("Staff","Iris"),("Diners","Nadia")] {
+            app.segmentedControls.buttons[tab].tap()
+            XCTAssertTrue(app.staticTexts[name].waitForExistence(timeout:5),app.debugDescription)
+            capture(app,"NPC identities front side and back - "+tab)
+        }
+        XCTAssertEqual(app.state,.runningForeground)
+    }
+
     func testLivingHavenAnimationGallery() {
         let app=launch("--ui-life-gallery")
         XCTAssertTrue(app.staticTexts["lifeReview"].waitForExistence(timeout:15))

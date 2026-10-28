@@ -22,15 +22,15 @@ with zipfile.ZipFile(io.BytesIO(data)) as archive:
 assert info['CFBundleDisplayName'] == 'Brainstorm Haven'
 assert info['CFBundleSupportedPlatforms'] == ['iPhoneOS']
 version = info['CFBundleShortVersionString'].split('.')[0]
-assert version == '59' and info['CFBundleVersion'] == '64'
-branch = 'codex/download-v59-' + source[:8]
+assert version == '60' and info['CFBundleVersion'] == '65'
+branch = 'codex/download-v60-' + source[:8]
 entries = []
 def blob(path, content):
     result = api('/git/blobs', {'content': base64.b64encode(content).decode(), 'encoding':'base64'})
     expected = hashlib.sha1(b'blob ' + str(len(content)).encode() + b'\0' + content).hexdigest()
     assert result['sha'] == expected
     entries.append({'path':path, 'mode':'100644', 'type':'blob', 'sha':result['sha']})
-blob('downloads/BrainstormHaven-59.ipa', data)
+blob('downloads/BrainstormHaven-60.ipa', data)
 verification = {'source':source, 'version':info['CFBundleShortVersionString'], 'build':info['CFBundleVersion'], 'size':len(data), 'sha256':digest}
 if Path('home-startup-verification.json').exists():
     verification['startup_verification']=json.loads(Path('home-startup-verification.json').read_text())
@@ -39,26 +39,26 @@ if os.environ.get('BINARY_SOURCE_SHA'):
     verification['test_recovery']=json.loads(Path('home-care-recovery.json').read_text())
 if Path('living-animations-verification.json').exists():
     verification['animation_verification']=json.loads(Path('living-animations-verification.json').read_text())
-blob('downloads/BrainstormHaven-59-verification.json', json.dumps(verification, indent=2).encode())
+blob('downloads/BrainstormHaven-60-verification.json', json.dumps(verification, indent=2).encode())
 if Path('living-animations-verification.json').exists():
-    blob('verification/v59/living-animations-verification.json',Path('living-animations-verification.json').read_bytes())
+    blob('verification/v60/living-animations-verification.json',Path('living-animations-verification.json').read_bytes())
 if Path('home-startup-verification.json').exists():
-    blob('verification/v59/home-startup-verification.json',Path('home-startup-verification.json').read_bytes())
+    blob('verification/v60/home-startup-verification.json',Path('home-startup-verification.json').read_bytes())
 if Path('home-care-recovery.json').exists():
-    blob('verification/v59/home-care-recovery.json',Path('home-care-recovery.json').read_bytes())
+    blob('verification/v60/home-care-recovery.json',Path('home-care-recovery.json').read_bytes())
 for report in sorted(Path('.').glob('ReleaseStartup-*-report.json')):
-    blob('verification/v59/' + report.name, report.read_bytes())
+    blob('verification/v60/' + report.name, report.read_bytes())
 for image in sorted(Path('.').glob('LittleHaven-response-painted-*.png')):
     reduced = Path('/tmp') / (image.stem+'.jpg')
     subprocess.run(['sips','-s','format','jpeg','-s','formatOptions','90','-Z','1100',str(image),'--out',str(reduced)],check=True,stdout=subprocess.DEVNULL)
-    blob('previews/v59/' + image.stem+'.jpg', reduced.read_bytes())
+    blob('previews/v60/' + image.stem+'.jpg', reduced.read_bytes())
 for motion in sorted(Path('.').glob('LittleHaven-*-motion.mp4')):
-    blob('previews/v59/'+motion.name,motion.read_bytes())
+    blob('previews/v60/'+motion.name,motion.read_bytes())
 
 tree = api('/git/trees', {'base_tree':api('/git/commits/' + source)['tree']['sha'], 'tree':entries})
-commit = api('/git/commits', {'message':'Verified Brainstorm Haven v59 build64 [skip ci]', 'tree':tree['sha'], 'parents':[source]})
+commit = api('/git/commits', {'message':'Verified Brainstorm Haven v60 build65 [skip ci]', 'tree':tree['sha'], 'parents':[source]})
 api('/git/refs', {'ref':'refs/heads/' + branch, 'sha':commit['sha']})
-url = 'https://raw.githubusercontent.com/' + repo + '/' + commit['sha'] + '/downloads/BrainstormHaven-59.ipa'
+url = 'https://raw.githubusercontent.com/' + repo + '/' + commit['sha'] + '/downloads/BrainstormHaven-60.ipa'
 with urllib.request.urlopen(url, timeout=90) as response:
     downloaded = response.read()
     assert response.status == 200
