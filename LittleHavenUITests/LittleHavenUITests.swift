@@ -497,8 +497,8 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(cash(app).contains("710"))
         app.buttons["closeInteraction"].tap()
         openPauseDestination("openReviews",app)
-        XCTAssertTrue(app.descendants(matching:.any)["guestReview_good"].exists)
-        XCTAssertTrue(app.descendants(matching:.any)["guestReview_bad"].exists)
+        XCTAssertTrue(app.descendants(matching:.any)["guestReview_good"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.descendants(matching:.any)["guestReview_bad"].waitForExistence(timeout:5))
         capture(app,"Good and bad reviews, hired staff and room upgrades")
     }
     func testOutdoorChaosCanBeHandled() {
