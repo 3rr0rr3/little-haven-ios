@@ -1,0 +1,84 @@
+name: Verify home doors and eating pose v58
+on:
+  push:
+    branches: ['codex/home-pose-polish']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test prologue, motel economy, stealth and checkpoint rules
+        run: |
+          set -euo pipefail
+          swiftc -frontend -parse LittleHaven/*.swift LittleHavenUITests/*.swift
+          swiftc LittleHaven/NPCDesign.swift LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
+          /tmp/little-haven-tests
+      - name: Render character app icon
+        run: python3 scripts/render_app_icon.py
+      - name: Build iPhone app
+        run: |
+          set -euo pipefail
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath device-build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Check home interactions and care in both control modes
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
+          echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -only-testing:LittleHavenUITests/LittleHavenUITests/testHomeBedroomsEnterExitAndSavedReturn -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleHomeCareAndSavedContinue -only-testing:LittleHavenUITests/LittleHavenUITests/testPersonalNeedsBathroomAndSavedCleanState -only-testing:LittleHavenUITests/LittleHavenUITests/testPersonalNeedsFoodAndDirtyNpcReaction -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenHomeFamilyConversations -resultBundlePath HomePolishResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+      - name: Capture native home and eating motion
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for MODE in needs-dirty needs-animation-eat; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch --ui-care-preview --ui-home-compatibility
+            sleep 5
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-$MODE.png"
+          done
+          xcrun simctl io "$SIM_DEVICE" recordVideo --codec=h264 LittleHaven-eating-motion.mp4 &
+          VIDEO_PID=$!
+          sleep 4
+          kill -INT "$VIDEO_PID"
+          wait "$VIDEO_PID"
+          for FRAME in 1 2 3; do
+            sleep 0.2
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-eating-$FRAME.png"
+          done
+          python3 scripts/publish_art_previews.py
+      - name: Verify and package IPA
+        run: |
+          set -euo pipefail
+          APP=device-build/Build/Products/Release-iphoneos/LittleHaven.app
+          test -x "$APP/LittleHaven"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleSupportedPlatforms:0' "$APP/Info.plist")" = "iPhoneOS"
+          xcrun lipo "$APP/LittleHaven" -verify_arch arm64
+          xcrun vtool -show-build "$APP/LittleHaven" | tee platform.txt
+          grep -Eq 'platform[[:space:]]+IOS$' platform.txt
+          mkdir -p package/Payload
+          ditto "$APP" package/Payload/LittleHaven.app
+          cd package
+          zip -qry ../LittleHaven-unsigned.ipa Payload
+          cd ..
+          unzip -t LittleHaven-unsigned.ipa
+          shasum -a 256 LittleHaven-unsigned.ipa > LittleHaven-unsigned.ipa.sha256
+      - name: Publish tested v58 installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish_candidate.py
+      - name: Preserve results and native previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Home-pose-polish
+          path: |
+            HomePolishResults.xcresult
+            LittleHaven-response-*.png
+            LittleHaven-eating-motion.mp4
+            LittleHaven-unsigned.ipa
+            candidate-verification.json

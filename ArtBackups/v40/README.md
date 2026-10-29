@@ -1,0 +1,1 @@
+Original v40 generated sheets and prompts are preserved unchanged in ArtSources/PaintedV40. The complete original catalog is reproducible from those sources with the v40 packer retained in Git commit 9e007d52cdcb16aeb9f5489a41929b62a1339e18. No gameplay/save files are changed by the v41 art revision.

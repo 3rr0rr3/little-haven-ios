@@ -1,0 +1,86 @@
+name: Supply corner focused screen recovery v61
+on:
+  push:
+    branches: ['codex/supply-corner-screen-checks']
+permissions:
+  contents: write
+  actions: read
+env:
+  VERIFIED_BINARY_SOURCE: d5da144a7aa14716b48f77b3ad719647c70e45bb
+concurrency:
+  group: supply-screen-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  world:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: World work dialogue shops sanctuary and joystick regressions
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
+          echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testSupplyBuyerCanBeHired -only-testing:LittleHavenUITests/LittleHavenUITests/testPawnShopRequiresExplicitSale -only-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenJoystickReleaseAndPause -only-testing:LittleHavenUITests/LittleHavenUITests/testOutdoorChaosCanBeHandled -only-testing:LittleHavenUITests/LittleHavenUITests/testLivingHavenAnimationGallery -resultBundlePath WorldLifeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test 2>&1 | tee WorldLifeResults.xcresult.log
+      - name: Export native screenshots
+        if: always()
+        timeout-minutes: 2
+        run: xcrun xcresulttool export attachments --path WorldLifeResults.xcresult --output-path art-ui-diagnostics
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Living-world
+          path: |
+            WorldLifeResults.xcresult.log
+            art-ui-diagnostics
+  publish:
+    needs: world
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Audit identical production and Foundation sources
+        run: |
+          python3 scripts/verify_supply_sources.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: Living-world
+      - name: Reuse native device and optimized startup evidence for identical production code
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          READY=0
+          for ATTEMPT in $(seq 1 30); do
+            STATUS=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/40716806941/jobs" --jq '.jobs[] | select(.name=="home") | .status')
+            RESULT=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/40716806941/jobs" --jq '.jobs[] | select(.name=="home") | .conclusion')
+            if [ "$STATUS" = completed ]; then test "$RESULT" = success; READY=1; break; fi
+            sleep 15
+          done
+          test "$READY" = 1
+          for ARTIFACT in Living-home Living-device; do
+            gh run download 40716806941 --repo "$GITHUB_REPOSITORY" --name "$ARTIFACT" --dir .
+          done
+      - name: Verify all eighteen UI executions and four optimized startup reports
+        run: python3 scripts/verify_supply_corner.py
+      - name: Publish native visual evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/art-ui-diagnostics
+          cp -R art-ui-diagnostics/. /tmp/art-ui-diagnostics/
+          python3 scripts/publish_art_previews.py
+      - name: Publish verified v61 installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish_candidate.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Living-verification
+          path: |
+            candidate-verification.json
+            living-animations-verification.json

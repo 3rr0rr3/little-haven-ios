@@ -1,7 +1,209 @@
 import XCTest
 
 final class LittleHavenUITests: XCTestCase {
+    #if !DEBUG
+    // Invoked only by the Release probe after CI seeds simulator preferences.
+    func testActualReleaseWakeAndFirstShift() {
+        let app=XCUIApplication()
+        app.launchArguments=[]
+        app.launch()
+        XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:20),app.debugDescription)
+        capture(app,"Actual Release title before first chapter")
+        app.buttons["CONTINUE GAME"].tap()
+        let wake=app.buttons["wakeUp"]
+        XCTAssertTrue(wake.waitForExistence(timeout:20),app.debugDescription)
+        if !wake.isHittable {app.swipeUp()}
+        wake.tap()
+        XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:30),app.debugDescription)
+        XCTAssertTrue(app.otherElements["officeCompatibilityRenderer"].exists)
+        Thread.sleep(forTimeInterval:20)
+        XCTAssertEqual(app.state,.runningForeground)
+        capture(app,"Actual optimized Release first shift")
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:20),app.debugDescription)
+        app.buttons["CONTINUE GAME"].tap()
+        XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:30),app.debugDescription)
+        XCTAssertTrue(app.otherElements["officeCompatibilityRenderer"].exists)
+        Thread.sleep(forTimeInterval:12)
+        XCTAssertEqual(app.state,.runningForeground)
+    }
+    func testActualReleaseSavedHomeContinue() {
+        let app=XCUIApplication();app.launchArguments=[];app.launch()
+        XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:20),app.debugDescription)
+        XCTAssertFalse(app.buttons["copyStartupReport"].exists,"A prior build's pending report must not trap the update")
+        app.buttons["CONTINUE GAME"].tap()
+        let home=app.descendants(matching:.any)["familyHouseScene"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout:30),app.debugDescription)
+        XCTAssertTrue(app.descendants(matching:.any)["homeCompatibilityRenderer"].firstMatch.exists)
+        XCTAssertTrue((home.value as? String ?? "").contains("dirty true"),"The saved owner's needs remain intact")
+        Thread.sleep(forTimeInterval:12);XCTAssertEqual(app.state,.runningForeground)
+        capture(app,"Optimized saved home continue with archived old-version report")
+        app.terminate();app.launch()
+        XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:20))
+        app.buttons["CONTINUE GAME"].tap()
+        XCTAssertTrue(home.waitForExistence(timeout:30));XCTAssertTrue(app.descendants(matching:.any)["homeCompatibilityRenderer"].firstMatch.exists)
+        Thread.sleep(forTimeInterval:12);XCTAssertEqual(app.state,.runningForeground)
+    }
+    #endif
     override func setUp() { continueAfterFailure = false }
+
+    func testStartupRecoveryReportWithoutLoadingGame() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-recovery-preview"]
+        app.launch()
+        XCTAssertTrue(app.buttons["copyStartupReport"].waitForExistence(timeout:15))
+        app.terminate()
+        app.launchArguments=["--ui-recovery-inspect"]
+        app.launch()
+        XCTAssertTrue(app.buttons["copyStartupReport"].waitForExistence(timeout:15),"The unfinished report survives process relaunch")
+        XCTAssertTrue(app.buttons["retryStartup"].exists)
+        XCTAssertFalse(app.otherElements["officeScene"].exists)
+        XCTAssertFalse(app.buttons["CONTINUE GAME"].exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS %@","before_hotel_view")).firstMatch.exists)
+        app.buttons["copyStartupReport"].tap()
+        XCTAssertTrue(app.buttons["Report copied"].exists)
+        capture(app,"Startup recovery reads the report without loading gameplay")
+    }
+
+    func testCompatibleOfficeWakeAndSave() {
+        for touch in [false,true] {
+            let app=XCUIApplication()
+            app.launchArguments=["--ui-wake","--ui-office-compatibility"]+(touch ? ["--ui-touch"] : [])
+            app.launch()
+            let wake=app.buttons["wakeUp"]
+            XCTAssertTrue(wake.waitForExistence(timeout:15))
+            if !wake.isHittable {app.swipeUp()}
+            wake.tap()
+            XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:20),app.debugDescription)
+            XCTAssertTrue(app.otherElements["officeCompatibilityRenderer"].exists)
+            app.buttons["receptionDesk"].tap()
+            XCTAssertTrue(app.buttons["saveCheckpoint"].waitForExistence(timeout:5))
+            app.buttons["saveCheckpoint"].tap()
+            capture(app,touch ? "Compatible first shift touch" : "Compatible first shift standard")
+            app.terminate()
+            app.launchArguments=["--ui-title","--ui-office-compatibility"]+(touch ? ["--ui-touch"] : [])
+            app.launch()
+            app.buttons["CONTINUE GAME"].tap()
+            XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:20))
+            XCTAssertTrue(app.otherElements["officeCompatibilityRenderer"].exists)
+            app.terminate()
+        }
+    }
+
+    func testAmbientArrivalKeepsMovementResponsive() {
+        let app=launch("--ui-life-arrival")
+        let world=app.otherElements["motelWorld"]
+        XCTAssertTrue(world.waitForExistence(timeout:15))
+        capture(app,"Guest arrives with a nonblocking door-knock transition")
+        let before=world.label
+        app.buttons["Walk east"].press(forDuration:0.25)
+        XCTAssertNotEqual(world.label,before,"Arrival visuals must not delay walking")
+        Thread.sleep(forTimeInterval:2)
+        XCTAssertEqual(app.state,.runningForeground)
+        capture(app,"Arrival finishes while normal movement remains available")
+    }
+
+    func testCatMotionPhasesRenderInGallery() {
+        let app=launch("--ui-life-gallery")
+        XCTAssertTrue(app.staticTexts["lifeReview"].waitForExistence(timeout:15))
+        let cat=app.staticTexts["Home cat 1"]
+        for _ in 0..<6 {
+            if cat.exists && cat.isHittable {break}
+            app.swipeUp()
+        }
+        XCTAssertTrue(cat.exists && cat.isHittable,app.debugDescription)
+        for frame in 0..<5 {
+            capture(app,"Cat motion phase \(frame): grooming stretch pounce curl")
+            Thread.sleep(forTimeInterval:1)
+        }
+        XCTAssertEqual(app.state,.runningForeground)
+    }
+
+    func testNPCIdentityGallery() {
+        let app=launch("--ui-npc-gallery")
+        XCTAssertTrue(app.staticTexts["npcReview"].waitForExistence(timeout:15))
+        for (tab,name) in [("Guests 1","Camila"),("Guests 2","Valentina"),("Staff","Iris"),("Diners","Nadia")] {
+            app.segmentedControls.buttons[tab].tap()
+            XCTAssertTrue(app.staticTexts[name].waitForExistence(timeout:5),app.debugDescription)
+            capture(app,"NPC identities front side and back - "+tab)
+        }
+        XCTAssertEqual(app.state,.runningForeground)
+    }
+
+    func testLivingHavenAnimationGallery() {
+        let app=launch("--ui-life-gallery")
+        XCTAssertTrue(app.staticTexts["lifeReview"].waitForExistence(timeout:15))
+        capture(app,"Living Haven guest routines and expressions")
+        Thread.sleep(forTimeInterval:2)
+        app.swipeUp();capture(app,"Living Haven family and first creatures")
+        Thread.sleep(forTimeInterval:2)
+        app.swipeUp();capture(app,"Living Haven creature personalities")
+        Thread.sleep(forTimeInterval:2)
+        app.swipeUp();capture(app,"Living Haven work tools and nature")
+        for _ in 0..<3 where !app.staticTexts["lifeReviewEnd"].isHittable {app.swipeUp()}
+        XCTAssertTrue(app.staticTexts["lifeReviewEnd"].exists)
+        XCTAssertEqual(app.state,.runningForeground)
+    }
+
+    func testCompatibleHomeCareAndSavedContinue() {
+        for touch in [false,true] {
+            let app=XCUIApplication()
+            app.launchArguments=["--ui-needs-food","--ui-testing","--ui-home-compatibility"]+(touch ? ["--ui-touch"] : [])
+            app.launch()
+            let home=app.descendants(matching:.any)["familyHouseScene"].firstMatch
+            XCTAssertTrue(home.waitForExistence(timeout:20))
+            XCTAssertTrue(app.descendants(matching:.any)["homeCompatibilityRenderer"].firstMatch.exists)
+            app.buttons["office_fridge"].tap();waitForCare(.eat,app)
+            XCTAssertTrue((home.value as? String ?? "").contains("Food 80"))
+            app.buttons["office_hildarelys"].tap();XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5));app.buttons["dialogueBack"].tap()
+            capture(app,touch ? "Compatible home fullscreen food and family" : "Compatible home food and family")
+            app.terminate();app.launchArguments=["--ui-title","--ui-testing","--ui-home-compatibility"]+(touch ? ["--ui-touch"] : []);app.launch()
+            XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:15));app.buttons["CONTINUE GAME"].tap()
+            XCTAssertTrue(home.waitForExistence(timeout:20));XCTAssertTrue(app.descendants(matching:.any)["homeCompatibilityRenderer"].firstMatch.exists)
+            XCTAssertTrue((home.value as? String ?? "").contains("Food 80"))
+            app.terminate()
+        }
+    }
+    func testCompatibleOfficeGuestInteraction() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-world","--ui-testing","--ui-office-compatibility"]
+        app.launch()
+        XCTAssertTrue(app.otherElements["officeCompatibilityRenderer"].waitForExistence(timeout:15))
+        XCTAssertTrue(app.buttons["office_guest"].waitForExistence(timeout:15))
+        Thread.sleep(forTimeInterval:5)
+        app.buttons["office_guest"].tap()
+        XCTAssertTrue(app.buttons["chargeGuest"].waitForExistence(timeout:15))
+        app.buttons["chooseRoom0"].tap()
+        app.buttons["chargeGuest"].tap()
+        XCTAssertTrue(cash(app).contains("260"))
+        capture(app,"Compatible reception guest booking preserves artwork and touch targets")
+    }
+
+    func testProductionWakeUpStartsFirstChapter() {
+        for touch in [false,true] {
+            let app=XCUIApplication()
+            // Intentionally omit --ui-testing: normal randomized arrivals and
+            // management initialization must run as they do on the phone.
+            app.launchArguments=["--ui-wake"]+(touch ? ["--ui-touch"] : [])
+            app.launch()
+            let wake=app.buttons["wakeUp"]
+            XCTAssertTrue(wake.waitForExistence(timeout:15))
+            if !wake.isHittable {app.swipeUp()}
+            wake.tap()
+            XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:30),app.debugDescription)
+            Thread.sleep(forTimeInterval:3)
+            XCTAssertEqual(app.state,.runningForeground)
+            capture(app,touch ? "First chapter production touch mode" : "First chapter production standard mode")
+            app.terminate()
+            app.launchArguments=["--ui-title"]
+            app.launch()
+            XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:15))
+            app.buttons["CONTINUE GAME"].tap()
+            XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:20),"The first-shift save must also open after relaunch")
+            app.terminate()
+        }
+    }
 
     func testHoldReleaseCollisionAndSave() {
         let app = launch("--ui-fresh")
@@ -15,7 +217,7 @@ final class LittleHavenUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 0.6)
         XCTAssertEqual(map.label, stopped)
         app.buttons["Open journal"].tap()
-        app.buttons["Done"].tap()
+        back(app)
         app.terminate()
         app.launchArguments = ["--ui-testing"]
         app.launch()
@@ -41,8 +243,10 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.buttons["declineGuest"].waitForExistence(timeout:20))
         app.buttons["declineGuest"].tap()
         XCTAssertTrue(cash(app).contains("260"), "Decline must not charge")
+        let doorFrame = app.buttons["office_door"].frame
         app.buttons["office_save"].tap()
         app.buttons["office_tools"].tap()
+        XCTAssertEqual(app.buttons["office_door"].frame, doorFrame, "Notifications must not shift room touch targets")
         app.buttons["office_door"].tap()
         let world = app.otherElements["motelWorld"]
         XCTAssertTrue(world.waitForExistence(timeout:10))
@@ -57,6 +261,74 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(cash(app).contains("260"))
         capture(app,"Reception decisions and saved desk checkpoint")
     }
+    func testFullscreenHomeFamilyConversations() {
+        let app=XCUIApplication();app.launchArguments=["--ui-family-home","--ui-testing","--ui-touch"];app.launch()
+        XCTAssertTrue(app.buttons["office_hildarelys"].waitForExistence(timeout:15))
+        app.buttons["hideFullscreenToolbar"].tap()
+        app.buttons["office_hildarelys"].tap()
+        XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5),"Hildarelys can be tapped from the home entrance in fullscreen")
+        app.buttons["Give her a kiss"].tap()
+        app.buttons["office_samhil"].tap()
+        XCTAssertTrue(app.buttons["Watch together"].waitForExistence(timeout:5))
+        app.buttons["Watch together"].tap()
+        XCTAssertTrue(app.buttons["office_chichu"].exists)
+        capture(app,"Fullscreen home seated Samhil and reliable family conversations")
+    }
+
+    func testFullscreenDialogueBackAndWifePhysicalTaps() {
+        let app=XCUIApplication();app.launchArguments=["--ui-family-home","--ui-testing","--ui-touch"];app.launch()
+        XCTAssertTrue(app.buttons["office_hildarelys"].waitForExistence(timeout:15))
+        app.buttons["hideFullscreenToolbar"].tap()
+        let wife=app.buttons["office_hildarelys"]
+        // Screen coordinates exercise actual hit regions, not accessibility activation.
+        wife.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+        XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5))
+        let back=app.buttons["dialogueBack"]
+        XCTAssertGreaterThanOrEqual(back.frame.height,44)
+        back.coordinate(withNormalizedOffset:CGVector(dx:0.85,dy:0.5)).tap()
+        XCTAssertFalse(app.otherElements["gameDialogue"].exists)
+        // Back must unpause the map and allow another family conversation.
+        wife.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+        XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5))
+        app.buttons["Give her a kiss"].tap()
+        app.terminate()
+        app.launchArguments=["--ui-family-home","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["office_mochi"].waitForExistence(timeout:15))
+        app.buttons["office_mochi"].coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+        XCTAssertTrue(app.buttons["Play"].waitForExistence(timeout:5))
+        app.buttons["dialogueBack"].coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+        XCTAssertFalse(app.otherElements["gameDialogue"].exists)
+        app.buttons["office_hildarelys"].tap()
+        XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5))
+        capture(app,"Working Back button and home family conversation")
+    }
+    func testHomeBedroomsEnterExitAndSavedReturn() {
+        for touch in [false,true] {
+            for parents in [false,true] {
+                let app=XCUIApplication()
+                app.launchArguments=[parents ? "--ui-bedroom-parents-door" : "--ui-bedroom-doors","--ui-testing"]+(touch ? ["--ui-touch"] : [])
+                app.launch()
+                let door=app.buttons[parents ? "office_parentsBedroom" : "office_girlBedroom"]
+                XCTAssertTrue(door.waitForExistence(timeout:15))
+                if touch {app.buttons["hideFullscreenToolbar"].tap()}
+                door.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+                XCTAssertTrue(app.otherElements["homeBedroomScene"].waitForExistence(timeout:5),app.debugDescription)
+                XCTAssertTrue(app.otherElements["homeBedroomScene"].label.contains(parents ? "Hildarelys" : "Samhil"))
+                capture(app,parents ? "Shared parents bedroom" : "Samhil bedroom")
+                if parents {
+                    app.buttons["bedroomSave"].tap()
+                    app.terminate();app.launchArguments=["--ui-title","--ui-testing"]+(touch ? ["--ui-touch"] : []);app.launch()
+                    XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:10));app.buttons["CONTINUE GAME"].tap()
+                    XCTAssertTrue(app.otherElements["homeBedroomScene"].waitForExistence(timeout:10),"Saved bedroom reloads in its own map: "+app.debugDescription)
+                }
+                app.buttons["bedroomExit"].coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+                XCTAssertTrue(app.otherElements["familyHouseScene"].waitForExistence(timeout:5))
+                XCTAssertFalse(app.otherElements["homeBedroomScene"].exists)
+                app.terminate()
+            }
+        }
+    }
+
     func testFamilyAndCatsAreTappable() {
         let app = launch("--ui-family-home")
         XCTAssertTrue(app.buttons["office_chichu"].waitForExistence(timeout:10), app.debugDescription)
@@ -70,6 +342,8 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
         app.buttons["Watch together"].tap()
         app.buttons["office_hildarelys"].tap()
+        capture(app,"Art QA family interaction target")
+        print("ART FAMILY TARGET: "+app.debugDescription)
         XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
         app.buttons["Give her a kiss"].tap()
         app.buttons["office_player"].tap()
@@ -81,6 +355,9 @@ final class LittleHavenUITests: XCTestCase {
     func testHomeDesignerAndFurniturePurchase() {
         let app=launch("--ui-home-store")
         XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
+        step("north",6,app)
         app.buttons["worldAction"].tap()
         XCTAssertTrue(app.buttons["buy_home_plant"].waitForExistence(timeout:5))
         app.buttons["buy_home_plant"].tap()
@@ -112,21 +389,39 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Chichi"].exists)
         capture(app,"Chichi follows outside while Chichu waits near home")
     }
+    func testSupplyBuyerCanBeHired() {
+        let app=launch("--ui-supply-buyer")
+        XCTAssertTrue(app.buttons["hireEmployees"].waitForExistence(timeout:15))
+        app.buttons["hireEmployees"].tap()
+        let hire=app.buttons["hire_buyer"]
+        for _ in 0..<7 {if hire.exists && hire.isHittable {break};app.swipeUp()}
+        XCTAssertTrue(hire.exists && hire.isHittable,app.debugDescription)
+        hire.tap()
+        XCTAssertFalse(app.buttons["hire_buyer"].exists)
+        capture(app,"Mina hired as supply buyer with budget and reserve explained")
+        app.buttons["closeInteraction"].tap()
+        XCTAssertTrue(cash(app).contains("520"))
+    }
+
     func testPawnShopRequiresExplicitSale() {
         let app=launch("--ui-pawn-store")
         XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
         XCTAssertTrue(cash(app).contains("2500"))
+        capture(app,"Physical shady alley and Sal before opening trade")
         app.buttons["worldAction"].tap()
         XCTAssertTrue(app.buttons["pawn_sell_1"].waitForExistence(timeout:5))
         app.buttons["pawn_sell_1"].tap()
         XCTAssertFalse(app.buttons["pawn_sell_1"].exists)
-        capture(app,"Pawn shop sells carried items individually")
-        app.buttons["Close"].tap()
+        capture(app,"Shady Corner sells carried items individually")
+        back(app)
         XCTAssertTrue(cash(app).contains("2570"))
     }
     func testClothingShopBuysAndEquips() {
         let app=launch("--ui-clothes-store")
         XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
+        step("north",6,app)
         app.buttons["worldAction"].tap()
         XCTAssertTrue(app.buttons["outfit_2"].waitForExistence(timeout:5))
         app.buttons["outfit_2"].tap()
@@ -145,7 +440,7 @@ final class LittleHavenUITests: XCTestCase {
         step("south", 2, app)
         app.buttons["worldAction"].press(forDuration: 1.8)
         XCTAssertTrue((world.value as? String ?? "").contains("Cleaning 2/3"))
-        step("west", 1, app)
+        step("west", 2, app)
         step("south", 1, app)
         app.buttons["worldAction"].press(forDuration: 1.8)
         XCTAssertTrue((world.value as? String ?? "").contains("Ready for guests"))
@@ -159,9 +454,8 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["worldAction"].tap()
         app.buttons["paint2"].tap()
         XCTAssertTrue((world.value as? String ?? "").contains("Theme 2"))
-        step("west", 1, app)
-        step("south", 1, app)
-        step("west", 2, app)
+        step("east", 3, app)
+        step("north", 3, app)
         app.buttons["worldAction"].tap()
         XCTAssertTrue((world.value as? String ?? "").contains("Furnishings 1"))
         capture(app, "Physical furniture and paint interaction")
@@ -171,7 +465,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(world.waitForExistence(timeout: 10))
         app.buttons["worldAction"].tap()
         app.buttons["buildRoom"].tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "4 ROOMS")).firstMatch.exists)
+        XCTAssertTrue((world.value as? String ?? "").contains("4 rooms"),"Construction adds the fourth room, independently of HUD visibility")
     }
 
     func testCaughtRestoresLastCheckpoint() {
@@ -193,16 +487,18 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["hireEmployees"].tap()
         app.buttons["hire_cleaner"].tap()
         XCTAssertTrue(cash(app).contains("800"))
-        app.buttons["Close interaction"].tap()
-        XCTAssertTrue(app.buttons["openStaff"].exists)
+        app.buttons["closeInteraction"].tap()
+        openPause(app);XCTAssertTrue(app.buttons["openStaff"].exists);back(app)
         app.buttons["receptionDesk"].tap()
+        capture(app,"Art QA desk interaction target")
+        print("ART DESK TARGET: "+app.debugDescription)
         app.buttons["deskRooms"].tap()
         app.buttons["deskUpgrade_0"].tap()
         XCTAssertTrue(cash(app).contains("710"))
-        app.buttons["Close interaction"].tap()
-        app.buttons["openReviews"].tap()
-        XCTAssertTrue(app.descendants(matching:.any)["guestReview_good"].exists)
-        XCTAssertTrue(app.descendants(matching:.any)["guestReview_bad"].exists)
+        app.buttons["closeInteraction"].tap()
+        openPauseDestination("openReviews",app)
+        XCTAssertTrue(app.descendants(matching:.any)["guestReview_good"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.descendants(matching:.any)["guestReview_bad"].waitForExistence(timeout:5))
         capture(app,"Good and bad reviews, hired staff and room upgrades")
     }
     func testOutdoorChaosCanBeHandled() {
@@ -210,18 +506,22 @@ final class LittleHavenUITests: XCTestCase {
         for (fixture,action) in [("--ui-chaos-fire","Put out the fire"),("--ui-chaos-pool","Help the guest out"),("--ui-chaos-fight","Break up the fight")] {
             if fixture != "--ui-chaos-fire" { app.terminate(); app.launchArguments = [fixture,"--ui-testing"]; app.launch() }
             XCTAssertTrue(app.buttons["incidentAlarm"].waitForExistence(timeout:10))
-            app.buttons["worldAction"].tap()
+            XCTAssertTrue(app.staticTexts["EMERGENCY"].exists)
+            capture(app,"Emergency alert " + fixture)
+            app.buttons["incidentAlarm"].tap()
             XCTAssertTrue(app.otherElements["gameDialogue"].waitForExistence(timeout:3))
-            app.buttons[action].tap()
+            app.otherElements["gameDialogue"].buttons[action].tap()
             XCTAssertFalse(app.buttons["incidentAlarm"].exists)
         }
     }
     func testPoliceFineAndBribe() {
         let app = launch("--ui-police")
         XCTAssertTrue(app.buttons["Risk a bribe / 80"].waitForExistence(timeout:10))
+        XCTAssertFalse(app.buttons["Back"].exists,"Police conversation has no dismiss button")
         app.buttons["Risk a bribe / 80"].tap()
         XCTAssertTrue(cash(app).contains("780"))
         XCTAssertTrue(app.buttons["Pay fine / 350"].waitForExistence(timeout:3))
+        XCTAssertFalse(app.buttons["Back"].exists,"Rejected bribe still requires payment")
         capture(app,"Police refuse bribe after a fatal emergency")
         app.buttons["Pay fine / 350"].tap()
         XCTAssertTrue(cash(app).contains("430"))
@@ -258,10 +558,12 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertFalse(app.buttons["openManagement"].exists)
         app.buttons["office_computer"].tap()
         XCTAssertTrue(app.buttons["miniClean_1"].waitForExistence(timeout:5))
+        if !app.buttons["miniClean_1"].isHittable {app.swipeUp()}
         app.buttons["miniClean_1"].tap()
         XCTAssertTrue(app.buttons["miniGameTap"].waitForExistence(timeout:3))
-        app.buttons["Cancel"].tap()
-        app.buttons["manageTab_Supplies"].tap()
+        app.buttons["cancelMiniGame"].tap()
+        app.buttons["managementSections"].tap()
+        app.buttons["manageSection_Supplies"].tap()
         XCTAssertTrue(app.buttons["buy_toiletries"].waitForExistence(timeout:3))
         app.buttons["buy_toiletries"].tap()
         XCTAssertTrue(app.staticTexts["In stock: 16"].exists)
@@ -285,7 +587,7 @@ final class LittleHavenUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS %@", "22:00 NIGHT")).firstMatch.waitForExistence(timeout:10))
         capture(app,"Night shift hotel grounds")
         app.buttons["office_computer"].tap()
-        app.buttons["manageTab_Desk"].tap()
+        app.buttons["managePrimary_Guests"].tap();app.buttons["manageTab_Desk"].tap()
         XCTAssertTrue(app.segmentedControls["pricingPolicy"].waitForExistence(timeout:5))
         capture(app,"Hourly nightly and weekly pricing")
     }
@@ -307,13 +609,13 @@ final class LittleHavenUITests: XCTestCase {
         waitForExpectations(timeout:3)
         let changedHintValue = hintSwitch.value as? String
         XCTAssertEqual(changedHintValue, expectedHintValue)
-        app.buttons["Done"].tap()
+        back(app)
         app.buttons["OPTIONS"].tap()
         XCTAssertEqual(app.switches["optionHints"].value as? String, changedHintValue)
         let defaults=app.buttons["Restore default options"]
         if !defaults.isHittable { app.swipeUp() }
         defaults.tap()
-        app.buttons["Done"].tap()
+        back(app)
         app.buttons["QUIT"].tap()
         app.buttons["Quit session"].tap()
         XCTAssertTrue(app.buttons["RETURN TO TITLE"].waitForExistence(timeout:5))
@@ -323,7 +625,7 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["Pause game"].tap()
         app.buttons["Options"].tap()
         XCTAssertTrue(app.switches["optionHints"].waitForExistence(timeout:5),"In-game options opens from pause")
-        app.buttons["Done"].tap()
+        back(app)
         app.buttons["backToTitle"].tap()
         XCTAssertTrue(app.buttons["CONTINUE GAME"].waitForExistence(timeout:10))
         app.buttons["NEW GAME"].tap()
@@ -374,9 +676,671 @@ final class LittleHavenUITests: XCTestCase {
         Thread.sleep(forTimeInterval:0.7)
         XCTAssertEqual(world.label,stoppedAgain)
     }
-    private func launch(_ fixture: String) -> XCUIApplication {
+    func testWalkingPastDoorActionsKeepsMoving() {
+        let app=launch("--ui-guest-favour")
+        let world=app.otherElements["motelWorld"]
+        XCTAssertTrue(world.waitForExistence(timeout:10))
+        app.buttons["Walk east"].press(forDuration:1.6)
+        let label=world.label
+        let column=Int(label.components(separatedBy:"Column ").last?.components(separatedBy:",").first ?? "") ?? 0
+        XCTAssertGreaterThanOrEqual(column,24,"A held direction continues through nearby room actions")
+        Thread.sleep(forTimeInterval:0.5)
+        XCTAssertEqual(world.label,label,"Releasing still stops immediately")
+    }
+    func testGuestConversationCanAcceptAPersonalRequest() {
+        let app=launch("--ui-guest-favour")
+        let talk=app.buttons["talkToGuest"]
+        XCTAssertTrue(talk.waitForExistence(timeout:10))
+        talk.tap()
+        let promise=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@", "Promise to bring")).firstMatch
+        XCTAssertTrue(promise.waitForExistence(timeout:5))
+        capture(app,"Guest conversation and personal request")
+        promise.tap()
+        XCTAssertFalse(promise.exists)
+        XCTAssertTrue(app.buttons["Walk east"].exists)
+    }
+    func testBeachIsReachableAndDecorated() {
+        let app=launch("--ui-beach")
+        let world=app.otherElements["motelWorld"]
+        XCTAssertTrue(world.waitForExistence(timeout:10))
+        XCTAssertTrue(app.staticTexts["SUNSET COVE BEACH"].exists)
+        let before=world.label
+        app.buttons["Walk east"].press(forDuration:0.5)
+        XCTAssertNotEqual(world.label,before)
+        capture(app,"Sunset Cove palms umbrellas loungers and sea")
+    }
+    func testShopInteriorExitReturnsToItsOwnDoor() {
+        let app=launch("--ui-home-store")
+        XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:10))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
+        XCTAssertTrue(app.buttons["shopCounter"].exists)
+        app.buttons["Walk south"].tap()
+        let world=app.otherElements["motelWorld"]
+        XCTAssertTrue(world.waitForExistence(timeout:5))
+        XCTAssertTrue(world.label.contains("Column 47"))
+    }
+    func testBarBartenderServesDrinks() {
+        let app=launch("--ui-bar")
+        XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
+        XCTAssertTrue(app.buttons["barPatron0"].exists)
+        app.buttons["shopCounter"].tap()
+        let drink=app.buttons["orderDrink_citrusSoda"]
+        XCTAssertTrue(drink.waitForExistence(timeout:5))
+        drink.tap()
+        XCTAssertTrue(app.staticTexts["492 COINS"].exists)
+        XCTAssertTrue(app.descendants(matching:.any).matching(NSPredicate(format:"label CONTAINS %@", "Jules served: Citrus soda")).firstMatch.exists)
+        capture(app,"Bartender serves drink in lively bar")
+    }
+    func testBeachChairCanRelaxAndStand() {
+        let app=launch("--ui-chair")
+        XCTAssertTrue(app.buttons["standFromChair"].waitForExistence(timeout:10))
+        app.buttons["standFromChair"].tap()
+        XCTAssertTrue(app.buttons["sitOnChair"].waitForExistence(timeout:3))
+        app.buttons["sitOnChair"].tap()
+        XCTAssertTrue(app.buttons["standFromChair"].waitForExistence(timeout:3))
+        app.buttons["Walk south"].tap()
+        XCTAssertFalse(app.buttons["standFromChair"].exists)
+        capture(app,"Beach lounger sit stand and movement")
+    }
+    func testFullscreenJoystickReleaseAndPause() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-world","--ui-touch","--ui-testing"]
+        app.launch()
+        let position=app.descendants(matching:.any)["fullscreenJoystick"].firstMatch
+        XCTAssertTrue(position.waitForExistence(timeout:15),app.debugDescription)
+        XCTAssertFalse(app.buttons["Walk north"].exists)
+        let before=position.value as? String
+        XCTAssertTrue(before?.contains("Column") == true,"Joystick exposes position while the toolbar is hidden")
+        let start=app.coordinate(withNormalizedOffset:CGVector(dx:0.55,dy:0.53))
+        let east=app.coordinate(withNormalizedOffset:CGVector(dx:0.75,dy:0.53))
+        start.tap()
+        Thread.sleep(forTimeInterval:0.5)
+        XCTAssertEqual(position.value as? String,before,"Ground taps do not start destination walking")
+        start.press(forDuration:0.05,thenDragTo:east,withVelocity:.slow,thenHoldForDuration:0.4)
+        XCTAssertEqual(position.value as? String,before,"Map dragging no longer moves the character")
+        let stick=app.descendants(matching:.any)["fullscreenJoystick"].firstMatch
+        XCTAssertTrue(stick.exists)
+        let center=stick.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5))
+        let right=stick.coordinate(withNormalizedOffset:CGVector(dx:0.9,dy:0.5))
+        center.press(forDuration:0.05,thenDragTo:right,withVelocity:.slow,thenHoldForDuration:0.5)
+        XCTAssertNotEqual(position.value as? String,before,"The visible joystick steers continuously")
+        let released=position.value as? String
+        Thread.sleep(forTimeInterval:0.5)
+        XCTAssertEqual(position.value as? String,released,"Releasing the finger stops without walking to its destination")
+        center.press(forDuration:0.05,thenDragTo:stick.coordinate(withNormalizedOffset:CGVector(dx:0.1,dy:0.5)),withVelocity:.slow,thenHoldForDuration:0.4)
+        XCTAssertNotEqual(position.value as? String,released,"A fresh drag can reverse direction")
+        let stopped=position.value as? String
+        openPause(app)
+        Thread.sleep(forTimeInterval:0.4)
+        back(app)
+        XCTAssertEqual(position.value as? String,stopped,"Pause cancels movement")
+        capture(app,"Full screen visible joystick and release")
+    }
+    func testFullscreenPrologueJournalAndOptions() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-fresh","--ui-touch","--ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Open journal"].waitForExistence(timeout:15))
+        XCTAssertFalse(app.buttons["Walk north"].exists)
+        app.buttons["Open journal"].tap()
+        XCTAssertTrue(app.buttons["Options"].waitForExistence(timeout:5),app.debugDescription)
+        app.buttons["Options"].tap()
+        XCTAssertTrue(app.switches["optionFullscreenTouch"].waitForExistence(timeout:5))
+        capture(app,"Full screen setting and prologue menu")
+    }
+    func testCreatureCanFollowAndStay() {
+        let app=launch("--ui-creature")
+        let creature=app.buttons["office_mochi"]
+        XCTAssertTrue(creature.waitForExistence(timeout:10))
+        creature.tap()
+        XCTAssertTrue(app.buttons["Follow me"].waitForExistence(timeout:3))
+        app.buttons["Follow me"].tap()
+        creature.tap()
+        XCTAssertTrue(app.buttons["Stay here"].waitForExistence(timeout:3))
+        capture(app,"Reference creature companion")
+        app.buttons["Stay here"].tap()
+        creature.tap()
+        XCTAssertTrue(app.buttons["Follow me"].waitForExistence(timeout:3))
+    }
+    func testHomeBasementStairsReturnHome() {
+        let app=launch("--ui-home-stairs")
+        XCTAssertTrue(app.buttons["office_basement"].waitForExistence(timeout:10))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.descendants(matching:.any)["basementScene"].firstMatch.waitForExistence(timeout:5))
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.buttons["office_basement"].waitForExistence(timeout:5))
+        capture(app,"Home stairs enter and leave basement")
+    }
+    func testBasementCreatureFeedingAndPetting() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-basement","--ui-corral-0","--ui-testing","--ui-painted-check"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Feed"].waitForExistence(timeout:10))
+        app.buttons["Feed"].tap()
+        app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.buttons["Fed today"].waitForExistence(timeout:3))
+        app.buttons["Pet"].tap()
+        capture(app,"Thirteen corral sanctuary and animal care")
+    }
+    func testNewSanctuaryResidentsCareAndAdventure() {
+        executionTimeAllowance = 180
+        let app=XCUIApplication()
+        for (id,name) in [(8,"Kawai Tom"),(9,"Inferno Cat"),(10,"cosmic cat"),(11,"Juan the horse"),(12,"The Hi Cat")] {
+            app.launchArguments=["--ui-basement","--ui-corral-\(id)","--ui-testing","--ui-painted-check"]
+            app.launch()
+            XCTAssertTrue(app.staticTexts[name.uppercased()].waitForExistence(timeout:15),name)
+            let dialogue=app.otherElements["gameDialogue"]
+            XCTAssertTrue(dialogue.buttons["Feed"].exists);dialogue.buttons["Feed"].tap()
+            app.buttons["worldAction"].tap()
+            XCTAssertTrue(app.buttons["Fed today"].waitForExistence(timeout:5))
+            app.buttons["Pet"].tap();app.buttons["worldAction"].tap()
+            capture(app,name+" in its own sanctuary corral")
+            app.buttons["Adventure & ability"].tap()
+            let quest=app.buttons["creatureAdventure\(id)"]
+            for _ in 0..<12 where !quest.isHittable {app.swipeUp()}
+            XCTAssertTrue(quest.isHittable,name+" has a reachable adventure entry")
+            quest.tap()
+            XCTAssertTrue(app.buttons["creatureAdventure\(id)"].exists)
+            XCTAssertFalse(app.buttons["creatureAdventure\(id)"].isEnabled,"Accepted quests require finding the keepsake")
+            app.terminate()
+        }
+    }
+    func testRideAndParkBicycle() {
+        let app=launch("--ui-bike")
+        XCTAssertTrue(app.buttons["rideBike"].waitForExistence(timeout:10))
+        app.buttons["rideBike"].tap()
+        XCTAssertTrue(app.buttons["dismountBike"].waitForExistence(timeout:10))
+        app.buttons["Walk east"].tap()
+        capture(app,"Character riding bicycle")
+        app.buttons["dismountBike"].tap()
+        capture(app,"Art QA parked bicycle interaction target")
+        print("ART BIKE TARGET: "+app.debugDescription)
+        XCTAssertTrue(app.buttons["rideBike"].waitForExistence(timeout:3))
+    }
+    func testFishRestaurantServesMeal() {
+        let app=launch("--ui-fish")
+        XCTAssertTrue(app.buttons["fishDiner0"].waitForExistence(timeout:10))
+        app.buttons["shopCounter"].tap()
+        XCTAssertTrue(app.buttons["orderMeal_grilledFish"].waitForExistence(timeout:3))
+        app.buttons["orderMeal_grilledFish"].tap()
+        XCTAssertTrue(app.staticTexts["482 COINS"].exists)
+        capture(app,"Fish restaurant order and diners")
+    }
+    func testCreativeEditorOpensAndMovesWasher() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-creative","--ui-touch","--ui-testing"]
+        app.launch()
+        openPauseDestination("openCreative",app)
+        XCTAssertTrue(app.buttons["closeCreative"].waitForExistence(timeout:10))
+        let washer=app.descendants(matching:.any)["creative-washer"].firstMatch
+        XCTAssertTrue(washer.waitForExistence(timeout:5))
+        let origin=washer.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5))
+        origin.press(forDuration:0.6,thenDragTo:origin.withOffset(CGVector(dx:0,dy:192)))
+        XCTAssertTrue(app.staticTexts["Washing machine placed."].waitForExistence(timeout:5),app.debugDescription)
+        let savedPosition=washer.value as? String
+        XCTAssertNotNil(savedPosition)
+        capture(app,"Creative mode physical object relocation")
+        app.buttons["closeCreative"].tap()
+        XCTAssertTrue(app.descendants(matching:.any)["fullscreenJoystick"].firstMatch.waitForExistence(timeout:5))
+        app.terminate();app.launchArguments=["--ui-touch","--ui-testing"];app.launch()
+        openPauseDestination("openCreative",app)
+        let restored=app.descendants(matching:.any)["creative-washer"].firstMatch
+        XCTAssertTrue(restored.waitForExistence(timeout:5))
+        XCTAssertEqual(restored.value as? String,savedPosition,"Creative changes survive closing and reopening the app")
+    }
+
+    func testFullscreenCounterGuestAndToolbarVisibility() {
+        let app=XCUIApplication();app.launchArguments=["--ui-counter","--ui-touch","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["office_guest"].waitForExistence(timeout:15))
+        app.buttons["office_guest"].tap()
+        XCTAssertTrue(app.buttons["Accept guest & collect payment"].waitForExistence(timeout:5),app.debugDescription)
+        capture(app,"Reception guest interaction from behind counter")
+        app.buttons["closeInteraction"].tap()
+        XCTAssertTrue(app.buttons["hideFullscreenToolbar"].waitForExistence(timeout:5))
+        app.buttons["hideFullscreenToolbar"].tap()
+        XCTAssertTrue(app.buttons["restoreFullscreenToolbar"].waitForExistence(timeout:3))
+        XCTAssertFalse(app.buttons["fullscreenPause"].exists)
+        capture(app,"Hidden toolbar retains joystick and restore button")
+        app.buttons["restoreFullscreenToolbar"].tap()
+        XCTAssertTrue(app.buttons["fullscreenPause"].waitForExistence(timeout:3))
+    }
+    func testPlayerPoolRescueAnimation() {
+        let app=launch("--ui-action-response-pool")
+        XCTAssertTrue(app.buttons["Walk east"].waitForExistence(timeout:15))
+        Thread.sleep(forTimeInterval:1)
+        capture(app,"Player swimming to actual guest")
+        Thread.sleep(forTimeInterval:2)
+        capture(app,"Player bringing guest to shore")
+        Thread.sleep(forTimeInterval:2)
+        capture(app,"Player helping rescued guest recover")
+        Thread.sleep(forTimeInterval:5)
+        XCTAssertTrue(app.buttons["Walk east"].exists)
+    }
+    func testPoliceFindsPlayerInFullscreenOffice() {
+        let app=XCUIApplication();app.launchArguments=["--ui-police-pursuit","--ui-touch","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["Pay fine / 200"].waitForExistence(timeout:20),"Officer must walk around reception counter and approach player")
+        XCTAssertFalse(app.buttons["Back"].exists)
+        app.coordinate(withNormalizedOffset:CGVector(dx:0.05,dy:0.15)).tap()
+        XCTAssertTrue(app.buttons["Pay fine / 200"].exists,"Tapping outside must not dismiss the conversation")
+        app.buttons["Risk a bribe / 80"].tap()
+        XCTAssertTrue(app.buttons["Pay fine / 350"].waitForExistence(timeout:3))
+        XCTAssertFalse(app.buttons["Back"].exists)
+        capture(app,"Mandatory police decision in fullscreen reception")
+        app.buttons["Pay fine / 350"].tap()
+        XCTAssertFalse(app.buttons["Pay fine / 350"].exists)
+        XCTAssertTrue(app.buttons["fullscreenPause"].exists)
+    }
+    func testGuestStoryChoiceAndSavedMemory() {
+        let app=launch("--ui-story")
+        XCTAssertTrue(app.buttons["office_guest"].waitForExistence(timeout:10))
+        app.buttons["office_guest"].tap()
+        XCTAssertTrue(app.buttons["openGuestStory"].waitForExistence(timeout:5))
+        app.buttons["openGuestStory"].tap()
+        XCTAssertTrue(app.buttons["storyChoice1"].waitForExistence(timeout:5))
+        app.buttons["storyChoice1"].tap()
+        XCTAssertTrue(app.staticTexts["storyResult"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.staticTexts["storyResult"].label.contains("Lantern Bar today"))
+        XCTAssertFalse(app.buttons["storyChoice1"].exists)
+        capture(app,"Guest story choice and remembered promise")
+        app.terminate();app.launchArguments=["--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["office_guest"].waitForExistence(timeout:10))
+        app.buttons["office_guest"].tap();app.buttons["openGuestStory"].tap()
+        XCTAssertFalse(app.buttons["storyChoice1"].exists,"Saved decisions cannot be replayed")
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format:"label CONTAINS %@", "Lantern Bar today")).firstMatch.waitForExistence(timeout:5))
+    }
+    func testLanternGuestStoryShow() {
+        let app=launch("--ui-story-bar")
+        XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
+        app.buttons["shopCounter"].tap()
+        XCTAssertTrue(app.buttons["startLanternShow"].waitForExistence(timeout:5))
+        app.buttons["startLanternShow"].tap()
+        XCTAssertTrue(cash(app).contains("560"))
+        capture(app,"Rowan playing at the Lantern Bar")
+        app.buttons["shopCounter"].tap()
+        XCTAssertFalse(app.buttons["startLanternShow"].exists)
+        XCTAssertTrue(app.staticTexts["Rowan's live set · promise kept"].exists)
+    }
+    func testNeighborRelationshipAndFavor() {
+        let app=launch("--ui-haven-neighbor")
+        XCTAssertTrue(app.buttons["neighborChat0"].waitForExistence(timeout:10))
+        app.buttons["neighborChat0"].tap()
+        XCTAssertFalse(app.buttons["neighborChat0"].isEnabled)
+        app.buttons["neighborFavor0"].tap()
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Willow Home"))
+        XCTAssertFalse(app.buttons["neighborFavor0"].isEnabled,"Delivery requires physically collecting the parcel")
+        capture(app,"Neighbor friendship and physical favor")
+        back(app)
+        app.buttons["Pause game"].tap()
+        let community=app.buttons["openHavenLife"]
+        XCTAssertTrue(community.waitForExistence(timeout:3))
+        if !community.isHittable {app.swipeUp()}
+        community.tap()
+        XCTAssertTrue(app.buttons["havenTab_Neighbors"].waitForExistence(timeout:5),"Community journal opens after dismissing the scrollable pause menu")
+    }
+    func testWeeklyActivityRoundsAndPrize() {
+        let app=launch("--ui-haven-calendar")
+        XCTAssertTrue(app.buttons["startHavenActivity"].waitForExistence(timeout:10))
+        app.buttons["startHavenActivity"].tap()
+        for _ in 0..<3 {
+            XCTAssertTrue(app.buttons["activityChoice0"].waitForExistence(timeout:3))
+            app.buttons["activityChoice0"].tap()
+        }
+        XCTAssertFalse(app.buttons["activityChoice0"].exists)
+        XCTAssertFalse(app.buttons["startHavenActivity"].exists)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Activity complete"))
+        capture(app,"Three-round neighborhood market")
+    }
+    func testCorralAdventureAndEmployeeRequest() {
+        let app=launch("--ui-haven-creature")
+        XCTAssertTrue(app.buttons["Adventure & ability"].waitForExistence(timeout:10))
+        app.buttons["Adventure & ability"].tap()
+        XCTAssertTrue(app.buttons["creatureAdventure0"].waitForExistence(timeout:5))
+        app.buttons["creatureAdventure0"].tap()
+        XCTAssertFalse(app.buttons["creatureAdventure0"].isEnabled)
+        capture(app,"Creature quest and unique ability")
+        app.terminate();app.launchArguments=["--ui-haven-team","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["employeeRaise_security"].waitForExistence(timeout:10))
+        app.buttons["employeeRaise_security"].tap()
+        XCTAssertFalse(app.buttons["employeeRaise_security"].exists)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("+2/day"))
+        capture(app,"Employee personality and permanent wage raise")
+    }
+
+    func testBreakfastRushConsumesSuppliesAndRewardsGuests() {
+        let app=launch("--ui-expansion-breakfast")
+        XCTAssertTrue(app.buttons["cookBreakfast"].waitForExistence(timeout:10))
+        app.buttons["cookBreakfast"].tap()
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Three fresh breakfast"))
+        for _ in 0..<2 {app.buttons["serveBreakfast"].tap()}
+        XCTAssertFalse(app.buttons["serveBreakfast"].isEnabled,"Each guest can eat only once")
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format:"label CONTAINS %@", "waiting: 0")).firstMatch.exists)
+        capture(app,"Morning breakfast service completed")
+    }
+    func testRoomDesignAndMilestoneUnlock() {
+        let app=launch("--ui-expansion-design")
+        XCTAssertTrue(app.buttons["design_0_cozy"].waitForExistence(timeout:10))
+        app.buttons["design_0_cozy"].tap()
+        XCTAssertFalse(app.buttons["design_0_cozy"].isEnabled)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("cozy accommodation"))
+        capture(app,"Guest-aware room design")
+        app.terminate();app.launchArguments=["--ui-expansion-journey","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["claimJourney"].waitForExistence(timeout:10))
+        app.buttons["claimJourney"].tap()
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Welcoming motel"))
+        XCTAssertFalse(app.buttons["claimJourney"].isEnabled,"Next milestone has separate requirements")
+        capture(app,"Motel milestone and facility permit")
+    }
+    func testDiscoveryCollectionCannotBeClaimedTwice() {
+        let app=launch("--ui-expansion-journal")
+        let collect=app.buttons["discovery_shell-pearl"]
+        XCTAssertTrue(collect.waitForExistence(timeout:10))
+        XCTAssertTrue(collect.isEnabled)
+        collect.tap()
+        XCTAssertFalse(app.buttons["discovery_shell-pearl"].exists)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Pearl shell"))
+        capture(app,"Collection journal and physical beach discovery")
+        back(app)
+        app.terminate();app.launchArguments=["--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["Walk east"].waitForExistence(timeout:10),"Collected discovery survives loading and controls remain available")
+    }
+
+
+    func testManagementDashboardFiltersAndQuickActions() {
+        // Two system menus may each wait for animation idle on a loaded simulator.
+        // Keep every assertion; allow the existing workflow maximum for this path.
+        executionTimeAllowance=180
+        let app=launch("--ui-management-dashboard")
+        XCTAssertTrue(app.staticTexts["managementOverview"].waitForExistence(timeout:10))
+        let attention=app.buttons["quickAttention"]
+        if !attention.isHittable {app.swipeUp()}
+        XCTAssertTrue(attention.exists)
+        attention.tap()
+        XCTAssertTrue(app.segmentedControls["roomStatusFilter"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["miniClean_1"].exists)
+        XCTAssertFalse(app.buttons["miniClean_0"].exists,"Needs-care filter excludes the healthy occupied room")
+        capture(app,"Management room care filter")
+        app.buttons["managementSections"].tap()
+        app.buttons["manageSection_Supplies"].tap()
+        XCTAssertTrue(app.buttons["buy_toiletries"].waitForExistence(timeout:5))
+        app.buttons["buy_toiletries"].tap()
+        XCTAssertTrue(app.staticTexts["In stock: 16"].exists)
+        app.buttons["managementSections"].tap()
+        app.buttons["manageSection_Today"].tap()
+        XCTAssertTrue(app.staticTexts["managementOverview"].waitForExistence(timeout:5))
+        capture(app,"Actionable hotel dashboard")
+    }
+
+    func testGardenPlantWaterAndHarvestUnlock() {
+        let app=launch("--ui-garden-plant")
+        XCTAssertTrue(app.buttons["plantPlot0"].waitForExistence(timeout:10))
+        app.buttons["plantPlot0"].tap()
+        XCTAssertTrue(app.buttons["waterPlot0"].waitForExistence(timeout:5))
+        app.buttons["waterPlot0"].tap()
+        XCTAssertFalse(app.buttons["waterPlot0"].isEnabled)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("watered"))
+        capture(app,"Planting and watering a real garden plot")
+        app.terminate();app.launchArguments=["--ui-garden-harvest","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["harvestPlot0"].waitForExistence(timeout:10))
+        app.buttons["harvestPlot0"].tap()
+        XCTAssertFalse(app.buttons["harvestPlot0"].exists)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Sunshine salad"))
+        capture(app,"Harvest unlocks the garden salad recipe")
+    }
+    func testGardenCookingAndServingGuest() {
+        let app=launch("--ui-garden-kitchen")
+        XCTAssertTrue(app.buttons["cookRecipe_herbToast"].waitForExistence(timeout:10))
+        app.buttons["cookRecipe_herbToast"].tap()
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("two portions"))
+        let serve=app.buttons["serveRecipe_herbToast"]
+        if !serve.isHittable {app.swipeUp()}
+        XCTAssertTrue(serve.isEnabled)
+        serve.tap()
+        XCTAssertFalse(app.buttons["serveRecipe_herbToast"].isEnabled)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("+18 coins"))
+        capture(app,"Homegrown dish served to a hotel guest")
+    }
+
+
+    func testInspectionsAndRivalry() {
+        let app=launch("--ui-occasion-inspection")
+        let inspect=app.buttons["requestInspection"]
+        XCTAssertTrue(inspect.waitForExistence(timeout:10))
+        if !inspect.isHittable {app.swipeUp()}
+        inspect.tap()
+        XCTAssertFalse(inspect.isEnabled)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("coins"))
+        capture(app,"Motel inspection checks and award")
+        app.terminate();app.launchArguments=["--ui-occasion-rival","--ui-testing"];app.launch()
+        let partner=app.buttons["rivalPartner"]
+        XCTAssertTrue(partner.waitForExistence(timeout:10));if !partner.isHittable {app.swipeUp()};partner.tap()
+        XCTAssertFalse(partner.isEnabled)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("Seabreeze"))
+        capture(app,"Coastal rivalry and cooperation")
+    }
+    func testGuestCelebrationPreparationAndHosting() {
+        let app=launch("--ui-occasion-celebration")
+        let accept=app.buttons["acceptCelebration"]
+        XCTAssertTrue(accept.waitForExistence(timeout:10));if !accept.isHittable {app.swipeUp()};accept.tap()
+        let decorate=app.buttons["celebrationTask0"]
+        XCTAssertTrue(decorate.waitForExistence(timeout:5));if !decorate.isHittable {app.swipeUp()};decorate.tap()
+        XCTAssertFalse(decorate.isEnabled)
+        XCTAssertFalse(app.buttons["hostCelebration"].isEnabled)
+        capture(app,"Guest celebration preparation checklist")
+        app.terminate();app.launchArguments=["--ui-occasion-host","--ui-testing"];app.launch()
+        let host=app.buttons["hostCelebration"]
+        XCTAssertTrue(host.waitForExistence(timeout:10));if !host.isHittable {app.swipeUp()};host.tap()
+        XCTAssertFalse(host.isEnabled)
+        XCTAssertTrue(app.staticTexts["havenFeedback"].label.contains("loved"))
+        capture(app,"Hosted guest celebration and lasting memory")
+        back(app)
+        XCTAssertTrue(app.otherElements["officeScene"].waitForExistence(timeout:5))
+        capture(app,"Celebration table and visiting friends in reception")
+    }
+
+    func testMenuHubFiveSectionsAndRememberedPosition() {
+        let app=launch("--ui-menu-pc")
+        XCTAssertTrue(app.buttons["office_computer"].waitForExistence(timeout:15));app.buttons["office_computer"].tap()
+        XCTAssertTrue(app.staticTexts["managementOverview"].waitForExistence(timeout:5))
+        for title in ["Overview","Guests","Rooms","Staff","Finances"] {XCTAssertTrue(app.buttons["managePrimary_"+title].exists)}
+        app.buttons["managePrimary_Rooms"].tap()
+        let last=app.descendants(matching:.any)["managementRoom_2"].firstMatch
+        for _ in 0..<5 where !last.isHittable {app.swipeUp()}
+        XCTAssertTrue(last.isHittable,app.debugDescription)
+        capture(app,"Remembered room-board position")
+        app.buttons["closeManagement"].tap()
+        app.buttons["office_computer"].tap()
+        XCTAssertTrue(app.segmentedControls["roomStatusFilter"].waitForExistence(timeout:5),"Reopening returns to Rooms")
+        XCTAssertTrue(last.waitForExistence(timeout:5))
+        let restored=XCTNSPredicateExpectation(predicate:NSPredicate(format:"hittable == true"),object:last)
+        XCTAssertEqual(XCTWaiter.wait(for:[restored],timeout:5),.completed,"Reopening keeps the visible room rather than resetting to the top")
+        app.buttons["managePrimary_Finances"].tap()
+        XCTAssertTrue(app.buttons["advanceHour"].waitForExistence(timeout:5))
+        capture(app,"Five clear management destinations")
+    }
+    func testCompactPauseMenuAndContextChooser() {
+        let app=launch("--ui-menu-actions")
+        XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:15))
+        XCTAssertFalse(app.buttons["openCreative"].exists);XCTAssertFalse(app.buttons["openReviews"].exists)
+        XCTAssertFalse(app.buttons["otherNearbyActions"].exists)
+        app.buttons["office_hildarelys"].tap()
+        XCTAssertTrue(app.buttons["Give her a kiss"].waitForExistence(timeout:5));app.buttons["dialogueBack"].tap()
+        openPause(app)
+        for id in ["pauseMap","openReviews","openCreative","pauseOptions"] {XCTAssertTrue(app.buttons[id].exists)}
+        capture(app,"Compact menu and secondary destinations")
+        app.buttons["openReviews"].tap()
+        XCTAssertTrue(app.buttons["closeInteraction"].waitForExistence(timeout:5));app.buttons["closeInteraction"].tap()
+        XCTAssertTrue(app.buttons["worldAction"].exists)
+    }
+    func testMapFiltersEmergencyLocationAndDispatch() {
+        let app=launch("--ui-menu-map")
+        XCTAssertTrue(app.segmentedControls["mapFilter"].waitForExistence(timeout:15))
+        app.segmentedControls["mapFilter"].buttons["Shops"].tap()
+        XCTAssertFalse(app.buttons["mapPin_home"].exists)
+        let shop=app.buttons["mapPlace_shop-furniture"]
+        for _ in 0..<3 where !shop.isHittable {app.swipeUp()}
+        shop.tap()
+        XCTAssertTrue(app.otherElements["mapSelection"].waitForExistence(timeout:5))
+        capture(app,"Filtered map with selected store")
+        app.terminate();app.launchArguments=["--ui-menu-emergency","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["emergencyShowLocation"].waitForExistence(timeout:15))
+        XCTAssertLessThan(app.buttons["incidentAlarm"].frame.height,110,"Collapsed emergency leaves the play area visible")
+        app.buttons["emergencyShowLocation"].tap()
+        XCTAssertTrue(app.otherElements["mapSelection"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["mapPin_incident"].exists)
+        back(app)
+        XCTAssertTrue(app.buttons["emergencyDispatch"].isEnabled);app.buttons["emergencyDispatch"].tap()
+        XCTAssertTrue(app.buttons["incidentAlarm"].exists,"Dispatch does not teleport or instantly resolve the emergency")
+        capture(app,"Actionable emergency location and responder")
+    }
+    func testHiringRequirementsAndQuietFullscreen() {
+        let app=launch("--ui-menu-locked")
+        XCTAssertTrue(app.buttons["hireEmployees"].waitForExistence(timeout:15));app.buttons["hireEmployees"].tap()
+        XCTAssertFalse(app.buttons["hire_cleaner"].isEnabled)
+        XCTAssertTrue(app.descendants(matching:.any).matching(NSPredicate(format:"label CONTAINS %@","Need 50 more coins")).firstMatch.exists)
+        capture(app,"Clear hiring price, benefit, remaining balance and unlock")
+        app.terminate();app.launchArguments=["--ui-family-home","--ui-touch","--ui-testing"];app.launch()
+        XCTAssertTrue(app.buttons["hideFullscreenToolbar"].waitForExistence(timeout:15))
+        let stick=app.descendants(matching:.any)["fullscreenJoystick"].firstMatch
+        let center=stick.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5))
+        center.press(forDuration:0.2,thenDragTo:stick.coordinate(withNormalizedOffset:CGVector(dx:0.75,dy:0.5)))
+        XCTAssertTrue(app.buttons["restoreFullscreenToolbar"].waitForExistence(timeout:5),"Walking collapses the HUD without changing joystick controls")
+        app.buttons["restoreFullscreenToolbar"].tap();XCTAssertTrue(app.buttons["fullscreenPause"].exists)
+        capture(app,"Quiet fullscreen with one-tap toolbar reveal")
+    }
+    func testSeasonalGoodsCatalogueAndPurchase() {
+        let app=launch("--ui-seasonal")
+        XCTAssertTrue(app.buttons["worldAction"].waitForExistence(timeout:15));app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.scrollViews["neighborhoodShop"].waitForExistence(timeout:5))
+        for kind in ["pumpkin","ghostLantern","christmasTree","giftStack"] {
+            let buy=app.buttons["buy_home_"+kind]
+            for _ in 0..<12 where !buy.isHittable {app.swipeUp()}
+            XCTAssertTrue(buy.isHittable,"Seasonal item is reachable: "+kind)
+            if buy.isHittable {buy.tap()}
+        }
+        capture(app,"Year-round Halloween and Christmas goods")
+        back(app);XCTAssertTrue(app.buttons["worldAction"].exists)
+    }
+    func testNeglectedRoomShowsChaosAndSafeMap() {
+        let app=launch("--ui-neglect")
+        XCTAssertTrue(app.buttons["neglectAlarm"].waitForExistence(timeout:15))
+        capture(app,"Neglected room residents in patched clothes")
+        app.buttons["neglectAlarm"].tap()
+        XCTAssertTrue(app.otherElements["mapSelection"].waitForExistence(timeout:5))
+        back(app);XCTAssertTrue(app.buttons["neglectAlarm"].exists)
+    }
+    func testPersonalNeedsBathroomAndSavedCleanState() {
+        let app=launch("--ui-needs-bathroom",homeCompatibility:true)
+        let scene=app.descendants(matching:.any)["homeBedroomScene"].firstMatch
+        XCTAssertTrue(scene.waitForExistence(timeout:15));XCTAssertTrue(app.descendants(matching:.any)["bedroomCompatibilityRenderer"].firstMatch.exists);XCTAssertTrue((scene.value as? String ?? "").contains("dirty true"))
+        app.buttons["worldAction"].tap()
+        waitForCare(.toilet,app)
+        XCTAssertTrue((scene.value as? String ?? "").contains("bathroom 0"))
+        step("south",2,app);step("east",7,app)
+        XCTAssertTrue(app.buttons["bathroom_shower"].exists);app.buttons["bathroom_shower"].tap()
+        waitForCare(.shower,app)
+        XCTAssertTrue((scene.value as? String ?? "").contains("hygiene 100"));XCTAssertTrue((scene.value as? String ?? "").contains("dirty false"))
+        capture(app,"Daily toilet and shower with clean character")
+        app.terminate();app.launchArguments=["--ui-testing"];app.launch()
+        XCTAssertTrue(scene.waitForExistence(timeout:15));XCTAssertTrue((scene.value as? String ?? "").contains("dirty false"));XCTAssertFalse((scene.value as? String ?? "").contains("hygiene 30"))
+    }
+    func testPersonalNeedsFoodAndDirtyNpcReaction() {
+        let app=launch("--ui-needs-food",homeCompatibility:true)
+        let home=app.descendants(matching:.any)["familyHouseScene"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout:15));app.buttons["office_fridge"].tap()
+        waitForCare(.eat,app)
+        XCTAssertTrue((home.value as? String ?? "").contains("Food 80"))
+        step("east",5,app);step("north",3,app)
+        app.buttons["office_hildarelys"].tap()
+        XCTAssertTrue(app.staticTexts["npcHygieneRemark"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["Give her a kiss"].exists,"Hygiene comments preserve family conversation choices")
+        capture(app,"Dirty appearance and NPC shower reminder")
+        app.buttons["dialogueBack"].tap();openPause(app);app.buttons["openPersonalNeeds"].tap()
+        XCTAssertTrue(app.descendants(matching:.any)["needFood"].firstMatch.waitForExistence(timeout:5))
+        XCTAssertTrue(app.descendants(matching:.any)["needBathroom"].firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching:.any)["needHygiene"].firstMatch.exists)
+        back(app)
+    }
+    private enum CareRoutine:String {case eat,toilet,shower}
+    private func waitForCare(_ care:CareRoutine,_ app:XCUIApplication) {
+        let badge=app.descendants(matching:.any)["careAnimation_"+care.rawValue].firstMatch
+        let finished=XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == false"),object:badge)
+        XCTAssertEqual(XCTWaiter.wait(for:[finished],timeout:8),.completed,"Routine must finish and restore controls")
+    }
+    func testRelocatedHomeBathroomDoorAndFridge() {
+        // Record the old tap-count assumption for diagnosis, then exercise actual
+        // doors from the same controlled approach used by the bedroom tests.
+        let probe=launch("--ui-needs-food")
+        let initial=probe.descendants(matching:.any)["familyHouseScene"].firstMatch
+        XCTAssertTrue(initial.waitForExistence(timeout:15))
+        step("east",2,probe);step("north",4,probe)
+        print("Home care tap-count probe: \(initial.value as? String ?? "missing")")
+        probe.terminate()
+        for touch in [false,true] {
+            let app=XCUIApplication()
+            app.launchArguments=["--ui-bedroom-doors","--ui-testing"]+(touch ? ["--ui-touch"] : [])
+            app.launch()
+            let home=app.descendants(matching:.any)["familyHouseScene"].firstMatch
+            XCTAssertTrue(home.waitForExistence(timeout:15))
+            XCTAssertTrue(app.buttons["office_fridge"].exists)
+            XCTAssertFalse(app.buttons["otherNearbyActions"].exists)
+            if touch {
+                app.buttons["hideFullscreenToolbar"].tap()
+                let stick=app.descendants(matching:.any)["fullscreenJoystick"].firstMatch
+                let center=stick.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5))
+                center.press(forDuration:0.05,thenDragTo:stick.coordinate(withNormalizedOffset:CGVector(dx:0.1,dy:0.5)),withVelocity:.slow,thenHoldForDuration:0.2)
+            } else {step("west",1,app)}
+            // The shelf at column 3 blocks any hold-repeat beyond column 4.
+            let approach=XCTNSPredicateExpectation(predicate:NSPredicate(format:"value CONTAINS %@","Column 4, row 3"),object:home)
+            XCTAssertEqual(XCTWaiter.wait(for:[approach],timeout:5),.completed,"Actual approach: \(home.value as? String ?? "missing")")
+            app.buttons["office_bathroomDoor"].coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+            let bath=app.descendants(matching:.any)["homeBedroomScene"].firstMatch
+            XCTAssertTrue(bath.waitForExistence(timeout:5),app.debugDescription)
+            XCTAssertTrue(bath.label.contains("Bathroom"))
+            app.buttons["bedroomExit"].coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+            XCTAssertTrue(home.waitForExistence(timeout:5))
+            XCTAssertTrue((home.value as? String ?? "").contains("Column 4, row 3"),"Return: \(home.value as? String ?? "missing")")
+            capture(app,touch ? "Fullscreen physical bathroom door and safe return" : "Physical bathroom door and kitchen fridge")
+            app.terminate()
+        }
+    }
+    func testEightHotelExperienceSectionsAndPhotoScrapbook() {
+        let expected:[(String,String)]=[("--ui-experience-guests","Returning guests"),("--ui-experience-identity","Choose a hotel specialization"),("--ui-experience-rooms","Matching room collections"),("--ui-experience-team","Employee relationships"),("--ui-experience-district","Neighborhood reputation"),("--ui-experience-creatures","Creature training & contests"),("--ui-experience-events","Seasonal hosting"),("--ui-experience-scrapbook","Family scrapbook")]
+        for (argument,title) in expected {
+            let app=launch(argument)
+            XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout:15),app.debugDescription)
+            XCTAssertTrue(app.staticTexts["Hotel life & memories"].exists)
+            capture(app,title)
+            app.terminate()
+        }
+        let photo=launch("--ui-experience-guests")
+        back(photo);openPause(photo)
+        XCTAssertTrue(photo.buttons["openPhotoMode"].exists);photo.buttons["openPhotoMode"].tap()
+        XCTAssertTrue(photo.buttons["takeHavenPhoto"].waitForExistence(timeout:5));photo.textFields["photoCaption"].tap();photo.textFields["photoCaption"].typeText("Family opening day")
+        photo.buttons["takeHavenPhoto"].tap();XCTAssertTrue(photo.buttons["Close"].waitForExistence(timeout:8));photo.buttons["Close"].tap()
+        openPause(photo);photo.buttons["openHotelExperiences"].tap();XCTAssertTrue(photo.staticTexts["Returning guests"].waitForExistence(timeout:5));photo.buttons["Scrapbook"].tap()
+        XCTAssertTrue(photo.staticTexts["Family opening day"].waitForExistence(timeout:5),photo.debugDescription)
+        capture(photo,"Photo scrapbook with real capture")
+    }
+    private func back(_ app:XCUIApplication) {
+        let menus=app.buttons.matching(identifier:"menuBack")
+        XCTAssertTrue(menus.firstMatch.waitForExistence(timeout:5),app.debugDescription)
+        guard let visible=menus.allElementsBoundByIndex.first(where:{$0.isHittable}) else {XCTFail("No visible Back control: "+app.debugDescription);return}
+        visible.tap()
+    }
+    private func openPause(_ app:XCUIApplication) {
+        if app.buttons["restoreFullscreenToolbar"].exists {app.buttons["restoreFullscreenToolbar"].tap()}
+        let button=app.buttons["Pause game"]
+        XCTAssertTrue(button.waitForExistence(timeout:10),app.debugDescription);button.tap()
+        XCTAssertTrue(app.buttons["pauseOptions"].waitForExistence(timeout:5))
+    }
+    private func openPauseDestination(_ id:String,_ app:XCUIApplication) {
+        openPause(app);app.buttons[id].tap()
+    }
+
+    private func launch(_ fixture: String,homeCompatibility:Bool=false) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = [fixture, "--ui-testing"]
+        app.launchArguments = [fixture, "--ui-testing", "--ui-painted-check"]+(homeCompatibility ? ["--ui-home-compatibility"] : [])
         app.launch()
         return app
     }
@@ -393,3 +1357,4 @@ final class LittleHavenUITests: XCTestCase {
         add(attachment)
     }
 }
+

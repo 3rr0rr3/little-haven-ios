@@ -1,0 +1,62 @@
+name: Publish verified supply corner v61
+on:
+  push:
+    branches: ['codex/publish-supply-corner']
+permissions:
+  contents: write
+  actions: read
+env:
+  VERIFIED_BINARY_SOURCE: d5da144a7aa14716b48f77b3ad719647c70e45bb
+  VERIFIED_UI_SOURCE: 8f86c4d1befd825256dd797fd8915b28e4718112
+jobs:
+  publish:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Audit identical production and Foundation sources
+        run: |
+          python3 scripts/verify_supply_sources.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: Living-world
+          github-token: ${{ github.token }}
+          run-id: 40723514311
+      - name: Reuse native device and optimized startup evidence for identical production code
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          READY=0
+          for ATTEMPT in $(seq 1 30); do
+            STATUS=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/40716806941/jobs" --jq '.jobs[] | select(.name=="home") | .status')
+            RESULT=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/40716806941/jobs" --jq '.jobs[] | select(.name=="home") | .conclusion')
+            if [ "$STATUS" = completed ]; then test "$RESULT" = success; READY=1; break; fi
+            sleep 15
+          done
+          test "$READY" = 1
+          for ARTIFACT in Living-home Living-device; do
+            gh run download 40716806941 --repo "$GITHUB_REPOSITORY" --name "$ARTIFACT" --dir "downloaded/$ARTIFACT"
+            ditto "downloaded/$ARTIFACT" .
+          done
+      - name: Verify all eighteen UI executions and four optimized startup reports
+        run: python3 scripts/verify_supply_corner.py
+      - name: Publish native visual evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/art-ui-diagnostics
+          cp -R art-ui-diagnostics/. /tmp/art-ui-diagnostics/
+          python3 scripts/publish_art_previews.py
+      - name: Publish verified v61 installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish_candidate.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Living-verification
+          path: |
+            candidate-verification.json
+            living-animations-verification.json

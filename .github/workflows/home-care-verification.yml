@@ -1,0 +1,72 @@
+name: Verify home care door and publish unchanged production build
+on:
+  push:
+    branches: ['codex/home-care-check']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BINARY_SOURCE_SHA: 1232dffb4ad1b396e0d45ed1f2ac1e60a8f09bde
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify production equality and retained passing checks
+        run: |
+          set -euo pipefail
+          gh api --allow-escape-sequences "repos/$GITHUB_REPOSITORY/actions/jobs/122243245296/logs" > original-job.log
+          python3 scripts/verify_home_care_recovery.py
+          swiftc -frontend -parse LittleHaven/*.swift LittleHavenUITests/*.swift
+          swiftc LittleHaven/NPCDesign.swift LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/home-care-model-tests
+          /tmp/home-care-model-tests
+      - name: Verify physical bathroom door and return in both controls modes
+        timeout-minutes: 16
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath home-care-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testRelocatedHomeBathroomDoorAndFridge -resultBundlePath HomeCareDoorResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test 2>&1 | tee home-care-ui.log
+      - uses: actions/download-artifact@v4
+        with:
+          name: LittleHaven-iPhone-IPA
+          run-id: 40519529272
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: Simulator-test-results
+          run-id: 40519529272
+          github-token: ${{ github.token }}
+          path: original-simulator-results
+      - uses: actions/download-artifact@v4
+        with:
+          name: Response-previews
+          run-id: 40519529272
+          github-token: ${{ github.token }}
+      - name: Verify complete combined coverage and publish candidate
+        env:
+          RECOVERY_FINISHED: 'true'
+        run: |
+          set -euo pipefail
+          cp original-simulator-results/ReleaseStartup-*-report.json .
+          python3 scripts/verify_home_care_recovery.py
+          python3 scripts/publish_candidate.py
+      - name: Preserve focused evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Home-care-door-verification
+          path: |
+            home-care-ui.log
+            HomeCareDoorResults.xcresult
+            home-care-recovery.json
+            candidate-verification.json
+          if-no-files-found: ignore

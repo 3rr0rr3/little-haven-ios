@@ -1,0 +1,42 @@
+name: Deliver verified IPA download
+on:
+  push:
+    branches: ['codex/pokopia-scenery']
+    paths: ['.github/workflows/deliver-verified-ipa.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and verify tested package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh run download 39620257152 --name LittleHaven-iPhone-IPA --dir package
+          gh run download 39620257152 --name Gameplay-previews --dir previews
+          cd package
+          echo '2062d809627bc6e14eae672bae8a8bd80c55d8a404f51cefc4faa0c46d62abb4  LittleHaven-unsigned.ipa' | sha256sum --check
+      - name: Save tested character app icon into source
+        run: |
+          set -euo pipefail
+          cp previews/LittleHaven-app-icon.png LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+          git config user.name 'Codex'
+          git config user.email 'codex@openai.com'
+          git add LittleHaven/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+          if ! git diff --cached --quiet; then
+            git commit -m 'Save tested character app icon [skip ci]'
+            git push origin HEAD:codex/pokopia-scenery
+          fi
+      - name: Provide direct IPA asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh release create test-20-neighborhood package/LittleHaven-unsigned.ipa package/LittleHaven-unsigned.ipa.sha256 previews/LittleHaven-neighbors.png previews/LittleHaven-chair.png previews/LittleHaven-facilities.png previews/LittleHaven-bar-exterior.png previews/LittleHaven-pool-pump.mp4 --target "$(git rev-parse HEAD)" --title 'Little Haven 20 - Neighborhood and beach loungers' --prerelease --notes 'Version 20.0 (24): remove overhead character names; move the bar into the retail district without changing the beach; add three neighbor houses with walking residents; interactive beach loungers; physical pool pump with repairable sparks, laundry machine, breakfast terrace and guest supply pavilion. All 29 simulator tests passed. SideStore feed unchanged.'

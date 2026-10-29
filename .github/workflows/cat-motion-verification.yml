@@ -1,0 +1,105 @@
+name: Verify cosmetic cat phases and final v59 package
+on:
+  push:
+    branches: ['codex/cat-motion-phase']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Audit exact cosmetic delta
+        run: |
+          python3 scripts/verify_cat_motion_delta.py --audit-only
+      - name: Validate Swift and model rules
+        run: |
+          set -euo pipefail
+          swiftc -frontend -parse LittleHaven/*.swift LittleHavenUITests/*.swift
+          swiftc LittleHaven/NPCDesign.swift LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
+          /tmp/little-haven-tests
+      - name: Render icon
+        run: |
+          set -euo pipefail
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath device-build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Build actual updated iPhone binary
+        run: |
+          set -euo pipefail
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath device-build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package updated iPhone app
+        run: |
+          set -euo pipefail
+          APP=device-build/Build/Products/Release-iphoneos/LittleHaven.app
+          test -x "$APP/LittleHaven"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleSupportedPlatforms:0' "$APP/Info.plist")" = "iPhoneOS"
+          xcrun lipo "$APP/LittleHaven" -verify_arch arm64
+          xcrun vtool -show-build "$APP/LittleHaven" | tee platform.txt
+          grep -Eq 'platform[[:space:]]+IOS$' platform.txt
+          mkdir -p package/Payload
+          ditto "$APP" package/Payload/LittleHaven.app
+          cd package
+          zip -qry ../LittleHaven-unsigned.ipa Payload
+          cd ..
+          unzip -t LittleHaven-unsigned.ipa
+          shasum -a 256 LittleHaven-unsigned.ipa > LittleHaven-unsigned.ipa.sha256
+      - name: Check cat phases family taps and compatible care
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
+          echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testCatMotionPhasesRenderInGallery -only-testing:LittleHavenUITests/LittleHavenUITests/testLivingHavenAnimationGallery -only-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleHomeCareAndSavedContinue -resultBundlePath CatMotionResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test 2>&1 | tee CatMotionResults.xcresult.log
+      - name: Wait for core native verification
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run watch 40631703703 --repo 3rr0rr3/little-haven-ios --interval 15
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Living-*
+          run-id: 40631703703
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: core-evidence
+      - name: Retain verified core results and original world previews
+        run: |
+          cp core-evidence/HomeLifeResults.xcresult.log .
+          cp core-evidence/WorldLifeResults.xcresult.log .
+          cp core-evidence/release-startup.log .
+          cp core-evidence/ReleaseStartup-*-report.json .
+          cp core-evidence/LittleHaven-response-painted-*.png .
+          cp core-evidence/LittleHaven-*-motion.mp4 .
+          python3 scripts/verify_cat_motion_delta.py
+      - name: Capture corrected home and cat motion
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-family-home --ui-testing --ui-home-compatibility --ui-touch
+          sleep 5
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-response-painted-life-family-home.png
+          xcrun simctl io "$SIM_DEVICE" recordVideo --codec=h264 LittleHaven-life-home-cats-corrected-motion.mp4 &
+          VIDEO_PID=$!
+          sleep 10
+          kill -INT "$VIDEO_PID"
+          wait "$VIDEO_PID"
+          xcrun xcresulttool export attachments --path CatMotionResults.xcresult --output-path /tmp/art-ui-diagnostics
+          python3 scripts/publish_art_previews.py
+      - name: Publish verified updated v59 IPA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish_candidate.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Corrected-cat-motion-verification
+          path: |
+            candidate-verification.json
+            living-animations-verification.json
+            CatMotionResults.xcresult.log
+            LittleHaven-unsigned.ipa

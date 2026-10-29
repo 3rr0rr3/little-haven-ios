@@ -1,0 +1,2673 @@
+{
+  "version": 46,
+  "cell": [
+    192,
+    224
+  ],
+  "directions": [
+    "front",
+    "left",
+    "right",
+    "back"
+  ],
+  "frames": [
+    "idle",
+    "leftStep",
+    "rightStep"
+  ],
+  "assets": [
+    {
+      "name": "bh-wizard",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-wizard.imageset/bh-wizard.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "0dea3cbb7a98973967de09c1dfa9517097a53be43b7f25cb75e3da004761ca64",
+      "source_bounds": [
+        [
+          56,
+          34,
+          330,
+          354
+        ],
+        [
+          417,
+          39,
+          694,
+          354
+        ],
+        [
+          791,
+          34,
+          1063,
+          357
+        ],
+        [
+          56,
+          382,
+          342,
+          689
+        ],
+        [
+          413,
+          385,
+          711,
+          689
+        ],
+        [
+          796,
+          384,
+          1079,
+          687
+        ],
+        [
+          41,
+          713,
+          334,
+          1017
+        ],
+        [
+          397,
+          715,
+          699,
+          1017
+        ],
+        [
+          785,
+          716,
+          1073,
+          1016
+        ],
+        [
+          57,
+          1050,
+          330,
+          1371
+        ],
+        [
+          423,
+          1050,
+          692,
+          1376
+        ],
+        [
+          801,
+          1050,
+          1065,
+          1371
+        ]
+      ]
+    },
+    {
+      "name": "bh-fox",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fox.imageset/bh-fox.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "1dadf875b8c830cdc26b089580854fcf0405b9ec9121a82e96b1910573244fb8",
+      "source_bounds": [
+        [
+          89,
+          63,
+          358,
+          345
+        ],
+        [
+          435,
+          63,
+          702,
+          356
+        ],
+        [
+          783,
+          66,
+          1050,
+          356
+        ],
+        [
+          59,
+          400,
+          371,
+          692
+        ],
+        [
+          410,
+          402,
+          721,
+          693
+        ],
+        [
+          764,
+          402,
+          1073,
+          694
+        ],
+        [
+          32,
+          740,
+          354,
+          1037
+        ],
+        [
+          384,
+          745,
+          702,
+          1037
+        ],
+        [
+          739,
+          743,
+          1059,
+          1039
+        ],
+        [
+          80,
+          1075,
+          297,
+          1375
+        ],
+        [
+          432,
+          1075,
+          654,
+          1380
+        ],
+        [
+          789,
+          1077,
+          1006,
+          1380
+        ]
+      ]
+    },
+    {
+      "name": "bh-blue",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-blue.imageset/bh-blue.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "982a8840b671667ec46f9d7d516580cbeb923d006b27f878c828aec031a9d99b",
+      "source_bounds": [
+        [
+          80,
+          54,
+          360,
+          358
+        ],
+        [
+          431,
+          57,
+          709,
+          366
+        ],
+        [
+          776,
+          54,
+          1056,
+          363
+        ],
+        [
+          46,
+          407,
+          362,
+          715
+        ],
+        [
+          400,
+          411,
+          714,
+          715
+        ],
+        [
+          751,
+          410,
+          1063,
+          712
+        ],
+        [
+          47,
+          757,
+          345,
+          1051
+        ],
+        [
+          401,
+          757,
+          708,
+          1049
+        ],
+        [
+          755,
+          757,
+          1057,
+          1051
+        ],
+        [
+          72,
+          1082,
+          303,
+          1397
+        ],
+        [
+          417,
+          1081,
+          653,
+          1402
+        ],
+        [
+          764,
+          1080,
+          1004,
+          1402
+        ]
+      ]
+    },
+    {
+      "name": "bh-shrek",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-shrek.imageset/bh-shrek.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "0134872ae266485479c3f161c9971686477270776d115a61e683663b4e3b4c63",
+      "source_bounds": [
+        [
+          103,
+          83,
+          298,
+          355
+        ],
+        [
+          450,
+          84,
+          645,
+          364
+        ],
+        [
+          797,
+          83,
+          992,
+          365
+        ],
+        [
+          104,
+          396,
+          295,
+          692
+        ],
+        [
+          452,
+          397,
+          647,
+          696
+        ],
+        [
+          803,
+          396,
+          1007,
+          691
+        ],
+        [
+          93,
+          731,
+          291,
+          1026
+        ],
+        [
+          436,
+          730,
+          643,
+          1030
+        ],
+        [
+          796,
+          731,
+          998,
+          1025
+        ],
+        [
+          99,
+          1069,
+          299,
+          1347
+        ],
+        [
+          449,
+          1070,
+          647,
+          1359
+        ],
+        [
+          798,
+          1071,
+          994,
+          1360
+        ]
+      ]
+    },
+    {
+      "name": "bh-shark",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-shark.imageset/bh-shark.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "a19f1c5932049f1bdce4e224b710ddc3d0919f5bdef3b0556514f623cff79731",
+      "source_bounds": [
+        [
+          32,
+          40,
+          331,
+          372
+        ],
+        [
+          395,
+          40,
+          689,
+          375
+        ],
+        [
+          777,
+          40,
+          1065,
+          373
+        ],
+        [
+          49,
+          398,
+          325,
+          719
+        ],
+        [
+          424,
+          401,
+          700,
+          716
+        ],
+        [
+          803,
+          401,
+          1075,
+          720
+        ],
+        [
+          31,
+          738,
+          315,
+          1054
+        ],
+        [
+          402,
+          739,
+          686,
+          1053
+        ],
+        [
+          780,
+          739,
+          1058,
+          1053
+        ],
+        [
+          38,
+          1072,
+          330,
+          1396
+        ],
+        [
+          402,
+          1072,
+          694,
+          1399
+        ],
+        [
+          784,
+          1072,
+          1070,
+          1396
+        ]
+      ]
+    },
+    {
+      "name": "bh-mighty",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-mighty.imageset/bh-mighty.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "b4497ffa7751f6deeffb81bee8ffc0d5b70e2d973821e2c42feeb6bacc1b320d",
+      "source_bounds": [
+        [
+          88,
+          62,
+          367,
+          364
+        ],
+        [
+          427,
+          61,
+          663,
+          376
+        ],
+        [
+          761,
+          62,
+          1000,
+          377
+        ],
+        [
+          107,
+          401,
+          369,
+          718
+        ],
+        [
+          455,
+          399,
+          713,
+          719
+        ],
+        [
+          787,
+          401,
+          1055,
+          718
+        ],
+        [
+          68,
+          725,
+          322,
+          1043
+        ],
+        [
+          405,
+          726,
+          646,
+          1041
+        ],
+        [
+          732,
+          726,
+          996,
+          1044
+        ],
+        [
+          84,
+          1059,
+          338,
+          1373
+        ],
+        [
+          420,
+          1057,
+          676,
+          1387
+        ],
+        [
+          756,
+          1059,
+          1008,
+          1387
+        ]
+      ]
+    },
+    {
+      "name": "bh-fang",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fang.imageset/bh-fang.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "c3b4d8ab6dcf84fd8d560cb041dcc7bb79d69b079afb7afa607955437e568156",
+      "source_bounds": [
+        [
+          78,
+          52,
+          350,
+          357
+        ],
+        [
+          438,
+          52,
+          699,
+          357
+        ],
+        [
+          786,
+          52,
+          1044,
+          358
+        ],
+        [
+          30,
+          414,
+          354,
+          701
+        ],
+        [
+          404,
+          415,
+          715,
+          703
+        ],
+        [
+          757,
+          414,
+          1070,
+          703
+        ],
+        [
+          34,
+          756,
+          348,
+          1039
+        ],
+        [
+          397,
+          756,
+          710,
+          1034
+        ],
+        [
+          758,
+          755,
+          1067,
+          1038
+        ],
+        [
+          81,
+          1071,
+          302,
+          1381
+        ],
+        [
+          443,
+          1071,
+          667,
+          1377
+        ],
+        [
+          795,
+          1071,
+          1013,
+          1379
+        ]
+      ]
+    },
+    {
+      "name": "bh-messi",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-messi.imageset/bh-messi.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "9a587dab58cf9761f4a79ecf9d536a5e9d47abdc16d5cd2fd35e9a319bdab7bb",
+      "source_bounds": [
+        [
+          93,
+          44,
+          331,
+          369
+        ],
+        [
+          438,
+          44,
+          676,
+          374
+        ],
+        [
+          773,
+          45,
+          1008,
+          374
+        ],
+        [
+          76,
+          389,
+          352,
+          705
+        ],
+        [
+          419,
+          389,
+          709,
+          705
+        ],
+        [
+          774,
+          389,
+          1056,
+          705
+        ],
+        [
+          56,
+          718,
+          335,
+          1033
+        ],
+        [
+          396,
+          718,
+          689,
+          1033
+        ],
+        [
+          750,
+          718,
+          1033,
+          1034
+        ],
+        [
+          73,
+          1041,
+          319,
+          1381
+        ],
+        [
+          420,
+          1041,
+          664,
+          1386
+        ],
+        [
+          757,
+          1041,
+          1006,
+          1386
+        ]
+      ]
+    },
+    {
+      "name": "bh-player",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-player.imageset/bh-player.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "6e7fb07ba674bc3ef9a78f3312fbf01afe5d1c2787a258cc7d70fe2f0c378a9e",
+      "source_bounds": [
+        [
+          127,
+          12,
+          350,
+          356
+        ],
+        [
+          437,
+          12,
+          662,
+          362
+        ],
+        [
+          763,
+          14,
+          988,
+          362
+        ],
+        [
+          126,
+          368,
+          355,
+          713
+        ],
+        [
+          441,
+          370,
+          665,
+          717
+        ],
+        [
+          779,
+          370,
+          1002,
+          719
+        ],
+        [
+          113,
+          722,
+          346,
+          1075
+        ],
+        [
+          434,
+          724,
+          667,
+          1075
+        ],
+        [
+          767,
+          725,
+          1001,
+          1078
+        ],
+        [
+          131,
+          1079,
+          350,
+          1407
+        ],
+        [
+          446,
+          1081,
+          663,
+          1422
+        ],
+        [
+          778,
+          1079,
+          1000,
+          1422
+        ]
+      ]
+    },
+    {
+      "name": "bh-player-cloth",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-player-cloth.imageset/bh-player-cloth.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "32e3b54615b7ad02f67576d02cd713d93c2adc5372d33d7b3b55a06bfee60c3e"
+    },
+    {
+      "name": "bh-hildarelys",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-hildarelys.imageset/bh-hildarelys.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "28c01a77426fe11b6b95c47b7b3d049fc799ca4ca1beefc90eb6e5ba70d8195a",
+      "source_bounds": [
+        [
+          50,
+          61,
+          312,
+          433
+        ],
+        [
+          374,
+          61,
+          637,
+          440
+        ],
+        [
+          704,
+          61,
+          966,
+          438
+        ],
+        [
+          57,
+          450,
+          303,
+          807
+        ],
+        [
+          390,
+          451,
+          639,
+          809
+        ],
+        [
+          722,
+          451,
+          970,
+          809
+        ],
+        [
+          43,
+          821,
+          294,
+          1176
+        ],
+        [
+          376,
+          821,
+          628,
+          1176
+        ],
+        [
+          706,
+          821,
+          958,
+          1176
+        ],
+        [
+          50,
+          1186,
+          300,
+          1522
+        ],
+        [
+          376,
+          1185,
+          629,
+          1528
+        ],
+        [
+          708,
+          1185,
+          960,
+          1528
+        ]
+      ]
+    },
+    {
+      "name": "bh-samhil",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-samhil.imageset/bh-samhil.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "f1a094e9f2bce1f9ae42f7948660c7b64779dcf559a3a21ce20e8b37ab68f3d5",
+      "source_bounds": [
+        [
+          99,
+          30,
+          350,
+          372
+        ],
+        [
+          420,
+          30,
+          672,
+          377
+        ],
+        [
+          756,
+          30,
+          1008,
+          378
+        ],
+        [
+          127,
+          392,
+          344,
+          733
+        ],
+        [
+          453,
+          391,
+          671,
+          732
+        ],
+        [
+          787,
+          392,
+          1008,
+          732
+        ],
+        [
+          101,
+          744,
+          321,
+          1085
+        ],
+        [
+          422,
+          744,
+          646,
+          1085
+        ],
+        [
+          764,
+          744,
+          985,
+          1084
+        ],
+        [
+          94,
+          1093,
+          348,
+          1426
+        ],
+        [
+          418,
+          1093,
+          677,
+          1433
+        ],
+        [
+          762,
+          1093,
+          1019,
+          1433
+        ]
+      ]
+    },
+    {
+      "name": "bh-tuki",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tuki.imageset/bh-tuki.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "f5a08e35819e35cb113f38e8502c53b1b8bf82d9343f57fd1e2076c5719c4bdd",
+      "source_bounds": [
+        [
+          46,
+          48,
+          345,
+          340
+        ],
+        [
+          410,
+          49,
+          714,
+          342
+        ],
+        [
+          776,
+          48,
+          1074,
+          343
+        ],
+        [
+          59,
+          382,
+          352,
+          684
+        ],
+        [
+          425,
+          382,
+          717,
+          683
+        ],
+        [
+          784,
+          382,
+          1074,
+          684
+        ],
+        [
+          44,
+          735,
+          344,
+          1031
+        ],
+        [
+          407,
+          736,
+          707,
+          1033
+        ],
+        [
+          775,
+          734,
+          1069,
+          1033
+        ],
+        [
+          42,
+          1074,
+          352,
+          1363
+        ],
+        [
+          409,
+          1072,
+          716,
+          1368
+        ],
+        [
+          773,
+          1073,
+          1077,
+          1368
+        ]
+      ]
+    },
+    {
+      "name": "bh-chichu",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-chichu.imageset/bh-chichu.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "98221cbcf8e5b6afa9561d3ad32902290eefdc88559fe423996cf1cf199c8f43",
+      "source_bounds": [
+        [
+          117,
+          8,
+          355,
+          383
+        ],
+        [
+          459,
+          8,
+          690,
+          392
+        ],
+        [
+          815,
+          8,
+          1046,
+          392
+        ],
+        [
+          50,
+          396,
+          385,
+          721
+        ],
+        [
+          421,
+          395,
+          747,
+          719
+        ],
+        [
+          772,
+          397,
+          1080,
+          719
+        ],
+        [
+          67,
+          728,
+          397,
+          1045
+        ],
+        [
+          437,
+          728,
+          757,
+          1043
+        ],
+        [
+          790,
+          728,
+          1086,
+          1047
+        ],
+        [
+          105,
+          1047,
+          349,
+          1409
+        ],
+        [
+          454,
+          1047,
+          696,
+          1410
+        ],
+        [
+          799,
+          1048,
+          1042,
+          1423
+        ]
+      ]
+    },
+    {
+      "name": "bh-chichi",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-chichi.imageset/bh-chichi.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "8fc352bf9e567ea4bf351abc8b3ad0c19ebe01d4ace7aedb0648fd7ad567c6c3",
+      "source_bounds": [
+        [
+          104,
+          44,
+          385,
+          387
+        ],
+        [
+          447,
+          24,
+          693,
+          393
+        ],
+        [
+          802,
+          54,
+          1029,
+          397
+        ],
+        [
+          40,
+          412,
+          388,
+          724
+        ],
+        [
+          422,
+          414,
+          747,
+          722
+        ],
+        [
+          770,
+          418,
+          1086,
+          722
+        ],
+        [
+          33,
+          751,
+          373,
+          1053
+        ],
+        [
+          411,
+          751,
+          738,
+          1050
+        ],
+        [
+          775,
+          751,
+          1086,
+          1050
+        ],
+        [
+          108,
+          1056,
+          322,
+          1421
+        ],
+        [
+          463,
+          1057,
+          671,
+          1426
+        ],
+        [
+          822,
+          1056,
+          1032,
+          1430
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-a",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-a.imageset/bh-guest-a.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "379377d4c59bfcd8964d72fd678b5149bbfdf0acdbf411351f0b5de996d3e964",
+      "source_bounds": [
+        [
+          74,
+          45,
+          292,
+          405
+        ],
+        [
+          395,
+          43,
+          615,
+          406
+        ],
+        [
+          712,
+          44,
+          931,
+          409
+        ],
+        [
+          66,
+          419,
+          300,
+          779
+        ],
+        [
+          391,
+          419,
+          625,
+          780
+        ],
+        [
+          716,
+          420,
+          948,
+          782
+        ],
+        [
+          64,
+          793,
+          299,
+          1151
+        ],
+        [
+          384,
+          793,
+          623,
+          1148
+        ],
+        [
+          716,
+          793,
+          952,
+          1150
+        ],
+        [
+          69,
+          1165,
+          294,
+          1525
+        ],
+        [
+          383,
+          1165,
+          610,
+          1532
+        ],
+        [
+          715,
+          1165,
+          941,
+          1541
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-a-cloth",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-a-cloth.imageset/bh-guest-a-cloth.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "dc0e7147032f5bea2cba9b30917cb0eed6e3cf78648afa126efdad8718ecdb8a"
+    },
+    {
+      "name": "bh-guest-b",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-b.imageset/bh-guest-b.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "f078abb50792686045b48169292fc9f56be14c97e0165e14a80eb0c34dac3396",
+      "source_bounds": [
+        [
+          70,
+          46,
+          267,
+          389
+        ],
+        [
+          404,
+          46,
+          608,
+          393
+        ],
+        [
+          742,
+          46,
+          945,
+          395
+        ],
+        [
+          56,
+          422,
+          295,
+          759
+        ],
+        [
+          391,
+          423,
+          634,
+          760
+        ],
+        [
+          729,
+          425,
+          973,
+          762
+        ],
+        [
+          32,
+          794,
+          276,
+          1133
+        ],
+        [
+          359,
+          795,
+          609,
+          1134
+        ],
+        [
+          706,
+          795,
+          950,
+          1134
+        ],
+        [
+          74,
+          1158,
+          257,
+          1514
+        ],
+        [
+          382,
+          1159,
+          600,
+          1520
+        ],
+        [
+          729,
+          1158,
+          934,
+          1521
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-b-cloth",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-b-cloth.imageset/bh-guest-b-cloth.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "e4122ebb5e49ee4d3d3d5605633e1c05c739843485b3071985eeb2c963fa50b5"
+    },
+    {
+      "name": "bh-guest-c",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-c.imageset/bh-guest-c.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "eda1db2304cd01e0cbdecb8c5fa4beafffbcee09ad0f67a26d735f6853b0dee2",
+      "source_bounds": [
+        [
+          66,
+          48,
+          271,
+          394
+        ],
+        [
+          402,
+          47,
+          605,
+          401
+        ],
+        [
+          740,
+          46,
+          940,
+          400
+        ],
+        [
+          77,
+          428,
+          277,
+          778
+        ],
+        [
+          403,
+          428,
+          607,
+          780
+        ],
+        [
+          742,
+          428,
+          944,
+          780
+        ],
+        [
+          62,
+          803,
+          271,
+          1159
+        ],
+        [
+          390,
+          802,
+          605,
+          1163
+        ],
+        [
+          731,
+          804,
+          943,
+          1163
+        ],
+        [
+          69,
+          1176,
+          270,
+          1517
+        ],
+        [
+          408,
+          1176,
+          611,
+          1520
+        ],
+        [
+          743,
+          1176,
+          940,
+          1524
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-c-cloth",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-c-cloth.imageset/bh-guest-c-cloth.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "d583a172b0e17ac33f3eb17150a9b5aedf860e9de7734fa917aa43e9c04995b3"
+    },
+    {
+      "name": "bh-guest-d",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-d.imageset/bh-guest-d.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "88bcc88ca8fc13a59cc36715940ad5164c5dda6bd05db8d173ef5556ca034356",
+      "source_bounds": [
+        [
+          64,
+          49,
+          300,
+          401
+        ],
+        [
+          387,
+          49,
+          620,
+          409
+        ],
+        [
+          711,
+          49,
+          945,
+          409
+        ],
+        [
+          79,
+          430,
+          306,
+          790
+        ],
+        [
+          401,
+          428,
+          628,
+          788
+        ],
+        [
+          743,
+          429,
+          969,
+          786
+        ],
+        [
+          55,
+          810,
+          288,
+          1175
+        ],
+        [
+          385,
+          811,
+          620,
+          1173
+        ],
+        [
+          721,
+          812,
+          957,
+          1175
+        ],
+        [
+          63,
+          1187,
+          303,
+          1538
+        ],
+        [
+          396,
+          1187,
+          631,
+          1545
+        ],
+        [
+          724,
+          1187,
+          955,
+          1548
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-d-cloth",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-d-cloth.imageset/bh-guest-d-cloth.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "c48b3e36ac9a72cc283650727065abb159cbbd9287942b6a85d7476e600f784b"
+    },
+    {
+      "name": "bh-guest-a-beach",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-a-beach.imageset/bh-guest-a-beach.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "ec48b9cddc6da2537ee4388565a0fd957a7904f89561321ca52513558e556286",
+      "source_bounds": [
+        [
+          69,
+          35,
+          283,
+          404
+        ],
+        [
+          393,
+          35,
+          608,
+          409
+        ],
+        [
+          720,
+          35,
+          934,
+          409
+        ],
+        [
+          67,
+          420,
+          290,
+          780
+        ],
+        [
+          399,
+          420,
+          620,
+          781
+        ],
+        [
+          728,
+          420,
+          951,
+          782
+        ],
+        [
+          69,
+          789,
+          290,
+          1147
+        ],
+        [
+          392,
+          789,
+          616,
+          1148
+        ],
+        [
+          721,
+          789,
+          945,
+          1149
+        ],
+        [
+          81,
+          1152,
+          288,
+          1518
+        ],
+        [
+          394,
+          1151,
+          604,
+          1527
+        ],
+        [
+          721,
+          1151,
+          930,
+          1530
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-b-beach",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-b-beach.imageset/bh-guest-b-beach.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "f5a744d9a2d794577ba4b4778127aecf33f2eb0f9e680b184d2efaba55daa319",
+      "source_bounds": [
+        [
+          65,
+          39,
+          288,
+          391
+        ],
+        [
+          392,
+          39,
+          616,
+          400
+        ],
+        [
+          719,
+          39,
+          945,
+          400
+        ],
+        [
+          56,
+          418,
+          315,
+          777
+        ],
+        [
+          385,
+          418,
+          647,
+          781
+        ],
+        [
+          716,
+          418,
+          975,
+          781
+        ],
+        [
+          29,
+          788,
+          286,
+          1139
+        ],
+        [
+          354,
+          788,
+          621,
+          1144
+        ],
+        [
+          676,
+          788,
+          946,
+          1143
+        ],
+        [
+          66,
+          1148,
+          276,
+          1518
+        ],
+        [
+          393,
+          1147,
+          606,
+          1523
+        ],
+        [
+          720,
+          1147,
+          940,
+          1523
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-c-beach",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-c-beach.imageset/bh-guest-c-beach.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "0e708cd044b40f087c4168fae4eb2a4466f79e528ef07455c768267c93f21d8b",
+      "source_bounds": [
+        [
+          62,
+          33,
+          278,
+          402
+        ],
+        [
+          386,
+          32,
+          605,
+          409
+        ],
+        [
+          725,
+          32,
+          942,
+          409
+        ],
+        [
+          67,
+          415,
+          278,
+          783
+        ],
+        [
+          392,
+          416,
+          604,
+          783
+        ],
+        [
+          728,
+          417,
+          941,
+          785
+        ],
+        [
+          62,
+          789,
+          273,
+          1151
+        ],
+        [
+          395,
+          788,
+          608,
+          1150
+        ],
+        [
+          728,
+          787,
+          944,
+          1151
+        ],
+        [
+          66,
+          1156,
+          273,
+          1520
+        ],
+        [
+          389,
+          1155,
+          597,
+          1524
+        ],
+        [
+          724,
+          1157,
+          934,
+          1531
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-d-beach",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-d-beach.imageset/bh-guest-d-beach.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "e55c8817eb502898b8cda2b311a81c428b093e29e4272f6ea7f80804cbb5ccd1",
+      "source_bounds": [
+        [
+          55,
+          42,
+          292,
+          403
+        ],
+        [
+          380,
+          42,
+          618,
+          409
+        ],
+        [
+          714,
+          42,
+          949,
+          410
+        ],
+        [
+          71,
+          428,
+          302,
+          782
+        ],
+        [
+          391,
+          429,
+          628,
+          782
+        ],
+        [
+          727,
+          429,
+          962,
+          782
+        ],
+        [
+          47,
+          803,
+          280,
+          1167
+        ],
+        [
+          381,
+          804,
+          612,
+          1167
+        ],
+        [
+          710,
+          804,
+          948,
+          1167
+        ],
+        [
+          55,
+          1174,
+          288,
+          1528
+        ],
+        [
+          383,
+          1173,
+          617,
+          1529
+        ],
+        [
+          724,
+          1174,
+          957,
+          1534
+        ]
+      ]
+    },
+    {
+      "name": "bh-stone-a",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-stone-a.imageset/bh-stone-a.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "73751485a0b5c6423f53525a3d32e90255515262dc9b726c9bf8fffaf95eddc9"
+    },
+    {
+      "name": "bh-stone-b",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-stone-b.imageset/bh-stone-b.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "ea0fdbfa166c618f3bb2d35fcc6cb52813619ffecfab1d4acae149c42202dcf3"
+    },
+    {
+      "name": "bh-stone-c",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-stone-c.imageset/bh-stone-c.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "01727240b5ed6f733ff1b744c51fbfcc522fe6e459db5bd407788e9ce907b6f3"
+    },
+    {
+      "name": "bh-stone-d",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-stone-d.imageset/bh-stone-d.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "9bd51a1c4023b9fe2a188e33baf7433286c31a005e27fb6a4179dc2140eaa29a"
+    },
+    {
+      "name": "bh-grass",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-grass.imageset/bh-grass.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "8acbb5328c3ec37a6e8d1e824276e9f73ff541396ec41522f91efdb3fbae6789"
+    },
+    {
+      "name": "bh-sand",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-sand.imageset/bh-sand.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "ba210938cc607ca84b7d2b2d2418ef210fb188990b340337db2b21db7f457cd5"
+    },
+    {
+      "name": "bh-water",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-water.imageset/bh-water.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "8d93ea62aff2727089155d6f0aa4449337e7249ba26ec379784e3408edc3019d"
+    },
+    {
+      "name": "bh-earth",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-earth.imageset/bh-earth.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "1c12772730067f4357202d654ccd58aeb18ce74f77a0fbc6efab3cf5a1e9b512"
+    },
+    {
+      "name": "bh-oak",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-oak.imageset/bh-oak.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "eaec92fc1883f9ccba15927b4915f30f23ad58881c664a5dbd9fa648b1c3c40d"
+    },
+    {
+      "name": "bh-walnut",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-walnut.imageset/bh-walnut.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "89ed633cb3d260c46bfd8797214f30fc453d39b18fbf471afd3c2622fe88ce60"
+    },
+    {
+      "name": "bh-plaster",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-plaster.imageset/bh-plaster.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "46fb465818a614d2b75152e6be450ddd50e133064da9d2aca644cc26c709953e"
+    },
+    {
+      "name": "bh-roof",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-roof.imageset/bh-roof.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "60135731bb87cfe8d5609fa4bdc7385de530cbbed45471777b8d7eeecc8cc9d2"
+    },
+    {
+      "name": "bh-road",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-road.imageset/bh-road.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "35e85aeac80d9bf06451d6cf8c74849bbed00766d66023aa62a00546776d75cb"
+    },
+    {
+      "name": "bh-moss",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-moss.imageset/bh-moss.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "759373314c39763a106e951a2e1c9c6d321034bce6aeff12d8520b77e7ad87da"
+    },
+    {
+      "name": "bh-straw",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-straw.imageset/bh-straw.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "de4e3174db814db9e693891bfa79d0c548bd0a033f7ce6aa2f2f0d366af6f3ea"
+    },
+    {
+      "name": "bh-timber",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-timber.imageset/bh-timber.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "696d72eba1512a9a195dfec6275d875572efc6c94b5f9c8e2b0a66ddb1f341b8"
+    },
+    {
+      "name": "bh-fence-h",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fence-h.imageset/bh-fence-h.png",
+      "size": [
+        280,
+        197
+      ],
+      "sha256": "3fab5fa312bd06611f0354ec65af516b3652a4b44edd9844893619c90bd51154"
+    },
+    {
+      "name": "bh-fence-v",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fence-v.imageset/bh-fence-v.png",
+      "size": [
+        144,
+        243
+      ],
+      "sha256": "7c273f08922372c6b8b5c8438a4d140164ab7de3dbdfa8c84f98560ce04e95f9"
+    },
+    {
+      "name": "bh-post",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-post.imageset/bh-post.png",
+      "size": [
+        118,
+        219
+      ],
+      "sha256": "334e908a76f70d042a3b008f5781ca1b671d49788d6dc50473c6d278f3871f4f"
+    },
+    {
+      "name": "bh-nameplate",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-nameplate.imageset/bh-nameplate.png",
+      "size": [
+        239,
+        161
+      ],
+      "sha256": "661ca9ee3ef86a3a6aa64e17170cf2c9a89e94569857b9bd4cebba8381bb103e"
+    },
+    {
+      "name": "bh-lantern",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-lantern.imageset/bh-lantern.png",
+      "size": [
+        171,
+        226
+      ],
+      "sha256": "9f203077e04bdf902bb4fd0f474a0feaa2174a50c637efcaa935b2db48d228ef"
+    },
+    {
+      "name": "bh-water-bowl",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-water-bowl.imageset/bh-water-bowl.png",
+      "size": [
+        219,
+        158
+      ],
+      "sha256": "0d33d1c49c1266b75626b776128c9c0b83e618bfa52d60c64fdaa58921abee1f"
+    },
+    {
+      "name": "bh-feed-bowl",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-feed-bowl.imageset/bh-feed-bowl.png",
+      "size": [
+        202,
+        172
+      ],
+      "sha256": "d047e208af007d851eaa2679a0768721ba2976ae98bdc62c39896a57db2d8217"
+    },
+    {
+      "name": "bh-bedding",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-bedding.imageset/bh-bedding.png",
+      "size": [
+        259,
+        187
+      ],
+      "sha256": "cfb61bc47c9d2cca8704ed4b4619968f97bc3fce65c7447b2f05f6e11520be0f"
+    },
+    {
+      "name": "bh-fern",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fern.imageset/bh-fern.png",
+      "size": [
+        259,
+        253
+      ],
+      "sha256": "7061bccf8a50eaace3fc21aa3381a0d3de603a1a281fdd1cc152febc9b8585f0"
+    },
+    {
+      "name": "bh-wildflowers",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-wildflowers.imageset/bh-wildflowers.png",
+      "size": [
+        227,
+        209
+      ],
+      "sha256": "806919b09a5ec3a2dfbd29666fabc21347e8d97e41929e91628470975002312a"
+    },
+    {
+      "name": "bh-tree",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tree.imageset/bh-tree.png",
+      "size": [
+        280,
+        281
+      ],
+      "sha256": "30e50d06f7d123f19b2e907af30a167661bfba781900c581053504924a6cd5ac"
+    },
+    {
+      "name": "bh-palm",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-palm.imageset/bh-palm.png",
+      "size": [
+        250,
+        281
+      ],
+      "sha256": "37eec2cbc7896ede6418eea5ae96cf312484b501c3ced5cd72920fda926fb8fd"
+    },
+    {
+      "name": "bh-stairs",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-stairs.imageset/bh-stairs.png",
+      "size": [
+        261,
+        224
+      ],
+      "sha256": "570cfaab8f3488bcfff1cd641ca822154dceb7965d0337af09651e7078be7e67"
+    },
+    {
+      "name": "bh-banner",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-banner.imageset/bh-banner.png",
+      "size": [
+        171,
+        255
+      ],
+      "sha256": "d63587388eb7131024a2aec4163adac98101b168faaff66e0758707b6b8dd99a"
+    },
+    {
+      "name": "bh-spellbook",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-spellbook.imageset/bh-spellbook.png",
+      "size": [
+        231,
+        213
+      ],
+      "sha256": "8118a4b2e1e32f90c585e660f1edd00df40f7831de9520dc97c55f55119ab9d3"
+    },
+    {
+      "name": "bh-dumbbell",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-dumbbell.imageset/bh-dumbbell.png",
+      "size": [
+        240,
+        161
+      ],
+      "sha256": "f4a2d038dbb70aa600388aee7187c201ef03850092d700ce454e806dd45931b9"
+    },
+    {
+      "name": "bh-tv-frame",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tv-frame.imageset/bh-tv-frame.png",
+      "size": [
+        320,
+        175
+      ],
+      "sha256": "0ae71f15be892dc7f0cf10da8b9da296b5c985965739b3f80cc918358e511622"
+    },
+    {
+      "name": "bh-save-journal",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-save-journal.imageset/bh-save-journal.png",
+      "size": [
+        239,
+        228
+      ],
+      "sha256": "18b65740d0cd5e92788d67c2de9c89492c1e948e160c61e0eb47d1d772ed039a"
+    },
+    {
+      "name": "bh-tool-rack",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tool-rack.imageset/bh-tool-rack.png",
+      "size": [
+        209,
+        253
+      ],
+      "sha256": "d044396fa277258729a625713606cf27da4187be82792ce3a58eaef0a7acf1f0"
+    },
+    {
+      "name": "bh-paint-supplies",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-paint-supplies.imageset/bh-paint-supplies.png",
+      "size": [
+        320,
+        210
+      ],
+      "sha256": "257f5d671c126ae476f74cd75a41fafd19153c3580f82f0ef511f2c66e154baf"
+    },
+    {
+      "name": "bh-coffee-set",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-coffee-set.imageset/bh-coffee-set.png",
+      "size": [
+        320,
+        215
+      ],
+      "sha256": "1ed4327fb31cbe9135b94b43bde7f391ec43943f089f2fa515d990b7b698cdd1"
+    },
+    {
+      "name": "bh-bath-sink",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-bath-sink.imageset/bh-bath-sink.png",
+      "size": [
+        247,
+        252
+      ],
+      "sha256": "01d466d2919a2771bdc8ebbfd3a83e8f161f00c45a3e2b11128bc6bd4ff1c005"
+    },
+    {
+      "name": "bh-toilet",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-toilet.imageset/bh-toilet.png",
+      "size": [
+        187,
+        270
+      ],
+      "sha256": "150b2237b5c4cf06c881a530617c928132cf46df8eac36f8fbeb54cd5ec84218"
+    },
+    {
+      "name": "bh-travel-chest",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-travel-chest.imageset/bh-travel-chest.png",
+      "size": [
+        320,
+        195
+      ],
+      "sha256": "ad0dcb2020c21c2b08fd044ae6526d87ee9c9311b4ae55a6ad18083a77870d1a"
+    },
+    {
+      "name": "bh-trash-bin",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-trash-bin.imageset/bh-trash-bin.png",
+      "size": [
+        173,
+        209
+      ],
+      "sha256": "d92ad5d61c438cf2aca1f870cac24473b0cfe0c0a1b6f7d0e9a2ea104a68a2cf"
+    },
+    {
+      "name": "bh-mop-bucket",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-mop-bucket.imageset/bh-mop-bucket.png",
+      "size": [
+        220,
+        261
+      ],
+      "sha256": "d539c3ae4c99f842f32522f19ed7fa4bfce7551028a2f6201a5497cb80df3f92"
+    },
+    {
+      "name": "bh-suitcase",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-suitcase.imageset/bh-suitcase.png",
+      "size": [
+        276,
+        210
+      ],
+      "sha256": "69d020c5c80157c2721aad46a51128cd4dfdb2d4c93016a6f1aa1d1104b4a426"
+    },
+    {
+      "name": "bh-small-lamp",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-small-lamp.imageset/bh-small-lamp.png",
+      "size": [
+        162,
+        234
+      ],
+      "sha256": "ad2a53a9decb41d643fc9df5d848e6bd9dffef5e1fefa8323619552dcb94c3e2"
+    },
+    {
+      "name": "bh-glazed-window",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-glazed-window.imageset/bh-glazed-window.png",
+      "size": [
+        231,
+        221
+      ],
+      "sha256": "a0fba7355e5053fc01b5db3e887c762391b67099f53116c913e6c819b3c5eee2"
+    },
+    {
+      "name": "bh-breakfast-counter",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-breakfast-counter.imageset/bh-breakfast-counter.png",
+      "size": [
+        320,
+        199
+      ],
+      "sha256": "bc84c9e03836b7956d34dd9d0f7caf95db8413c054c0fc961ee692b3740cab2c"
+    },
+    {
+      "name": "bh-coffee-table",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-coffee-table.imageset/bh-coffee-table.png",
+      "size": [
+        320,
+        187
+      ],
+      "sha256": "3c6327b85485b3800a560e16f3e8699b1468d694d0aee2d90ac7d87a66572c11"
+    },
+    {
+      "name": "bh-tv-console",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tv-console.imageset/bh-tv-console.png",
+      "size": [
+        320,
+        140
+      ],
+      "sha256": "125c3f171ae4fdcf14504027b626e787ec3b943243a18689214a8a03afb95dab"
+    },
+    {
+      "name": "bh-watch",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-watch.imageset/bh-watch.png",
+      "size": [
+        242,
+        320
+      ],
+      "sha256": "b09f28343d6b3341ec0dd0d0bb41a13d8c81c79960e4987971916a6b486e57da"
+    },
+    {
+      "name": "bh-camera",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-camera.imageset/bh-camera.png",
+      "size": [
+        320,
+        238
+      ],
+      "sha256": "e94682c3155a16d407f24371b14c0cb979b866dae82efeddd2b004caea857672"
+    },
+    {
+      "name": "bh-extinguisher",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-extinguisher.imageset/bh-extinguisher.png",
+      "size": [
+        180,
+        320
+      ],
+      "sha256": "af254a876ce29635649eaa4c9a421e284e3b8bb326000f75c52df1fb2d44cd0d"
+    },
+    {
+      "name": "bh-clothes-rack",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-clothes-rack.imageset/bh-clothes-rack.png",
+      "size": [
+        320,
+        317
+      ],
+      "sha256": "9ef6668e0e46af4612272091e790b3dd5037e06c1f20f4b8f467acb4a48b9bc0"
+    },
+    {
+      "name": "bh-fish-display",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fish-display.imageset/bh-fish-display.png",
+      "size": [
+        320,
+        297
+      ],
+      "sha256": "c14102dab40f6a3a0574887dcb77744f5b090e7c2e0c30a78928ae7c58918bc7"
+    },
+    {
+      "name": "bh-folded-clothes",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-folded-clothes.imageset/bh-folded-clothes.png",
+      "size": [
+        320,
+        256
+      ],
+      "sha256": "69805fd8e1d14c53a8218f1803fe6026a6e1845cdfcfe2c4661769d1192502c3"
+    },
+    {
+      "name": "bh-house-warm",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-house-warm.imageset/bh-house-warm.png",
+      "size": [
+        320,
+        280
+      ],
+      "sha256": "e22d5e0d4af0f127ef48cd7c01ee0afc2bd3f341e8f9998c1926845825aa4b66"
+    },
+    {
+      "name": "bh-house-blue",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-house-blue.imageset/bh-house-blue.png",
+      "size": [
+        320,
+        286
+      ],
+      "sha256": "a1ec16683f0aae8e78caaecf5af688c886d46a6b30d53cf2f5b5ba3c570b56b8"
+    },
+    {
+      "name": "bh-house-green",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-house-green.imageset/bh-house-green.png",
+      "size": [
+        320,
+        288
+      ],
+      "sha256": "bcd5f971fc6ec6ea0e93ca918c9c2f0d134d40dffaa46b50e2e8de5901fe1ff8"
+    },
+    {
+      "name": "bh-store-furniture",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-furniture.imageset/bh-store-furniture.png",
+      "size": [
+        320,
+        255
+      ],
+      "sha256": "58bbde8972dd516633ec7d68b7e7023847496e184e573121780b53387895c85c"
+    },
+    {
+      "name": "bh-store-clothing",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-clothing.imageset/bh-store-clothing.png",
+      "size": [
+        320,
+        242
+      ],
+      "sha256": "36e09256c9e10fac0b300eb3b11496df85e4d664834815d55903cbb48b235ad9"
+    },
+    {
+      "name": "bh-store-pawn",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-pawn.imageset/bh-store-pawn.png",
+      "size": [
+        320,
+        251
+      ],
+      "sha256": "04e3420519733878f63ce807ab5aa18186ed65aa219278768f91a7670958a6a8"
+    },
+    {
+      "name": "bh-store-bar",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-bar.imageset/bh-store-bar.png",
+      "size": [
+        320,
+        259
+      ],
+      "sha256": "c149752c69439f011bc68e303980b1534de68e4a16f7276045b44182d8e607ea"
+    },
+    {
+      "name": "bh-store-fish",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-fish.imageset/bh-store-fish.png",
+      "size": [
+        320,
+        246
+      ],
+      "sha256": "007388a37ee0b47b514a2d6d9c0f7f82f95294d43092822143238de73a0c0cbe"
+    },
+    {
+      "name": "bh-office-facade",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-office-facade.imageset/bh-office-facade.png",
+      "size": [
+        320,
+        144
+      ],
+      "sha256": "cb5e432473f585e10b346c423929b168a64d3e4e82f3fd067bc66a6c2b4770b8"
+    },
+    {
+      "name": "bh-motel-facade",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-motel-facade.imageset/bh-motel-facade.png",
+      "size": [
+        320,
+        216
+      ],
+      "sha256": "5c23f2ce7ff564fea15c3cf185d256bfe807908dfa1aae0987161df1fe833a25"
+    },
+    {
+      "name": "bh-laundry-shelter",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-laundry-shelter.imageset/bh-laundry-shelter.png",
+      "size": [
+        320,
+        225
+      ],
+      "sha256": "1271a6090f2a75106f6f4554c4a928add9c5b838b08fe137690adbf9e69acbfd"
+    },
+    {
+      "name": "bh-park-bench",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-park-bench.imageset/bh-park-bench.png",
+      "size": [
+        302,
+        179
+      ],
+      "sha256": "0a1311b5b579bedbf073ecfa7af9b16a4c356036c099e45a9f72d1be55f6344d"
+    },
+    {
+      "name": "bh-sofa-front",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-sofa-front.imageset/bh-sofa-front.png",
+      "size": [
+        294,
+        201
+      ],
+      "sha256": "44e236110bec8e54686e9d8f0bc29b4398eea36d84329b3b3fd3bd5c07f490c1"
+    },
+    {
+      "name": "bh-sofa-back",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-sofa-back.imageset/bh-sofa-back.png",
+      "size": [
+        296,
+        185
+      ],
+      "sha256": "eb1a6f97c96664293e090e2ddbcf6fa6e474fb436d44e8fb0d29073a000f3708"
+    },
+    {
+      "name": "bh-desk",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-desk.imageset/bh-desk.png",
+      "size": [
+        305,
+        188
+      ],
+      "sha256": "defdc310e6a435f79e2404df12d87ef7503bb780298bfb32e4ee7f97ce708340"
+    },
+    {
+      "name": "bh-bed",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-bed.imageset/bh-bed.png",
+      "size": [
+        187,
+        268
+      ],
+      "sha256": "37caa6e48a93121be756c6581ba921599055bb9058e7d32891a87d6e17c4fb1c"
+    },
+    {
+      "name": "bh-nightstand",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-nightstand.imageset/bh-nightstand.png",
+      "size": [
+        206,
+        211
+      ],
+      "sha256": "217177a2420e6310c8cdd8d7996910a1568906dfcd9e09dfc80a70acde5e62d7"
+    },
+    {
+      "name": "bh-vending",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-vending.imageset/bh-vending.png",
+      "size": [
+        203,
+        288
+      ],
+      "sha256": "ada2e4ec46d8635635e2b1bdc4322d7d7f105e18d8e4a9a3ba3060dbfab219df"
+    },
+    {
+      "name": "bh-washer",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-washer.imageset/bh-washer.png",
+      "size": [
+        207,
+        273
+      ],
+      "sha256": "a597e2c441f36aefb61edddb06531489ca9a29d7b608bb54b95456147b1389a7"
+    },
+    {
+      "name": "bh-linen",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-linen.imageset/bh-linen.png",
+      "size": [
+        210,
+        277
+      ],
+      "sha256": "e0171b4c849a28033585420d0b751ef9daeb36f3551c8956de8b4935fe61835b"
+    },
+    {
+      "name": "bh-dining-table",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-dining-table.imageset/bh-dining-table.png",
+      "size": [
+        298,
+        241
+      ],
+      "sha256": "8ff41302ad1b827a9f6c0b599e07de4e138b3ff811612d8d0f12e1fb83ef7ea3"
+    },
+    {
+      "name": "bh-bar-counter",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-bar-counter.imageset/bh-bar-counter.png",
+      "size": [
+        277,
+        255
+      ],
+      "sha256": "86cda11503c1e1e560d88cb13603adc536d8c2ba5086badd804832e52807fabe"
+    },
+    {
+      "name": "bh-bookshelf",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-bookshelf.imageset/bh-bookshelf.png",
+      "size": [
+        266,
+        205
+      ],
+      "sha256": "5c23f4ffb68603e5f4f0d4fc78c6e88f780d7b1518adeb2fca14604c3a46fcba"
+    },
+    {
+      "name": "bh-workbench",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-workbench.imageset/bh-workbench.png",
+      "size": [
+        288,
+        224
+      ],
+      "sha256": "a70dc01d6ee1311507f912f0f9ff7abb2482fc639844f158a46723405c720633"
+    },
+    {
+      "name": "bh-stove",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-stove.imageset/bh-stove.png",
+      "size": [
+        222,
+        255
+      ],
+      "sha256": "5304d6cd212d073fff2a6d565919f0052f322f9627181907575f88780932b9b9"
+    },
+    {
+      "name": "bh-rug",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-rug.imageset/bh-rug.png",
+      "size": [
+        320,
+        187
+      ],
+      "sha256": "ccbd4c1046ed337e3d027dc2b4a22ddca698b7de62141200aaec868a4bbbed24"
+    },
+    {
+      "name": "bh-lounger",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-lounger.imageset/bh-lounger.png",
+      "size": [
+        281,
+        265
+      ],
+      "sha256": "42790113915ed9b5512fd8e7e54d46cc0928de6ae05e9260974b3f8e512c8d66"
+    },
+    {
+      "name": "bh-door",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-door.imageset/bh-door.png",
+      "size": [
+        207,
+        279
+      ],
+      "sha256": "8f6934eb145132907b494b787633c7b48ed27c0761420085b414f275312847f4"
+    }
+  ],
+  "sources": [
+    {
+      "name": "materials",
+      "kind": "materials",
+      "file": "materials.png",
+      "prompt": "Image 1 is the old production sheet, preserve its exact grid, every object's identity, order and orientation. Image 2 is the USER-APPROVED Brainstorm Haven office reference and is the art/design authority. Rebuild image 1 in image 2's flat 2D cut-paper cartoon game look: bold clean charcoal/brown outlines, simple deliberate shapes, mostly solid muted sage, green, tan, brown, teal and warm cream colors, one or two flat shadow planes only. No anime painting, watercolor, detailed grain, photorealism, shiny 3D bevels or noisy micro-detail. Wherever an object appears in image 2 copy its exact shape, palette and simple detailing. Match the old round-eyed paper cartoon characters' visual world. This is an actual reusable game sprite sheet, NOT a screenshot, room scene, concept board or generic UI icon set. No people, captions, labels, logos, grid lines or watermark. EXACT 4 columns by 4 rows of edge-to-edge seamless repeatable top-down terrain tiles. Row1 four natural warm-gray/tan stone path slab variations with dark simple seam lines. Row2 solid green grass with a few tiny flat grass tufts, cream sand with sparse simple marks, turquoise water with clean flat wave shapes, brown corral earth. Row3 golden tan wide horizontal floorboards EXACTLY matching approved office floor with fine dark seams but no wood grain, darker walnut floorboards same simple language, solid sage/cream plaster, simple terracotta roof shingles. Row4 flat gray road with a few sparse marks, simple mossy cobbles, flat golden straw, simple brown timber planks. Every individual cell fills its edges, no margins or padding, no separating grid. Opposite edges of EACH cell must tile seamlessly. Uniform flat illumination, no cast light or shadows spanning an entire cell. Restrained simple broad shapes. Output opaque complete sheet.",
+      "alpha_extraction_prompt": null
+    },
+    {
+      "name": "props",
+      "kind": "props",
+      "file": "props.png",
+      "prompt": "Image 1 is the old production sheet, preserve its exact grid, every object's identity, order and orientation. Image 2 is the USER-APPROVED Brainstorm Haven office reference and is the art/design authority. Rebuild image 1 in image 2's flat 2D cut-paper cartoon game look: bold clean charcoal/brown outlines, simple deliberate shapes, mostly solid muted sage, green, tan, brown, teal and warm cream colors, one or two flat shadow planes only. No anime painting, watercolor, detailed grain, photorealism, shiny 3D bevels or noisy micro-detail. Wherever an object appears in image 2 copy its exact shape, palette and simple detailing. Match the old round-eyed paper cartoon characters' visual world. This is an actual reusable game sprite sheet, NOT a screenshot, room scene, concept board or generic UI icon set. No people, captions, labels, logos, grid lines or watermark. EXACT 4x4 grid of sixteen isolated props. Row1 horizontal two-rail wooden fence; vertical fence segment; short fence post; blank brown/cream nameplate. Row2 simple hanging warm-yellow lantern; water bowl; feed bowl; pet bedding. Row3 potted plant like approved office plant; wildflower clump; leafy tree with simple layered rounded green clumps; palm with bold flat green leaves. Row4 wooden stairs; red hanging banner with simple leaf symbol; spellbook; dumbbell. Same elevated top-down game camera. Each object wholly inside its cell with at least 18% transparent margin on every side, generous clear gutters, no overlap, no floor or background. Genuine alpha transparency outside all sixteen separate silhouettes. Lantern light is a flat yellow pane not a large glowing halo.",
+      "alpha_extraction_prompt": null
+    },
+    {
+      "name": "fixtures",
+      "kind": "fixtures",
+      "file": "fixtures.png",
+      "prompt": "Image 1 is the old production sheet, preserve its exact grid, every object's identity, order and orientation. Image 2 is the USER-APPROVED Brainstorm Haven office reference and is the art/design authority. Rebuild image 1 in image 2's flat 2D cut-paper cartoon game look: bold clean charcoal/brown outlines, simple deliberate shapes, mostly solid muted sage, green, tan, brown, teal and warm cream colors, one or two flat shadow planes only. No anime painting, watercolor, detailed grain, photorealism, shiny 3D bevels or noisy micro-detail. Wherever an object appears in image 2 copy its exact shape, palette and simple detailing. Match the old round-eyed paper cartoon characters' visual world. This is an actual reusable game sprite sheet, NOT a screenshot, room scene, concept board or generic UI icon set. No people, captions, labels, logos, grid lines or watermark. EXACT 4x4 grid of sixteen separate matching cartoon fixtures. Row1 TV frame with blank dark screen; open save-journal; cleaning TOOL RACK matching approved picture; PAINT SUPPLIES RACK matching approved picture. Row2 COFFEE SET on brown table matching approved picture; bathroom sink; toilet; travel chest. Row3 trash bin; mop bucket with mop; suitcase; small lamp. Row4 rectangular glazed window; breakfast serving counter with food and plates; small brown COFFEE TABLE with cup, little plant and open magazine matching approved picture; low brown TV console. At least 18% fully transparent margin around every object within its cell, clear wide gutters. No floor, no shadows connecting objects, genuine alpha outside silhouettes. Same original orientations and elevated top-down camera. No decorative floral textures unless present in approved picture.",
+      "alpha_extraction_prompt": null
+    },
+    {
+      "name": "equipment",
+      "kind": "equipment",
+      "file": "equipment.png",
+      "prompt": "Image 1 is the old production sheet, preserve its exact grid, every object's identity, order and orientation. Image 2 is the USER-APPROVED Brainstorm Haven office reference and is the art/design authority. Rebuild image 1 in image 2's flat 2D cut-paper cartoon game look: bold clean charcoal/brown outlines, simple deliberate shapes, mostly solid muted sage, green, tan, brown, teal and warm cream colors, one or two flat shadow planes only. No anime painting, watercolor, detailed grain, photorealism, shiny 3D bevels or noisy micro-detail. Wherever an object appears in image 2 copy its exact shape, palette and simple detailing. Match the old round-eyed paper cartoon characters' visual world. This is an actual reusable game sprite sheet, NOT a screenshot, room scene, concept board or generic UI icon set. No people, captions, labels, logos, grid lines or watermark. EXACT three columns and two rows, six isolated items. Row1 simple gold wristwatch with brown strap and plain round dial; simple retro camera; red fire extinguisher with black hose. Row2 wooden clothes rack with several solid colored shirts; glass-front fish counter with two fish on ice; low brown folded-clothing display table. Keep each object centered in original cell, no overlap, at least 18% genuine fully transparent margin on every side. No background gradient or colored haze: true alpha around all six objects. Chunky readable flat cartoon details, no intricate realistic metal/glass reflections. Camera angle and equipment proportions unchanged.",
+      "alpha_extraction_prompt": "BACKGROUND EXTRACTION ONLY. Preserve all 6 illustrated objects and their exact positions, sizes, colors and outlines in this 3-column 2-row production game sheet. Remove ALL of the opaque blurred colored gradient background between and around the objects. Replace it with GENUINE FULLY TRANSPARENT ALPHA. Do not draw a checkerboard. No black or white matte. Do not restyle, move, add, remove or crop any actual object. Carefully preserve each object's solid interiors, small gaps and separate silhouette. The result must contain exactly 6 isolated objects on truly transparent background, no floor, no ground shadows or colored halo. Entire sheet dimensions and grid remain unchanged."
+    },
+    {
+      "name": "facades",
+      "kind": "facades",
+      "file": "facades.png",
+      "prompt": "Image 1 is the old production sheet, preserve its exact grid, every object's identity, order and orientation. Image 2 is the USER-APPROVED Brainstorm Haven office reference and is the art/design authority. Rebuild image 1 in image 2's flat 2D cut-paper cartoon game look: bold clean charcoal/brown outlines, simple deliberate shapes, mostly solid muted sage, green, tan, brown, teal and warm cream colors, one or two flat shadow planes only. No anime painting, watercolor, detailed grain, photorealism, shiny 3D bevels or noisy micro-detail. Wherever an object appears in image 2 copy its exact shape, palette and simple detailing. Match the old round-eyed paper cartoon characters' visual world. This is an actual reusable game sprite sheet, NOT a screenshot, room scene, concept board or generic UI icon set. No people, captions, labels, logos, grid lines or watermark. EXACT four columns and three rows, twelve separate front-facing slightly elevated top-down cartoon game buildings. Row1 warm red-roof house; blue-roof house; green-roof house; furniture shop with green awning and large shop windows. Row2 clothing boutique with pink awning and visible clothing displays; dark-blue pawn shop with window objects; warm-red bar with simple mug emblem; teal fish restaurant with fish emblem. Row3 low commercial motel reception OFFICE with flat green roof and broad glass windows showing a desk; single-story motel-room facade with door and window; open-sided laundry shelter; green park bench. Match approved office style on every building: bold simple outlines, flat muted colors and one dark side plane, no brick/woodgrain microtextures, no warm painted atmospheric backgrounds. Houses remain distinct from storefronts; storefronts have wide windows, awnings, blank signboards. Preserve every entrance horizontal placement from image1 for gameplay anchor slicing. Each silhouette must remain inside original cell with 15% fully transparent margins on all sides and clear gutters. No ground, no scene, no cast shadows outside silhouette, no text. Genuine transparent alpha between and around all twelve separate objects.",
+      "alpha_extraction_prompt": "BACKGROUND EXTRACTION ONLY. Preserve all 12 illustrated objects and their exact positions, sizes, colors and outlines in this 4-column 3-row production game sheet. Remove ALL of the opaque blurred colored gradient background between and around the objects. Replace it with GENUINE FULLY TRANSPARENT ALPHA. Do not draw a checkerboard. No black or white matte. Do not restyle, move, add, remove or crop any actual object. Carefully preserve each object's solid interiors, small gaps and separate silhouette. The result must contain exactly 12 isolated objects on truly transparent background, no floor, no ground shadows or colored halo. Entire sheet dimensions and grid remain unchanged."
+    },
+    {
+      "name": "furniture",
+      "kind": "furniture",
+      "file": "furniture.png",
+      "prompt": "Edit existing exact 4x4 furniture atlas against approved-office-reference.png: copy matching reception desk, couch, bed, vending machine, bookshelf and red rug designs; restyle all sixteen objects into consistent flat cut-paper cartoon shapes and bold outlines, keeping original grid/order/orientations and transparent separation."
+    }
+  ],
+  "legacy_actor_assets_not_rendered": true
+}

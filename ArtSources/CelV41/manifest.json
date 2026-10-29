@@ -1,0 +1,2808 @@
+{
+  "version": 41,
+  "cell": [
+    192,
+    224
+  ],
+  "directions": [
+    "front",
+    "left",
+    "right",
+    "back"
+  ],
+  "frames": [
+    "idle",
+    "leftStep",
+    "rightStep"
+  ],
+  "assets": [
+    {
+      "name": "bh-stone-a",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-stone-a.imageset/bh-stone-a.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "899429efc526d3a6d64e390ef0ef285458ee6cbcb4067c1a5336618af30800da"
+    },
+    {
+      "name": "bh-stone-b",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-stone-b.imageset/bh-stone-b.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "268df7b735f720e614824e286a063c4eb0ca0ca97f27524927def22518e67e7a"
+    },
+    {
+      "name": "bh-stone-c",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-stone-c.imageset/bh-stone-c.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "4ffb50214b31f248907e470eb619b33759c103f779db66e8a5335de08396d601"
+    },
+    {
+      "name": "bh-stone-d",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-stone-d.imageset/bh-stone-d.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "18f18a81eb58047aa8eef2bb5d8cba3ec27f0226260188882c153cd06d873cb2"
+    },
+    {
+      "name": "bh-grass",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-grass.imageset/bh-grass.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "3b79cfc16601ed8d070295f4eb854b254f1f5300f5863777886f3d6d52afc45d"
+    },
+    {
+      "name": "bh-sand",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-sand.imageset/bh-sand.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "2252e48afe5c10ca622be9a66e319bffa78cbbd291cefaba4dc743eb84cda745"
+    },
+    {
+      "name": "bh-water",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-water.imageset/bh-water.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "07a22db2288caa020316b870f623c2750c845257e48f6000391293103dc930d9"
+    },
+    {
+      "name": "bh-earth",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-earth.imageset/bh-earth.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "538fb7a1c05ec0add2fd67784cee4ed05047d4fe9c6fc622f653cd7604d81846"
+    },
+    {
+      "name": "bh-oak",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-oak.imageset/bh-oak.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "53f2b5c7eeac9959337bafef29172860ca8bedba3716de00b6e3faa1e74256f5"
+    },
+    {
+      "name": "bh-walnut",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-walnut.imageset/bh-walnut.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "6b88837e0d330a60d165cf5022968de35f49c8565556ca51ae523f47868c843d"
+    },
+    {
+      "name": "bh-plaster",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-plaster.imageset/bh-plaster.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "44b30c588e2007419ec31dc0795a01a7e3a77f5c35eb8ea86b457a99d589667e"
+    },
+    {
+      "name": "bh-roof",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-roof.imageset/bh-roof.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "6f1bbc34337a48076a8a4ffd0388ccd7b570c7c7c3d58e42127ad326a7518cc6"
+    },
+    {
+      "name": "bh-road",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-road.imageset/bh-road.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "2a55f0c59141d12d5177d39f2a035255542035307989a6248ddd9ff2cb9a7846"
+    },
+    {
+      "name": "bh-moss",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-moss.imageset/bh-moss.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "348c8bc614ff438ba3e347c77b93e207e4deb4246482c27d0aa6374e3ce75d9c"
+    },
+    {
+      "name": "bh-straw",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-straw.imageset/bh-straw.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "de8146978f77de8b8ee31c1a87dae8717d91cc3c431c4aeb06a5e35afa97c09a"
+    },
+    {
+      "name": "bh-timber",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-timber.imageset/bh-timber.png",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "6272b2d47842dd2e1c8b2f4f0e8becdf3c03cd1f183b4ad331922896258daf33"
+    },
+    {
+      "name": "bh-fence-h",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fence-h.imageset/bh-fence-h.png",
+      "size": [
+        246,
+        176
+      ],
+      "sha256": "e2c7a869f225a250561e479ee2a015ad66357b4e3d2bf8c31e6b07267902cea6"
+    },
+    {
+      "name": "bh-fence-v",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fence-v.imageset/bh-fence-v.png",
+      "size": [
+        130,
+        223
+      ],
+      "sha256": "bcbd7f1d24d48d72b1729f3a0be4fe2d25b6268a70aa4475656d5da3cb7ad4d5"
+    },
+    {
+      "name": "bh-post",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-post.imageset/bh-post.png",
+      "size": [
+        103,
+        206
+      ],
+      "sha256": "af9d5ef407e7463065f04767793ac70859129ba9076e86f334afe450ff094396"
+    },
+    {
+      "name": "bh-nameplate",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-nameplate.imageset/bh-nameplate.png",
+      "size": [
+        222,
+        145
+      ],
+      "sha256": "2f15727b4a211c9c5c8b14dae1fb13a6d8e0e551be2a4dbc5ce7356ee17ccae9"
+    },
+    {
+      "name": "bh-lantern",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-lantern.imageset/bh-lantern.png",
+      "size": [
+        154,
+        216
+      ],
+      "sha256": "419250489b170b36efd7757b312d7175ad58424942657cc144ffe5e47e8d84f3"
+    },
+    {
+      "name": "bh-water-bowl",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-water-bowl.imageset/bh-water-bowl.png",
+      "size": [
+        199,
+        143
+      ],
+      "sha256": "36db71f2f15e9d0ae0ec79eedde28931e57fa97c4470af6ab876f4fa69a0665e"
+    },
+    {
+      "name": "bh-feed-bowl",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-feed-bowl.imageset/bh-feed-bowl.png",
+      "size": [
+        180,
+        148
+      ],
+      "sha256": "bd9808daf1c7cde3302f2a55f609f1fb6a6ac48ea514e106feef3bf4ddc1a6a7"
+    },
+    {
+      "name": "bh-bedding",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-bedding.imageset/bh-bedding.png",
+      "size": [
+        220,
+        171
+      ],
+      "sha256": "63a701fe7dc97c906ef2e744b8496dc3e16c8fced3844906506e8bfe4c588bd1"
+    },
+    {
+      "name": "bh-fern",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fern.imageset/bh-fern.png",
+      "size": [
+        223,
+        212
+      ],
+      "sha256": "a074a3b459cd43474dd7efa8c116b718ce7365b39681d4b2afc20d1e4b272931"
+    },
+    {
+      "name": "bh-wildflowers",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-wildflowers.imageset/bh-wildflowers.png",
+      "size": [
+        205,
+        177
+      ],
+      "sha256": "4042fe7fbb4f985639331a6bd59594ab9793b4cd73226dcaf6aac719d7b89b7f"
+    },
+    {
+      "name": "bh-tree",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tree.imageset/bh-tree.png",
+      "size": [
+        224,
+        239
+      ],
+      "sha256": "49394983c25dc1bc357bfa9432d7bc0fa78729efc2b02914f444b0504880147f"
+    },
+    {
+      "name": "bh-palm",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-palm.imageset/bh-palm.png",
+      "size": [
+        213,
+        241
+      ],
+      "sha256": "efb47152fab3582ab5aad33e4894f2f0b6e00347cc2ab7ff6b8d53f35d8b4b0a"
+    },
+    {
+      "name": "bh-stairs",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-stairs.imageset/bh-stairs.png",
+      "size": [
+        221,
+        201
+      ],
+      "sha256": "2acc25fcc330db3ab0ab4f17f074b58fc737d3c5680b5405a734bbecb3caad8a"
+    },
+    {
+      "name": "bh-banner",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-banner.imageset/bh-banner.png",
+      "size": [
+        151,
+        228
+      ],
+      "sha256": "ed174055716367a2a8b18f5d3f2c3e166e5c5ba08063cee658b12038cc0db46e"
+    },
+    {
+      "name": "bh-spellbook",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-spellbook.imageset/bh-spellbook.png",
+      "size": [
+        207,
+        191
+      ],
+      "sha256": "1dd30097d6ad4cac7cf07e220c54f5bd934204d739ad7b48ee28b8eae7f5e056"
+    },
+    {
+      "name": "bh-dumbbell",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-dumbbell.imageset/bh-dumbbell.png",
+      "size": [
+        210,
+        142
+      ],
+      "sha256": "2d1d650ff1c24bcfdd0a798fec1bcb6898c6817dd4e2eb00fd7d26b8cef61b7f"
+    },
+    {
+      "name": "bh-wizard",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-wizard.imageset/bh-wizard.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "0dea3cbb7a98973967de09c1dfa9517097a53be43b7f25cb75e3da004761ca64",
+      "source_bounds": [
+        [
+          56,
+          34,
+          330,
+          354
+        ],
+        [
+          417,
+          39,
+          694,
+          354
+        ],
+        [
+          791,
+          34,
+          1063,
+          357
+        ],
+        [
+          56,
+          382,
+          342,
+          689
+        ],
+        [
+          413,
+          385,
+          711,
+          689
+        ],
+        [
+          796,
+          384,
+          1079,
+          687
+        ],
+        [
+          41,
+          713,
+          334,
+          1017
+        ],
+        [
+          397,
+          715,
+          699,
+          1017
+        ],
+        [
+          785,
+          716,
+          1073,
+          1016
+        ],
+        [
+          57,
+          1050,
+          330,
+          1371
+        ],
+        [
+          423,
+          1050,
+          692,
+          1376
+        ],
+        [
+          801,
+          1050,
+          1065,
+          1371
+        ]
+      ]
+    },
+    {
+      "name": "bh-fox",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fox.imageset/bh-fox.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "1dadf875b8c830cdc26b089580854fcf0405b9ec9121a82e96b1910573244fb8",
+      "source_bounds": [
+        [
+          89,
+          63,
+          358,
+          345
+        ],
+        [
+          435,
+          63,
+          702,
+          356
+        ],
+        [
+          783,
+          66,
+          1050,
+          356
+        ],
+        [
+          59,
+          400,
+          371,
+          692
+        ],
+        [
+          410,
+          402,
+          721,
+          693
+        ],
+        [
+          764,
+          402,
+          1073,
+          694
+        ],
+        [
+          32,
+          740,
+          354,
+          1037
+        ],
+        [
+          384,
+          745,
+          702,
+          1037
+        ],
+        [
+          739,
+          743,
+          1059,
+          1039
+        ],
+        [
+          80,
+          1075,
+          297,
+          1375
+        ],
+        [
+          432,
+          1075,
+          654,
+          1380
+        ],
+        [
+          789,
+          1077,
+          1006,
+          1380
+        ]
+      ]
+    },
+    {
+      "name": "bh-blue",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-blue.imageset/bh-blue.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "982a8840b671667ec46f9d7d516580cbeb923d006b27f878c828aec031a9d99b",
+      "source_bounds": [
+        [
+          80,
+          54,
+          360,
+          358
+        ],
+        [
+          431,
+          57,
+          709,
+          366
+        ],
+        [
+          776,
+          54,
+          1056,
+          363
+        ],
+        [
+          46,
+          407,
+          362,
+          715
+        ],
+        [
+          400,
+          411,
+          714,
+          715
+        ],
+        [
+          751,
+          410,
+          1063,
+          712
+        ],
+        [
+          47,
+          757,
+          345,
+          1051
+        ],
+        [
+          401,
+          757,
+          708,
+          1049
+        ],
+        [
+          755,
+          757,
+          1057,
+          1051
+        ],
+        [
+          72,
+          1082,
+          303,
+          1397
+        ],
+        [
+          417,
+          1081,
+          653,
+          1402
+        ],
+        [
+          764,
+          1080,
+          1004,
+          1402
+        ]
+      ]
+    },
+    {
+      "name": "bh-shrek",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-shrek.imageset/bh-shrek.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "0134872ae266485479c3f161c9971686477270776d115a61e683663b4e3b4c63",
+      "source_bounds": [
+        [
+          103,
+          83,
+          298,
+          355
+        ],
+        [
+          450,
+          84,
+          645,
+          364
+        ],
+        [
+          797,
+          83,
+          992,
+          365
+        ],
+        [
+          104,
+          396,
+          295,
+          692
+        ],
+        [
+          452,
+          397,
+          647,
+          696
+        ],
+        [
+          803,
+          396,
+          1007,
+          691
+        ],
+        [
+          93,
+          731,
+          291,
+          1026
+        ],
+        [
+          436,
+          730,
+          643,
+          1030
+        ],
+        [
+          796,
+          731,
+          998,
+          1025
+        ],
+        [
+          99,
+          1069,
+          299,
+          1347
+        ],
+        [
+          449,
+          1070,
+          647,
+          1359
+        ],
+        [
+          798,
+          1071,
+          994,
+          1360
+        ]
+      ]
+    },
+    {
+      "name": "bh-shark",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-shark.imageset/bh-shark.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "a19f1c5932049f1bdce4e224b710ddc3d0919f5bdef3b0556514f623cff79731",
+      "source_bounds": [
+        [
+          32,
+          40,
+          331,
+          372
+        ],
+        [
+          395,
+          40,
+          689,
+          375
+        ],
+        [
+          777,
+          40,
+          1065,
+          373
+        ],
+        [
+          49,
+          398,
+          325,
+          719
+        ],
+        [
+          424,
+          401,
+          700,
+          716
+        ],
+        [
+          803,
+          401,
+          1075,
+          720
+        ],
+        [
+          31,
+          738,
+          315,
+          1054
+        ],
+        [
+          402,
+          739,
+          686,
+          1053
+        ],
+        [
+          780,
+          739,
+          1058,
+          1053
+        ],
+        [
+          38,
+          1072,
+          330,
+          1396
+        ],
+        [
+          402,
+          1072,
+          694,
+          1399
+        ],
+        [
+          784,
+          1072,
+          1070,
+          1396
+        ]
+      ]
+    },
+    {
+      "name": "bh-mighty",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-mighty.imageset/bh-mighty.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "b4497ffa7751f6deeffb81bee8ffc0d5b70e2d973821e2c42feeb6bacc1b320d",
+      "source_bounds": [
+        [
+          88,
+          62,
+          367,
+          364
+        ],
+        [
+          427,
+          61,
+          663,
+          376
+        ],
+        [
+          761,
+          62,
+          1000,
+          377
+        ],
+        [
+          107,
+          401,
+          369,
+          718
+        ],
+        [
+          455,
+          399,
+          713,
+          719
+        ],
+        [
+          787,
+          401,
+          1055,
+          718
+        ],
+        [
+          68,
+          725,
+          322,
+          1043
+        ],
+        [
+          405,
+          726,
+          646,
+          1041
+        ],
+        [
+          732,
+          726,
+          996,
+          1044
+        ],
+        [
+          84,
+          1059,
+          338,
+          1373
+        ],
+        [
+          420,
+          1057,
+          676,
+          1387
+        ],
+        [
+          756,
+          1059,
+          1008,
+          1387
+        ]
+      ]
+    },
+    {
+      "name": "bh-fang",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fang.imageset/bh-fang.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "c3b4d8ab6dcf84fd8d560cb041dcc7bb79d69b079afb7afa607955437e568156",
+      "source_bounds": [
+        [
+          78,
+          52,
+          350,
+          357
+        ],
+        [
+          438,
+          52,
+          699,
+          357
+        ],
+        [
+          786,
+          52,
+          1044,
+          358
+        ],
+        [
+          30,
+          414,
+          354,
+          701
+        ],
+        [
+          404,
+          415,
+          715,
+          703
+        ],
+        [
+          757,
+          414,
+          1070,
+          703
+        ],
+        [
+          34,
+          756,
+          348,
+          1039
+        ],
+        [
+          397,
+          756,
+          710,
+          1034
+        ],
+        [
+          758,
+          755,
+          1067,
+          1038
+        ],
+        [
+          81,
+          1071,
+          302,
+          1381
+        ],
+        [
+          443,
+          1071,
+          667,
+          1377
+        ],
+        [
+          795,
+          1071,
+          1013,
+          1379
+        ]
+      ]
+    },
+    {
+      "name": "bh-messi",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-messi.imageset/bh-messi.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "9a587dab58cf9761f4a79ecf9d536a5e9d47abdc16d5cd2fd35e9a319bdab7bb",
+      "source_bounds": [
+        [
+          93,
+          44,
+          331,
+          369
+        ],
+        [
+          438,
+          44,
+          676,
+          374
+        ],
+        [
+          773,
+          45,
+          1008,
+          374
+        ],
+        [
+          76,
+          389,
+          352,
+          705
+        ],
+        [
+          419,
+          389,
+          709,
+          705
+        ],
+        [
+          774,
+          389,
+          1056,
+          705
+        ],
+        [
+          56,
+          718,
+          335,
+          1033
+        ],
+        [
+          396,
+          718,
+          689,
+          1033
+        ],
+        [
+          750,
+          718,
+          1033,
+          1034
+        ],
+        [
+          73,
+          1041,
+          319,
+          1381
+        ],
+        [
+          420,
+          1041,
+          664,
+          1386
+        ],
+        [
+          757,
+          1041,
+          1006,
+          1386
+        ]
+      ]
+    },
+    {
+      "name": "bh-player",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-player.imageset/bh-player.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "6e7fb07ba674bc3ef9a78f3312fbf01afe5d1c2787a258cc7d70fe2f0c378a9e",
+      "source_bounds": [
+        [
+          127,
+          12,
+          350,
+          356
+        ],
+        [
+          437,
+          12,
+          662,
+          362
+        ],
+        [
+          763,
+          14,
+          988,
+          362
+        ],
+        [
+          126,
+          368,
+          355,
+          713
+        ],
+        [
+          441,
+          370,
+          665,
+          717
+        ],
+        [
+          779,
+          370,
+          1002,
+          719
+        ],
+        [
+          113,
+          722,
+          346,
+          1075
+        ],
+        [
+          434,
+          724,
+          667,
+          1075
+        ],
+        [
+          767,
+          725,
+          1001,
+          1078
+        ],
+        [
+          131,
+          1079,
+          350,
+          1407
+        ],
+        [
+          446,
+          1081,
+          663,
+          1422
+        ],
+        [
+          778,
+          1079,
+          1000,
+          1422
+        ]
+      ]
+    },
+    {
+      "name": "bh-player-cloth",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-player-cloth.imageset/bh-player-cloth.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "32e3b54615b7ad02f67576d02cd713d93c2adc5372d33d7b3b55a06bfee60c3e"
+    },
+    {
+      "name": "bh-hildarelys",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-hildarelys.imageset/bh-hildarelys.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "28c01a77426fe11b6b95c47b7b3d049fc799ca4ca1beefc90eb6e5ba70d8195a",
+      "source_bounds": [
+        [
+          50,
+          61,
+          312,
+          433
+        ],
+        [
+          374,
+          61,
+          637,
+          440
+        ],
+        [
+          704,
+          61,
+          966,
+          438
+        ],
+        [
+          57,
+          450,
+          303,
+          807
+        ],
+        [
+          390,
+          451,
+          639,
+          809
+        ],
+        [
+          722,
+          451,
+          970,
+          809
+        ],
+        [
+          43,
+          821,
+          294,
+          1176
+        ],
+        [
+          376,
+          821,
+          628,
+          1176
+        ],
+        [
+          706,
+          821,
+          958,
+          1176
+        ],
+        [
+          50,
+          1186,
+          300,
+          1522
+        ],
+        [
+          376,
+          1185,
+          629,
+          1528
+        ],
+        [
+          708,
+          1185,
+          960,
+          1528
+        ]
+      ]
+    },
+    {
+      "name": "bh-samhil",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-samhil.imageset/bh-samhil.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "f1a094e9f2bce1f9ae42f7948660c7b64779dcf559a3a21ce20e8b37ab68f3d5",
+      "source_bounds": [
+        [
+          99,
+          30,
+          350,
+          372
+        ],
+        [
+          420,
+          30,
+          672,
+          377
+        ],
+        [
+          756,
+          30,
+          1008,
+          378
+        ],
+        [
+          127,
+          392,
+          344,
+          733
+        ],
+        [
+          453,
+          391,
+          671,
+          732
+        ],
+        [
+          787,
+          392,
+          1008,
+          732
+        ],
+        [
+          101,
+          744,
+          321,
+          1085
+        ],
+        [
+          422,
+          744,
+          646,
+          1085
+        ],
+        [
+          764,
+          744,
+          985,
+          1084
+        ],
+        [
+          94,
+          1093,
+          348,
+          1426
+        ],
+        [
+          418,
+          1093,
+          677,
+          1433
+        ],
+        [
+          762,
+          1093,
+          1019,
+          1433
+        ]
+      ]
+    },
+    {
+      "name": "bh-tuki",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tuki.imageset/bh-tuki.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "f5a08e35819e35cb113f38e8502c53b1b8bf82d9343f57fd1e2076c5719c4bdd",
+      "source_bounds": [
+        [
+          46,
+          48,
+          345,
+          340
+        ],
+        [
+          410,
+          49,
+          714,
+          342
+        ],
+        [
+          776,
+          48,
+          1074,
+          343
+        ],
+        [
+          59,
+          382,
+          352,
+          684
+        ],
+        [
+          425,
+          382,
+          717,
+          683
+        ],
+        [
+          784,
+          382,
+          1074,
+          684
+        ],
+        [
+          44,
+          735,
+          344,
+          1031
+        ],
+        [
+          407,
+          736,
+          707,
+          1033
+        ],
+        [
+          775,
+          734,
+          1069,
+          1033
+        ],
+        [
+          42,
+          1074,
+          352,
+          1363
+        ],
+        [
+          409,
+          1072,
+          716,
+          1368
+        ],
+        [
+          773,
+          1073,
+          1077,
+          1368
+        ]
+      ]
+    },
+    {
+      "name": "bh-chichu",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-chichu.imageset/bh-chichu.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "98221cbcf8e5b6afa9561d3ad32902290eefdc88559fe423996cf1cf199c8f43",
+      "source_bounds": [
+        [
+          117,
+          8,
+          355,
+          383
+        ],
+        [
+          459,
+          8,
+          690,
+          392
+        ],
+        [
+          815,
+          8,
+          1046,
+          392
+        ],
+        [
+          50,
+          396,
+          385,
+          721
+        ],
+        [
+          421,
+          395,
+          747,
+          719
+        ],
+        [
+          772,
+          397,
+          1080,
+          719
+        ],
+        [
+          67,
+          728,
+          397,
+          1045
+        ],
+        [
+          437,
+          728,
+          757,
+          1043
+        ],
+        [
+          790,
+          728,
+          1086,
+          1047
+        ],
+        [
+          105,
+          1047,
+          349,
+          1409
+        ],
+        [
+          454,
+          1047,
+          696,
+          1410
+        ],
+        [
+          799,
+          1048,
+          1042,
+          1423
+        ]
+      ]
+    },
+    {
+      "name": "bh-chichi",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-chichi.imageset/bh-chichi.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "8fc352bf9e567ea4bf351abc8b3ad0c19ebe01d4ace7aedb0648fd7ad567c6c3",
+      "source_bounds": [
+        [
+          104,
+          44,
+          385,
+          387
+        ],
+        [
+          447,
+          24,
+          693,
+          393
+        ],
+        [
+          802,
+          54,
+          1029,
+          397
+        ],
+        [
+          40,
+          412,
+          388,
+          724
+        ],
+        [
+          422,
+          414,
+          747,
+          722
+        ],
+        [
+          770,
+          418,
+          1086,
+          722
+        ],
+        [
+          33,
+          751,
+          373,
+          1053
+        ],
+        [
+          411,
+          751,
+          738,
+          1050
+        ],
+        [
+          775,
+          751,
+          1086,
+          1050
+        ],
+        [
+          108,
+          1056,
+          322,
+          1421
+        ],
+        [
+          463,
+          1057,
+          671,
+          1426
+        ],
+        [
+          822,
+          1056,
+          1032,
+          1430
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-a",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-a.imageset/bh-guest-a.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "379377d4c59bfcd8964d72fd678b5149bbfdf0acdbf411351f0b5de996d3e964",
+      "source_bounds": [
+        [
+          74,
+          45,
+          292,
+          405
+        ],
+        [
+          395,
+          43,
+          615,
+          406
+        ],
+        [
+          712,
+          44,
+          931,
+          409
+        ],
+        [
+          66,
+          419,
+          300,
+          779
+        ],
+        [
+          391,
+          419,
+          625,
+          780
+        ],
+        [
+          716,
+          420,
+          948,
+          782
+        ],
+        [
+          64,
+          793,
+          299,
+          1151
+        ],
+        [
+          384,
+          793,
+          623,
+          1148
+        ],
+        [
+          716,
+          793,
+          952,
+          1150
+        ],
+        [
+          69,
+          1165,
+          294,
+          1525
+        ],
+        [
+          383,
+          1165,
+          610,
+          1532
+        ],
+        [
+          715,
+          1165,
+          941,
+          1541
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-a-cloth",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-a-cloth.imageset/bh-guest-a-cloth.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "dc0e7147032f5bea2cba9b30917cb0eed6e3cf78648afa126efdad8718ecdb8a"
+    },
+    {
+      "name": "bh-guest-b",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-b.imageset/bh-guest-b.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "f078abb50792686045b48169292fc9f56be14c97e0165e14a80eb0c34dac3396",
+      "source_bounds": [
+        [
+          70,
+          46,
+          267,
+          389
+        ],
+        [
+          404,
+          46,
+          608,
+          393
+        ],
+        [
+          742,
+          46,
+          945,
+          395
+        ],
+        [
+          56,
+          422,
+          295,
+          759
+        ],
+        [
+          391,
+          423,
+          634,
+          760
+        ],
+        [
+          729,
+          425,
+          973,
+          762
+        ],
+        [
+          32,
+          794,
+          276,
+          1133
+        ],
+        [
+          359,
+          795,
+          609,
+          1134
+        ],
+        [
+          706,
+          795,
+          950,
+          1134
+        ],
+        [
+          74,
+          1158,
+          257,
+          1514
+        ],
+        [
+          382,
+          1159,
+          600,
+          1520
+        ],
+        [
+          729,
+          1158,
+          934,
+          1521
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-b-cloth",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-b-cloth.imageset/bh-guest-b-cloth.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "e4122ebb5e49ee4d3d3d5605633e1c05c739843485b3071985eeb2c963fa50b5"
+    },
+    {
+      "name": "bh-guest-c",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-c.imageset/bh-guest-c.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "eda1db2304cd01e0cbdecb8c5fa4beafffbcee09ad0f67a26d735f6853b0dee2",
+      "source_bounds": [
+        [
+          66,
+          48,
+          271,
+          394
+        ],
+        [
+          402,
+          47,
+          605,
+          401
+        ],
+        [
+          740,
+          46,
+          940,
+          400
+        ],
+        [
+          77,
+          428,
+          277,
+          778
+        ],
+        [
+          403,
+          428,
+          607,
+          780
+        ],
+        [
+          742,
+          428,
+          944,
+          780
+        ],
+        [
+          62,
+          803,
+          271,
+          1159
+        ],
+        [
+          390,
+          802,
+          605,
+          1163
+        ],
+        [
+          731,
+          804,
+          943,
+          1163
+        ],
+        [
+          69,
+          1176,
+          270,
+          1517
+        ],
+        [
+          408,
+          1176,
+          611,
+          1520
+        ],
+        [
+          743,
+          1176,
+          940,
+          1524
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-c-cloth",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-c-cloth.imageset/bh-guest-c-cloth.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "d583a172b0e17ac33f3eb17150a9b5aedf860e9de7734fa917aa43e9c04995b3"
+    },
+    {
+      "name": "bh-guest-d",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-d.imageset/bh-guest-d.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "88bcc88ca8fc13a59cc36715940ad5164c5dda6bd05db8d173ef5556ca034356",
+      "source_bounds": [
+        [
+          64,
+          49,
+          300,
+          401
+        ],
+        [
+          387,
+          49,
+          620,
+          409
+        ],
+        [
+          711,
+          49,
+          945,
+          409
+        ],
+        [
+          79,
+          430,
+          306,
+          790
+        ],
+        [
+          401,
+          428,
+          628,
+          788
+        ],
+        [
+          743,
+          429,
+          969,
+          786
+        ],
+        [
+          55,
+          810,
+          288,
+          1175
+        ],
+        [
+          385,
+          811,
+          620,
+          1173
+        ],
+        [
+          721,
+          812,
+          957,
+          1175
+        ],
+        [
+          63,
+          1187,
+          303,
+          1538
+        ],
+        [
+          396,
+          1187,
+          631,
+          1545
+        ],
+        [
+          724,
+          1187,
+          955,
+          1548
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-d-cloth",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-d-cloth.imageset/bh-guest-d-cloth.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "c48b3e36ac9a72cc283650727065abb159cbbd9287942b6a85d7476e600f784b"
+    },
+    {
+      "name": "bh-guest-a-beach",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-a-beach.imageset/bh-guest-a-beach.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "ec48b9cddc6da2537ee4388565a0fd957a7904f89561321ca52513558e556286",
+      "source_bounds": [
+        [
+          69,
+          35,
+          283,
+          404
+        ],
+        [
+          393,
+          35,
+          608,
+          409
+        ],
+        [
+          720,
+          35,
+          934,
+          409
+        ],
+        [
+          67,
+          420,
+          290,
+          780
+        ],
+        [
+          399,
+          420,
+          620,
+          781
+        ],
+        [
+          728,
+          420,
+          951,
+          782
+        ],
+        [
+          69,
+          789,
+          290,
+          1147
+        ],
+        [
+          392,
+          789,
+          616,
+          1148
+        ],
+        [
+          721,
+          789,
+          945,
+          1149
+        ],
+        [
+          81,
+          1152,
+          288,
+          1518
+        ],
+        [
+          394,
+          1151,
+          604,
+          1527
+        ],
+        [
+          721,
+          1151,
+          930,
+          1530
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-b-beach",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-b-beach.imageset/bh-guest-b-beach.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "f5a744d9a2d794577ba4b4778127aecf33f2eb0f9e680b184d2efaba55daa319",
+      "source_bounds": [
+        [
+          65,
+          39,
+          288,
+          391
+        ],
+        [
+          392,
+          39,
+          616,
+          400
+        ],
+        [
+          719,
+          39,
+          945,
+          400
+        ],
+        [
+          56,
+          418,
+          315,
+          777
+        ],
+        [
+          385,
+          418,
+          647,
+          781
+        ],
+        [
+          716,
+          418,
+          975,
+          781
+        ],
+        [
+          29,
+          788,
+          286,
+          1139
+        ],
+        [
+          354,
+          788,
+          621,
+          1144
+        ],
+        [
+          676,
+          788,
+          946,
+          1143
+        ],
+        [
+          66,
+          1148,
+          276,
+          1518
+        ],
+        [
+          393,
+          1147,
+          606,
+          1523
+        ],
+        [
+          720,
+          1147,
+          940,
+          1523
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-c-beach",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-c-beach.imageset/bh-guest-c-beach.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "0e708cd044b40f087c4168fae4eb2a4466f79e528ef07455c768267c93f21d8b",
+      "source_bounds": [
+        [
+          62,
+          33,
+          278,
+          402
+        ],
+        [
+          386,
+          32,
+          605,
+          409
+        ],
+        [
+          725,
+          32,
+          942,
+          409
+        ],
+        [
+          67,
+          415,
+          278,
+          783
+        ],
+        [
+          392,
+          416,
+          604,
+          783
+        ],
+        [
+          728,
+          417,
+          941,
+          785
+        ],
+        [
+          62,
+          789,
+          273,
+          1151
+        ],
+        [
+          395,
+          788,
+          608,
+          1150
+        ],
+        [
+          728,
+          787,
+          944,
+          1151
+        ],
+        [
+          66,
+          1156,
+          273,
+          1520
+        ],
+        [
+          389,
+          1155,
+          597,
+          1524
+        ],
+        [
+          724,
+          1157,
+          934,
+          1531
+        ]
+      ]
+    },
+    {
+      "name": "bh-guest-d-beach",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-guest-d-beach.imageset/bh-guest-d-beach.png",
+      "size": [
+        576,
+        896
+      ],
+      "sha256": "e55c8817eb502898b8cda2b311a81c428b093e29e4272f6ea7f80804cbb5ccd1",
+      "source_bounds": [
+        [
+          55,
+          42,
+          292,
+          403
+        ],
+        [
+          380,
+          42,
+          618,
+          409
+        ],
+        [
+          714,
+          42,
+          949,
+          410
+        ],
+        [
+          71,
+          428,
+          302,
+          782
+        ],
+        [
+          391,
+          429,
+          628,
+          782
+        ],
+        [
+          727,
+          429,
+          962,
+          782
+        ],
+        [
+          47,
+          803,
+          280,
+          1167
+        ],
+        [
+          381,
+          804,
+          612,
+          1167
+        ],
+        [
+          710,
+          804,
+          948,
+          1167
+        ],
+        [
+          55,
+          1174,
+          288,
+          1528
+        ],
+        [
+          383,
+          1173,
+          617,
+          1529
+        ],
+        [
+          724,
+          1174,
+          957,
+          1534
+        ]
+      ]
+    },
+    {
+      "name": "bh-sofa-front",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-sofa-front.imageset/bh-sofa-front.png",
+      "size": [
+        308,
+        205
+      ],
+      "sha256": "50852e6843d63bd4f0e8983a00e6ab95bcb74e2d1feb2e4972d4ad2a5fabcf8d"
+    },
+    {
+      "name": "bh-sofa-back",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-sofa-back.imageset/bh-sofa-back.png",
+      "size": [
+        301,
+        179
+      ],
+      "sha256": "e7b531055d7e171f11fd897b21a944c6bfff837add682f5ede1305162fcb7faa"
+    },
+    {
+      "name": "bh-desk",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-desk.imageset/bh-desk.png",
+      "size": [
+        308,
+        189
+      ],
+      "sha256": "5455f4590859185fab2209ce5ff17a40779cfa44625248d3fc628cb5698845b1"
+    },
+    {
+      "name": "bh-bed",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-bed.imageset/bh-bed.png",
+      "size": [
+        217,
+        297
+      ],
+      "sha256": "b68950f40a6c5e54d8d8628bde27637479638e2fa9b6220b48749bf82cf24dfc"
+    },
+    {
+      "name": "bh-nightstand",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-nightstand.imageset/bh-nightstand.png",
+      "size": [
+        211,
+        223
+      ],
+      "sha256": "90783dc7bf0711d1aa95fe17ca36cdbfe6f0eeafadab19cbfeac014a2740f33d"
+    },
+    {
+      "name": "bh-vending",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-vending.imageset/bh-vending.png",
+      "size": [
+        194,
+        295
+      ],
+      "sha256": "1c38bb549e8438f70b4621c377696454db6294c250f7bb004e823f368aa2071c"
+    },
+    {
+      "name": "bh-washer",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-washer.imageset/bh-washer.png",
+      "size": [
+        204,
+        286
+      ],
+      "sha256": "a5ffe2f38823a6c315c4f51b8b9f1cb00f7ed76a2f3bc3fc891433f446bbef20"
+    },
+    {
+      "name": "bh-linen",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-linen.imageset/bh-linen.png",
+      "size": [
+        207,
+        285
+      ],
+      "sha256": "7cdeb960c93842120c4193f7e461b70eb353ad4ed7342c5d8035631779a3fb6f"
+    },
+    {
+      "name": "bh-dining-table",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-dining-table.imageset/bh-dining-table.png",
+      "size": [
+        307,
+        236
+      ],
+      "sha256": "f19c0b355d09f1e848599874706a94fba4f1bdc619c2477c05d4803ac20efeae"
+    },
+    {
+      "name": "bh-bar-counter",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-bar-counter.imageset/bh-bar-counter.png",
+      "size": [
+        281,
+        265
+      ],
+      "sha256": "6194876b2222d3c74619fa48e0a0b39ad02fba4c84622dea7527ecc17f9d3728"
+    },
+    {
+      "name": "bh-bookshelf",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-bookshelf.imageset/bh-bookshelf.png",
+      "size": [
+        281,
+        220
+      ],
+      "sha256": "dac67de208ec582ce2fb0e0f6add4349ed9e418402b845c228e95a5b34eaeb6e"
+    },
+    {
+      "name": "bh-workbench",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-workbench.imageset/bh-workbench.png",
+      "size": [
+        306,
+        221
+      ],
+      "sha256": "10a5a26e9a49c5b230d8cbe6c6642981f2da1ba7af587dda63469d670eacd270"
+    },
+    {
+      "name": "bh-stove",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-stove.imageset/bh-stove.png",
+      "size": [
+        234,
+        262
+      ],
+      "sha256": "a0bafb0e1108753607cb17d52bcda74a61572d858baaeaeecb05d5e40ab27e6b"
+    },
+    {
+      "name": "bh-rug",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-rug.imageset/bh-rug.png",
+      "size": [
+        320,
+        179
+      ],
+      "sha256": "26a592612d187d540399b7932d5349c8f8ae92e0855d7f554c84495b3f3b82eb"
+    },
+    {
+      "name": "bh-lounger",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-lounger.imageset/bh-lounger.png",
+      "size": [
+        311,
+        292
+      ],
+      "sha256": "0b4007b245aab9ecc659e81904ba238384b218463598bb254e0b48635f038fd7"
+    },
+    {
+      "name": "bh-door",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-door.imageset/bh-door.png",
+      "size": [
+        230,
+        289
+      ],
+      "sha256": "4677a7c6be157128a0236b66acc19be5b976006267f4574fcd74fada66ad311f"
+    },
+    {
+      "name": "bh-tv-frame",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tv-frame.imageset/bh-tv-frame.png",
+      "size": [
+        320,
+        167
+      ],
+      "sha256": "3f3f7e104aa66db9f02b57ecc7161f0491ced27c229964a7f4c23d9e550387f0"
+    },
+    {
+      "name": "bh-save-journal",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-save-journal.imageset/bh-save-journal.png",
+      "size": [
+        243,
+        219
+      ],
+      "sha256": "7bdbca0de456c40194f30721ca7eef1624f03e399e53d35b1f90b0fda3b34d5f"
+    },
+    {
+      "name": "bh-tool-rack",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tool-rack.imageset/bh-tool-rack.png",
+      "size": [
+        197,
+        273
+      ],
+      "sha256": "73ef3e0954a4ea48ed153e26c68ac3e82ed8555603b4f624da4cef53d8d24732"
+    },
+    {
+      "name": "bh-paint-supplies",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-paint-supplies.imageset/bh-paint-supplies.png",
+      "size": [
+        304,
+        226
+      ],
+      "sha256": "c9c63a03991c79ee61b3ef5512db2e13ccb83400b5eed9a2b3dffef512451968"
+    },
+    {
+      "name": "bh-coffee-set",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-coffee-set.imageset/bh-coffee-set.png",
+      "size": [
+        320,
+        221
+      ],
+      "sha256": "77c7c638d678cc984707d7f04f78d91036f9c528d49eaf6ff506bec0c51fddb4"
+    },
+    {
+      "name": "bh-bath-sink",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-bath-sink.imageset/bh-bath-sink.png",
+      "size": [
+        261,
+        255
+      ],
+      "sha256": "cfcd817bef59c47bb6166dd23d0b060ef928d695dee2c74a59586969e99302d4"
+    },
+    {
+      "name": "bh-toilet",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-toilet.imageset/bh-toilet.png",
+      "size": [
+        182,
+        273
+      ],
+      "sha256": "f78c9a106f2728ca375a82835a51cb2fea7a648894ac6168a5fc2e7894eeea22"
+    },
+    {
+      "name": "bh-travel-chest",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-travel-chest.imageset/bh-travel-chest.png",
+      "size": [
+        318,
+        184
+      ],
+      "sha256": "31e6f0bc88f7f17a88a78b721db67c7297937526f4ffa5b61ed42113058454d1"
+    },
+    {
+      "name": "bh-trash-bin",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-trash-bin.imageset/bh-trash-bin.png",
+      "size": [
+        172,
+        207
+      ],
+      "sha256": "ae17b7f8c6fcb520f2c2cd0742aabde6832707ea0bd9baa2b3d2b913bb1645ad"
+    },
+    {
+      "name": "bh-mop-bucket",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-mop-bucket.imageset/bh-mop-bucket.png",
+      "size": [
+        225,
+        261
+      ],
+      "sha256": "9e42882aac6b71d155918a531a57bf4c3f1803e016f1e3b7e53a1160515bc665"
+    },
+    {
+      "name": "bh-suitcase",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-suitcase.imageset/bh-suitcase.png",
+      "size": [
+        272,
+        211
+      ],
+      "sha256": "4e13f0b61da0653cd3e3bf178b1ba6505ec661449c607d500c24cb9a0a1f649b"
+    },
+    {
+      "name": "bh-small-lamp",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-small-lamp.imageset/bh-small-lamp.png",
+      "size": [
+        159,
+        230
+      ],
+      "sha256": "25795e45ae6441f39c48e9b654b508412e0f73d084aef8bdaf900c43418d90de"
+    },
+    {
+      "name": "bh-glazed-window",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-glazed-window.imageset/bh-glazed-window.png",
+      "size": [
+        227,
+        224
+      ],
+      "sha256": "366d2306b8199c696d3bb74e07d6113c45f3f0f619feb82cf361cfe009482d2a"
+    },
+    {
+      "name": "bh-breakfast-counter",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-breakfast-counter.imageset/bh-breakfast-counter.png",
+      "size": [
+        320,
+        209
+      ],
+      "sha256": "4ba8378d8c21ecbbc7c3f7fd901522d1fa0b1debe3828d506fcafcf91c87d2d4"
+    },
+    {
+      "name": "bh-coffee-table",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-coffee-table.imageset/bh-coffee-table.png",
+      "size": [
+        311,
+        170
+      ],
+      "sha256": "07190773fd1db02d9af1a267e8c8cac4289d3cc104c50a00b20015decbe3ad09"
+    },
+    {
+      "name": "bh-tv-console",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-tv-console.imageset/bh-tv-console.png",
+      "size": [
+        320,
+        135
+      ],
+      "sha256": "e8fcb7a4a36071c36a0fe097dc885315b9860a5a3f32c98bbb965759e827dcba"
+    },
+    {
+      "name": "bh-watch",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-watch.imageset/bh-watch.png",
+      "size": [
+        231,
+        320
+      ],
+      "sha256": "d0e8f9f0b1d26a2aa70a3d29d5b8e393e00dad3541de70bb357937f583f6bc9c"
+    },
+    {
+      "name": "bh-camera",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-camera.imageset/bh-camera.png",
+      "size": [
+        320,
+        239
+      ],
+      "sha256": "84facbcbc50dcd5e56659263f377192303d63caa2b7e63c71d23ac717552129c"
+    },
+    {
+      "name": "bh-extinguisher",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-extinguisher.imageset/bh-extinguisher.png",
+      "size": [
+        173,
+        320
+      ],
+      "sha256": "cfb19a7665799a8d2f5c2fee25bfcf950101f893281f4cd469143b8cef745c14"
+    },
+    {
+      "name": "bh-clothes-rack",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-clothes-rack.imageset/bh-clothes-rack.png",
+      "size": [
+        319,
+        320
+      ],
+      "sha256": "200b124e0bf9068b397b5118c6aa7d4a908da1a1f8c3e4719e06cb7aecf1b3f3"
+    },
+    {
+      "name": "bh-fish-display",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-fish-display.imageset/bh-fish-display.png",
+      "size": [
+        320,
+        292
+      ],
+      "sha256": "7950475e4fb24abe13b28bd6f8e7004e9c8232f7e245bdbf90c4a70869959061"
+    },
+    {
+      "name": "bh-folded-clothes",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-folded-clothes.imageset/bh-folded-clothes.png",
+      "size": [
+        320,
+        259
+      ],
+      "sha256": "3378d34d771853558357e80744f77f95fb4fd7a3fc33bfbfb90c645e66c1eb1b"
+    },
+    {
+      "name": "bh-house-warm",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-house-warm.imageset/bh-house-warm.png",
+      "size": [
+        320,
+        281
+      ],
+      "sha256": "74da891400e06cf0ad5437f75fee5e236b730782f04840dd72414a855175b95e"
+    },
+    {
+      "name": "bh-house-blue",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-house-blue.imageset/bh-house-blue.png",
+      "size": [
+        320,
+        287
+      ],
+      "sha256": "38f4d36384c68424aec344a060bc75db28954b5daa1b18766f5bb2534bdd3437"
+    },
+    {
+      "name": "bh-house-green",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-house-green.imageset/bh-house-green.png",
+      "size": [
+        320,
+        293
+      ],
+      "sha256": "0b43e85bfc7d4cb64a97f46eeb7ac910e895d9af36b8d9c661c8376cc9128171"
+    },
+    {
+      "name": "bh-store-furniture",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-furniture.imageset/bh-store-furniture.png",
+      "size": [
+        320,
+        253
+      ],
+      "sha256": "7463ffeac30ed16d470ae16c45e7e0e950f1c61b8fa1c20b06f8495e903ed253"
+    },
+    {
+      "name": "bh-store-clothing",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-clothing.imageset/bh-store-clothing.png",
+      "size": [
+        320,
+        240
+      ],
+      "sha256": "10cc00172f4401266d9679896adce617218d51b452be174db50c14fe2da8cffe"
+    },
+    {
+      "name": "bh-store-pawn",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-pawn.imageset/bh-store-pawn.png",
+      "size": [
+        320,
+        248
+      ],
+      "sha256": "4bc5eacc48d41afec1dd2e4a93c184fcbbb925186cb0ef62df3716fde7d0324c"
+    },
+    {
+      "name": "bh-store-bar",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-bar.imageset/bh-store-bar.png",
+      "size": [
+        320,
+        252
+      ],
+      "sha256": "6c63b897e7e999bea212c86b5c949fd42f44627ea588a2e8d22fce7830f86478"
+    },
+    {
+      "name": "bh-store-fish",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-store-fish.imageset/bh-store-fish.png",
+      "size": [
+        320,
+        247
+      ],
+      "sha256": "13e84416b80d931b8352b2eea809b2a321cd0ff9b566fb0625dbaaddc05d2da2"
+    },
+    {
+      "name": "bh-office-facade",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-office-facade.imageset/bh-office-facade.png",
+      "size": [
+        320,
+        146
+      ],
+      "sha256": "db0fca52739cfbd7ab032dc5955f47f3aeb89443561a6d9aa1d9775d6e93f09c"
+    },
+    {
+      "name": "bh-motel-facade",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-motel-facade.imageset/bh-motel-facade.png",
+      "size": [
+        320,
+        211
+      ],
+      "sha256": "5be45d17cd34424fd0ab5daa6e8cc6c67ac68692bf45edb32afa9408f6762608"
+    },
+    {
+      "name": "bh-laundry-shelter",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-laundry-shelter.imageset/bh-laundry-shelter.png",
+      "size": [
+        308,
+        237
+      ],
+      "sha256": "56adf45b65a6127f83ade4a655ae725bf2130621793790d8c3a1cf4e07d1b0df"
+    },
+    {
+      "name": "bh-park-bench",
+      "path": "LittleHaven/Assets.xcassets/Painted/bh-park-bench.imageset/bh-park-bench.png",
+      "size": [
+        312,
+        189
+      ],
+      "sha256": "3811644481dfb1a8cb046d17827dfd8242f6bb50d60827e65aba63211fbcf598"
+    }
+  ],
+  "sources": [
+    {
+      "name": "materials",
+      "kind": "materials",
+      "file": "materials.png",
+      "prompt": "Production game material atlas style edit. Image1 is the current material atlas: preserve EXACT four columns x four rows and every cell's material type and broad scale. Image2 is the approved art style: clean matte cel shading, deliberate simplified shapes, restrained muted palette. Restyle ALL16 surfaces into the same crisp stylized anime game language, not textured watercolor or realistic photographed materials. Row1 four subtly varied worn limestone path slab patterns; row2 grass, sand, turquoise water, corral earth; row3 oak floorboards, walnut floorboards, warm plaster, terracotta shingles; row4 grey road, mossy cobbles, straw weave, aged timber. Entire surface fills every cell edge to edge, no borders, gutters, labels, props, people, text or perspective. Individually seamless repeatable texture in EACH cell: matching opposite edges, especially water, grass and sand; uniform overall illumination across each cell to prevent visible repeating squares. Clean large forms, subtle restrained hand-authored grain only where helpful; intentional two/three color material shading, gentle natural highlights, no tiny speckles, no gritty photographic detail, no random brushnoise, no muddy gradients or bevelled UI squares. Stone should have a few subtle irregular seam lines and muted moss, wood few carefully drawn grain lines. Gentle ambient crevice shading but no directional shadow across entire tiles. Clean readable production game materials, not generic flat solid swatches. Keep all16types in exact original order."
+    },
+    {
+      "name": "props",
+      "kind": "props",
+      "file": "props.png",
+      "prompt": "Style edit of production game prop atlas. Image1 contains sixteen props: preserve every object's identity, orientation, relative placement and EXACT four columns by four rows grid, each isolated with at least10% clear padding, no objects touch across cells. Image2 is approved game art style, authoritative for clean deliberate contours, matte simplified volumes and restrained two/three-tone cel shading. Redraw ALL16 props to match this refined stylized anime game style, removing gritty wear, speckled watercolor texture, dense micro-detail and plastic shine. Keep subtle purposeful wood grain, sturdy fence depth, gentle warm lantern light, clean foliage clumps rather than hundreds of leaves. Row1 horizontal fence, vertical fence, post, blank nameplate; row2 lantern, waterbowl, feedbowl, strawbed; row3 pottedfern, wildflowers, leafy tree, palm; row4 stairs, redleafbanner, spellbook, dumbbell. No characters, no new items, no text, logos, labels or grid. Same elevated2.5D top-down camera and upper-left light for all, tiny contact shadows only, genuine transparent alpha everywhere outside each object, no floor, backdrop, fog or castshadow. Objects should look like authored matching game assets, not a generic vector icon set. CRITICAL SPACING CORRECTION: scale each of the sixteen individual props down to approximately65% of its current cell footprint. Keep them centered on the exact4x4 cell centers and wholly inside each cell. Leave at least20% cell width/height clear alpha padding at ALL FOUR edges of EACH cell, with completely transparent wide straight gutters. No leaf, rail, lantern or stairs may touch another object or cross any cell edge. Preserve the exact object designs and cel shaded finish; only improve spacing and reduce individual size uniformly within each cell. EXACTLY16separateobjects."
+    },
+    {
+      "name": "wizard",
+      "kind": "actor",
+      "file": "wizard.png",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay."
+    },
+    {
+      "name": "fox",
+      "kind": "actor",
+      "file": "fox.png",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay."
+    },
+    {
+      "name": "blue",
+      "kind": "actor",
+      "file": "blue.png",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay."
+    },
+    {
+      "name": "shrek",
+      "kind": "actor",
+      "file": "shrek.png",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay."
+    },
+    {
+      "name": "shark",
+      "kind": "actor",
+      "file": "shark.png",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay."
+    },
+    {
+      "name": "mighty-fixed",
+      "kind": "actor",
+      "file": "mighty-fixed.png",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. Keep the muscular gray tabby cat bare-furred: no clothing, green skin, ogre hood or vest."
+    },
+    {
+      "name": "fang",
+      "kind": "actor",
+      "file": "fang.png",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. Preserve long two upper fangs and expressive open mouth."
+    },
+    {
+      "name": "messi",
+      "kind": "actor",
+      "file": "messi.png",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. Preserve the black number10 and blue-white striped shirt, no brand emblems."
+    },
+    {
+      "name": "player",
+      "kind": "actor",
+      "file": "player.png",
+      "prompt": "Use case: style-transfer. Production transparent player animation atlas for Brainstorm Haven. Image 1 is the APPROVED CHARACTER DESIGN and shading, authoritative for face, short squat proportions, hair shape, huge square glasses, beard, gray three-button shirt, stubby arms and tiny black shoes. Reproduce THAT compact character exactly, not the taller slimmer character in image 2. Image 2 is ONLY a sprite-sheet layout/motion reference. Create 3 columns by 4 rows of 12 separate full-body sprites. Equal cells, generous 12% transparent padding each cell, identical scale and foot baseline. Row1 FRONT, row2 full LEFT profile, row3 full RIGHT profile, row4 full BACK: entire body, hair, glasses and clothes correctly turn, no face or eyes visible at back. Columns: standing idle, left-foot step, right-foot step with small opposite arm swing, feet visibly alternate. Keep tiny squat 2-head proportions including tall spikes, no long limbs or trouser legs, no backpack, no objects. Small slightly elevated top-down game camera. Style EXACTLY image1: clean restrained dark outlines, matte flat color regions with two or three intentional cel-shadow shapes, no grainy painted texture or plastic shine, no random hair facets or gradients. Gray short-sleeve shirt, three black front buttons, tan skin, black beard/hair. Side/back garment consistent; no chestbuttons onback. Genuine TRANSPARENT alpha background, no ground plane, no text, grid, labels, scenery, opaque fill or large shadows. Every frame isolated within its own exact cell. Do not add columns/rows."
+    },
+    {
+      "name": "hildarelys-v2",
+      "kind": "actor",
+      "file": "hildarelys-v2.png",
+      "asset_name": "hildarelys",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. Keep this female character feminine and recognizable, with compact approximately2-head body proportions and short little limbs, matching the approved player's scale. Do not add glasses, beard or spiky hair. Preserve existing hairstyle, dress and shoes."
+    },
+    {
+      "name": "samhil",
+      "kind": "actor",
+      "file": "samhil.png",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. Keep this female character feminine and recognizable, with compact approximately2-head body proportions and short little limbs, matching the approved player's scale. Do not add glasses, beard or spiky hair. Preserve existing hairstyle, dress and shoes."
+    },
+    {
+      "name": "tuki",
+      "kind": "actor",
+      "file": "tuki.png",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. Tuki must retain purple pink round body, green leafy crown and spikes, purple side stripes, blue tears, little plum-colored feet."
+    },
+    {
+      "name": "chichu-painted",
+      "kind": "actor",
+      "file": "chichu-painted.png",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. Preserve this small pet cat's exact fur markings and eye color; no clothes or beard."
+    },
+    {
+      "name": "chichi-painted",
+      "kind": "actor",
+      "file": "chichi-painted.png",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. Preserve this small pet cat's exact fur markings and eye color; no clothes or beard."
+    },
+    {
+      "name": "guest-a-v2",
+      "kind": "actor",
+      "file": "guest-a-v2.png",
+      "asset_name": "guest-a",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. Human NPC must have compact squat approximately2-head proportions, tiny legs and short limbs matching approved player. Retain NPC hairstyle, skin color, gender and original outfit. No borrowed beard/glasses."
+    },
+    {
+      "name": "guest-b-v2",
+      "kind": "actor",
+      "file": "guest-b-v2.png",
+      "asset_name": "guest-b",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. Human NPC must have compact squat approximately2-head proportions, tiny legs and short limbs matching approved player. Retain NPC hairstyle, skin color, gender and original outfit. No borrowed beard/glasses."
+    },
+    {
+      "name": "guest-c-v2",
+      "kind": "actor",
+      "file": "guest-c-v2.png",
+      "asset_name": "guest-c",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. Human NPC must have compact squat approximately2-head proportions, tiny legs and short limbs matching approved player. Retain NPC hairstyle, skin color, gender and original outfit. No borrowed glasses or spiky hair."
+    },
+    {
+      "name": "guest-d-v2",
+      "kind": "actor",
+      "file": "guest-d-v2.png",
+      "asset_name": "guest-d",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. Human NPC must have compact squat approximately2-head proportions, tiny legs and short limbs matching approved player. Retain NPC hairstyle, skin color, gender and original outfit. No borrowed glasses or spiky hair."
+    },
+    {
+      "name": "guest-a-beach-v2",
+      "kind": "actor",
+      "file": "guest-a-beach-v2.png",
+      "asset_name": "guest-a-beach",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. BEACH outfit: preserve floral shirt/shorts/sandals or coral sundress as applicable. Short squat2-head human proportions. Keep all facial identity/hair and beach clothing; no gray office shirt."
+    },
+    {
+      "name": "guest-b-beach-v2",
+      "kind": "actor",
+      "file": "guest-b-beach-v2.png",
+      "asset_name": "guest-b-beach",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. BEACH outfit: preserve floral shirt/shorts/sandals or coral sundress as applicable. Short squat2-head human proportions. Keep all facial identity/hair and beach clothing; no gray office shirt."
+    },
+    {
+      "name": "guest-c-beach-v2",
+      "kind": "actor",
+      "file": "guest-c-beach-v2.png",
+      "asset_name": "guest-c-beach",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. BEACH outfit: preserve floral shirt/shorts/sandals or coral sundress as applicable. Short squat2-head human proportions. Keep all facial identity/hair and beach clothing; no gray office shirt."
+    },
+    {
+      "name": "guest-d-beach-v2",
+      "kind": "actor",
+      "file": "guest-d-beach-v2.png",
+      "asset_name": "guest-d-beach",
+      "prompt": "Production game sprite sheet style edit. Image1 is the EXISTING sprite sheet and is authoritative for this subject's identity, colors, costume, species, unique markings and all poses. Image2 is the APPROVED ART STYLE only, NOT a subject to insert. Restyle only the original subject with that approved clean matte cel shading, crisp consistent restrained dark contours, simple deliberate shadow shapes, readable expressive faces, subtle highlights, no gritty painterly texture, fur speckles, muddy gradients or glossy plastic. Preserve short compact game-character proportions, never tall realistic adult anatomy. Do not copy the male reference's hair, glasses, beard or outfit onto other subjects. Maintain original character's face and personality. EXACTLY3 columns and4 rows, twelve separate FULL BODY frames. Row1 FRONT, row2 entire body LEFT profile, row3 entire body RIGHT profile, row4 entire body BACK without frontal face. Column1 idle, column2 left-foot/paw step, column3 right-foot/paw step; opposite arm swing, clearly alternate contact feet. Same design and size all12cells, generous at least12% transparent padding within each cell and common foot baseline. Slightly elevated 2.5D top-down game camera. Keep all distinctive costume/accessories/markings from image1, no new accessories or animals, no player reference inserted. No labels, captions, grid, text, background/floor, big shadows or watermark. GENUINE TRANSPARENT alpha outside the twelve isolated character silhouettes. Original exact grid structure and ordering are critical for gameplay. BEACH outfit: preserve floral shirt/shorts/sandals or coral sundress as applicable. Short squat2-head human proportions. Keep all facial identity/hair and beach clothing; no gray office shirt."
+    },
+    {
+      "name": "furniture",
+      "kind": "furniture",
+      "file": "furniture.png",
+      "prompt": "Style-transfer of production game prop atlas. Image1 is the exact existing furniture atlas: preserve all sixteen objects, their types, orientations, silhouettes, relative sizes and exact4 columns by4 rows. Image2 is the approved visual language. Redraw ALL16 objects with the same clean restrained outlines, matte color fills and two/three intentional cel-shadow shapes as that character. Simplified readable volumes and a few purposeful wood-grain/seam details, no photographic texture, no heavy grunge, no tiny speckles, no overrendered gloss or dense airbrushed gradients. Same elevated front/top2.5D camera, warm diffuse upper-left light, all objects fully contained within their cells with10%transparent padding. Keep furniture practical original design and colors: sofas, desk, bed and all fixtures should remain recognizable and proportionally identical. Do not insert the character or add new props. No text, labels, grid, ground plane or large cast shadows. GENUINE TRANSPARENT alpha outside separate object silhouettes. Keep both front and back sofa views; no face cushions drawn on the back view."
+    },
+    {
+      "name": "fixtures",
+      "kind": "fixtures",
+      "file": "fixtures.png",
+      "prompt": "Style-transfer of production game prop atlas. Image1 is the exact existing fixtures atlas: preserve all sixteen objects, their types, orientations, silhouettes, relative sizes and exact4 columns by4 rows. Image2 is the approved visual language. Redraw ALL16 objects with the same clean restrained outlines, matte color fills and two/three intentional cel-shadow shapes as that character. Simplified readable volumes and a few purposeful wood-grain/seam details, no photographic texture, no heavy grunge, no tiny speckles, no overrendered gloss or dense airbrushed gradients. Same elevated front/top2.5D camera, warm diffuse upper-left light, all objects fully contained within their cells with10%transparent padding. Keep furniture practical original design and colors: sofas, desk, bed and all fixtures should remain recognizable and proportionally identical. Do not insert the character or add new props. No text, labels, grid, ground plane or large cast shadows. GENUINE TRANSPARENT alpha outside separate object silhouettes. TV interior must remain a blank uniform dark navy rectangle framed by wood, for existing animated game screen overlay; preserve its relative screen bounds."
+    },
+    {
+      "name": "equipment-fixed",
+      "kind": "equipment",
+      "file": "equipment-fixed.png",
+      "prompt": "Restyle this production equipment atlas into approved character's clean matte cel-shaded game-art finish. Image1 subject/layout authoritative, image2 STYLE reference only. EXACT3columns by2rows, six isolated objects in same order: watch, camera, red extinguisher; clothing rack, fish display cabinet, folded clothes table. Keep every object and its orientation, practical design, relative scale, colors and major details. Deliberate dark contours and simple clean two/three-tone shadow areas, few useful material lines, no grainyspeckles or photographed texture, no heavy metallicgloss, no random microdetails. Empty plain label on extinguisher. No text, numbers except watchdial, labels, grid, extraobjects or characters. ALL SIX objects must be genuine TRANSPARENT ALPHA CUTOUTS; remove all original opaque brown/gray gradientbackground, haze and largecastshadows. Every prop fully contained in own exactcell with12%cleartransparentpadding, same elevatedfronttop2.5Dcamera. Six objects physically connected silhouettes, rack clothes touch rail, straps/hoses stay attached. No opaque color fill or painted checkerboard behind anyobject."
+    },
+    {
+      "name": "facades",
+      "kind": "facades",
+      "file": "facades.png",
+      "prompt": "Restyle this production building atlas. Image1 is the exact layout and subject source; preserve all12objects in EXACT4columns by3rows, their individual silhouettes, perspective, door/window/sign positions and individual commercial identities. Image2 is the approved style: clean deliberate contours, matte surfaces, two/three-tone cel shading, restrained natural colors and minimal purposeful texture. Apply THAT coherent refined stylized anime game look to ALL buildings and bench, removing excessive photoreal grain, tiny leafnoise, dirty grunge and dense painterly shading. Keep three homes, furniture/clothing/pawn/bar/fish storefronts, office, motelroom, EMPTY laundry shelter and bench in exact original order. Office door remains43%fromleft, motel40%fromleft. Signs blank for runtime lettering. Laundry shelter remains empty: equipment is independently movable. Straight-on slightly elevated2.5D top-down game view with upper-left diffuse light, gentle warm interior lights, no nightglowcloud. Every object isolated fully inside own equal cell,10%clear gutters, GENUINE transparent alpha outside silhouettes. No scene ground, gradientbackground, sky, people, characterreference, labels, logos, text, extra props or large castshadows. Preserve recognizable build/design, simply clean up rendering to match approvedcharacter."
+    }
+  ]
+}

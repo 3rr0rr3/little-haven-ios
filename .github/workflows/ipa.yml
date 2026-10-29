@@ -1,7 +1,7 @@
 name: Test and build iPhone IPA
 on:
   push:
-    branches: [main]
+    branches: [main, 'codex/pokopia-scenery']
     paths:
       - 'LittleHaven/**'
       - 'LittleHaven.xcodeproj/**'
@@ -18,7 +18,7 @@ permissions:
 jobs:
   build:
     runs-on: macos-15
-    timeout-minutes: 25
+    timeout-minutes: 90
     permissions:
       contents: write
     steps:
@@ -26,22 +26,159 @@ jobs:
       - name: Test prologue, motel economy, stealth and checkpoint rules
         run: |
           set -euo pipefail
-          swiftc LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
+          swiftc -frontend -parse LittleHaven/*.swift LittleHavenUITests/*.swift
+          swiftc LittleHaven/NPCDesign.swift LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
           /tmp/little-haven-tests
+      - name: Compare navigation performance with shipped v32
+        run: python3 scripts/benchmark_navigation.py
+      - name: Preserve navigation measurements
+        uses: actions/upload-artifact@v4
+        with:
+          name: Navigation-performance
+          path: navigation-performance.json
+          if-no-files-found: error
+      - name: Validate painted art resources
+        run: python3 scripts/validate_painted_art.py
+      - name: Render character app icon
+        run: python3 scripts/render_app_icon.py
       - name: Build iPhone app
         run: |
           set -euo pipefail
           xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath device-build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
-      - name: Test controls, motel management and game-over recovery
+      - name: Test saved creative relocation, family, bicycle and desk touch regressions first
+        timeout-minutes: 30
         run: |
           set -euo pipefail
           DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
           echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeWakeAndSave -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeGuestInteraction -only-testing:LittleHavenUITests/LittleHavenUITests/testStartupRecoveryReportWithoutLoadingGame -only-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -only-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenHomeFamilyConversations -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenDialogueBackAndWifePhysicalTaps -only-testing:LittleHavenUITests/LittleHavenUITests/testHomeBedroomsEnterExitAndSavedReturn -only-testing:LittleHavenUITests/LittleHavenUITests/testMenuHubFiveSectionsAndRememberedPosition -only-testing:LittleHavenUITests/LittleHavenUITests/testCompactPauseMenuAndContextChooser -only-testing:LittleHavenUITests/LittleHavenUITests/testMapFiltersEmergencyLocationAndDispatch -only-testing:LittleHavenUITests/LittleHavenUITests/testHiringRequirementsAndQuietFullscreen -only-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -only-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenJoystickReleaseAndPause -only-testing:LittleHavenUITests/LittleHavenUITests/testObjectCustomizationAndConstruction -only-testing:LittleHavenUITests/LittleHavenUITests/testOutdoorChaosCanBeHandled -only-testing:LittleHavenUITests/LittleHavenUITests/testTitleOptionsContinueAndNewGame -only-testing:LittleHavenUITests/LittleHavenUITests/testNewSanctuaryResidentsCareAndAdventure -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleHomeCareAndSavedContinue -only-testing:LittleHavenUITests/LittleHavenUITests/testPersonalNeedsBathroomAndSavedCleanState -only-testing:LittleHavenUITests/LittleHavenUITests/testPersonalNeedsFoodAndDirtyNpcReaction -resultBundlePath CreativeResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+      - name: Test first-chapter transition on a smaller iPhone
+        run: |
+          set -euo pipefail
+          xcrun simctl shutdown "$SIM_DEVICE"
+          TYPE=$(xcrun simctl list devicetypes -j | python3 -c 'import sys,json; print(next(d["identifier"] for d in json.load(sys.stdin)["devicetypes"] if d["name"] == "iPhone SE (3rd generation)"))')
+          RUNTIME=$(xcrun simctl list runtimes -j | python3 -c 'import sys,json; print(next(r["identifier"] for r in json.load(sys.stdin)["runtimes"] if r.get("isAvailable") and "iOS" in r["name"]))')
+          SMALL=$(xcrun simctl create StartupSmall "$TYPE" "$RUNTIME")
+          xcrun simctl boot "$SMALL"
+          xcrun simctl bootstatus "$SMALL" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SMALL" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -only-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -resultBundlePath SmallStartupResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+          xcrun simctl shutdown "$SMALL"
+          xcrun simctl boot "$SIM_DEVICE"
+          xcrun simctl bootstatus "$SIM_DEVICE" -b
+      - name: Test actual Release wake-up and saved home with compatible rendering
+        timeout-minutes: 24
+        run: |
+          set -euo pipefail
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-needs-dirty --ui-home-compatibility --ui-testing
+          CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+          HOME_FIXTURE_READY=0
+          for ATTEMPT in $(seq 1 30); do
+            if python3 scripts/seed_release_startup.py "$CONTAINER" false export-home; then HOME_FIXTURE_READY=1; break; fi
+            sleep 1
+          done
+          test "$HOME_FIXTURE_READY" = 1
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-startup-build CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES build-for-testing
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl install "$SIM_DEVICE" release-startup-build/Build/Products/Release-iphonesimulator/LittleHaven.app
+          for TOUCH in false true; do
+            CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+            python3 scripts/seed_release_startup.py "$CONTAINER" "$TOUCH"
+            xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-startup-build -parallel-testing-enabled NO -only-testing:LittleHavenUITests/LittleHavenUITests/testActualReleaseWakeAndFirstShift -resultBundlePath "ReleaseStartup-$TOUCH.xcresult" CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test-without-building
+            CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+            python3 scripts/verify_startup_report.py "$CONTAINER" "$TOUCH" "ReleaseStartup-$TOUCH-report.json"
+          done
+          for TOUCH in false true; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+            python3 scripts/seed_release_startup.py "$CONTAINER" "$TOUCH" home
+            xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-startup-build -parallel-testing-enabled NO -only-testing:LittleHavenUITests/LittleHavenUITests/testActualReleaseSavedHomeContinue -resultBundlePath "ReleaseStartup-home-$TOUCH.xcresult" CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test-without-building
+            CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+            python3 scripts/verify_startup_report.py "$CONTAINER" "$TOUCH" "ReleaseStartup-home-$TOUCH-report.json" home
+          done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl install "$SIM_DEVICE" sim-build/Build/Products/Debug-iphonesimulator/LittleHaven.app
+      - name: Preserve focused failure diagnostics immediately
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Focused-test-failure
+          path: CreativeResults.xcresult
+          if-no-files-found: ignore
+      - name: Verify and package IPA
+        run: |
+          set -euo pipefail
+          APP=device-build/Build/Products/Release-iphoneos/LittleHaven.app
+          test -x "$APP/LittleHaven"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleSupportedPlatforms:0' "$APP/Info.plist")" = "iPhoneOS"
+          xcrun lipo "$APP/LittleHaven" -verify_arch arm64
+          xcrun vtool -show-build "$APP/LittleHaven" | tee platform.txt
+          grep -Eq 'platform[[:space:]]+IOS$' platform.txt
+          mkdir -p package/Payload
+          ditto "$APP" package/Payload/LittleHaven.app
+          cd package
+          zip -qry ../LittleHaven-unsigned.ipa Payload
+          cd ..
+          unzip -t LittleHaven-unsigned.ipa
+          shasum -a 256 LittleHaven-unsigned.ipa > LittleHaven-unsigned.ipa.sha256
+      - name: Preserve verified iPhone package
+        uses: actions/upload-artifact@v4
+        with:
+          name: LittleHaven-iPhone-IPA
+          path: |
+            LittleHaven-unsigned.ipa
+            LittleHaven-unsigned.ipa.sha256
+          if-no-files-found: error
+      - name: Capture painted scenes and publish visual review evidence
+        if: ${{ always() && env.SIM_DEVICE != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for MODE in experience-guests experience-identity experience-rooms experience-team experience-district experience-creatures experience-events experience-scrapbook needs-animation-eat needs-animation-toilet needs-animation-shower needs-dirty needs-bathroom needs-panel needs-npc neglect night-sky seasonal menu-emergency sanctuary-juan sanctuary-pink sanctuary-inferno sanctuary-cosmic sanctuary-hi menu-pause menu-map menu-staff menu-purchases management-dashboard management-growth basement family-home bedroom-samhil bedroom-parents office-preview beach water-pool street home-store home-exterior neighborhood motel-room bar fish creative; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch --ui-painted-check --ui-care-preview --ui-home-compatibility
+            sleep 5
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-$MODE.png"
+          done
+          for MODE in fire pool fight; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-action-response-$MODE" --ui-testing --ui-touch --ui-response-time 1.8
+            sleep 7
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-response-painted-action-$MODE.png"
+          done
+          xcrun xcresulttool export attachments --path CreativeResults.xcresult --output-path /tmp/art-ui-diagnostics || true
+          python3 scripts/publish_art_previews.py
+      - name: Preserve response previews for early visual review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Response-previews
+          path: |
+            LittleHaven-response-*.png
+          if-no-files-found: error
+      - name: Test controls, motel management and game-over recovery
+        timeout-minutes: 24
+        run: |
+          set -euo pipefail
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$SIM_DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 180 -skip-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -skip-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeWakeAndSave -skip-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeGuestInteraction -skip-testing:LittleHavenUITests/LittleHavenUITests/testStartupRecoveryReportWithoutLoadingGame -skip-testing:LittleHavenUITests/LittleHavenUITests/testCreativeEditorOpensAndMovesWasher -skip-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -skip-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenHomeFamilyConversations -skip-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenDialogueBackAndWifePhysicalTaps -skip-testing:LittleHavenUITests/LittleHavenUITests/testHomeBedroomsEnterExitAndSavedReturn -skip-testing:LittleHavenUITests/LittleHavenUITests/testMenuHubFiveSectionsAndRememberedPosition -skip-testing:LittleHavenUITests/LittleHavenUITests/testCompactPauseMenuAndContextChooser -skip-testing:LittleHavenUITests/LittleHavenUITests/testMapFiltersEmergencyLocationAndDispatch -skip-testing:LittleHavenUITests/LittleHavenUITests/testHiringRequirementsAndQuietFullscreen -skip-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -skip-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -skip-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenJoystickReleaseAndPause -skip-testing:LittleHavenUITests/LittleHavenUITests/testObjectCustomizationAndConstruction -skip-testing:LittleHavenUITests/LittleHavenUITests/testOutdoorChaosCanBeHandled -skip-testing:LittleHavenUITests/LittleHavenUITests/testTitleOptionsContinueAndNewGame -skip-testing:LittleHavenUITests/LittleHavenUITests/testNewSanctuaryResidentsCareAndAdventure -skip-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleHomeCareAndSavedContinue -skip-testing:LittleHavenUITests/LittleHavenUITests/testPersonalNeedsBathroomAndSavedCleanState -skip-testing:LittleHavenUITests/LittleHavenUITests/testPersonalNeedsFoodAndDirtyNpcReaction -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+      - name: Publish tested candidate download without updating SideStore
+        if: ${{ success() && github.ref == 'refs/heads/codex/pokopia-scenery' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish_candidate.py
+      - name: Preserve public candidate verification
+        if: ${{ success() && github.ref == 'refs/heads/codex/pokopia-scenery' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Candidate-verification
+          path: candidate-verification.json
+          if-no-files-found: error
       - name: Capture chapter previews
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           DEVICE="$SIM_DEVICE"
@@ -88,7 +225,7 @@ jobs:
           sleep 2
           xcrun simctl io "$DEVICE" screenshot LittleHaven-hiring.png
       - name: Capture animated gameplay
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           DEVICE="$SIM_DEVICE"
@@ -100,6 +237,13 @@ jobs:
             RECORD_PID=$!
             sleep 5
             kill -INT "$RECORD_PID"
+            for SECOND in 1 2 3 4 5 6 7 8 9 10; do
+              kill -0 "$RECORD_PID" 2>/dev/null || break
+              sleep 1
+            done
+            kill -TERM "$RECORD_PID" 2>/dev/null || true
+            sleep 1
+            kill -KILL "$RECORD_PID" 2>/dev/null || true
             wait "$RECORD_PID" || true
             xcrun simctl io "$DEVICE" screenshot "LittleHaven-$MODE.png"
           done
@@ -112,6 +256,13 @@ jobs:
             RECORD_PID=$!
             sleep 5
             kill -INT "$RECORD_PID"
+            for SECOND in 1 2 3 4 5 6 7 8 9 10; do
+              kill -0 "$RECORD_PID" 2>/dev/null || break
+              sleep 1
+            done
+            kill -TERM "$RECORD_PID" 2>/dev/null || true
+            sleep 1
+            kill -KILL "$RECORD_PID" 2>/dev/null || true
             wait "$RECORD_PID" || true
           done
           for MODE in home-exterior family-home neighborhood home-store clothes-store pawn-store staff-posts parking-staff weather-storm weather-snow weather-wind; do
@@ -120,8 +271,151 @@ jobs:
             sleep 3
             xcrun simctl io "$DEVICE" screenshot "LittleHaven-$MODE.png"
           done
+      - name: Capture beach shops and animated television
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
+        run: |
+          set -euo pipefail
+          for MODE in beach motel-room; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE"
+            sleep 4
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
+          done
+          for MODE in home-store clothes-store pawn-store; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-store-inside
+            sleep 4
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE-interior.png"
+          done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-family-home
+          sleep 4
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-tv-frame1.png
+          sleep 1
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-tv-frame2.png
+          xcrun simctl io "$SIM_DEVICE" recordVideo --codec=h264 --force LittleHaven-animated-tv.mp4 &
+          TV_RECORD_PID=$!
+          sleep 7
+          kill -INT "$TV_RECORD_PID"
+          for SECOND in 1 2 3 4 5 6 7 8 9 10; do
+            kill -0 "$TV_RECORD_PID" 2>/dev/null || break
+            sleep 1
+          done
+          kill -TERM "$TV_RECORD_PID" 2>/dev/null || true
+          sleep 1
+          kill -KILL "$TV_RECORD_PID" 2>/dev/null || true
+          wait "$TV_RECORD_PID" || true
+      - name: Capture bar and storefronts
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
+        run: |
+          set -euo pipefail
+          for MODE in bar bar-exterior; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE"
+            sleep 3
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
+          done
+      - name: Capture residential area and physical facilities
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
+        run: |
+          set -euo pipefail
+          for MODE in neighbors chair facilities; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE"
+            sleep 3
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
+          done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-facilities
+          sleep 2
+          xcrun simctl io "$SIM_DEVICE" recordVideo --codec=h264 --force LittleHaven-pool-pump.mp4 &
+          PUMP_VIDEO_PID=$!
+          sleep 6
+          kill -INT "$PUMP_VIDEO_PID" || true
+          for SECOND in 1 2 3 4 5 6 7 8 9 10; do
+            kill -0 "$PUMP_VIDEO_PID" 2>/dev/null || break
+            sleep 1
+          done
+          kill -TERM "$PUMP_VIDEO_PID" 2>/dev/null || true
+          sleep 1
+          kill -KILL "$PUMP_VIDEO_PID" 2>/dev/null || true
+          wait "$PUMP_VIDEO_PID" || true
+      - name: Capture full screen touch mode and laundry
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
+        run: |
+          set -euo pipefail
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-laundry --ui-touch
+          sleep 4
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-touch-laundry.png
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-family-home --ui-touch
+          sleep 4
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-touch-home.png
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-creature --ui-touch
+          sleep 3
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-creature.png
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-creature --ui-creature-portrait --ui-touch
+          sleep 3
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-Tuki-portrait.png
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-action-theft
+          sleep 2
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-small-room-items.png
+      - name: Capture basement and all eight residents
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
+        run: |
+          set -euo pipefail
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-basement --ui-touch
+          sleep 3
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-basement.png
+          for ID in 0 1 2 3 4 5 6 7; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-basement "--ui-corral-$ID" --ui-touch
+            sleep 2
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-corral-$ID.png"
+          done
+      - name: Capture restaurant bikes and corner stairs
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
+        run: |
+          set -euo pipefail
+          for MODE in fish fish-exterior bike bike-riding home-stairs; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-touch
+            sleep 3
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
+          done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-action-checkin --ui-touch
+          sleep 1
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-checkin-desk.png
+      - name: Capture creative layout and subtle full-screen controls
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
+        run: |
+          set -euo pipefail
+          for MODE in creative creative-moved; do
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-touch
+            sleep 3
+            xcrun simctl io "$SIM_DEVICE" screenshot "LittleHaven-$MODE.png"
+          done
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-creative --ui-creative-preview --ui-touch
+          sleep 3
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-creative-editor.png
+      - name: Capture guest interaction
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
+        run: |
+          set -euo pipefail
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-guest-favour --ui-guest-dialogue
+          sleep 2
+          xcrun simctl io "$SIM_DEVICE" screenshot LittleHaven-guest-conversation.png
       - name: Capture management simulation
-        if: ${{ success() && env.SIM_DEVICE != '' }}
+        if: ${{ success() && env.SIM_DEVICE != '' && github.ref == 'refs/heads/main' }}
         run: |
           set -euo pipefail
           DEVICE="$SIM_DEVICE"
@@ -141,22 +435,6 @@ jobs:
             sleep 3
             xcrun simctl io "$DEVICE" screenshot "LittleHaven-management-$MODE.png"
           done
-      - name: Verify and package IPA
-        run: |
-          set -euo pipefail
-          APP=device-build/Build/Products/Release-iphoneos/LittleHaven.app
-          test -x "$APP/LittleHaven"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleSupportedPlatforms:0' "$APP/Info.plist")" = "iPhoneOS"
-          xcrun lipo "$APP/LittleHaven" -verify_arch arm64
-          xcrun vtool -show-build "$APP/LittleHaven" | tee platform.txt
-          grep -Eq 'platform[[:space:]]+IOS$' platform.txt
-          mkdir -p package/Payload
-          ditto "$APP" package/Payload/LittleHaven.app
-          cd package
-          zip -qry ../LittleHaven-unsigned.ipa Payload
-          cd ..
-          unzip -t LittleHaven-unsigned.ipa
-          shasum -a 256 LittleHaven-unsigned.ipa > LittleHaven-unsigned.ipa.sha256
       - name: Publish IPA, previews and SideStore update
         if: github.ref == 'refs/heads/main'
         env:
@@ -165,19 +443,11 @@ jobs:
         run: |
           set -euo pipefail
           TAG="sideload-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
-          printf '%s\n' 'Little Haven 15.0: A crisp 2D pixel world, tiled roofs, textured grass, coordinated paths, and continuous home flooring. Original characters, reception PC, home workbench and pet companions are preserved. iOS 17+.' 'Wake up and walk around your motel grounds, office and rooms. Meet guests, collect payment, carry cleaning tools, make beds, collect trash, mop spills and expand your motel.' 'Explore occupied rooms, steal belongings and escape before suspicion reaches 100%. Getting caught returns you to your last saved checkpoint.' 'Save at the desk or end the day. Existing cottage saves migrate to the wake-up scene.' 'Unsigned arm64 iPhoneOS build. Sign through your sideloading tool before installing. Physical-device installation has not been verified.' > release-notes.txt
-          gh release create "$TAG" LittleHaven-home-exterior.png LittleHaven-family-home.png LittleHaven-neighborhood.png LittleHaven-home-store.png LittleHaven-clothes-store.png LittleHaven-pawn-store.png LittleHaven-staff-posts.png LittleHaven-pool-responder.png LittleHaven-pool-responder.mp4 LittleHaven-fight-responder.png LittleHaven-fight-responder.mp4 LittleHaven-title.png LittleHaven-options.png LittleHaven-quit.png LittleHaven-management-board.png LittleHaven-management-events.png LittleHaven-management-cameras.png LittleHaven-management-night.png LittleHaven-pool.mp4 LittleHaven-fight.mp4 LittleHaven-fire.mp4 LittleHaven-pool.png LittleHaven-fight.png LittleHaven-parking-staff.png LittleHaven-weather-storm.png LittleHaven-weather-snow.png LittleHaven-weather-wind.png LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png LittleHaven-wake.png LittleHaven-motel.png LittleHaven-stealth.png LittleHaven-cleaning.png LittleHaven-office.png LittleHaven-dialogue.png LittleHaven-chaos.png LittleHaven-police.png LittleHaven-hiring.png --target "$GITHUB_SHA" --title "Little Haven 15.0 - 2D pixel world" --prerelease --notes-file release-notes.txt
+          printf '%s\n' 'Little Haven 17.0: Decorated home and reception, upright animated TV and sofa, walk-in stores with distinctive shopkeepers and merchandise, individual store signs, a decorated Sunset Cove beach, and motel-style guest rooms. Original characters, smooth walking, reception PC, workbench, companions and guest-request consequences are preserved. iOS 17+.' 'Wake up and walk around your motel grounds, office and rooms. Meet guests, collect payment, carry cleaning tools, make beds, collect trash, mop spills and expand your motel.' 'Explore occupied rooms, steal belongings and escape before suspicion reaches 100%. Getting caught returns you to your last saved checkpoint.' 'Save at the desk or end the day. Existing cottage saves migrate to the wake-up scene.' 'Unsigned arm64 iPhoneOS build. Sign through your sideloading tool before installing. Physical-device installation has not been verified.' > release-notes.txt
+          gh release create "$TAG" LittleHaven-beach.png LittleHaven-motel-room.png LittleHaven-home-store-interior.png LittleHaven-clothes-store-interior.png LittleHaven-pawn-store-interior.png LittleHaven-tv-frame1.png LittleHaven-animated-tv.mp4 LittleHaven-guest-conversation.png LittleHaven-home-exterior.png LittleHaven-family-home.png LittleHaven-neighborhood.png LittleHaven-home-store.png LittleHaven-clothes-store.png LittleHaven-pawn-store.png LittleHaven-staff-posts.png LittleHaven-pool-responder.png LittleHaven-pool-responder.mp4 LittleHaven-fight-responder.png LittleHaven-fight-responder.mp4 LittleHaven-title.png LittleHaven-options.png LittleHaven-quit.png LittleHaven-management-board.png LittleHaven-management-events.png LittleHaven-management-cameras.png LittleHaven-management-night.png LittleHaven-pool.mp4 LittleHaven-fight.mp4 LittleHaven-fire.mp4 LittleHaven-pool.png LittleHaven-fight.png LittleHaven-parking-staff.png LittleHaven-weather-storm.png LittleHaven-weather-snow.png LittleHaven-weather-wind.png LittleHaven-unsigned.ipa LittleHaven-unsigned.ipa.sha256 LittleHaven-preview.png LittleHaven-wake.png LittleHaven-motel.png LittleHaven-stealth.png LittleHaven-cleaning.png LittleHaven-office.png LittleHaven-dialogue.png LittleHaven-chaos.png LittleHaven-police.png LittleHaven-hiring.png --target "$GITHUB_SHA" --title "Little Haven 17.0 - Sunset Cove and walk-in shops" --prerelease --notes-file release-notes.txt
           gh api "repos/$GH_REPO/contents/sideStore.json" > live-source-response.json
           python3 scripts/update_source.py "$TAG"
           gh api --method PUT "repos/$GH_REPO/contents/sideStore.json" --input source-update.json
-      - name: Preserve verified iPhone package
-        uses: actions/upload-artifact@v4
-        with:
-          name: LittleHaven-iPhone-IPA
-          path: |
-            LittleHaven-unsigned.ipa
-            LittleHaven-unsigned.ipa.sha256
-          if-no-files-found: error
       - name: Preserve gameplay previews
         if: always()
         uses: actions/upload-artifact@v4
@@ -192,5 +462,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Simulator-test-results
-          path: TestResults.xcresult
+          path: |
+            SmallStartupResults.xcresult
+            ReleaseStartup-*.xcresult
+            ReleaseStartup-*-report.json
+            CreativeResults.xcresult
+            TestResults.xcresult
           if-no-files-found: ignore
+
