@@ -2,7 +2,7 @@ name: Verify and publish home office and Hi Cat update
 on:
   push:
     branches: ['codex/pokopia-scenery']
-    paths: ['.github/workflows/hi-cat-release.yml']
+    paths: ['.github/workflows/hi-cat-release.yml', 'LittleHaven/OfficeView.swift']
   workflow_dispatch:
 permissions:
   contents: write

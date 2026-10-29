@@ -57,6 +57,7 @@ struct FamilyHouseView:View {
                 ForEach(motel.visiblePets, id: \.key) { pet in
                     target(OfficeTap(rawValue:pet.key)!,"Talk to \(motel.companionName(pet.key))",pet.value.tile,scale,origin)
                         .animation(.linear(duration:pet.value.following ? 0.14 : 0.65),value:pet.value.tile)
+                        .zIndex(2)
                 }
                 target(.fridge,"Eat from fridge",Motel.homeFridge,scale,origin)
                 target(.bathroomDoor,"Enter bathroom",HomeBedroom.bathroom.door,scale,origin).zIndex(3)
@@ -75,7 +76,11 @@ struct FamilyHouseView:View {
         let familyMember=item == .hildarelys || item == .samhil || item == .chichu || item == .chichi || item == .mochi
         // Bedroom doors extend up the wall. Keep their target on the actual door,
         // above the family patrol, instead of centering it on the floor approach.
-        return Button {if familyMember {tap(item)} else if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).frame(width:max(item == .hildarelys ? 64 : 44,24*scale),height:max(item == .hildarelys ? 64 : 44,(bedroomDoor ? 30 : 26)*scale)).contentShape(Rectangle())}.buttonStyle(.plain).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+(bedroomDoor ? 18 : CGFloat(tile.y*16+5))*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
+        // Cover the full step as roaming actors interpolate between tiles. This
+        // keeps a tap on their displayed body inside the target during motion.
+        let targetWidth:CGFloat=familyMember ? 40 : 24
+        let targetHeight:CGFloat=familyMember ? 40 : bedroomDoor ? 30 : 26
+        return Button {if familyMember {tap(item)} else if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).frame(width:max(44,targetWidth*scale),height:max(44,targetHeight*scale)).contentShape(Rectangle())}.buttonStyle(.plain).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+(bedroomDoor ? 18 : CGFloat(tile.y*16+5))*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
     }
 }
 struct OfficeReceptionView: View {
@@ -309,3 +314,4 @@ struct HomeBedroomView:View {
             .accessibilityValue("Column \(motel.actorTile.x), row \(motel.actorTile.y). Food \(motel.playerNeeds.fullness), bathroom \(motel.playerNeeds.bladder), hygiene \(motel.playerNeeds.hygiene), dirty \(motel.isPlayerDirty).")
     }
 }
+
