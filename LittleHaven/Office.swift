@@ -75,7 +75,7 @@ extension Motel {
     /// Home cats wander on the existing simulation cadence; no extra UI timer.
     mutating func tickHomeCats() {
         guard isAtHome,currentBedroom == nil else{return}
-        let route=[Tile(x:10,y:12),Tile(x:8,y:10),Tile(x:6,y:7),Tile(x:8,y:4),Tile(x:10,y:7),Tile(x:12,y:12)]
+        let route=OfficeReception.homeCatRoute
         // Pathfinding used to run for both cats in the same simulation frame.
         // Alternate them so the home never pays for two searches plus the
         // family patrol update at once; each cat still moves regularly.
@@ -127,6 +127,7 @@ struct OfficeReception: Codable {
     static let samhil = Tile(x:11,y:9)
     static let chichu = Tile(x:10,y:12)
     static let chichi = Tile(x:12,y:12)
+    static let homeCatRoute=[Tile(x:10,y:12),Tile(x:8,y:10),Tile(x:6,y:7),Tile(x:8,y:4),Tile(x:10,y:7),Tile(x:12,y:12)]
     static let hildarelysRoute = [Tile(x: 6,y: 3),Tile(x: 7,y: 3),Tile(x: 8,y: 3),Tile(x: 8,y: 4),Tile(x: 7,y: 4),Tile(x: 6,y: 4)]
     var hildarelys: Tile { Self.hildarelysRoute[(tick / 2) % Self.hildarelysRoute.count] }
 }
