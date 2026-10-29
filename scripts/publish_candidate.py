@@ -22,7 +22,7 @@ with zipfile.ZipFile(io.BytesIO(data)) as archive:
 assert info['CFBundleDisplayName'] == 'Brainstorm Haven'
 assert info['CFBundleSupportedPlatforms'] == ['iPhoneOS']
 version = info['CFBundleShortVersionString'].split('.')[0]
-assert version == '62' and info['CFBundleVersion'] == '67'
+assert version == '63' and info['CFBundleVersion'] == '68'
 branch = 'codex/download-v63-' + source[:8]
 entries = []
 def blob(path, content):
