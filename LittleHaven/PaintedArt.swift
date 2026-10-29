@@ -140,7 +140,7 @@ struct PaintedSanctuary:View {
             for id in BasementLayout.residents {
                 let p=BasementLayout.pen(id),x=Double(p.x*16),y=Double(p.y*16)
                 let pen=CGRect(x:x,y:y,width:128,height:64)
-                c.fill(Path(pen),with:.color(Color(hex:[UInt32(0xBDA785),0xCDBB94,0x9DAF9A,0xA5B18C,0xCEC4AA,0xAEA38E,0xB89F95,0x9EAF9A,0xCEB3BE,0xB7A298,0xA1B69C,0xCBB98D][id])))
+                c.fill(Path(pen),with:.color(Color(hex:[UInt32(0xBDA785),0xCDBB94,0x9DAF9A,0xA5B18C,0xCEC4AA,0xAEA38E,0xB89F95,0x9EAF9A,0xCEB3BE,0xB7A298,0xA1B69C,0xCBB98D,0xB7AEBB][id])))
                 var bed=c;bed.opacity=0.10;PaintedArt.texture("straw",in:pen.insetBy(dx:3,dy:4),context:&bed,unit:32)
                 PaintedArt.draw("bedding",in:CGRect(x:x+7,y:y+14,width:28,height:26),context:&c,fit:true)
                 PaintedArt.draw("feed-bowl",in:CGRect(x:x+98,y:y+15,width:15,height:8),context:&c)
@@ -190,3 +190,4 @@ struct PaintedSanctuary:View {
         }.frame(width:400,height:CGFloat(BasementLayout.height*16))
     }
 }
+

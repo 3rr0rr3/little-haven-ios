@@ -821,11 +821,11 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["worldAction"].tap()
         XCTAssertTrue(app.buttons["Fed today"].waitForExistence(timeout:3))
         app.buttons["Pet"].tap()
-        capture(app,"Twelve corral sanctuary and animal care")
+        capture(app,"Thirteen corral sanctuary and animal care")
     }
     func testNewSanctuaryResidentsCareAndAdventure() {
         let app=XCUIApplication()
-        for (id,name) in [(8,"Kawai Tom"),(9,"Inferno Cat"),(10,"cosmic cat"),(11,"Juan the horse")] {
+        for (id,name) in [(8,"Kawai Tom"),(9,"Inferno Cat"),(10,"cosmic cat"),(11,"Juan the horse"),(12,"The Hi Cat")] {
             app.launchArguments=["--ui-basement","--ui-corral-\(id)","--ui-testing","--ui-painted-check"]
             app.launch()
             XCTAssertTrue(app.staticTexts[name.uppercased()].waitForExistence(timeout:15),name)
@@ -1356,3 +1356,4 @@ final class LittleHavenUITests: XCTestCase {
         add(attachment)
     }
 }
+

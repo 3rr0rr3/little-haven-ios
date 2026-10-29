@@ -74,9 +74,13 @@ extension Motel {
     }
     /// Home cats wander on the existing simulation cadence; no extra UI timer.
     mutating func tickHomeCats() {
-        guard isAtHome,currentBedroom == nil,worldState.tick%4==0 else{return}
+        guard isAtHome,currentBedroom == nil else{return}
         let route=[Tile(x:10,y:12),Tile(x:8,y:10),Tile(x:6,y:7),Tile(x:8,y:4),Tile(x:10,y:7),Tile(x:12,y:12)]
-        for (index,id) in ["chichu","chichi"].enumerated() {
+        // Pathfinding used to run for both cats in the same simulation frame.
+        // Alternate them so the home never pays for two searches plus the
+        // family patrol update at once; each cat still moves regularly.
+        let roaming=["chichu","chichi"],index=abs(worldState.tick)%roaming.count
+        for (index,id) in [(index,roaming[index])] {
             var pet=petState(id)
             guard pet.map=="house",!pet.following,pet.stay != true else{continue}
             var stop=abs(pet.homeStop ?? index*3)%route.count
@@ -203,11 +207,11 @@ struct CorralCare:Codable {
     var visits = 0
 }
 enum BasementLayout {
-    static let width=25,height=37
+    static let width=25,height=42
     static let homeStairs=Tile(x:1,y:13)
-    static let stairs=Tile(x:12,y:35)
-    static let arrival=Tile(x:12,y:34)
-    static let titles=["Wizard Chichu","Two-tail fox","Blue Chichu","Shrek Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Messi Chichu","Kawai Tom","Inferno Cat","cosmic cat","Juan the horse"]
+    static let stairs=Tile(x:12,y:40)
+    static let arrival=Tile(x:12,y:39)
+    static let titles=["Wizard Chichu","Two-tail fox","Blue Chichu","Shrek Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Messi Chichu","Kawai Tom","Inferno Cat","cosmic cat","Juan the horse","The Hi Cat"]
     static var residents:Range<Int> {titles.indices}
     static func pen(_ id:Int)->RPGRegion {RPGRegion(x:id%2 == 0 ? 2 : 15,y:3+(id/2)*5,width:8,height:4)}
     static func gate(_ id:Int)->Tile {let p=pen(id);return Tile(x:id%2 == 0 ? 10 : 14,y:p.y+2)}
@@ -229,7 +233,7 @@ extension Motel {
     @discardableResult mutating func enterBasement()->Bool {
         guard isAtHome,currentBedroom == nil,actorTile.distance(to:BasementLayout.homeStairs)<=1 else{return false}
         initializeWorld();world!.place = .basement;world!.player=BasementLayout.arrival
-        lastEvent="Welcome to your creature sanctuary. Twelve corrals, twelve friends."
+        lastEvent="Welcome to your creature sanctuary. Thirteen corrals, thirteen friends."
         return true
     }
     @discardableResult mutating func leaveBasement()->Bool {
@@ -437,3 +441,4 @@ extension Motel {
         return nil
     }
 }
+

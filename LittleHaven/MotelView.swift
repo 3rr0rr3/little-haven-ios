@@ -287,7 +287,11 @@ struct MotelView: View {
                     ticks += 1
                     change { current in
                         if current.operationsState.incident != nil || ticks % 2 == 0 { current.tickWorld() }
-                        if ticks % 2 == 0 && (current.isAtReception || current.isAtHome || current.reception.visitor != nil) { current.tickReception() }
+                        // Reception arrivals and the family patrol use the
+                        // opposite frame from the heavier world simulation.
+                        // This prevents a client or Hildarelys update from
+                        // landing on the same render pass as all world walkers.
+                        if ticks % 2 == 1 && (current.isAtReception || current.isAtHome || current.reception.visitor != nil) { current.tickReception() }
                         if ticks % 6 == 0 && current.visit?.sneaking == true { current.tick() }
                         current.tickManagement(advanceClock:ticks % MotelCadence.businessSteps == 0)
                     }
@@ -1393,3 +1397,4 @@ private struct MotelScreenSection: View {
     let makeContent: () -> AnyView
     var body: AnyView { makeContent() }
 }
+

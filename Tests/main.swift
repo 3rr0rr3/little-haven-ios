@@ -1148,10 +1148,10 @@ func referenceCompanionRules() {
 referenceCompanionRules()
 
 func basementSanctuaryRules() {
-    require(BasementLayout.titles.count == 12,"Exactly twelve distinct corral residents")
+    require(BasementLayout.titles.count == 13,"Exactly thirteen distinct corral residents")
     require(Array(BasementLayout.titles.prefix(8)) == ["Wizard Chichu","Two-tail fox","Blue Chichu","Shrek Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Messi Chichu"],"Existing resident save IDs and names retain their order")
-    require(Array(BasementLayout.titles.suffix(4)) == ["Kawai Tom","Inferno Cat","cosmic cat","Juan the horse"],"Requested spellings use the same three save IDs and append Juan")
-    require(Motel.adventureClues.count == 12 && Motel.adventureSites.count == 12 && Motel.creatureAbilities.count == 12,"All twelve care and adventure entries are complete")
+    require(Array(BasementLayout.titles.suffix(5)) == ["Kawai Tom","Inferno Cat","cosmic cat","Juan the horse","The Hi Cat"],"Requested spellings and all appended resident save IDs remain stable")
+    require(Motel.adventureClues.count == 13 && Motel.adventureSites.count == 13 && Motel.creatureAbilities.count == 13,"All thirteen care and adventure entries are complete")
     var reachable:Set<Tile>=[BasementLayout.arrival],queue=[BasementLayout.arrival],cursor=0
     while cursor<queue.count {
         let tile=queue[cursor];cursor+=1
@@ -1188,8 +1188,8 @@ func basementSanctuaryRules() {
     require(!game.careForCorral(0,feed:false),"Cannot interact with a distant animal")
     let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(game))
     require(saved.isAtBasement && saved.corralCare(7).fedDay == game.day && saved.corralCare(7).visits == 1,"Basement location and animal care persist")
-    for id in 8...11 {require(saved.corralCare(id).fedDay == game.day && saved.corralCare(id).visits == 1,"New resident care survives save and reload")}
-    require(!game.careForCorral(12,feed:false) && !game.startCreatureAdventure(12),"An invalid corral ID never indexes the resident arrays")
+    for id in 8...12 {require(saved.corralCare(id).fedDay == game.day && saved.corralCare(id).visits == 1,"New resident care survives save and reload")}
+    require(!game.careForCorral(13,feed:false) && !game.startCreatureAdventure(13),"An invalid corral ID never indexes the resident arrays")
     var legacy=game;legacy.world!.corrals=legacy.world!.corrals?.filter{$0.key<8};legacy.world!.player=Tile(x:12,y:24)
     let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(legacy))
     require(!BasementLayout.blocked(restored.actorTile) && restored.corralCare(7).visits == 1 && restored.corralCare(8).fedDay == -1,"Eight-resident saves retain their care and safely default the added residents")
@@ -1200,7 +1200,7 @@ func basementSanctuaryRules() {
     game.togglePet("mochi") // Tuki is upstairs, so remote follow stays disabled.
     require(!game.petState("mochi").following,"Corrals do not alter the home companion")
     require(game.leaveBasement() && game.isAtHome && !game.homeBlocked(game.actorTile),"Upstairs returns to the family home")
-    print("PASS: twelve enclosed residents, home stairs, feeding, petting, safe movement and saved care")
+    print("PASS: thirteen enclosed residents, home stairs, feeding, petting, safe movement and saved care")
 }
 basementSanctuaryRules()
 
@@ -1873,7 +1873,10 @@ func homeRoamingAndRearBathroomRules() {
     var paths:[String:Set<Tile>]=["chichu":[],"chichi":[]]
     home.home=FamilyHome();home.home!.placed=[PlacedHomeObject(id:99,kind:.table,tile:Tile(x:8,y:10))]
     for _ in 0..<120 {
+        let beforeCats=[home.petState("chichu").tile,home.petState("chichi").tile]
         home.tickWorld()
+        let afterCats=[home.petState("chichu").tile,home.petState("chichi").tile]
+        require(zip(beforeCats,afterCats).filter{$0.0 != $0.1}.count<=1,"Only one roaming cat path is updated per simulation frame")
         for id in ["chichu","chichi"] {
             let tile=home.petState(id).tile;paths[id]!.insert(tile)
             require(!home.homeBlocked(tile),"Roaming cats avoid real home furniture")
@@ -2202,3 +2205,4 @@ func havenExperiencePackRules() {
     print("PASS: all eight experience systems affect gameplay, physical locations, persistence and legacy saves")
 }
 havenExperiencePackRules()
+

@@ -932,6 +932,7 @@ struct BasementArt:View {
 
 enum CorralCreatureArt {
     static func draw(context:inout GraphicsContext,kind:Int,facing:Int,walk:Double) {
+        if kind == 13 {drawHiCat(context:&context,facing:facing,walk:walk);return}
         if kind == 12 {drawJuan(context:&context,facing:facing,walk:walk);return}
         if (9...11).contains(kind) {drawNewResident(context:&context,kind:kind,facing:facing,walk:walk);return}
         if (1...8).contains(kind),PaintedArt.creature(context:&context,name:PaintedArt.creatures[kind-1],facing:facing,walk:walk) {return}
@@ -1030,6 +1031,32 @@ struct CorralCreaturePortrait:View {
 }
 
 extension CorralCreatureArt {
+    static func drawHiCat(context:inout GraphicsContext,facing:Int,walk:Double) {
+        var c=context
+        let edge=Color(hex:0x413A46),fur=Color(hex:0xB9B4B8),light=Color(hex:0xE2DDE0),stripe=Color(hex:0x67606C)
+        func oval(_ rect:CGRect,_ color:Color,_ outline:Bool=true) {let p=Path(ellipseIn:rect);c.fill(p,with:.color(color));if outline{c.stroke(p,with:.color(edge),lineWidth:0.45)}}
+        func line(_ points:[CGPoint],_ width:Double=0.65) {var p=Path();p.addLines(points);c.stroke(p,with:.color(stripe),style:StrokeStyle(lineWidth:width,lineCap:.round,lineJoin:.round))}
+        let bob=max(-1,min(1,walk))*0.45
+        c.fill(Path(ellipseIn:CGRect(x:2,y:25,width:21,height:2.4)),with:.color(.black.opacity(0.2)))
+        oval(CGRect(x:5,y:14,width:14,height:12),fur)
+        oval(CGRect(x:facing == 1 ? 2 : 15,y:17+bob,width:7,height:10),light)
+        for x in [facing == 1 ? 3.2 : 16.2,facing == 1 ? 5.0 : 18.0,facing == 1 ? 6.8 : 19.8] {oval(CGRect(x:x,y:17.6+bob,width:1.35,height:2),Color(hex:0x8C7182),false)}
+        oval(CGRect(x:3.5,y:4,width:17,height:15),fur)
+        var leftEar=Path();leftEar.addLines([CGPoint(x:4,y:8),CGPoint(x:5.2,y:1),CGPoint(x:10,y:5.2)]);leftEar.closeSubpath();c.fill(leftEar,with:.color(fur));c.stroke(leftEar,with:.color(edge),lineWidth:0.45)
+        var rightEar=Path();rightEar.addLines([CGPoint(x:14,y:5.2),CGPoint(x:18.8,y:1),CGPoint(x:20,y:8)]);rightEar.closeSubpath();c.fill(rightEar,with:.color(fur));c.stroke(rightEar,with:.color(edge),lineWidth:0.45)
+        line([CGPoint(x:8,y:5),CGPoint(x:9.3,y:8)]);line([CGPoint(x:12,y:4.5),CGPoint(x:12,y:8)]);line([CGPoint(x:16,y:5),CGPoint(x:14.7,y:8)])
+        if facing != 3 {
+            let shift=facing == 1 ? -1.2 : facing == 2 ? 1.2 : 0
+            for x in [8.0,16.0] {oval(CGRect(x:x-3+shift,y:8,width:6,height:6.5),Color(hex:0x241F2B));oval(CGRect(x:x-1.8+shift,y:8.7,width:1.7,height:1.7),.white,false)}
+            oval(CGRect(x:10.5+shift,y:13.2,width:3,height:2),Color(hex:0x8A6878))
+            line([CGPoint(x:11.2+shift,y:15.3),CGPoint(x:12+shift,y:16),CGPoint(x:12.8+shift,y:15.3)],0.5)
+            for y in [14.2,16.0] {line([CGPoint(x:3,y:y),CGPoint(x:9,y:y+0.4)],0.45);line([CGPoint(x:15,y:y+0.4),CGPoint(x:21,y:y)],0.45)}
+        }
+        line([CGPoint(x:6,y:18),CGPoint(x:9,y:19)]);line([CGPoint(x:18,y:18),CGPoint(x:15,y:19)]);line([CGPoint(x:7,y:21),CGPoint(x:10,y:22)]);line([CGPoint(x:17,y:21),CGPoint(x:14,y:22)])
+        let badge=Path(roundedRect:CGRect(x:9,y:20,width:6,height:4),cornerRadius:0.8);c.fill(badge,with:.color(Color(hex:0x28232C)))
+        c.draw(Text("Hi").font(.system(size:2.5,weight:.bold,design:.rounded)).foregroundColor(.white),at:CGPoint(x:12,y:22))
+    }
+
     static func drawJuan(context:inout GraphicsContext,facing:Int,walk:Double) {
         var c=context
         let step=max(-1,min(1,walk))*0.65
@@ -1627,7 +1654,7 @@ struct LifeAnimationReview:View {
         result.append(LifeReviewSpec(id:"Beach outfit seated",actor:RPGActor(id:"beach-review",tile:Tile(x:0,y:0),color:0x91B7B1,variant:592,beachwear:true),kind:"sit"))
         result.append(LifeReviewSpec(id:"Happy guest",actor:RPGActor(id:"happy-review",tile:Tile(x:0,y:0),color:0xB7A1C4,variant:593,expression:"cheerful"),kind:"laugh"))
         result.append(LifeReviewSpec(id:"Upset guest",actor:RPGActor(id:"upset-review",tile:Tile(x:0,y:0),color:0xC4A16F,variant:594,expression:"angry"),kind:"cross"))
-        for id in 0..<12 {result.append(LifeReviewSpec(id:BasementLayout.titles[id],actor:RPGActor(id:"creature-\(id)",tile:Tile(x:0,y:0),color:0x999999,variant:id,corralCreature:id+1),kind:"creature"))}
+        for id in BasementLayout.residents {result.append(LifeReviewSpec(id:BasementLayout.titles[id],actor:RPGActor(id:"creature-\(id)",tile:Tile(x:0,y:0),color:0x999999,variant:id,corralCreature:id+1),kind:"creature"))}
         for id in 1...2 {result.append(LifeReviewSpec(id:"Home cat \(id)",actor:RPGActor(id:"cat-\(id)",tile:Tile(x:0,y:0),color:0x85817C,variant:0,animal:id),kind:"creature"))}
         result.append(LifeReviewSpec(id:"Tuki",actor:RPGActor(id:"mochi",tile:Tile(x:0,y:0),color:0xBB89B2,variant:0,creature:true),kind:"creature"))
         return result
@@ -1672,3 +1699,4 @@ extension HavenLifeArt {
         }
     }
 }
+

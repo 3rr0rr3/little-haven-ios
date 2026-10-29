@@ -6,7 +6,7 @@ import sys
 container, touch, destination = sys.argv[1:4]
 home = len(sys.argv)>4 and sys.argv[4]=="home"
 report = json.loads((Path(container) / 'Library/Application Support/startup-report.json').read_text())
-assert report['build'] == '62.0 (67)', report
+assert report['build'] == '63.0 (68)', report
 assert report['pending'] is False, report
 required = [
     'hotel_body_begin', 'hotel_screen_deferred', 'hotelChrome_constructed',
@@ -27,3 +27,4 @@ ordered = required[:10]
 assert [report['steps'].index(s) for s in ordered] == sorted(report['steps'].index(s) for s in ordered), report
 Path(destination).write_text(json.dumps(report, indent=2))
 print('Optimized Release hotel construction, drawing and stable checkpoint verified; touch:', touch)
+

@@ -733,13 +733,13 @@ extension Motel {
         return true
     }
     static let adventureClues=["a keepsake near the north neighborhood path","a ribbon in the shop plaza","a lure outside Coral Catch","a seed pouch by the cove",
-        "a shell on the east beach","a training buckle near the neighbors' homes","a grooming brush beside the laundry","a lost football near the south motel path","a pink ribbon by the neighborhood gardens","an ember charm in the motel courtyard","a moonstone beside the cove palms","a lucky horseshoe by the neighborhood path"]
+        "a shell on the east beach","a training buckle near the neighbors' homes","a grooming brush beside the laundry","a lost football near the south motel path","a pink ribbon by the neighborhood gardens","an ember charm in the motel courtyard","a moonstone beside the cove palms","a lucky horseshoe by the neighborhood path","a silver bell beside the office garden"]
     static let adventureSites=[Tile(x:45,y:17),Tile(x:54,y:33),Tile(x:47,y:36),Tile(x:56,y:45),
-        Tile(x:62,y:48),Tile(x:62,y:17),Tile(x:12,y:8),Tile(x:36,y:31),Tile(x:48,y:16),Tile(x:17,y:13),Tile(x:56,y:47),Tile(x:44,y:21)]
+        Tile(x:62,y:48),Tile(x:62,y:17),Tile(x:12,y:8),Tile(x:36,y:31),Tile(x:48,y:16),Tile(x:17,y:13),Tile(x:56,y:47),Tile(x:44,y:21),Tile(x:39,y:16)]
     static let creatureAbilities=["Wizard's insight · +1 toiletry each morning","Twin-tail courier · +1 towel each morning",
         "Blue's lucky cast · +2 fishing score","Shrek's green thumb · +2 snacks each morning",
         "Shark's sea sense · +2 fishing score","Mighty's encouragement · staff fatigue -5 each morning",
-        "Fang's pest patrol · +1 pesticide each morning","Messi's team spirit · +2 activity score","Kawai Tom's welcome · +1 snack each morning","Inferno Cat's forge · +1 spare part each morning","cosmic cat's clean orbit · +1 towel each morning","Juan's steady pace · +1 toiletry each morning"]
+        "Fang's pest patrol · +1 pesticide each morning","Messi's team spirit · +2 activity score","Kawai Tom's welcome · +1 snack each morning","Inferno Cat's forge · +1 spare part each morning","cosmic cat's clean orbit · +1 towel each morning","Juan's steady pace · +1 toiletry each morning","The Hi Cat's greeting · guest patience improves each morning"]
     func adventure(_ id:Int)->HavenAdventure {haven.adventures[id] ?? HavenAdventure()}
     func adventureTile(_ id:Int)->Tile {groundNearestWalkable(to:groundTile(Self.adventureSites[id]))}
     @discardableResult mutating func startCreatureAdventure(_ id:Int)->Bool {
@@ -881,6 +881,7 @@ extension Motel {
             default:break
             }
         }
+        if adventure(12).completed {s.reputation=min(100,s.reputation+1)}
         if state.identity == .lively {
             var n=state.neighbors[0] ?? HavenNeighbor()
             if rooms.contains(where:{$0.guest?.kind == .party && !$0.health.upgrades.contains(.soundproof)}) {n.friendship=max(-10,n.friendship-1);report.append("Unsoundproofed parties upset Nora.")}
@@ -1630,7 +1631,11 @@ struct RoomCollection:Codable {var selected:DecorCollection = .coastal;var owned
 struct GuestBond:Codable {var visits=0;var chapter=0;var storyDay=0;var friend=false;var memories:[String]=[]}
 struct EmployeeDispute:Codable {var first:String;var second:String;var day:Int}
 struct CreatureTraining:Codable {var xp=0;var trainedDay=0;var medals=0;var level:Int {1+xp/6}}
-enum CreatureExercise:String,Codable,CaseIterable,Identifiable {case fetch,obstacles,tricks;var id:String {rawValue};var title:String {rawValue.capitalized}}
+enum CreatureExercise:String,Codable,CaseIterable,Identifiable {
+    case fetch,obstacles,tricks
+    var id:String {rawValue}
+    var title:String {rawValue.capitalized}
+}
 struct SanctuaryContest:Codable {var creature:Int;var round=0;var score=0;var finished=false;var week:Int}
 enum SeasonalParty:String,Codable,CaseIterable,Identifiable {
     case springMarket,beachParty,halloween,christmas
@@ -1859,3 +1864,4 @@ extension Motel {
         return props
     }
 }
+

@@ -138,7 +138,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          for MODE in experience-guests experience-identity experience-rooms experience-team experience-district experience-creatures experience-events experience-scrapbook needs-animation-eat needs-animation-toilet needs-animation-shower needs-dirty needs-bathroom needs-panel needs-npc neglect night-sky seasonal menu-emergency sanctuary-juan sanctuary-pink sanctuary-inferno sanctuary-cosmic menu-pause menu-map menu-staff menu-purchases management-dashboard management-growth basement family-home bedroom-samhil bedroom-parents office-preview beach water-pool street home-store home-exterior neighborhood motel-room bar fish creative; do
+          for MODE in experience-guests experience-identity experience-rooms experience-team experience-district experience-creatures experience-events experience-scrapbook needs-animation-eat needs-animation-toilet needs-animation-shower needs-dirty needs-bathroom needs-panel needs-npc neglect night-sky seasonal menu-emergency sanctuary-juan sanctuary-pink sanctuary-inferno sanctuary-cosmic sanctuary-hi menu-pause menu-map menu-staff menu-purchases management-dashboard management-growth basement family-home bedroom-samhil bedroom-parents office-preview beach water-pool street home-store home-exterior neighborhood motel-room bar fish creative; do
             xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
             xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch --ui-painted-check --ui-care-preview --ui-home-compatibility
             sleep 5
@@ -469,3 +469,4 @@ jobs:
             CreativeResults.xcresult
             TestResults.xcresult
           if-no-files-found: ignore
+
