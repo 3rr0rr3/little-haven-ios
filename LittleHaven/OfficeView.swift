@@ -52,8 +52,8 @@ struct FamilyHouseView:View {
             ZStack(alignment:.topLeading) {
                 renderHome()
                 if let care {CareAnimationBadge(care:care).position(x:proxy.size.width/2,y:origin.y+46*scale)}
-                target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin).animation(.linear(duration:0.65),value:motel.reception.hildarelys).zIndex(2)
-                target(.samhil,"Talk to Samhil",OfficeReception.samhil,scale,origin).zIndex(2)
+                target(.hildarelys,"Talk to Hildarelys",motel.reception.hildarelys,scale,origin).animation(.linear(duration:0.65),value:motel.reception.hildarelys).zIndex(4)
+                target(.samhil,"Talk to Samhil",OfficeReception.samhil,scale,origin).zIndex(4)
                 ForEach(motel.visiblePets, id: \.key) { pet in
                     target(OfficeTap(rawValue:pet.key)!,"Talk to \(motel.companionName(pet.key))",pet.value.tile,scale,origin)
                         .animation(.linear(duration:pet.value.following ? 0.14 : 0.65),value:pet.value.tile)
