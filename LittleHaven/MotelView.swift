@@ -523,7 +523,10 @@ struct MotelView: View {
     }
     private func steer(_ direction:Tile?) {
         guard !paused,!motel.caught,scenePhase == .active else{joystickDirection=nil;return}
-        if direction != nil {movement=nil;working=false;workProgress=0}
+        if direction != nil {
+            movement=nil;working=false;workProgress=0
+            if fullscreenTouch,autoHideHUD {hideFullscreenToolbar=true}
+        }
         joystickDirection=direction
     }
     private func interactAtTouch(_ target:Tile,_ completion:(()->Void)?) {
