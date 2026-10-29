@@ -72,9 +72,10 @@ struct FamilyHouseView:View {
     }
     private func target(_ item:OfficeTap,_ label:String,_ tile:Tile,_ scale:CGFloat,_ origin:CGPoint)->some View {
         let bedroomDoor=item == .girlBedroom || item == .parentsBedroom || item == .bathroomDoor
+        let familyMember=item == .hildarelys || item == .samhil || item == .chichu || item == .chichi || item == .mochi
         // Bedroom doors extend up the wall. Keep their target on the actual door,
         // above the family patrol, instead of centering it on the floor approach.
-        return Button {if item == .hildarelys || item == .samhil {tap(item)} else if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).frame(width:max(item == .hildarelys ? 64 : 44,24*scale),height:max(item == .hildarelys ? 64 : 44,(bedroomDoor ? 30 : 26)*scale)).contentShape(Rectangle())}.buttonStyle(.plain).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+(bedroomDoor ? 18 : CGFloat(tile.y*16+5))*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
+        return Button {if familyMember {tap(item)} else if let worldTouch {worldTouch(tile,{tap(item)})} else {tap(item)}} label:{Color.white.opacity(0.001).frame(width:max(item == .hildarelys ? 64 : 44,24*scale),height:max(item == .hildarelys ? 64 : 44,(bedroomDoor ? 30 : 26)*scale)).contentShape(Rectangle())}.buttonStyle(.plain).position(x:origin.x+CGFloat(tile.x*16+8)*scale,y:origin.y+(bedroomDoor ? 18 : CGFloat(tile.y*16+5))*scale).accessibilityLabel(label).accessibilityIdentifier("office_"+item.rawValue)
     }
 }
 struct OfficeReceptionView: View {
