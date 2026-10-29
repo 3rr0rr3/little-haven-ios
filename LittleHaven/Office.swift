@@ -77,7 +77,8 @@ extension Motel {
         guard isAtHome,currentBedroom == nil else{return}
         let route=OfficeReception.homeCatRoute
         // Pathfinding used to run for both cats in the same simulation frame;
-        // their shared patrol route is also preallocated on OfficeReception.
+        // their shared patrol route is also preallocated on OfficeReception,
+        // keeping this path to one search and zero route allocations per frame.
         // Alternate them so the home never pays for two searches plus the
         // family patrol update at once; each cat still moves regularly.
         let roaming=["chichu","chichi"],index=abs(worldState.tick)%roaming.count
