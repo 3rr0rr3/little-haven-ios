@@ -1852,11 +1852,11 @@ struct HavenExperienceView:View {
     var body:some View {
         NavigationStack {
             VStack(spacing:0) {
-                ScrollView(.horizontal,showsIndicators:false) {
-                    HStack(spacing:9) {ForEach(HavenExperienceTab.allCases) {item in
-                        Button {tab=item} label:{VStack(spacing:5){Image(systemName:item.icon);Text(item.rawValue).font(.caption2.bold())}.frame(width:78,height:58).background(tab==item ? gold.opacity(0.24):Color.white.opacity(0.06),in:RoundedRectangle(cornerRadius:13)).overlay(RoundedRectangle(cornerRadius:13).stroke(tab==item ? gold:Color.clear,lineWidth:1.5))}.buttonStyle(.plain).accessibilityIdentifier("experience_"+item.id)
-                    }}.padding(.horizontal,16).padding(.vertical,12)
-                }
+                LazyVGrid(columns:Array(repeating:GridItem(.flexible(),spacing:7),count:4),spacing:8) {
+                    ForEach(HavenExperienceTab.allCases) {item in
+                        Button {withAnimation(.easeInOut(duration:0.2)){tab=item}} label:{VStack(spacing:5){Image(systemName:item.icon);Text(item.rawValue).font(.caption2.bold()).lineLimit(1).minimumScaleFactor(0.8)}.frame(maxWidth:.infinity).frame(height:52).background(tab==item ? gold.opacity(0.24):Color.white.opacity(0.06),in:RoundedRectangle(cornerRadius:13)).overlay(RoundedRectangle(cornerRadius:13).stroke(tab==item ? gold:Color.clear,lineWidth:1.5))}.buttonStyle(.plain).accessibilityIdentifier("experience_"+item.id)
+                    }
+                }.padding(.horizontal,12).padding(.vertical,10)
                 ScrollView {content.padding(18)}
             }.foregroundStyle(cream).background(Color(hex:0x172A25))
                 .navigationTitle("Hotel life & memories").navigationBarTitleDisplayMode(.inline)
