@@ -1014,7 +1014,7 @@ extension Motel {
         }
         return min(4,score)
     }
-    func designPremium(_ guest:MotelGuest,_ room:MotelRoom)->Int {roomMatch(guest,room)*4 + focusPremium(guest,room) + collectionPremium(room.id)}
+    func designPremium(_ guest:MotelGuest,_ room:MotelRoom)->Int {roomMatch(guest,room)*4 + focusPremium(guest,room) + collectionPremium(guest,room.id)}
     @discardableResult mutating func designHavenRoom(_ id:Int,_ design:HavenRoomDesign)->Bool {
         guard havenExpansion != nil,!caught,let i=rooms.firstIndex(where:{$0.id==id}),rooms[i].guest==nil,roomDesign(rooms[i]) != design,cash>=design.cost else{return false}
         cash-=design.cost;var e=expansion;e.designs[id]=design;havenExpansion=e
@@ -1733,6 +1733,10 @@ extension Motel {
     func collection(_ room:Int)->RoomCollection {experiences.collections[room] ?? RoomCollection()}
     func collectionComplete(_ room:Int)->Bool {let c=collection(room);return c.owned[c.selected.rawValue,default:[]].count==3}
     func collectionPremium(_ room:Int)->Int {collectionComplete(room) ? 10 : 0}
+    func collectionPremium(_ guest:MotelGuest,_ room:Int)->Int {
+        guard collectionComplete(room) else{return 0}
+        switch collection(room).selected {case .coastal:return guest.holiday == .couple ? 10:0;case .garden:return experiences.focus == .creatures || guest.holiday == .family ? 10:0;case .family:return guest.holiday == .family ? 10:0;case .boutique:return guest.holiday == .business || guest.kind == .celebrity ? 10:0}
+    }
     @discardableResult mutating func buyCollectionPiece(_ room:Int,kind:DecorCollection,piece:Int)->Bool {
         guard isAtReception,canSave,(0..<3).contains(piece),rooms.contains(where:{$0.id==room && $0.guest==nil}) else{return false}
         var e=experiences,c=collection(room);guard !c.owned[kind.rawValue,default:[]].contains(piece),cash>=15+piece*5 else{return false}

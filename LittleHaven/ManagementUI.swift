@@ -1933,7 +1933,7 @@ struct HavenExperienceView:View {
         else {card {Text(available.title).font(.headline);Text("Booking \(available.cost) coins · hosted at \(available.place)").font(.caption);Button("Book this season") {mutate{_=$0.bookSeasonalParty(available)}}.buttonStyle(MotelButtonStyle(subdued:true)).disabled(!motel.isAtReception || motel.cash<available.cost || motel.experiences.hostingWeek==motel.experienceWeek)}}
     }}
     private var scrapbookContent:some View {section("Family scrapbook",detail:"Photos and meaningful moments stay here across saves. Photo mode is opened from the main pause menu.") {
-        if motel.experiences.photos.isEmpty {empty("No photos yet. Open Photo mode from the pause menu and capture your favorite view.")} else {ForEach(motel.experiences.photos){photo in card {HavenPhotoThumbnail(photo:photo).frame(height:150).clipShape(RoundedRectangle(cornerRadius:11));Label(photo.caption.isEmpty ? photo.place:photo.caption,systemImage:"photo.fill").font(.headline);Text("Day \(photo.day) · \(photo.place)").font(.caption)}}}
+        if motel.experiences.photos.isEmpty {empty("No photos yet. Open Photo mode from the pause menu and capture your favorite view.")} else {ForEach(motel.experiences.photos){photo in card {HavenPhotoThumbnail(photo:photo).frame(height:150).clipShape(RoundedRectangle(cornerRadius:11));Label(photo.caption.isEmpty ? photo.place:photo.caption,systemImage:"photo.fill").font(.headline);Text("Day \(photo.day) · \(photo.place)").font(.caption);HStack{if let url=photoURL(photo) {ShareLink(item:url){Label("Share",systemImage:"square.and.arrow.up")}.buttonStyle(.bordered)};Button(role:.destructive){deletePhoto(photo)} label:{Label("Remove",systemImage:"trash")}.buttonStyle(.bordered)}}}}
         Text("Memories").font(.title3.bold()).padding(.top,8)
         if motel.experiences.memories.isEmpty {empty("Stories, friendships, contests and celebrations will appear here.")} else {ForEach(motel.experiences.memories){memory in card {Text(memory.text);Text("Day \(memory.day)").font(.caption).foregroundStyle(.secondary)}}}
     }}
@@ -1941,6 +1941,8 @@ struct HavenExperienceView:View {
     private func card<Content:View>(@ViewBuilder _ content:()->Content)->some View {VStack(alignment:.leading,spacing:10){content()}.padding(14).frame(maxWidth:.infinity,alignment:.leading).background(panel,in:RoundedRectangle(cornerRadius:15))}
     private func empty(_ text:String)->some View {Text(text).font(.subheadline).foregroundStyle(.secondary).padding(14).frame(maxWidth:.infinity,alignment:.leading).background(Color.white.opacity(0.05),in:RoundedRectangle(cornerRadius:14))}
     private func staffName(_ id:String)->String {StaffRole(rawValue:id)?.name ?? id.capitalized}
+    private func photoURL(_ photo:HavenPhoto)->URL? {FileManager.default.urls(for:.documentDirectory,in:.userDomainMask).first?.appendingPathComponent("HavenPhotos",isDirectory:true).appendingPathComponent(photo.fileName)}
+    private func deletePhoto(_ photo:HavenPhoto) {if let url=photoURL(photo){try? FileManager.default.removeItem(at:url)};mutate{$0.forgetHavenPhoto(photo.id)}}
     private func mutate(_ action:(inout Motel)->Void) {var value=game.motel ?? Motel();action(&value);game.motel=value;game.save()}
 }
 
