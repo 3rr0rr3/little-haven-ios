@@ -1899,8 +1899,8 @@ struct HavenExperienceView:View {
         ForEach(motel.rooms) {room in card {Text("Room \(room.number)").font(.headline);Text(room.guest==nil ? "Vacant · \(motel.collection(room.id).selected.title) set":"Occupied by \(room.guest!.name)").font(.caption)
             ForEach(DecorCollection.allCases) {kind in let owned=motel.collection(room.id).owned[kind.rawValue,default:[]]
                 HStack{Text(kind.title).frame(maxWidth:.infinity,alignment:.leading);Text("\(owned.count)/3").font(.caption.bold());if motel.collection(room.id).selected==kind {Image(systemName:"eye.fill")}}
-                HStack{ForEach(0..<3,id:\.self){piece in Button(owned.contains(piece) ? "✓ \(piece+1)":"Buy \(15+piece*5)") {mutate{_=$0.buyCollectionPiece(room:room.id,kind:kind,piece:piece)}}.buttonStyle(.bordered).disabled(owned.contains(piece) || room.guest != nil || !motel.isAtReception)}
-                    if owned.count==3 && motel.collection(room.id).selected != kind {Button("Use") {mutate{_=$0.selectCollection(room:room.id,kind:kind)}}.buttonStyle(.borderedProminent).disabled(room.guest != nil || !motel.isAtReception)}
+                HStack{ForEach(0..<3,id:\.self){piece in Button(owned.contains(piece) ? "✓ \(piece+1)":"Buy \(15+piece*5)") {mutate{_=$0.buyCollectionPiece(room.id,kind:kind,piece:piece)}}.buttonStyle(.bordered).disabled(owned.contains(piece) || room.guest != nil || !motel.isAtReception)}
+                    if owned.count==3 && motel.collection(room.id).selected != kind {Button("Use") {mutate{_=$0.selectCollection(room.id,kind:kind)}}.buttonStyle(.borderedProminent).disabled(room.guest != nil || !motel.isAtReception)}
                 }
             }
         }}

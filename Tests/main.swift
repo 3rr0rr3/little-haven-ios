@@ -2169,7 +2169,7 @@ func havenExperiencePackRules() {
     require(m.guestBond(first.name).visits==1,"Returning-guest journal records a real stay")
     m.world!.place = .office;m.world!.player=OfficeReception.clerk
     require(m.chooseHotelFocus(.family) && m.experiences.focus == .family,"Hotel specialization is selectable at reception")
-    for piece in 0..<3 {require(m.buyCollectionPiece(room:1,kind:.family,piece:piece),"Each coordinated room piece is a real purchase")}
+    for piece in 0..<3 {require(m.buyCollectionPiece(1,kind:.family,piece:piece),"Each coordinated room piece is a real purchase")}
     require(m.collectionComplete(1) && m.collectionPremium(1)==10,"A complete matching collection changes booking value")
     let encoded=try! JSONEncoder().encode(m);let saved=try! JSONDecoder().decode(Motel.self,from:encoded)
     require(saved.experiences.focus == .family && saved.collectionComplete(1),"Specialization and room collection survive saving")
