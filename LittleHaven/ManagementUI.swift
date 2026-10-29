@@ -1876,7 +1876,7 @@ struct HavenExperienceView:View {
         case .scrapbook:scrapbookContent
         }
     }
-    private var activeGuests:[MotelGuest] {motel.rooms.compactMap(\.guest)+motel.waiting+(motel.world?.travellers ?? [])}
+    private var activeGuests:[MotelGuest] {motel.rooms.compactMap(\.guest)+motel.waiting}
     private var knownGuestNames:[String] {Array(Set(motel.experiences.bonds.filter{$0.value.visits>0}.map(\.key))).sorted()}
     private var guestContent:some View {section("Returning guests",detail:"Guests remember every stay. Listen nearby to unlock a personal three-part story, then invite friends back.") {
         if knownGuestNames.isEmpty {empty("Welcome a guest to begin your relationship journal.")}
