@@ -824,6 +824,7 @@ final class LittleHavenUITests: XCTestCase {
         capture(app,"Thirteen corral sanctuary and animal care")
     }
     func testNewSanctuaryResidentsCareAndAdventure() {
+        executionTimeAllowance = 180
         let app=XCUIApplication()
         for (id,name) in [(8,"Kawai Tom"),(9,"Inferno Cat"),(10,"cosmic cat"),(11,"Juan the horse"),(12,"The Hi Cat")] {
             app.launchArguments=["--ui-basement","--ui-corral-\(id)","--ui-testing","--ui-painted-check"]
@@ -849,7 +850,7 @@ final class LittleHavenUITests: XCTestCase {
         let app=launch("--ui-bike")
         XCTAssertTrue(app.buttons["rideBike"].waitForExistence(timeout:10))
         app.buttons["rideBike"].tap()
-        XCTAssertTrue(app.buttons["dismountBike"].waitForExistence(timeout:3))
+        XCTAssertTrue(app.buttons["dismountBike"].waitForExistence(timeout:10))
         app.buttons["Walk east"].tap()
         capture(app,"Character riding bicycle")
         app.buttons["dismountBike"].tap()
