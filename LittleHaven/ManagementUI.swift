@@ -1923,7 +1923,7 @@ struct HavenExperienceView:View {
                 if motel.experiences.contest == nil || motel.experiences.contest?.finished==true {Button("Enter weekly contest · 10") {mutate{_=$0.enterSanctuaryContest(id)}}.buttonStyle(.borderedProminent).disabled(motel.nearbyTrainingCreature != id || motel.cash<10 || motel.experiences.contestWeek==motel.experienceWeek)}
             }
         }
-        if let run=motel.experiences.contest,!run.finished {card {Text("Contest round \(run.round+1) of 3").font(.headline);Text("Score: \(run.score)");HStack{ForEach(CreatureExercise.allCases){exercise in Button(exercise.title){mutate{_=$0.contestRound(exercise)}}.buttonStyle(.bordered)}}}
+        if let run=motel.experiences.contest,!run.finished {card {Text("Contest round \(run.round+1) of 3").font(.headline);Text("Score: \(run.score)");HStack{ForEach(CreatureExercise.allCases){exercise in Button(exercise.title){mutate{_=$0.contestRound(exercise)}}.buttonStyle(.bordered)}}}}
         Text("Stand beside the selected creature’s corral gate in the basement.").font(.caption)
     }}
     private var eventContent:some View {section("Seasonal hosting",detail:"Every season has a physical celebration. Book at reception, then visit its marked location to decorate, cater and welcome guests.") {
