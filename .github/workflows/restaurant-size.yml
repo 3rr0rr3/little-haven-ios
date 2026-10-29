@@ -1,4 +1,4 @@
-name: Verify restaurant sizes and build IPA
+name: Verify restaurant depth and build IPA
 on:
   push:
     branches: ['fix/restaurant-size']
@@ -27,17 +27,19 @@ jobs:
           echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
-          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -only-testing:LittleHavenUITests/LittleHavenUITests/testFishRestaurantServesMeal -only-testing:LittleHavenUITests/LittleHavenUITests/testBarBartenderServesDrinks -only-testing:LittleHavenUITests/LittleHavenUITests/testShopInteriorExitReturnsToItsOwnDoor -resultBundlePath RestaurantResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -only-testing:LittleHavenUITests/LittleHavenUITests/testWalkBehindRestaurantsAndReturnToEntrance -only-testing:LittleHavenUITests/LittleHavenUITests/testFishRestaurantServesMeal -only-testing:LittleHavenUITests/LittleHavenUITests/testBarBartenderServesDrinks -only-testing:LittleHavenUITests/LittleHavenUITests/testShopInteriorExitReturnsToItsOwnDoor -resultBundlePath RestaurantResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
       - name: Capture full height restaurant exteriors
         run: |
           set -euo pipefail
           xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
           xcrun simctl install "$SIM_DEVICE" sim-build/Build/Products/Debug-iphonesimulator/LittleHaven.app
           for MODE in fish-exterior bar-exterior; do
-            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch
-            sleep 5
-            xcrun simctl io "$SIM_DEVICE" screenshot "$MODE.png"
-            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town
+            for POSITION in front behind side; do
+              xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" "--ui-roof-$POSITION" --ui-testing --ui-touch
+              sleep 5
+              xcrun simctl io "$SIM_DEVICE" screenshot "$MODE-$POSITION.png"
+              xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town
+            done
           done
       - name: Verify and package device IPA
         run: |
@@ -49,21 +51,21 @@ jobs:
           mkdir -p package/Payload
           ditto "$APP" package/Payload/LittleHaven.app
           cd package
-          zip -qry ../BrainstormHaven-64.ipa Payload
+          zip -qry ../BrainstormHaven-65.ipa Payload
           cd ..
-          unzip -t BrainstormHaven-64.ipa
-          shasum -a 256 BrainstormHaven-64.ipa > BrainstormHaven-64.ipa.sha256
+          unzip -t BrainstormHaven-65.ipa
+          shasum -a 256 BrainstormHaven-65.ipa > BrainstormHaven-65.ipa.sha256
       - name: Publish updated installer
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh release create restaurant-size-v64 BrainstormHaven-64.ipa BrainstormHaven-64.ipa.sha256 fish-exterior.png bar-exterior.png --target "$GITHUB_SHA" --title 'Brainstorm Haven 64 - Full height restaurants' --prerelease --notes 'Restores Coral Catch and The Lantern Bar to full storefront height, preserving saved entrances and walking routes. Built for arm64 iPhoneOS; game rules and restaurant interaction tests passed. Unsigned IPA for signing with SideStore or your sideloading tool.'
+          gh release create restaurant-depth-v65 BrainstormHaven-65.ipa BrainstormHaven-65.ipa.sha256 *-exterior-*.png --target "$GITHUB_SHA" --title 'Brainstorm Haven 65 - Walk behind restaurant roofs' --prerelease --notes 'Fixes character depth behind Coral Catch and The Lantern Bar while keeping their full height, saved entrances and walking routes. Built for arm64 iPhoneOS; game rules, walking behind both restaurants and restaurant interaction tests passed. Unsigned IPA for signing with SideStore or your sideloading tool.'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Restaurant-size-build
           path: |
             RestaurantResults.xcresult
-            *-exterior.png
-            BrainstormHaven-64.ipa*
+            *-exterior-*.png
+            BrainstormHaven-65.ipa*

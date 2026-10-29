@@ -61,6 +61,22 @@ struct RPGActor {
 private struct WorldTouchKey: EnvironmentKey {
     static let defaultValue: ((Tile, (() -> Void)?) -> Void)? = nil
 }
+
+/// A transparent storefront sorted with the actors by its entrance baseline.
+/// Artwork can overhang a walkable path without putting walkers on the roof.
+struct RPGStorefront {
+    let shop: NeighborhoodShop
+    let offset: Tile
+    var bounds: CGRect {
+        CGRect(x:Double((shop.door.x-3)*16-4),y:Double((shop.door.y-6)*16-8),width:120,height:112)
+    }
+    var artwork: some View {
+        Canvas {context,_ in
+            context.translateBy(x:-bounds.minX,y:-bounds.minY)
+            DecorArt.storefront(&context,shop:shop)
+        }.frame(width:bounds.width,height:bounds.height)
+    }
+}
 extension EnvironmentValues {
     var worldTouch: ((Tile, (() -> Void)?) -> Void)? {
         get {self[WorldTouchKey.self]}
@@ -88,6 +104,7 @@ struct RPGSceneView: UIViewRepresentable {
     var poolOffset=Tile(x:0,y:0)
     var pumpPosition=Tile(x:10,y:21)
     var lifeProps:[HavenWorldProp] = []
+    var storefronts:[RPGStorefront] = []
     let scenery: () -> AnyView
 
     @MainActor final class Coordinator {
@@ -140,7 +157,7 @@ struct RPGSceneView: UIViewRepresentable {
         scene.configure(mapID: mapID, revision: revision, mapSize: mapSize,
                         columns: columns, interior: interior, actors: actors,
                         working: working, workKind: workKind, visual: visual,
-                        weather:weather,cars:cars,bikePositions:bikePositions,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,pumpPosition:pumpPosition,poolOffset:poolOffset,lifeProps:lifeProps,scenery: scenery)
+                        weather:weather,cars:cars,bikePositions:bikePositions,day:day,night:night,nightVision:nightVision,powerOut:powerOut,pumpFault:pumpFault,pumpPosition:pumpPosition,poolOffset:poolOffset,lifeProps:lifeProps,storefronts:storefronts,scenery: scenery)
         }
     }
     static func dismantleUIView(_ view: SKView, coordinator: Coordinator) {
@@ -417,7 +434,7 @@ final class RPGScene: SKScene {
                              mapSize: CGSize, columns: CGFloat, interior: Bool,
                              actors: [RPGActor], working: Bool, workKind:String,
                              visual:HotelVisual?,weather:HotelWeather,cars:[HotelCar],bikePositions:[Int:Tile],day:Int,night:Bool,nightVision:Bool,powerOut:Bool,pumpFault:Bool,pumpPosition:Tile,poolOffset:Tile,lifeProps:[HavenWorldProp],
-                             scenery: () -> AnyView) {
+                             storefronts:[RPGStorefront],scenery: () -> AnyView) {
         StartupTrace.stage("spritekit_configure_"+mapID)
         let changedMap = worldID != mapID
         if changedMap {lifeTextures.removeAll(keepingCapacity:true);lifeTextureOrder.removeAll(keepingCapacity:true);lastActors.removeAll(keepingCapacity:true)}
@@ -441,6 +458,7 @@ final class RPGScene: SKScene {
             map.position = .zero
             map.zPosition = -10000
             world.addChild(map)
+            configureStorefronts(mapID == "grounds" ? storefronts : [])
             worldID = mapID
             revision = newRevision
         }
@@ -1240,6 +1258,24 @@ final class RPGScene: SKScene {
         if jump { followCamera.position=point }
         else { followCamera.run(.move(to:point,duration:cameraMoveDuration),withKey:"follow") }
     }
+    @MainActor private func configureStorefronts(_ storefronts:[RPGStorefront]) {
+        for node in world.children where node.name?.hasPrefix("storefront:") == true {node.removeFromParent()}
+        for storefront in storefronts {
+            let renderer=ImageRenderer(content:storefront.artwork)
+            renderer.scale=3
+            guard let image=renderer.uiImage else {continue}
+            let bounds=storefront.bounds,offset=storefront.offset
+            let texture=SKTexture(image:image);texture.filteringMode = .linear
+            let node=SKSpriteNode(texture:texture,size:bounds.size)
+            node.name="storefront:"+storefront.shop.id
+            node.anchorPoint=CGPoint(x:0,y:1)
+            node.position=CGPoint(x:bounds.minX+Double(offset.x*16),y:-(bounds.minY+Double(offset.y*16)))
+            // Actor depth is its animated ground Y. At the entrance it is in front;
+            // on the north path it is behind, including while moving diagonally.
+            node.zPosition=CGFloat((storefront.shop.door.y+offset.y)*16)
+            world.addChild(node)
+        }
+    }
     override func didChangeSize(_ oldSize: CGSize) { layoutCamera(jump: true) }
     override func update(_ currentTime: TimeInterval) {
         if previousTime > 0 { weatherTime += min(0.05,max(0,currentTime-previousTime)) }
@@ -1350,10 +1386,11 @@ struct MotelRPGView: View {
         return RPGSceneView(mapID: mapID, revision: worldRevision, mapSize: CGSize(width: interior ? 144 : MotelGrounds.width*16, height: interior ? 144 : MotelGrounds.height*16), columns: 14, interior: interior, actors: actors, working: workProgress > 0,
                             workKind:motel.cleaningTarget == 0 ? "bed" : motel.cleaningTarget == 1 ? "trash" : "mop",
                             visual:motel.operationsState.visual,weather:motel.weather,cars:motel.parkedBikes,bikePositions:motel.bikeParking,day:motel.day,
-                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),poolOffset:motel.creativeOffset("pool"),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps+motel.expansionWorldProps+motel.gardenWorldProps+motel.celebrationWorldProps+motel.experienceWorldProps+motel.natureMotionProps) {
+                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),poolOffset:motel.creativeOffset("pool"),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps+motel.expansionWorldProps+motel.gardenWorldProps+motel.celebrationWorldProps+motel.experienceWorldProps+motel.natureMotionProps,
+                            storefronts:[NeighborhoodShop.fish,.bar].map {RPGStorefront(shop:$0,offset:motel.creativeOffset("shop-"+$0.id))}) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }
             if motel.worldState.place == .office { return AnyView(MotelOfficeCanvas(sceneryOnly: true, motel: motel, x: 0, y: 0)) }
-            return AnyView(MotelGroundsCanvas(motel: motel, x: 0, y: 0, npcTick: 0, sceneryOnly: true, fullMap: true))
+            return AnyView(MotelGroundsCanvas(motel: motel, x: 0, y: 0, npcTick: 0, sceneryOnly: true, fullMap: true,layeredRestaurants:true))
         }
     }
 }

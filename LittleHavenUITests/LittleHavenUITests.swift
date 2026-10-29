@@ -858,6 +858,27 @@ final class LittleHavenUITests: XCTestCase {
         print("ART BIKE TARGET: "+app.debugDescription)
         XCTAssertTrue(app.buttons["rideBike"].waitForExistence(timeout:3))
     }
+    func testWalkBehindRestaurantsAndReturnToEntrance() {
+        for (fixture,column) in [("--ui-fish-exterior",47),("--ui-bar-exterior",57)] {
+            let app=XCUIApplication()
+            app.launchArguments=[fixture,"--ui-roof-side","--ui-testing","--ui-painted-check"]
+            app.launch()
+            let world=app.otherElements["motelWorld"]
+            XCTAssertTrue(world.waitForExistence(timeout:15))
+            step("east",5,app)
+            XCTAssertTrue(world.label.contains("Column \(column), row 30"),world.label)
+            capture(app,"Walker behind restaurant roof \(column)")
+            step("east",5,app)
+            XCTAssertTrue(world.label.contains("Column \(column+5), row 30"),world.label)
+            capture(app,"Walker emerges beside restaurant \(column)")
+            step("south",5,app);step("west",5,app)
+            XCTAssertTrue(world.label.contains("Column \(column), row 35"),world.label)
+            capture(app,"Walker in front of restaurant entrance \(column)")
+            app.buttons["worldAction"].tap()
+            XCTAssertTrue(app.otherElements["shopInterior"].waitForExistence(timeout:10))
+            app.terminate()
+        }
+    }
     func testFishRestaurantServesMeal() {
         let app=launch("--ui-fish")
         XCTAssertTrue(app.buttons["fishDiner0"].waitForExistence(timeout:10))

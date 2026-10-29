@@ -191,7 +191,7 @@ enum CozyScenery {
 }
 
 enum NeighborhoodArt {
-    static func draw(context:inout GraphicsContext,level:Int,motel:Motel?=nil) {
+    static func draw(context:inout GraphicsContext,level:Int,motel:Motel?=nil,layeredRestaurants:Bool=false) {
         // Same seven-by-five footprint as the hotel buildings; no differently colored lawn rectangle.
         let homeContext=context,homeOffset=motel?.creativeOffset("home") ?? Tile(x:0,y:0)
         context.translateBy(x:Double(homeOffset.x*16),y:Double(homeOffset.y*16))
@@ -206,6 +206,7 @@ enum NeighborhoodArt {
             context=saved
         }
         for shop in NeighborhoodShop.allCases {
+            if layeredRestaurants && (shop == .fish || shop == .bar) {continue}
             let saved=context,d=motel?.creativeOffset("shop-"+shop.id) ?? Tile(x:0,y:0)
             context.translateBy(x:Double(d.x*16),y:Double(d.y*16))
             DecorArt.storefront(&context,shop:shop)

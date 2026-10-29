@@ -222,6 +222,7 @@ struct MotelGroundsCanvas: View, Animatable {
     var npcTick: Double
     var sceneryOnly = false
     var fullMap = false
+    var layeredRestaurants = false
     var animatableData: AnimatablePair<AnimatablePair<Double, Double>, Double> {
         get { AnimatablePair(AnimatablePair(x, y), npcTick) }
         set { x = newValue.first.first; y = newValue.first.second; npcTick = newValue.second }
@@ -267,7 +268,7 @@ struct MotelGroundsCanvas: View, Animatable {
             // Terrain stays behind every relocatable building and furnishing.
             rect(240,472,365,80,0x747E78)
             BeachArt.draw(context:&context,motel:motel,animatedPalms:sceneryOnly)
-            NeighborhoodArt.draw(context:&context,level:motel.household.level,motel:motel)
+            NeighborhoodArt.draw(context:&context,level:motel.household.level,motel:motel,layeredRestaurants:layeredRestaurants)
             // Employee facilities appear only after that employee is hired.
             for role in motel.staffStations {
                 if role == .cleaner {continue} // Housekeeping equipment lives inside the laundry pavilion.
