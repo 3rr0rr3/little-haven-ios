@@ -1014,7 +1014,7 @@ extension Motel {
         }
         return min(4,score)
     }
-    func designPremium(_ guest:MotelGuest,_ room:MotelRoom)->Int {roomMatch(guest,room)*4 + focusPremium(guest,room) + collectionPremium(room)}
+    func designPremium(_ guest:MotelGuest,_ room:MotelRoom)->Int {roomMatch(guest,room)*4 + focusPremium(guest,room) + collectionPremium(room.id)}
     @discardableResult mutating func designHavenRoom(_ id:Int,_ design:HavenRoomDesign)->Bool {
         guard havenExpansion != nil,!caught,let i=rooms.firstIndex(where:{$0.id==id}),rooms[i].guest==nil,roomDesign(rooms[i]) != design,cash>=design.cost else{return false}
         cash-=design.cost;var e=expansion;e.designs[id]=design;havenExpansion=e
