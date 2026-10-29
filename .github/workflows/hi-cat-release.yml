@@ -1,0 +1,93 @@
+name: Verify and publish home office and Hi Cat update
+on:
+  push:
+    branches: ['codex/pokopia-scenery']
+    paths: ['.github/workflows/hi-cat-release.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate gameplay art and navigation
+        run: |
+          set -euo pipefail
+          swiftc -frontend -parse LittleHaven/*.swift LittleHavenUITests/*.swift
+          swiftc LittleHaven/NPCDesign.swift LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
+          /tmp/little-haven-tests
+          python3 scripts/benchmark_navigation.py
+          python3 scripts/validate_painted_art.py
+          python3 scripts/render_app_icon.py
+      - name: Build native iPhone app
+        run: xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath device-build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Verify home office sanctuary controls and saved state
+        timeout-minutes: 25
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
+          echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 240 -only-testing:LittleHavenUITests/LittleHavenUITests/testProductionWakeUpStartsFirstChapter -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleOfficeGuestInteraction -only-testing:LittleHavenUITests/LittleHavenUITests/testFamilyAndCatsAreTappable -only-testing:LittleHavenUITests/LittleHavenUITests/testFullscreenDialogueBackAndWifePhysicalTaps -only-testing:LittleHavenUITests/LittleHavenUITests/testCompatibleHomeCareAndSavedContinue -only-testing:LittleHavenUITests/LittleHavenUITests/testNewSanctuaryResidentsCareAndAdventure -only-testing:LittleHavenUITests/LittleHavenUITests/testRideAndParkBicycle -only-testing:LittleHavenUITests/LittleHavenUITests/testStaffReviewsAndDeskUpgrades -resultBundlePath HiCatResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test 2>&1 | tee hi-cat-ui.log
+      - name: Verify optimized Release startup and saved home
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town --ui-needs-dirty --ui-home-compatibility --ui-testing
+          CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+          READY=0
+          for ATTEMPT in $(seq 1 30); do
+            if python3 scripts/seed_release_startup.py "$CONTAINER" false export-home; then READY=1; break; fi
+            sleep 1
+          done
+          test "$READY" = 1
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-startup-build CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES build-for-testing
+          xcrun simctl install "$SIM_DEVICE" release-startup-build/Build/Products/Release-iphonesimulator/LittleHaven.app
+          for TOUCH in false true; do
+            for PLACE in office home; do
+              xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+              CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+              if [ "$PLACE" = home ]; then
+                python3 scripts/seed_release_startup.py "$CONTAINER" "$TOUCH" home
+                TEST=testActualReleaseSavedHomeContinue
+              else
+                python3 scripts/seed_release_startup.py "$CONTAINER" "$TOUCH"
+                TEST=testActualReleaseWakeAndFirstShift
+              fi
+              xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -destination "id=$SIM_DEVICE" -derivedDataPath release-startup-build -parallel-testing-enabled NO "-only-testing:LittleHavenUITests/LittleHavenUITests/$TEST" -resultBundlePath "ReleaseStartup-$PLACE-$TOUCH.xcresult" CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test-without-building
+              CONTAINER=$(xcrun simctl get_app_container "$SIM_DEVICE" com.littlehaven.town data)
+              python3 scripts/verify_startup_report.py "$CONTAINER" "$TOUCH" "ReleaseStartup-$PLACE-$TOUCH-report.json" "$PLACE"
+            done
+          done
+      - name: Package verified arm64 installer
+        run: |
+          set -euo pipefail
+          APP=device-build/Build/Products/Release-iphoneos/LittleHaven.app
+          xcrun lipo "$APP/LittleHaven" -verify_arch arm64
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleSupportedPlatforms:0' "$APP/Info.plist")" = iPhoneOS
+          mkdir -p package/Payload
+          ditto "$APP" package/Payload/LittleHaven.app
+          (cd package && zip -qry ../LittleHaven-unsigned.ipa Payload)
+          unzip -t LittleHaven-unsigned.ipa
+          shasum -a 256 LittleHaven-unsigned.ipa > LittleHaven-unsigned.ipa.sha256
+      - name: Publish v63 candidate download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish_candidate.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Hi-Cat-update-verification
+          path: |
+            HiCatResults.xcresult
+            hi-cat-ui.log
+            navigation-performance.json
+            ReleaseStartup-*-report.json
+            candidate-verification.json
+            LittleHaven-unsigned.ipa*
+
