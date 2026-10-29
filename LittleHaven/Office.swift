@@ -76,7 +76,8 @@ extension Motel {
     mutating func tickHomeCats() {
         guard isAtHome,currentBedroom == nil else{return}
         let route=OfficeReception.homeCatRoute
-        // Pathfinding used to run for both cats in the same simulation frame.
+        // Pathfinding used to run for both cats in the same simulation frame;
+        // their shared patrol route is also preallocated on OfficeReception.
         // Alternate them so the home never pays for two searches plus the
         // family patrol update at once; each cat still moves regularly.
         let roaming=["chichu","chichi"],index=abs(worldState.tick)%roaming.count
