@@ -186,7 +186,8 @@ enum CreativeCatalog {
         add("home","Family home",51,9,7,5,[FamilyHome.door,Tile(x:54,y:15)])
         for shop in NeighborhoodShop.allCases {
             let h=(shop == .bar || shop == .fish) ? 4 : 6
-            add("shop-"+shop.id,shop.title,shop.door.x-3,shop.door.y-h,7,h,[shop.door,Tile(x:shop.door.x,y:shop.door.y+1)])
+            let art = (shop == .bar || shop == .fish) ? RPGRegion(x:(shop.door.x-3)*16-4,y:(shop.door.y-6)*16-12,width:120,height:120) : nil
+            add("shop-"+shop.id,shop.title,shop.door.x-3,shop.door.y-h,7,h,[shop.door,Tile(x:shop.door.x,y:shop.door.y+1)],art)
         }
         for (id,o) in ResidentialLayout.origins.enumerated() {
             add("neighbor-\(id)","Neighbor home \(id+1)",o.x,o.y,7,5,[ResidentialLayout.doors[id]])

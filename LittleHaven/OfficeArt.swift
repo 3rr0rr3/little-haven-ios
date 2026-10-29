@@ -443,9 +443,9 @@ enum DecorArt {
     static func storefront(_ c:inout GraphicsContext,shop:NeighborhoodShop) {
         if shop == .pawn {shadyCorner(&c);return}
         if shop == .fish {fishFacade(&c);return}
-        let x=Double((shop.door.x-3)*16),y=Double((shop.door.y-(shop == .bar ? 4 : 6))*16)
+        // Full-height artwork grows upward from the saved entrance, including the bar.
+        let x=Double((shop.door.x-3)*16),y=Double((shop.door.y-6)*16)
         let original=c
-        if shop == .bar {c.translateBy(x:0,y:y);c.scaleBy(x:1,y:2.0/3.0);c.translateBy(x:0,y:-y)}
         let facade=shop == .furniture ? "store-furniture" : shop == .clothing ? "store-clothing" : shop == .pawn ? "store-pawn" : "store-bar"
         if PaintedArt.facade(facade,in:CGRect(x:x-2,y:y,width:116,height:96),sourceDoor:0.4...0.6,doorX:x+46,doorWidth:23,context:&c) {
             PaintedArt.nameplate(shop.title.uppercased(),in:CGRect(x:x+15,y:y+24,width:82,height:12),context:&c,font:4.8)
@@ -1220,10 +1220,14 @@ extension CorralCreatureArt {
 
 extension DecorArt {
     static func fishFacade(_ c:inout GraphicsContext) {
-        let x=Double((NeighborhoodShop.fish.door.x-3)*16),y=Double((NeighborhoodShop.fish.door.y-4)*16)
-        if PaintedArt.facade("store-fish",in:CGRect(x:x-2,y:y,width:116,height:64),sourceDoor:0.4...0.6,doorX:x+44,doorWidth:25,context:&c) {
-            PaintedArt.nameplate("CORAL CATCH",in:CGRect(x:x+15,y:y+19,width:82,height:10),context:&c,font:4.8);return
+        let x=Double((NeighborhoodShop.fish.door.x-3)*16),y=Double((NeighborhoodShop.fish.door.y-6)*16)
+        if PaintedArt.facade("store-fish",in:CGRect(x:x-2,y:y,width:116,height:96),sourceDoor:0.4...0.6,doorX:x+44,doorWidth:25,context:&c) {
+            PaintedArt.nameplate("CORAL CATCH",in:CGRect(x:x+15,y:y+24,width:82,height:12),context:&c,font:4.8);return
         }
+        // The procedural fallback uses the same full height and entrance baseline.
+        let original=c
+        defer {c=original}
+        c.translateBy(x:0,y:y);c.scaleBy(x:1,y:1.5);c.translateBy(x:0,y:-y)
         func block(_ dx:Double,_ dy:Double,_ w:Double,_ h:Double,_ color:UInt32) {CozyScenery.block(context:&c,x:x+dx,y:y+dy,w:w,h:h,color:color,depth:0.7)}
         block(0,7,112,55,0xE4DDC2);block(-2,1,116,9,0x508C91)
         block(5,12,102,16,0x477D82)
