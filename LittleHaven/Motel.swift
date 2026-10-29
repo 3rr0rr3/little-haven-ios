@@ -75,6 +75,7 @@ struct Motel: Codable {
     var kitchenGarden:KitchenGarden?
     var havenOccasions:HavenOccasions?
     var personalNeeds:PlayerNeeds?
+    var havenExperiences:HavenExperiences?
     var household: FamilyHome { home ?? FamilyHome() }
     var expansionCost: Int { 250 + (rooms.count - 3) * 150 }
     var occupancy: Int { rooms.filter { $0.guest != nil }.count }
@@ -116,6 +117,7 @@ struct Motel: Codable {
         if isAtReception {playVisual("checkin",target:OfficeReception.computer)}
         registerContract(guest,room:rooms[roomIndex],payment:payment)
         welcomeRoutineGuest(guest,room:rooms[roomIndex])
+        rememberGuestVisit(guest)
         prepareChaosClock()
         lastEvent = "\(guest.name) checked into room \(rooms[roomIndex].number). +\(payment) coins."
         return true
@@ -205,6 +207,7 @@ struct Motel: Codable {
         attractHavenGuests()
         refreshExpansionDay()
         settleOccasionMorning()
+        settleExperienceDay()
         if let oldVisit=visit,oldVisit.sneaking,rooms.first(where:{$0.id==oldVisit.roomID})?.guest==nil {
             var empty=RoomVisit(roomID:oldVisit.roomID,sneaking:false)
             empty.player=oldVisit.player;empty.facing=oldVisit.facing;empty.pocket=oldVisit.pocket;empty.loot=oldVisit.loot
@@ -1011,7 +1014,7 @@ extension Motel {
         }
         return min(4,score)
     }
-    func designPremium(_ guest:MotelGuest,_ room:MotelRoom)->Int {roomMatch(guest,room)*4}
+    func designPremium(_ guest:MotelGuest,_ room:MotelRoom)->Int {roomMatch(guest,room)*4 + focusPremium(guest,room) + collectionPremium(room)}
     @discardableResult mutating func designHavenRoom(_ id:Int,_ design:HavenRoomDesign)->Bool {
         guard havenExpansion != nil,!caught,let i=rooms.firstIndex(where:{$0.id==id}),rooms[i].guest==nil,roomDesign(rooms[i]) != design,cash>=design.cost else{return false}
         cash-=design.cost;var e=expansion;e.designs[id]=design;havenExpansion=e
@@ -1607,4 +1610,248 @@ extension Motel {
         return true
     }
     func hygieneRemark()->String {isPlayerDirty ? PlayerNeeds.hygieneRemarks.randomElement()! : ""}
+}
+
+// Optional, bounded save data for the eight opt-in hotel experiences.
+enum HotelFocus:String,Codable,CaseIterable,Identifiable {
+    case family,luxury,party,creatures
+    var id:String {rawValue}
+    var title:String {switch self {case .family:return "Family resort";case .luxury:return "Luxury retreat";case .party:return "Party motel";case .creatures:return "Creature-friendly haven"}}
+    var detail:String {switch self {case .family:return "Family vacationers prefer matching family rooms.";case .luxury:return "More celebrities; excellent upkeep earns a premium. Requires reputation 60 and three furniture upgrades.";case .party:return "More party groups; soundproof rooms earn a premium.";case .creatures:return "Creature-loving travelers favor garden rooms and your sanctuary."}}
+}
+enum DecorCollection:String,Codable,CaseIterable,Identifiable {
+    case coastal,garden,family,boutique
+    var id:String {rawValue}
+    var title:String {rawValue.capitalized}
+    var pieces:[String] {["Coordinated rug","Framed artwork","Bedside planter"]}
+    var palette:UInt32 {switch self {case .coastal:return 0x7AAFB9;case .garden:return 0x8CA46C;case .family:return 0xD4AD6C;case .boutique:return 0xA58AA8}}
+}
+struct RoomCollection:Codable {var selected:DecorCollection = .coastal;var owned:[String:Set<Int>]=[:]}
+struct GuestBond:Codable {var visits=0;var chapter=0;var storyDay=0;var friend=false;var memories:[String]=[]}
+struct EmployeeDispute:Codable {var first:String;var second:String;var day:Int}
+struct CreatureTraining:Codable {var xp=0;var trainedDay=0;var medals=0;var level:Int {1+xp/6}}
+enum CreatureExercise:String,Codable,CaseIterable,Identifiable {case fetch,obstacles,tricks;var id:String {rawValue};var title:String {rawValue.capitalized}}
+struct SanctuaryContest:Codable {var creature:Int;var round=0;var score=0;var finished=false;var week:Int}
+enum SeasonalParty:String,Codable,CaseIterable,Identifiable {
+    case springMarket,beachParty,halloween,christmas
+    var id:String {rawValue}
+    var title:String {switch self {case .springMarket:return "Spring visiting market";case .beachParty:return "Summer beach reception";case .halloween:return "Halloween lantern party";case .christmas:return "Christmas dinner"}}
+    var season:Int {Self.allCases.firstIndex(of:self) ?? 0}
+    var cost:Int {self == .christmas ? 35 : 25}
+    var location:Tile {self == .beachParty ? Tile(x:59,y:46) : self == .springMarket ? Tile(x:54,y:33) : Tile(x:4,y:27)}
+    var place:String {self == .beachParty ? "Sunset Cove" : self == .springMarket ? "the shop plaza" : "the breakfast terrace"}
+}
+struct SeasonalHosting:Codable {var kind:SeasonalParty;var stage=0;var startedDay:Int;var completed=false}
+struct HavenMemory:Codable,Identifiable {var id:String;var day:Int;var text:String}
+struct HavenPhoto:Codable,Identifiable {var id:String;var fileName:String;var day:Int;var place:String;var caption:String}
+struct HavenExperiences:Codable {
+    var activated=false
+    var bonds:[String:GuestBond]=[:]
+    var focus:HotelFocus?
+    var focusDay=0
+    var collections:[Int:RoomCollection]=[:]
+    var dispute:EmployeeDispute?
+    var lastDisputeWeek=0
+    var district:[String:Int]=["residents":40,"businesses":40,"police":40]
+    var communityDay=0
+    var businessGiftWeek=0
+    var settledDay=0
+    var invitedFriend:String?
+    var inviteDay=0
+    var training:[Int:CreatureTraining]=[:]
+    var contest:SanctuaryContest?
+    var contestWeek=0
+    var hosting:SeasonalHosting?
+    var hostingWeek=0
+    var photos:[HavenPhoto]=[]
+    var memories:[HavenMemory]=[]
+}
+extension Motel {
+    var experiences:HavenExperiences {havenExperiences ?? HavenExperiences()}
+    var experienceWeek:Int {max(0,day-1)/7+1}
+    var experienceSeason:Int {max(0,day-1)/14%4}
+    var seasonTitle:String {["Spring","Summer","Autumn","Winter"][experienceSeason]}
+    mutating func activateExperiences() {var e=experiences;e.activated=true;havenExperiences=e}
+    mutating func rememberExperience(_ message:String) {
+        var e=experiences
+        e.memories.insert(HavenMemory(id:UUID().uuidString,day:day,text:message),at:0)
+        e.memories=Array(e.memories.prefix(50));havenExperiences=e
+    }
+    mutating func rememberGuestVisit(_ guest:MotelGuest) {
+        var e=experiences,b=e.bonds[guest.name] ?? GuestBond();b.visits+=1
+        let message=b.visits==1 ? "Your first welcome at Brainstorm Haven." : "Returned for stay \(b.visits)."
+        b.memories.insert("Day \(day): "+message,at:0);b.memories=Array(b.memories.prefix(6));e.bonds[guest.name]=b;havenExperiences=e
+    }
+    func guestBond(_ name:String)->GuestBond {experiences.bonds[name] ?? GuestBond()}
+    func guestInterest(_ name:String)->String {["family adventures","writing a book","coastal travel","live music","creatures","cooking"][(Self.guestNames.firstIndex(of:name) ?? 0)%6]}
+    func canShareGuestStory(_ name:String)->Bool {
+        guard !caught,guestBond(name).storyDay != day else{return false}
+        if isAtReception,reception.visitor?.guest.name==name {return true}
+        return nearbyHospitalityRoom?.guest?.name==name
+    }
+    func bondStory(_ name:String)->String {
+        let b=guestBond(name)
+        switch b.chapter {
+        case 0:return name+" opens up about "+guestInterest(name)+". A thoughtful welcome could become a friendship."
+        case 1:return name+" remembers your last welcome. After two stays and 2 trust, share a small keepsake or make time to listen."
+        case 2:return name+" hopes to keep in touch. After three stays and 5 trust, you can become lasting friends."
+        default:return name+" considers you a friend and remembers your hospitality. Invite them back from reception when they are away."
+        }
+    }
+    @discardableResult mutating func shareGuestStory(_ name:String,generous:Bool=false)->Bool {
+        guard canShareGuestStory(name),Self.guestNames.contains(name) else{return false}
+        var e=experiences,b=guestBond(name);let trust=simulation.relationships[name,default:0]
+        guard b.chapter<3,(b.chapter != 1 || b.visits>=2 && trust>=2),(b.chapter != 2 || b.visits>=3 && trust>=5) else{return false}
+        if generous {guard simulation.stock["snacks",default:0]>0 else{return false};var s=simulation;s.stock["snacks",default:0]-=1;simulation=s}
+        b.chapter+=1;b.storyDay=day
+        b.friend=b.chapter==3
+        let message=b.friend ? "You became friends with "+name+"." : "You shared a personal moment about "+guestInterest(name)+"."
+        b.memories.insert("Day \(day): "+message,at:0);b.memories=Array(b.memories.prefix(6));e.bonds[name]=b;havenExperiences=e
+        var s=simulation;s.relationships[name,default:0]+=generous ? 2 : 1;simulation=s
+        rememberExperience(message);lastEvent=message;return true
+    }
+    @discardableResult mutating func inviteGuestFriend(_ name:String)->Bool {
+        guard isAtReception,guestBond(name).friend,experiences.inviteDay != day,experiences.invitedFriend==nil,
+              !waiting.contains(where:{$0.name==name}),!rooms.contains(where:{$0.guest?.name==name}),!worldState.travellers.contains(where:{$0.name==name}) else{return false}
+        var e=experiences;e.inviteDay=day;e.invitedFriend=name;havenExperiences=e;lastEvent=name+" will try to visit tomorrow.";return true
+    }
+    @discardableResult mutating func chooseHotelFocus(_ focus:HotelFocus)->Bool {
+        guard isAtReception,canSave,experiences.focusDay != day,experiences.focus != focus else{return false}
+        if focus == .luxury {guard simulation.reputation>=60,rooms.reduce(0,{$0+$1.furniture})>=3 else{return false}}
+        var e=experiences;e.activated=true;e.focus=focus;e.focusDay=day;havenExperiences=e
+        rememberExperience("Chose "+focus.title+" as the hotel's specialization.");lastEvent="Specialization chosen: "+focus.title+". Tomorrow's visitors will reflect it.";return true
+    }
+    func focusPremium(_ guest:MotelGuest,_ room:MotelRoom)->Int {
+        switch experiences.focus {
+        case .family:return guest.holiday == .family && collectionComplete(room.id) ? 8 : 0
+        case .luxury:return guest.kind == .celebrity && room.furniture>=1 && room.health.faults.isEmpty && room.health.cleanliness>=80 ? 12 : 0
+        case .party:return guest.kind == .party && room.health.upgrades.contains(.soundproof) ? 10 : 0
+        case .creatures:return guest.holiday == .family && experiences.training.values.contains(where:{$0.level>=2}) ? 8 : 0
+        case nil:return 0
+        }
+    }
+    func collection(_ room:Int)->RoomCollection {experiences.collections[room] ?? RoomCollection()}
+    func collectionComplete(_ room:Int)->Bool {let c=collection(room);return c.owned[c.selected.rawValue,default:[]].count==3}
+    func collectionPremium(_ room:Int)->Int {collectionComplete(room) ? 10 : 0}
+    @discardableResult mutating func buyCollectionPiece(_ room:Int,kind:DecorCollection,piece:Int)->Bool {
+        guard isAtReception,canSave,(0..<3).contains(piece),rooms.contains(where:{$0.id==room && $0.guest==nil}) else{return false}
+        var e=experiences,c=collection(room);guard !c.owned[kind.rawValue,default:[]].contains(piece),cash>=15+piece*5 else{return false}
+        let price=15+piece*5;cash-=price;c.selected=kind;c.owned[kind.rawValue,default:[]].insert(piece);e.collections[room]=c;havenExperiences=e
+        logMoney(-price,category:"Room collection",note:kind.title+" "+kind.pieces[piece]);lastEvent="Installed "+kind.pieces[piece].lowercased()+" in room \(rooms.first{$0.id==room}!.number)."
+        if collectionComplete(room) {rememberExperience("Completed the "+kind.title+" collection in room \(rooms.first{$0.id==room}!.number).");lastEvent+=" Matching collection: +10 per night."}
+        return true
+    }
+    @discardableResult mutating func selectCollection(_ room:Int,kind:DecorCollection)->Bool {
+        guard isAtReception,rooms.contains(where:{$0.id==room && $0.guest==nil}),!collection(room).owned[kind.rawValue,default:[]].isEmpty else{return false}
+        var e=experiences,c=collection(room);c.selected=kind;e.collections[room]=c;havenExperiences=e;lastEvent="Room collection displayed: "+kind.title;return true
+    }
+    func districtScore(_ group:String)->Int {experiences.district[group,default:40]}
+    mutating func adjustDistrict(_ group:String,_ amount:Int) {var e=experiences;e.district[group]=max(0,min(100,e.district[group,default:40]+amount));havenExperiences=e}
+    @discardableResult mutating func communityAction(_ group:String)->Bool {
+        guard ["residents","businesses","police"].contains(group),isAtReception,experiences.communityDay != day,cash>=10 else{return false}
+        cash-=10;var e=experiences;e.communityDay=day;havenExperiences=e;adjustDistrict(group,5)
+        if group=="police" {var s=simulation;s.heat=max(0,s.heat-3);simulation=s}
+        logMoney(-10,category:"Community",note:group+" outreach");rememberExperience("Helped the neighborhood's "+group+".");lastEvent="Community trust improved. Existing fines still apply.";return true
+    }
+    var employeeDisputePenalty:Int {experiences.dispute == nil ? 0 : 1}
+    @discardableResult mutating func resolveEmployeeDispute(paid:Bool)->Bool {
+        guard isAtReception,let d=experiences.dispute,!paid || cash>=10 else{return false}
+        if paid {cash-=10;logMoney(-10,category:"Staff support",note:"Mediated disagreement")}
+        var s=simulation
+        for key in [d.first,d.second] {guard let role=StaffRole(rawValue:key) else{continue};var p=s.profiles[key] ?? StaffProfile.make(role);p.loyalty=min(100,p.loyalty+(paid ? 8 : 3));p.fatigue=max(0,p.fatigue-15);s.profiles[key]=p}
+        simulation=s;var e=experiences;e.dispute=nil;havenExperiences=e
+        if paid {var h=haven;var a=h.employees[d.first] ?? HavenEmployee(),b=h.employees[d.second] ?? HavenEmployee();a.friend=d.second;b.friend=d.first;h.employees[d.first]=a;h.employees[d.second]=b;havenLife=h}
+        rememberExperience("Helped two employees settle a disagreement.");lastEvent=paid ? "The team reconciled and became work friends." : "Separate breaks helped the team cool off.";return true
+    }
+    func training(_ creature:Int)->CreatureTraining {experiences.training[creature] ?? CreatureTraining()}
+    func creatureExercise(_ creature:Int)->CreatureExercise {CreatureExercise.allCases[max(0,creature)%3]}
+    var nearbyTrainingCreature:Int? {guard isAtBasement else{return nil};return BasementLayout.residents.first{actorTile.distance(to:BasementLayout.gate($0))<=1}}
+    @discardableResult mutating func trainCreature(_ creature:Int,exercise:CreatureExercise)->Bool {
+        guard nearbyTrainingCreature==creature,training(creature).trainedDay != day,simulation.stock["snacks",default:0]>0 else{return false}
+        var s=simulation;s.stock["snacks",default:0]-=1;simulation=s
+        var e=experiences,t=training(creature);t.trainedDay=day;t.xp+=exercise==creatureExercise(creature) ? 3 : 2;e.training[creature]=t;havenExperiences=e
+        rememberExperience("Practiced "+exercise.title.lowercased()+" with "+BasementLayout.titles[creature]+".");lastEvent="Training complete. Level \(t.level), experience \(t.xp).";return true
+    }
+    @discardableResult mutating func enterSanctuaryContest(_ creature:Int)->Bool {
+        guard nearbyTrainingCreature==creature,experiences.contestWeek != experienceWeek,cash>=10,experiences.contest?.finished != false else{return false}
+        cash-=10;var e=experiences;e.contestWeek=experienceWeek;e.contest=SanctuaryContest(creature:creature,week:experienceWeek);havenExperiences=e;logMoney(-10,category:"Sanctuary contest",note:BasementLayout.titles[creature]);lastEvent="Three rounds: coach your companion in its favorite activity.";return true
+    }
+    @discardableResult mutating func contestRound(_ exercise:CreatureExercise)->Bool {
+        guard var run=experiences.contest,!run.finished,nearbyTrainingCreature==run.creature else{return false}
+        run.round+=1;run.score+=exercise==creatureExercise(run.creature) ? 2 : 1
+        var e=experiences
+        if run.round==3 {
+            run.finished=true;let medal=run.score+min(3,training(run.creature).level-1)>=7
+            var t=training(run.creature);t.xp+=2;if medal {t.medals+=1;cash+=35};e.training[run.creature]=t
+            e.contest=run;havenExperiences=e
+            if medal {logMoney(35,category:"Sanctuary contest",note:"Companion medal")}
+            rememberExperience(BasementLayout.titles[run.creature]+(medal ? " earned a sanctuary medal!" : " completed a first sanctuary competition."));lastEvent=medal ? "A medal and 35 coins!" : "A good effort. Train before next week's contest.";return true
+        }
+        e.contest=run;havenExperiences=e;lastEvent="Round \(run.round)/3 complete. Score \(run.score).";return true
+    }
+    var seasonalHostTile:Tile? {experiences.hosting.map{groundNearestWalkable(to:groundTile($0.kind.location))}}
+    @discardableResult mutating func bookSeasonalParty(_ kind:SeasonalParty)->Bool {
+        guard isAtReception,kind.season==experienceSeason,experiences.hostingWeek != experienceWeek,experiences.hosting?.completed != false,cash>=kind.cost else{return false}
+        cash-=kind.cost;var e=experiences;e.hostingWeek=experienceWeek;e.hosting=SeasonalHosting(kind:kind,startedDay:day);havenExperiences=e
+        logMoney(-kind.cost,category:"Seasonal hosting",note:kind.title);lastEvent="Booked "+kind.title+". Go to "+kind.place+" to decorate, cater and host.";return true
+    }
+    @discardableResult mutating func prepareSeasonalParty()->Bool {
+        guard var party=experiences.hosting,!party.completed,worldState.place == .grounds,let tile=seasonalHostTile,actorTile.distance(to:tile)<=2 else{return false}
+        if party.stage==1 {guard simulation.stock["snacks",default:0]>=3 else{return false};var s=simulation;s.stock["snacks",default:0]-=3;simulation=s}
+        party.stage+=1;var e=experiences;e.hosting=party;havenExperiences=e
+        if party.stage==3 {
+            party.completed=true;e=experiences;e.hosting=party;havenExperiences=e;cash+=60;adjustDistrict("residents",4);adjustDistrict("businesses",3)
+            logMoney(60,category:"Seasonal hosting",note:party.kind.title);rememberExperience("Hosted "+party.kind.title+" with friends and neighbors.");lastEvent="Your celebration is complete! +60 coins and neighborhood trust."
+        } else {lastEvent=party.stage==1 ? "Decorations are ready. Bring 3 snacks for catering." : "Food is ready. Welcome the guests to finish hosting."}
+        return true
+    }
+    mutating func settleExperienceDay() {
+        guard experiences.activated,experiences.settledDay != day else{return}
+        var e=experiences;e.settledDay=day
+        let occupied=operationsState.workers.filter(\.active)
+        if e.lastDisputeWeek != experienceWeek,occupied.count>=2,let first=occupied.first(where:{(simulation.profiles[$0.role.rawValue]?.fatigue ?? 0)>=35}),let other=occupied.first(where:{$0.id != first.id}),e.dispute==nil {
+            e.lastDisputeWeek=experienceWeek;e.dispute=EmployeeDispute(first:first.id,second:other.id,day:day)
+        }
+        if let d=e.dispute,(!operationsState.workers.contains(where:{$0.id==d.first}) || !operationsState.workers.contains(where:{$0.id==d.second})) {e.dispute=nil}
+        havenExperiences=e
+        if districtScore("police")>=70 {var s=simulation;s.heat=max(0,s.heat-3);simulation=s}
+        if districtScore("businesses")>=70,experiences.businessGiftWeek != experienceWeek {e=experiences;e.businessGiftWeek=experienceWeek;havenExperiences=e;var s=simulation;s.stock["parts",default:0]+=1;simulation=s;rememberExperience("Local businesses sent a repair-part gift.")}
+        for i in waiting.indices where waiting[i].storyID==nil {
+            switch experiences.focus {
+            case .family:if i%2==0 {waiting[i].category = .resident}
+            case .luxury:if i%2==0 {waiting[i].category = .celebrity}
+            case .party:if i%2==0 {waiting[i].category = .party}
+            case .creatures:if i%2==0 {waiting[i].category = .traveler}
+            case nil:break
+            }
+        }
+        let invited=experiences.invitedFriend
+        if let name=invited,!rooms.contains(where:{$0.guest?.name==name}),!worldState.travellers.contains(where:{$0.name==name}),!waiting.contains(where:{$0.name==name}),let index=Self.guestNames.firstIndex(of:name),waiting.count<12 {
+            waiting.append(MotelGuest(id:day*1000+800,name:name,nights:2,color:Self.themeColors[index%4],story:"Returned to visit a friend at Brainstorm Haven.",category:.traveler))
+        }
+        e=experiences;e.invitedFriend=nil;havenExperiences=e
+        if districtScore("residents")>=70,waiting.count<12,let referral=Self.arrivals(day:day,count:1,randomize:Self.randomizeGuestArrivals,excluding:Set(waiting.map(\.name)+rooms.compactMap{$0.guest?.name}+worldState.travellers.map(\.name))).first {
+            waiting.append(MotelGuest(id:day*1000+801,name:referral.name,nights:referral.nights,color:referral.color,story:"A neighbor recommended your hotel.",category:.traveler))
+        }
+    }
+    @discardableResult mutating func recordHavenPhoto(fileName:String,caption:String)->Bool {
+        guard experiences.photos.count<40,fileName.hasSuffix(".jpg"),let id=UUID(uuidString:String(fileName.dropLast(4))),!experiences.photos.contains(where:{$0.id==id.uuidString}) else{return false}
+        var e=experiences;e.photos.insert(HavenPhoto(id:id.uuidString,fileName:fileName,day:day,place:mapName,caption:String(caption.prefix(100))),at:0);havenExperiences=e
+        rememberExperience("Saved a photo at "+mapName+".");lastEvent="Photo saved to the family scrapbook.";return true
+    }
+    mutating func forgetHavenPhoto(_ id:String) {var e=experiences;e.photos.removeAll{$0.id==id};havenExperiences=e}
+    var experienceWorldProps:[HavenWorldProp] {
+        guard havenExperiences != nil else{return []}
+        if let visit,let room=rooms.first(where:{$0.id==visit.roomID}) {
+            let set=collection(room.id),owned=set.owned[set.selected.rawValue,default:[]]
+            let tiles=[Tile(x:4,y:5),Tile(x:6,y:2),Tile(x:2,y:5)]
+            return owned.sorted().map{HavenWorldProp(id:"collection-\(room.id)-\(set.selected.rawValue)-\($0)",tile:tiles[$0],kind:200+(DecorCollection.allCases.firstIndex(of:set.selected) ?? 0)*3+$0)}
+        }
+        guard worldState.place == .grounds,let party=experiences.hosting,!party.completed else{return []}
+        let base=groundNearestWalkable(to:groundTile(party.kind.location))
+        var props=[HavenWorldProp(id:"season-sign-\(party.kind.rawValue)",tile:base,kind:212+party.kind.season)]
+        if party.stage>=1 {props.append(HavenWorldProp(id:"season-table-\(party.kind.rawValue)",tile:groundNearestWalkable(to:Tile(x:base.x+2,y:base.y)),kind:216+party.kind.season))}
+        if party.stage>=2 {props.append(HavenWorldProp(id:"season-lantern-\(party.kind.rawValue)",tile:groundNearestWalkable(to:Tile(x:base.x-2,y:base.y)),kind:220+party.kind.season))}
+        return props
+    }
 }

@@ -1031,6 +1031,21 @@ final class RPGScene: SKScene {
                     let pan=SKShapeNode(ellipseOf:CGSize(width:8,height:4));pan.fillColor=UIColor(Color(hex:0x334F48));pan.strokeColor=UIColor(Color(hex:0xF3DDA5));pan.lineWidth=0.5
                     pan.position=CGPoint(x:0,y:6);node.addChild(pan)
                     block(CGRect(x:4,y:5,width:6,height:1),0x76624F,0)
+                } else if prop.kind>=200 {
+                    let code=prop.kind-200
+                    if code<12 {
+                        let collection=code/3,slot=code%3
+                        let colors:[UInt32]=[0x7AAFB9,0x8CA46C,0xD4AD6C,0xA58AA8],accent=colors[collection]
+                        if slot==0 {block(CGRect(x:-14,y:-8,width:28,height:17),accent,4);block(CGRect(x:-11,y:-5,width:22,height:11),0xF5E7C8,3);node.zPosition=2}
+                        else if slot==1 {block(CGRect(x:-8,y:-6,width:16,height:12),0x694D39,2);block(CGRect(x:-6,y:-4,width:12,height:8),accent,1);block(CGRect(x:-2,y:-1,width:4,height:4),0xF5E7C8,2)}
+                        else {block(CGRect(x:-7,y:-5,width:14,height:7),0xA1704B,2);for x in [-4,0,4] {let leaf=SKShapeNode(ellipseOf:CGSize(width:6,height:10));leaf.fillColor=UIColor(Color(hex:accent));leaf.strokeColor = .clear;leaf.position=CGPoint(x:x,y:5);node.addChild(leaf)}}
+                    } else {
+                        let stage=(code-12)/4,season=(code-12)%4
+                        let colors:[UInt32]=[0x8BAA64,0x75B6C0,0xD47D45,0xB94E52],accent=colors[season]
+                        if stage==0 {block(CGRect(x:-13,y:-8,width:26,height:16),0x6D4A32,3);block(CGRect(x:-11,y:-6,width:22,height:12),accent,2);block(CGRect(x:-1,y:-14,width:2,height:7),0x6D4A32,0)}
+                        else if stage==1 {block(CGRect(x:-18,y:-5,width:36,height:11),0xF5E7C8,3);block(CGRect(x:-17,y:3,width:34,height:3),accent,1);for x in [-11,0,11] {let dish=SKShapeNode(ellipseOf:CGSize(width:8,height:4));dish.fillColor=UIColor(Color(hex:0xEFC977));dish.strokeColor = .clear;dish.position=CGPoint(x:x,y:7);node.addChild(dish)}}
+                        else {block(CGRect(x:-1,y:-4,width:2,height:18),0x634A36,0);let glow=SKShapeNode(circleOfRadius:8);glow.fillColor=UIColor(Color(hex:accent)).withAlphaComponent(0.35);glow.strokeColor = .clear;glow.position=CGPoint(x:0,y:12);node.addChild(glow);let lamp=SKShapeNode(circleOfRadius:4);lamp.fillColor=UIColor(Color(hex:0xF6D77C));lamp.strokeColor = .clear;lamp.position=CGPoint(x:0,y:12);node.addChild(lamp)}
+                    }
                 } else if prop.kind>=20 {
                     let code=prop.kind>=100 ? prop.kind-100 : prop.kind
                     block(CGRect(x:-7,y:-4,width:14,height:9),0x9B7851,1)
@@ -1335,7 +1350,7 @@ struct MotelRPGView: View {
         return RPGSceneView(mapID: mapID, revision: worldRevision, mapSize: CGSize(width: interior ? 144 : MotelGrounds.width*16, height: interior ? 144 : MotelGrounds.height*16), columns: 14, interior: interior, actors: actors, working: workProgress > 0,
                             workKind:motel.cleaningTarget == 0 ? "bed" : motel.cleaningTarget == 1 ? "trash" : "mop",
                             visual:motel.operationsState.visual,weather:motel.weather,cars:motel.parkedBikes,bikePositions:motel.bikeParking,day:motel.day,
-                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),poolOffset:motel.creativeOffset("pool"),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps+motel.expansionWorldProps+motel.gardenWorldProps+motel.celebrationWorldProps+motel.natureMotionProps) {
+                            night:motel.isNight,nightVision:motel.simulation.nightVision,powerOut:motel.simulation.powerOut || (room?.health.faults.contains(.light) ?? false),pumpFault:!interior && motel.serviceAvailable(.repair),poolOffset:motel.creativeOffset("pool"),pumpPosition:motel.groundTile(Tile(x:10,y:21)),lifeProps:motel.havenWorldProps+motel.expansionWorldProps+motel.gardenWorldProps+motel.celebrationWorldProps+motel.experienceWorldProps+motel.natureMotionProps) {
             if let visit, let room { return AnyView(MotelRoomCanvas(room: room, visit: visit, x: 0, y: 0, guestPresent: motel.guestPresent(in: room.id), sceneryOnly: true)) }
             if motel.worldState.place == .office { return AnyView(MotelOfficeCanvas(sceneryOnly: true, motel: motel, x: 0, y: 0)) }
             return AnyView(MotelGroundsCanvas(motel: motel, x: 0, y: 0, npcTick: 0, sceneryOnly: true, fullMap: true))

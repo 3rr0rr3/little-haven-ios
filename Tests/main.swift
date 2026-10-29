@@ -2160,3 +2160,45 @@ func supplyBuyerAndShadyCornerRules() {
     print("PASS: supply buyer round trips, real capped purchases, reserve, ledger, save compatibility and physical shady trading")
 }
 supplyBuyerAndShadyCornerRules()
+
+func havenExperiencePackRules() {
+    var m=Motel();m.initializeWorld();m.enableManagement();m.cash=2000;m.waiting=Motel.arrivals(day:1,count:4,randomize:false)
+    m.activateExperiences()
+    let first=m.waiting[0]
+    require(m.checkIn(guestID:first.id,roomID:0),"A normal welcome still checks in")
+    require(m.guestBond(first.name).visits==1,"Returning-guest journal records a real stay")
+    m.world!.place = .office;m.world!.player=OfficeReception.clerk
+    require(m.chooseHotelFocus(.family) && m.experiences.focus == .family,"Hotel specialization is selectable at reception")
+    for piece in 0..<3 {require(m.buyCollectionPiece(room:1,kind:.family,piece:piece),"Each coordinated room piece is a real purchase")}
+    require(m.collectionComplete(1) && m.collectionPremium(1)==10,"A complete matching collection changes booking value")
+    let encoded=try! JSONEncoder().encode(m);let saved=try! JSONDecoder().decode(Motel.self,from:encoded)
+    require(saved.experiences.focus == .family && saved.collectionComplete(1),"Specialization and room collection survive saving")
+    var legacyJSON=try! JSONSerialization.jsonObject(with:encoded) as! [String:Any];legacyJSON.removeValue(forKey:"havenExperiences")
+    let legacy=try! JSONDecoder().decode(Motel.self,from:JSONSerialization.data(withJSONObject:legacyJSON))
+    require(legacy.havenExperiences == nil && legacy.districtScore("residents")==40,"Old saves gain safe default experience data")
+
+    var team=m;team.operations!.workers=[MotelWorker(role:.cleaner,tile:StaffRole.cleaner.home),MotelWorker(role:.maintenance,tile:StaffRole.maintenance.home)]
+    var e=team.experiences;e.dispute=EmployeeDispute(first:StaffRole.cleaner.rawValue,second:StaffRole.maintenance.rawValue,day:team.day);team.havenExperiences=e
+    let money=team.cash;require(team.resolveEmployeeDispute(paid:true) && team.cash==money-10,"Employee disagreements have a paid reconciliation choice")
+    require(team.haven.employees[StaffRole.cleaner.rawValue]?.friend==StaffRole.maintenance.rawValue,"A team meal creates a persistent friendship")
+    let resident=team.districtScore("residents");require(team.communityAction("residents") && team.districtScore("residents")==resident+5,"Community choices alter a specific district relationship")
+
+    var pets=Motel();pets.initializeWorld();pets.enableManagement();pets.activateExperiences();pets.cash=200;pets.operations!.simulation!.stock["snacks"]=8
+    pets.world!.place = .basement;pets.world!.player=BasementLayout.gate(0)
+    require(pets.trainCreature(0,exercise:pets.creatureExercise(0)),"Creature training only works at its physical corral")
+    require(pets.training(0).xp==3 && pets.enterSanctuaryContest(0),"Training feeds a weekly physical competition")
+    for _ in 0..<3 {require(pets.contestRound(pets.creatureExercise(0)),"A contest has three playable rounds")}
+    require(pets.experiences.contest?.finished==true,"Creature competition completes and persists")
+
+    var event=Motel();event.initializeWorld();event.enableManagement();event.activateExperiences();event.cash=200;event.operations!.simulation!.stock["snacks"]=5
+    event.world!.place = .office;event.world!.player=OfficeReception.clerk
+    let seasonal=SeasonalParty.allCases[event.experienceSeason]
+    require(event.bookSeasonalParty(seasonal),"Current seasonal event can be booked at reception")
+    event.world!.place = .grounds;event.world!.player=event.seasonalHostTile!
+    require(event.prepareSeasonalParty() && event.prepareSeasonalParty() && event.prepareSeasonalParty(),"Decorating, catering and welcoming complete at the physical host site")
+    require(event.experiences.hosting?.completed==true && event.experienceWorldProps.isEmpty,"A finished event pays out and removes temporary decorations")
+    let filename=UUID().uuidString+".jpg";require(event.recordHavenPhoto(fileName:filename,caption:"Opening night"),"A JPEG can be recorded in the scrapbook")
+    require(event.experiences.photos.count==1 && event.experiences.memories.contains{$0.text.contains("photo")},"Photo metadata and a bounded family memory are saved")
+    print("PASS: all eight experience systems affect gameplay, physical locations, persistence and legacy saves")
+}
+havenExperiencePackRules()

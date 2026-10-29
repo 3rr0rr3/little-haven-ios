@@ -140,7 +140,7 @@ extension Motel {
     @discardableResult mutating func sellBelonging(_ item:Int)->Bool {
         guard canTrade(.pawn),RoomVisit.lootValues.indices.contains(item),let index=household.stolen.firstIndex(of:item) else{return false}
         var state=household;state.stolen.remove(at:index);home=state;let value=RoomVisit.lootValues[item];cash+=value
-        logMoney(value,category:"Shady Corner",note:RoomVisit.lootNames[item]);lastEvent="Sold \(RoomVisit.lootNames[item]) for \(value) coins.";return true
+        logMoney(value,category:"Shady Corner",note:RoomVisit.lootNames[item]);if havenExperiences != nil {adjustDistrict("police",-2);adjustDistrict("residents",-1)};lastEvent="Sold \(RoomVisit.lootNames[item]) for \(value) coins.";return true
     }
 }
 
@@ -327,6 +327,7 @@ extension Motel {
         state.reviews = Array(state.reviews.prefix(30))
         if var sim=state.simulation { sim.reputation=max(0,min(100,sim.reputation+stars-3)); state.simulation=sim }
         operations = state
+        if havenExperiences != nil { adjustDistrict("residents",stars >= 4 ? 1 : -1); adjustDistrict("businesses",stars == 5 ? 1 : 0) }
     }
     @discardableResult mutating func upgradeFromDesk(_ roomID: Int) -> Bool {
         guard isAtReception else { return false }
@@ -1125,7 +1126,8 @@ extension Motel {
         if isNight && !profile.nightShift {return false}
         let friend=havenLife?.employees[worker.role.rawValue]?.friend
         let supported=friend.map{key in operationsState.workers.contains{$0.role.rawValue==key && $0.active}} ?? false
-        let cadence=max(1,4-profile.speed/30+(profile.fatigue>=75 ? 1 : 0)-(supported && profile.loyalty>=80 ? 1 : 0))
+        let involved=experiences.dispute.map{$0.first==worker.id || $0.second==worker.id} ?? false
+        let cadence=max(1,4-profile.speed/30+(profile.fatigue>=75 ? 1 : 0)+(involved ? 1 : 0)-(supported && profile.loyalty>=80 ? 1 : 0))
         return tick % cadence==0
     }
     mutating func scheduleNight(_ role:StaffRole) { guard managementEnabled else{return};var s=simulation;var p=s.profiles[role.rawValue] ?? StaffProfile.make(role);p.nightShift.toggle();s.profiles[role.rawValue]=p;simulation=s;lastEvent="Shift schedule updated. Night shifts cost 50% more." }

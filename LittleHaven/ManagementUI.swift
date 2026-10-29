@@ -1834,3 +1834,118 @@ struct PlayerNeedsPanel:View {
         VStack(alignment:.leading,spacing:7) {Label("\(title): \(value)/100",systemImage:symbol);ProgressView(value:Double(value),total:100).tint(Color(hex:(id=="needBathroom" ? value>=75 : value<=35) ? 0xD58B65 : 0xE9C77D))}.accessibilityElement(children:.combine).accessibilityIdentifier(id)
     }
 }
+
+enum HavenExperienceTab:String,CaseIterable,Identifiable {
+    case guests="Guests",identity="Hotel style",rooms="Room sets",team="Team",district="District",creatures="Training",events="Events",scrapbook="Scrapbook"
+    var id:String {rawValue}
+    var icon:String {switch self {case .guests:return "person.2.fill";case .identity:return "building.2.fill";case .rooms:return "bed.double.fill";case .team:return "person.3.fill";case .district:return "map.fill";case .creatures:return "pawprint.fill";case .events:return "party.popper.fill";case .scrapbook:return "photo.on.rectangle.angled"}}
+}
+
+struct HavenExperienceView:View {
+    @Binding var game:Game
+    var initialTab:HavenExperienceTab = .guests
+    @State private var tab:HavenExperienceTab
+    @Environment(\.dismiss) private var dismiss
+    init(game:Binding<Game>,initialTab:HavenExperienceTab = .guests) {_game=game;self.initialTab=initialTab;_tab=State(initialValue:initialTab)}
+    private var motel:Motel {game.motel ?? Motel()}
+    private let cream=Color(hex:0xF5E7C8),gold=Color(hex:0xEFC977),panel=Color(hex:0x29443A)
+    var body:some View {
+        NavigationStack {
+            VStack(spacing:0) {
+                ScrollView(.horizontal,showsIndicators:false) {
+                    HStack(spacing:9) {ForEach(HavenExperienceTab.allCases) {item in
+                        Button {tab=item} label:{VStack(spacing:5){Image(systemName:item.icon);Text(item.rawValue).font(.caption2.bold())}.frame(width:78,height:58).background(tab==item ? gold.opacity(0.24):Color.white.opacity(0.06),in:RoundedRectangle(cornerRadius:13)).overlay(RoundedRectangle(cornerRadius:13).stroke(tab==item ? gold:Color.clear,lineWidth:1.5))}.buttonStyle(.plain).accessibilityIdentifier("experience_"+item.id)
+                    }}.padding(.horizontal,16).padding(.vertical,12)
+                }
+                ScrollView {content.padding(18)}
+            }.foregroundStyle(cream).background(Color(hex:0x172A25))
+                .navigationTitle("Hotel life & memories").navigationBarTitleDisplayMode(.inline)
+                .toolbar {ToolbarItem(placement:.topBarLeading){MenuBackButton {dismiss()}}}
+                .onAppear {if motel.havenExperiences == nil {mutate{$0.activateExperiences()}}}
+        }.tint(gold)
+    }
+    @ViewBuilder private var content:some View {
+        switch tab {
+        case .guests:guestContent
+        case .identity:identityContent
+        case .rooms:roomContent
+        case .team:teamContent
+        case .district:districtContent
+        case .creatures:creatureContent
+        case .events:eventContent
+        case .scrapbook:scrapbookContent
+        }
+    }
+    private var activeGuests:[MotelGuest] {motel.rooms.compactMap(\.guest)+motel.waiting+(motel.world?.travellers ?? [])}
+    private var knownGuestNames:[String] {Array(Set(motel.experiences.bonds.filter{$0.value.visits>0}.map(\.key))).sorted()}
+    private var guestContent:some View {section("Returning guests",detail:"Guests remember every stay. Listen nearby to unlock a personal three-part story, then invite friends back.") {
+        if knownGuestNames.isEmpty {empty("Welcome a guest to begin your relationship journal.")}
+        ForEach(knownGuestNames,id:\.self) {name in let bond=motel.guestBond(name)
+            card {HStack{VStack(alignment:.leading){Text(name).font(.headline);Text("Visits \(bond.visits) · Story \(bond.chapter)/3 · Likes \(motel.guestInterest(name))").font(.caption)};Spacer();if bond.friend {Image(systemName:"heart.fill").foregroundStyle(.pink)}}
+                ProgressView(value:Double(bond.chapter),total:3).tint(gold)
+                if activeGuests.contains(where:{$0.name==name}) {Button(bond.chapter>=3 ? "Share a memory" : "Listen to their story") {mutate{_=$0.shareGuestStory(name)}}.buttonStyle(MotelButtonStyle(subdued:true)).disabled(!motel.canShareGuestStory(name))}
+                if bond.friend {Button("Invite for another visit") {mutate{_=$0.inviteGuestFriend(name)}}.buttonStyle(MotelButtonStyle(subdued:true)).disabled(motel.experiences.inviteDay==motel.day)}
+                ForEach(bond.memories,id:\.self){Text($0).font(.caption).foregroundStyle(.secondary)}
+            }
+        }
+    }}
+    private var identityContent:some View {section("Choose a hotel specialization",detail:"Your choice changes tomorrow’s guest mix and adds honest room premiums. You can choose once each game day at reception.") {
+        ForEach(HotelFocus.allCases) {focus in card {HStack{VStack(alignment:.leading,spacing:5){Text(focus.title).font(.headline);Text(focus.detail).font(.caption)};Spacer();if motel.experiences.focus==focus {Image(systemName:"checkmark.seal.fill").foregroundStyle(gold)}}
+            Button(motel.experiences.focus==focus ? "Current specialization":"Choose") {mutate{_=$0.chooseHotelFocus(focus)}}.buttonStyle(MotelButtonStyle(subdued:true)).disabled(motel.experiences.focus==focus || motel.experiences.focusDay==motel.day || !motel.isAtReception)
+        }}
+        Text(motel.isAtReception ? "You are at reception.":"Go to the reception desk to change your hotel style.").font(.caption)
+    }}
+    private var roomContent:some View {section("Matching room collections",detail:"Buy three coordinated pieces for a vacant room. A complete set adds 10 coins to matching bookings; owned sets remain available forever.") {
+        ForEach(motel.rooms) {room in card {Text("Room \(room.number)").font(.headline);Text(room.guest==nil ? "Vacant · \(motel.collection(room.id).selected.title) set":"Occupied by \(room.guest!.name)").font(.caption)
+            ForEach(DecorCollection.allCases) {kind in let owned=motel.collection(room.id).owned[kind.rawValue,default:[]]
+                HStack{Text(kind.title).frame(maxWidth:.infinity,alignment:.leading);Text("\(owned.count)/3").font(.caption.bold());if motel.collection(room.id).selected==kind {Image(systemName:"eye.fill")}}
+                HStack{ForEach(0..<3,id:\.self){piece in Button(owned.contains(piece) ? "✓ \(piece+1)":"Buy \(15+piece*5)") {mutate{_=$0.buyCollectionPiece(room:room.id,kind:kind,piece:piece)}}.buttonStyle(.bordered).disabled(owned.contains(piece) || room.guest != nil || !motel.isAtReception)}
+                    if owned.count==3 && motel.collection(room.id).selected != kind {Button("Use") {mutate{_=$0.selectCollection(room:room.id,kind:kind)}}.buttonStyle(.borderedProminent).disabled(room.guest != nil || !motel.isAtReception)}
+                }
+            }
+        }}
+        Text(motel.isAtReception ? "Collection catalogue open.":"Use the room catalogue at reception.").font(.caption)
+    }}
+    private var teamContent:some View {section("Employee relationships",detail:"Staff gain personality and friendship bonuses. Tired colleagues may disagree once per week; resolve it before their work cadence slows.") {
+        ForEach(motel.operationsState.workers) {worker in let profile=motel.simulation.profiles[worker.role.rawValue] ?? StaffProfile.make(worker.role)
+            card {HStack{VStack(alignment:.leading){Text(worker.role.name+" · "+worker.role.title).font(.headline);Text("\(motel.employeePersonality(worker.role)) · loyalty \(profile.loyalty) · fatigue \(profile.fatigue)").font(.caption)};Spacer();Circle().fill(Color(hex:worker.role.color)).frame(width:24,height:24)}}
+        }
+        if let dispute=motel.experiences.dispute {card {Text("Team disagreement").font(.headline);Text("\(staffName(dispute.first)) and \(staffName(dispute.second)) need your help.").font(.caption);HStack{Button("Mediate") {mutate{_=$0.resolveEmployeeDispute(paid:false)}}.buttonStyle(.bordered);Button("Team meal · 10") {mutate{_=$0.resolveEmployeeDispute(paid:true)}}.buttonStyle(.borderedProminent)}}} else {empty("No unresolved disagreements.")}
+    }}
+    private var districtContent:some View {section("Neighborhood reputation",detail:"Residents bring referrals, businesses send parts, and trusted police reduce heat. Your choices change each group separately.") {
+        ForEach(["residents","businesses","police"],id:\.self) {key in card {HStack{Label(key.capitalized,systemImage:key=="residents" ? "house.fill" : key=="businesses" ? "storefront.fill" : "shield.fill");Spacer();Text("\(motel.districtScore(key))/100").bold()};ProgressView(value:Double(motel.districtScore(key)),total:100).tint(gold);Button("Community support · 10") {mutate{_=$0.communityAction(key)}}.buttonStyle(MotelButtonStyle(subdued:true)).disabled(!motel.isAtReception || motel.experiences.communityDay==motel.day || motel.cash<10)}}
+        Text(motel.isAtReception ? "Choose one community action today.":"Community support is arranged from reception.").font(.caption)
+    }}
+    private var creatureContent:some View {section("Creature training & contests",detail:"Train once per day at a corral gate. Favorite exercises give more progress. Enter one three-round sanctuary contest each week.") {
+        ForEach(BasementLayout.residents,id:\.self) {id in let progress=motel.training(id)
+            card {HStack{VStack(alignment:.leading){Text(BasementLayout.titles[id]).font(.headline);Text("Level \(progress.level) · \(progress.medals) medals · favorite: \(motel.creatureExercise(id).title)").font(.caption)};Spacer();Image(systemName:"pawprint.fill").foregroundStyle(gold)}
+                HStack{ForEach(CreatureExercise.allCases){exercise in Button(exercise.title){mutate{_=$0.trainCreature(id,exercise:exercise)}}.buttonStyle(.bordered).disabled(motel.nearbyTrainingCreature != id || progress.trainedDay==motel.day || motel.simulation.stock["snacks",default:0]<=0)}}
+                if motel.experiences.contest == nil || motel.experiences.contest?.finished==true {Button("Enter weekly contest · 10") {mutate{_=$0.enterSanctuaryContest(id)}}.buttonStyle(.borderedProminent).disabled(motel.nearbyTrainingCreature != id || motel.cash<10 || motel.experiences.contestWeek==motel.experienceWeek)}
+            }
+        }
+        if let run=motel.experiences.contest,!run.finished {card {Text("Contest round \(run.round+1) of 3").font(.headline);Text("Score: \(run.score)");HStack{ForEach(CreatureExercise.allCases){exercise in Button(exercise.title){mutate{_=$0.contestRound(exercise)}}.buttonStyle(.bordered)}}}
+        Text("Stand beside the selected creature’s corral gate in the basement.").font(.caption)
+    }}
+    private var eventContent:some View {section("Seasonal hosting",detail:"Every season has a physical celebration. Book at reception, then visit its marked location to decorate, cater and welcome guests.") {
+        Text("\(motel.seasonTitle) · Week \(motel.experienceWeek)").font(.title3.bold())
+        let available=SeasonalParty.allCases[motel.experienceSeason]
+        if let hosting=motel.experiences.hosting,hosting.startedDay<=motel.day {card {Text(hosting.kind.title).font(.headline);Text(hosting.completed ? "Complete — saved in your scrapbook." : hosting.stage==0 ? "Next: decorate at \(hosting.kind.place)." : hosting.stage==1 ? "Next: bring 3 snacks to \(hosting.kind.place)." : "Next: welcome guests at \(hosting.kind.place).").font(.caption);if !hosting.completed {Button("Continue event") {mutate{_=$0.prepareSeasonalParty()}}.buttonStyle(MotelButtonStyle(subdued:true)).disabled(motel.seasonalHostTile.map{motel.worldState.place != .grounds || motel.actorTile.distance(to:$0)>2} ?? true)}}}
+        else {card {Text(available.title).font(.headline);Text("Booking \(available.cost) coins · hosted at \(available.place)").font(.caption);Button("Book this season") {mutate{_=$0.bookSeasonalParty(available)}}.buttonStyle(MotelButtonStyle(subdued:true)).disabled(!motel.isAtReception || motel.cash<available.cost || motel.experiences.hostingWeek==motel.experienceWeek)}}
+    }}
+    private var scrapbookContent:some View {section("Family scrapbook",detail:"Photos and meaningful moments stay here across saves. Photo mode is opened from the main pause menu.") {
+        if motel.experiences.photos.isEmpty {empty("No photos yet. Open Photo mode from the pause menu and capture your favorite view.")} else {ForEach(motel.experiences.photos){photo in card {HavenPhotoThumbnail(photo:photo).frame(height:150).clipShape(RoundedRectangle(cornerRadius:11));Label(photo.caption.isEmpty ? photo.place:photo.caption,systemImage:"photo.fill").font(.headline);Text("Day \(photo.day) · \(photo.place)").font(.caption)}}}
+        Text("Memories").font(.title3.bold()).padding(.top,8)
+        if motel.experiences.memories.isEmpty {empty("Stories, friendships, contests and celebrations will appear here.")} else {ForEach(motel.experiences.memories){memory in card {Text(memory.text);Text("Day \(memory.day)").font(.caption).foregroundStyle(.secondary)}}}
+    }}
+    private func section<Content:View>(_ title:String,detail:String,@ViewBuilder content:()->Content)->some View {VStack(alignment:.leading,spacing:13){Text(title).font(.title2.bold());Text(detail).font(.subheadline).foregroundStyle(.secondary);content()}.frame(maxWidth:.infinity,alignment:.leading)}
+    private func card<Content:View>(@ViewBuilder _ content:()->Content)->some View {VStack(alignment:.leading,spacing:10){content()}.padding(14).frame(maxWidth:.infinity,alignment:.leading).background(panel,in:RoundedRectangle(cornerRadius:15))}
+    private func empty(_ text:String)->some View {Text(text).font(.subheadline).foregroundStyle(.secondary).padding(14).frame(maxWidth:.infinity,alignment:.leading).background(Color.white.opacity(0.05),in:RoundedRectangle(cornerRadius:14))}
+    private func staffName(_ id:String)->String {StaffRole(rawValue:id)?.name ?? id.capitalized}
+    private func mutate(_ action:(inout Motel)->Void) {var value=game.motel ?? Motel();action(&value);game.motel=value;game.save()}
+}
+
+private struct HavenPhotoThumbnail:View {
+    let photo:HavenPhoto
+    var body:some View {Group {if let image=Self.load(photo.fileName) {Image(uiImage:image).resizable().scaledToFill()} else {ZStack{Color.white.opacity(0.06);Image(systemName:"photo.badge.exclamationmark").font(.largeTitle)}}}.frame(maxWidth:.infinity,maxHeight:.infinity).clipped()}
+    private static func load(_ name:String)->UIImage? {guard let root=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask).first else{return nil};return UIImage(contentsOfFile:root.appendingPathComponent("HavenPhotos",isDirectory:true).appendingPathComponent(name).path)}
+}

@@ -46,9 +46,16 @@ struct ContentView: View {
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.removeObject(forKey:"littlehaven.compatibleOffice")}
         if args.contains(where:{$0.hasPrefix("--ui-")}) {UserDefaults.standard.set(args.contains("--ui-touch"),forKey:"littlehaven.fullscreenTouch");UserDefaults.standard.set(false,forKey:"littlehaven.hideFullscreenToolbar")}
 
-
-
-
+        if args.contains(where:{$0.hasPrefix("--ui-experience-")}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.cash=2000;sample.motel!.activateExperiences()
+            sample.motel!.operations!.simulation!.stock["snacks"]=12
+            for role in [StaffRole.cleaner,.maintenance,.security] {_=sample.motel!.hire(role)}
+            let known=Motel.arrivals(day:1,count:3,randomize:false)
+            for guest in known {sample.motel!.rememberGuestVisit(guest)}
+            var e=sample.motel!.experiences;e.bonds[known[0].name]?.chapter=2;e.district=["residents":68,"businesses":52,"police":35];e.dispute=EmployeeDispute(first:StaffRole.cleaner.rawValue,second:StaffRole.maintenance.rawValue,day:1);sample.motel!.havenExperiences=e
+            sample.motel!.world!.place = .office;sample.motel!.world!.player=OfficeReception.clerk
+            sample.save();return sample
+        }
         if args.contains("--ui-supply-buyer") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld();sample.motel!.enableManagement();sample.motel!.cash=700;sample.motel!.guestsServed=12;sample.motel!.waiting=[]
             for item in Supply.allCases {sample.motel!.operations!.simulation!.stock[item.rawValue]=8}

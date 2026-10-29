@@ -1303,6 +1303,24 @@ final class LittleHavenUITests: XCTestCase {
             app.terminate()
         }
     }
+    func testEightHotelExperienceSectionsAndPhotoScrapbook() {
+        let expected:[(String,String)]=[("--ui-experience-guests","Returning guests"),("--ui-experience-identity","Choose a hotel specialization"),("--ui-experience-rooms","Matching room collections"),("--ui-experience-team","Employee relationships"),("--ui-experience-district","Neighborhood reputation"),("--ui-experience-creatures","Creature training & contests"),("--ui-experience-events","Seasonal hosting"),("--ui-experience-scrapbook","Family scrapbook")]
+        for (argument,title) in expected {
+            let app=launch(argument)
+            XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout:15),app.debugDescription)
+            XCTAssertTrue(app.staticTexts["Hotel life & memories"].exists)
+            capture(app,title)
+            app.terminate()
+        }
+        let photo=launch("--ui-experience-guests")
+        back(photo);openPause(photo)
+        XCTAssertTrue(photo.buttons["openPhotoMode"].exists);photo.buttons["openPhotoMode"].tap()
+        XCTAssertTrue(photo.buttons["takeHavenPhoto"].waitForExistence(timeout:5));photo.textFields["photoCaption"].tap();photo.textFields["photoCaption"].typeText("Family opening day")
+        photo.buttons["takeHavenPhoto"].tap();XCTAssertTrue(photo.buttons["Close"].waitForExistence(timeout:8));photo.buttons["Close"].tap()
+        openPause(photo);photo.buttons["openHotelExperiences"].tap();XCTAssertTrue(photo.staticTexts["Returning guests"].waitForExistence(timeout:5));photo.buttons["Scrapbook"].tap()
+        XCTAssertTrue(photo.staticTexts["Family opening day"].waitForExistence(timeout:5),photo.debugDescription)
+        capture(photo,"Photo scrapbook with real capture")
+    }
     private func back(_ app:XCUIApplication) {
         let menus=app.buttons.matching(identifier:"menuBack")
         XCTAssertTrue(menus.firstMatch.waitForExistence(timeout:5),app.debugDescription)

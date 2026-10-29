@@ -93,6 +93,13 @@ struct MotelView: View {
     @State private var havenTab:HavenTab = .neighbors
     @State private var lifeAfterPause=false
     @State private var journalAfterPause=false
+    @State private var showExperiences=false
+    @State private var experienceAfterPause=false
+    @State private var experienceTab:HavenExperienceTab = .guests
+    @State private var photoMode=false
+    @State private var photoAfterPause=false
+    @State private var hidePhotoControls=false
+    @State private var photoCaption=""
     private var motel: Motel { game.motel ?? Motel() }
     private var mapIdentity: String {motel.petMap}
     private let cream = Color(hex: 0xF5E7C8)
@@ -104,7 +111,7 @@ struct MotelView: View {
         return false
         #endif
     }
-    private var paused: Bool { needsAfterPause || showNeeds || activeCare != nil || pauseDestination != nil || showHavenLife || lifeAfterPause || journalAfterPause || storyGuest != nil || showStoryJournal || motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
+    private var paused: Bool { photoMode || photoAfterPause || showExperiences || experienceAfterPause || needsAfterPause || showNeeds || activeCare != nil || pauseDestination != nil || showHavenLife || lifeAfterPause || journalAfterPause || storyGuest != nil || showStoryJournal || motel.policeRequiresDecision || responseDuration > 0 || showCreative || corral != nil || talkingRoom != nil || neighborhood != nil || showHome || showManagement || showOptions || showPolice || showIncident || family != nil || panel != nil || showMap || showPause || confirmRest || showSneak || confirmRestore }
 
     var body: some View {
         StartupTrace.stage("hotel_body_begin")
@@ -140,6 +147,7 @@ struct MotelView: View {
             StartupTrace.stage("hotel_game_over_begin")
             return AnyView(gameOver)
         }
+        if photoMode {return AnyView(photoScreen)}
         if fullscreenTouch {
             StartupTrace.stage("hotel_fullscreen_begin")
             let screen=AnyView(fullscreenWorld)
@@ -214,6 +222,9 @@ struct MotelView: View {
             if ProcessInfo.processInfo.arguments.contains("--ui-haven-team") {havenTab = .team;showHavenLife=true}
             if ProcessInfo.processInfo.arguments.contains("--ui-haven-calendar") {havenTab = .calendar;showHavenLife=true}
             if ProcessInfo.processInfo.arguments.contains("--ui-haven-creature") {corral=0}
+            for (argument,tab) in [("--ui-experience-guests",HavenExperienceTab.guests),("--ui-experience-identity",.identity),("--ui-experience-rooms",.rooms),("--ui-experience-team",.team),("--ui-experience-district",.district),("--ui-experience-creatures",.creatures),("--ui-experience-events",.events),("--ui-experience-scrapbook",.scrapbook)] {
+                if ProcessInfo.processInfo.arguments.contains(argument) {experienceTab=tab;showExperiences=true}
+            }
 
             if ProcessInfo.processInfo.arguments.contains("--ui-police") { showPolice = true }
             if ProcessInfo.processInfo.arguments.contains("--ui-hiring") { panel = .staff }
@@ -347,6 +358,7 @@ struct MotelView: View {
         .sheet(isPresented:$showNeeds) {PlayerNeedsPanel(motel:motel)}
         .sheet(item:$storyGuest) { guest in GuestStoriesView(game:$game,guest:guest) }
         .sheet(isPresented:$showHavenLife) {HavenLifeView(game:$game,initialTab:havenTab)}
+        .sheet(isPresented:$showExperiences) {HavenExperienceView(game:$game,initialTab:experienceTab)}
         .sheet(isPresented:$showStoryJournal) { GuestStoriesView(game:$game) }
         .sheet(item:$neighborhood) { shop in NeighborhoodStoreView(game:$game,shop:shop) }
         .sheet(isPresented:$showHome) { HomeDesignView(game:$game) }
@@ -362,6 +374,8 @@ struct MotelView: View {
             if needsAfterPause {needsAfterPause=false;showNeeds=true}
             if lifeAfterPause {lifeAfterPause=false;showHavenLife=true}
             if journalAfterPause {journalAfterPause=false;showStoryJournal=true}
+            if experienceAfterPause {experienceAfterPause=false;showExperiences=true}
+            if photoAfterPause {photoAfterPause=false;photoMode=true}
             if let destination=pauseDestination {
                 pauseDestination=nil
                 if !motel.policeRequiresDecision {
@@ -693,6 +707,39 @@ struct MotelView: View {
                 }
     }
 
+    private var photoScreen:some View {
+        ZStack {
+            deferredScene.ignoresSafeArea().allowsHitTesting(false)
+            if !hidePhotoControls {
+                VStack {
+                    HStack {Button("Close") {photoMode=false}.buttonStyle(MotelButtonStyle(subdued:true));Spacer();Text("PHOTO MODE").font(.headline);Spacer();Color.clear.frame(width:88)}.padding()
+                    Spacer()
+                    VStack(spacing:10) {
+                        TextField("Caption (optional)",text:$photoCaption).textFieldStyle(.roundedBorder).foregroundStyle(.primary).accessibilityIdentifier("photoCaption")
+                        Button {captureHavenPhoto()} label:{Label("Take photo",systemImage:"camera.fill")}.buttonStyle(MotelButtonStyle()).accessibilityIdentifier("takeHavenPhoto")
+                    }.padding().background(.ultraThinMaterial,in:RoundedRectangle(cornerRadius:18)).padding()
+                }
+            }
+        }.background(Color.black)
+    }
+    private func captureHavenPhoto() {
+        guard motel.experiences.photos.count<40 else {toast="The scrapbook holds 40 photos. Remove one before taking another.";return}
+        hidePhotoControls=true
+        Task {@MainActor in
+            try? await Task.sleep(for:.milliseconds(180))
+            guard let window=UIApplication.shared.connectedScenes.compactMap({$0 as? UIWindowScene}).flatMap(\.windows).first(where:{$0.isKeyWindow}) else {hidePhotoControls=false;return}
+            let format=UIGraphicsImageRendererFormat();format.scale=min(UIScreen.main.scale,2);format.opaque=true
+            let image=UIGraphicsImageRenderer(bounds:window.bounds,format:format).image {_ in window.drawHierarchy(in:window.bounds,afterScreenUpdates:true)}
+            let id=UUID(),name=id.uuidString+".jpg"
+            guard let data=image.jpegData(compressionQuality:0.82),let docs=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask).first else {hidePhotoControls=false;return}
+            let folder=docs.appendingPathComponent("HavenPhotos",isDirectory:true)
+            try? FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+            let url=folder.appendingPathComponent(name)
+            do {try data.write(to:url,options:.atomic);var saved=false;change{saved=$0.recordHavenPhoto(fileName:name,caption:photoCaption)};if saved {game.save();photoCaption=""} else {try? FileManager.default.removeItem(at:url)}} catch {toast="The photo could not be saved."}
+            hidePhotoControls=false
+        }
+    }
+
     private var deferredScene: some View {
         MotelScreenSection {
             StartupTrace.stage("hotel_map_begin")
@@ -804,6 +851,7 @@ struct MotelView: View {
 
     private func guestDialogue(room:MotelRoom,guest:MotelGuest)->some View {
         var choices=[DialogueChoice(title:"Ask about their stay",action:{change { _ = $0.greetGuest(room.id) };talkingRoom=nil})]
+        if guest.storyID == nil {choices.insert(DialogueChoice(title:motel.guestBond(guest.name).chapter>=3 ? "Share a memory" : "Listen: "+motel.guestInterest(guest.name),action:{change{_=$0.shareGuestStory(guest.name)};talkingRoom=nil}),at:0)}
         if let id=guest.storyID {
             choices.insert(DialogueChoice(title:"Talk: "+id.title,action:{talkingRoom=nil;storyGuest=guest}),at:0)
         }
@@ -975,6 +1023,8 @@ struct MotelView: View {
                     Button {needsAfterPause=true;showPause=false} label:{Label("Personal needs",systemImage:"person.fill.checkmark")}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("openPersonalNeeds")
                     Button("Haven life & weekly activities") {havenTab = .neighbors;lifeAfterPause=true;showPause=false}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("openHavenLife")
                     Button("Guest stories") {journalAfterPause=true;showPause=false}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("guestStoriesJournal")
+                    Button("Hotel life & memories") {experienceTab = .guests;experienceAfterPause=true;showPause=false}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("openHotelExperiences")
+                    Button("Photo mode") {photoAfterPause=true;showPause=false}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("openPhotoMode")
                     Divider()
                     Button("Load last checkpoint") {showPause=false;confirmRestore=true}.buttonStyle(MotelButtonStyle(subdued:true))
                     Button("Save & return to title") {stop();game.save();showPause=false;returnToTitle()}.buttonStyle(MotelButtonStyle(subdued:true)).accessibilityIdentifier("backToTitle")
@@ -1021,8 +1071,8 @@ struct MotelView: View {
                     }), DialogueChoice(title:"Pet",action:{ toast = "\(familyTitle) purrs happily."; family = nil }),
                     DialogueChoice(title:"Give a treat",action:{ toast = "\(familyTitle) enjoys a little treat."; family = nil })]
         }
-        if person == .hildarelys { return [DialogueChoice(title:"Give her a kiss",action:{ toast = "Hildarelys smiles: We make a good team."; family = nil })] }
-        return [DialogueChoice(title:"Watch together",action:{ toast = "You share a funny cartoon with Samhil."; family = nil })]
+        if person == .hildarelys { return [DialogueChoice(title:"Give her a kiss",action:{ change{$0.rememberExperience("Shared a quiet family moment with Hildarelys.")};toast = "Hildarelys smiles: We make a good team."; family = nil })] }
+        return [DialogueChoice(title:"Watch together",action:{change{$0.rememberExperience("Watched a funny cartoon with Samhil.")};toast = "You share a funny cartoon with Samhil."; family = nil })]
     }
     private func incidentChoices(_ kind: ChaosKind) -> [DialogueChoice] {
         if motel.nearbyIncident { return [DialogueChoice(title:kind.action,action:{

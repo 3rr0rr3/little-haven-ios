@@ -347,6 +347,9 @@ extension Motel {
         if let favour=worldState.guestFavour,favour.status == .pending,let room=rooms.first(where:{$0.guest?.id==favour.guestID}) {
             pins.append(HavenMapPin(id:"guest-favour",title:"Guest delivery",detail:room.guest?.name ?? "Guest request",tile:groundRoomDoor(room.id),symbol:"shippingbox.fill",group:.tasks))
         }
+        if let hosting=experiences.hosting,!hosting.completed {
+            pins.append(HavenMapPin(id:"seasonal-host",title:hosting.kind.title,detail:hosting.stage==0 ? "Decorate at "+hosting.kind.place : hosting.stage==1 ? "Bring 3 snacks" : "Welcome your guests",tile:groundNearestWalkable(to:groundTile(hosting.kind.location)),symbol:"party.popper.fill",group:.tasks))
+        }
         return pins
     }
     func navigationDirection(to destination:Tile)->String {
