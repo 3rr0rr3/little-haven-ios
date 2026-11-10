@@ -65,7 +65,11 @@ struct TownCanvas: View, Animatable {
                 // Three original village buildings.
                 for (index, b) in Town.buildings.enumerated() {
                     let x = Double(b.0 * 16), y = Double(b.1 * 16), w = Double((b.2 - b.0 + 1) * 16), h = Double((b.3 - b.1 + 1) * 16)
+                    if index == 1 {
+                        HouseDesignArt.draw(context:&context,x:x,y:y,w:w,h:h,doorX:Double(Town.door.x*16),style:3,name:game.ownsHouse ? "HOME" : "FOR SALE")
+                    } else {
                     CozyScenery.building(context:&context,x:x,y:y,w:w,h:h,doorX:index == 1 ? Double(Town.door.x*16) : x+w/2-8,name:index == 1 ? (game.ownsHouse ? "HOME" : "FOR SALE") : index == 0 ? "MARKET" : "WORKSHOP",roof:index == 1 ? 0x8AAC98 : 0xC88A70,paint:0xE8D6B4)
+                    }
                 }
                 for y in 0..<Town.height {
                     for x in 0..<Town.width where x == 0 || x == Town.width - 1 || y == 0 || y == Town.height - 1 {

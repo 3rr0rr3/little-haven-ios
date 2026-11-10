@@ -325,6 +325,18 @@ struct ContentView: View {
             sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
             sample.save();return sample
         }
+        if args.contains("--ui-house-town") {
+            var sample=Game();sample.player=Tile(x:15,y:8);return sample
+        }
+        if args.contains(where:{$0.hasPrefix("--ui-house-")}) {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.waiting=[];sample.motel!.world!.place = .grounds
+            if let id=(0..<3).first(where:{args.contains("--ui-house-\($0)")}) {
+                let door=ResidentialLayout.doors[id];sample.motel!.world!.player=Tile(x:door.x,y:door.y+2)
+            } else {sample.motel!.world!.player=Tile(x:54,y:16)}
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            return sample
+        }
         if args.contains("--ui-neighbors") || args.contains("--ui-chair") || args.contains("--ui-facilities") || args.contains("--ui-laundry") {
             var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
             sample.motel!.cash=900;sample.motel!.waiting=[];sample.motel!.world!.place = .grounds

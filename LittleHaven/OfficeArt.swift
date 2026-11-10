@@ -201,7 +201,7 @@ enum NeighborhoodArt {
         for (id,origin) in ResidentialLayout.origins.enumerated() {
             let saved=context,d=motel?.creativeOffset("neighbor-\(id)") ?? Tile(x:0,y:0)
             context.translateBy(x:Double(d.x*16),y:Double(d.y*16))
-            CozyScenery.building(context:&context,x:Double(origin.x*16),y:Double(origin.y*16),w:112,h:80,doorX:Double(ResidentialLayout.doors[id].x*16),name:"",roof:[UInt32(0x7597A2),0xB69775,0xA5869B][id],paint:0xE8D6AD)
+            HouseDesignArt.draw(context:&context,x:Double(origin.x*16),y:Double(origin.y*16),w:112,h:80,doorX:Double(ResidentialLayout.doors[id].x*16),style:id)
             for dx in [4.0,93] {CozyScenery.planter(context:&context,x:Double(origin.x*16)+dx,y:Double((origin.y+5)*16))}
             context=saved
         }
@@ -1846,5 +1846,154 @@ enum ThanksgivingArt {
         draw(context:&context,x:35,y:104,kind:2)
         draw(context:&context,x:191,y:312,kind:2)
         for (x,y) in [(27.0,168.0),(111,274),(204,179),(248,286),(52,310)] {draw(context:&context,x:x,y:y,kind:4)}
+    }
+}
+
+
+/// Distinct silhouettes and construction details within the existing house footprints.
+enum HouseDesignArt {
+    static func draw(context:inout GraphicsContext,x:Double,y:Double,w:Double,h:Double,doorX:Double,style:Int,name:String="") {
+        var c=context
+        let sx=w/112,sy=h/80,door=(doorX-x+8)/sx
+        c.translateBy(x:x,y:y);c.scaleBy(x:sx,y:sy)
+        let ink:UInt32=0x493B30,cream:UInt32=0xF2DDB3
+        func shape(_ path:Path,_ color:UInt32,_ width:Double=0.9) {
+            c.fill(path,with:.linearGradient(Gradient(colors:[CozyScenery.tint(color,1.12),Color(hex:color),CozyScenery.tint(color,0.88)]),startPoint:CGPoint(x:15,y:15),endPoint:CGPoint(x:100,y:80)))
+            c.stroke(path,with:.color(Color(hex:ink)),style:StrokeStyle(lineWidth:width,lineJoin:.round))
+        }
+        func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32,_ radius:Double=1) {
+            shape(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:radius),color)
+        }
+        func line(_ points:[CGPoint],_ color:UInt32,_ width:Double=0.65) {
+            var p=Path();p.addLines(points);c.stroke(p,with:.color(Color(hex:color)),style:StrokeStyle(lineWidth:width,lineCap:.round,lineJoin:.round))
+        }
+        func poly(_ points:[CGPoint],_ color:UInt32)->Path {
+            var p=Path();p.addLines(points);p.closeSubpath();shape(p,color);return p
+        }
+        func material(_ name:String,_ rect:CGRect,_ opacity:Double=0.25) {
+            PaintedArt.texture(name,in:rect,context:&c,unit:40,opacity:opacity,blend:.multiply)
+        }
+        func window(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ round:Bool=false) {
+            let p=Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:round ? w/2 : 1)
+            shape(p,0x754A2E)
+            let glass=CGRect(x:x+2,y:y+2,width:w-4,height:h-4)
+            shape(Path(roundedRect:glass,cornerRadius:round ? (w-4)/2 : 0.4),0x699DAD,0.5)
+            var shine=c;shine.clip(to:p)
+            var ray=Path();ray.addLines([CGPoint(x:x+3,y:y+2),CGPoint(x:x+7,y:y+2),CGPoint(x:x+w-4,y:y+h-2),CGPoint(x:x+w-8,y:y+h-2)]);ray.closeSubpath()
+            shine.fill(ray,with:.color(Color(hex:0xD8F1E3).opacity(0.35)))
+            line([CGPoint(x:x+w/2,y:y+1),CGPoint(x:x+w/2,y:y+h-1)],0xD5BA82,1)
+            line([CGPoint(x:x+1,y:y+h*0.52),CGPoint(x:x+w-1,y:y+h*0.52)],0xD5BA82,1)
+            box(x-1,y+h, w+2,2,cream)
+        }
+        func entrance(_ color:UInt32,_ arch:Bool=false,_ glass:Bool=false) {
+            let p=Path(roundedRect:CGRect(x:door-10,y:49,width:20,height:29),cornerRadius:arch ? 8 : 1)
+            shape(p,0xF2DDB3,1.1)
+            shape(Path(roundedRect:CGRect(x:door-7.5,y:51,width:15,height:26),cornerRadius:arch ? 6 : 0.5),color,0.8)
+            if glass {window(door-5.5,53,11,13)}
+            else {
+                for dx in [-4.0,0,4] {line([CGPoint(x:door+dx,y:56),CGPoint(x:door+dx,y:75)],0x6D482D,0.5)}
+            }
+            shape(Path(ellipseIn:CGRect(x:door+3.3,y:66,width:1.8,height:2)),0xE9BF66,0.3)
+            box(door-13,77,26,3,0xD9C5A0)
+        }
+        func roofTiles(_ path:Path,_ color:UInt32,_ metal:Bool=false) {
+            var r=c;r.clip(to:path)
+            if metal {
+                for xx in stride(from:0.0,through:112.0,by:9) {
+                    var seam=Path();seam.move(to:CGPoint(x:xx,y:0));seam.addLine(to:CGPoint(x:xx+5,y:43))
+                    r.stroke(seam,with:.color(CozyScenery.tint(color,0.6)),lineWidth:0.75)
+                    seam=Path();seam.move(to:CGPoint(x:xx+1,y:0));seam.addLine(to:CGPoint(x:xx+6,y:43))
+                    r.stroke(seam,with:.color(CozyScenery.tint(color,1.4)),lineWidth:0.4)
+                }
+            } else {
+                for row in 0..<6 {
+                    let yy=Double(row*7),shift=row%2==0 ? 0.0 : -7.0
+                    for col in 0..<10 {
+                        let tile=Path(roundedRect:CGRect(x:Double(col*13)+shift,y:yy,width:12.4,height:6.6),cornerRadius:1.1)
+                        r.stroke(tile,with:.color(CozyScenery.tint(color,0.6)),lineWidth:0.55)
+                        r.stroke(Path(CGRect(x:Double(col*13)+shift+1,y:yy+0.8,width:10,height:0.1)),with:.color(CozyScenery.tint(color,1.4)),lineWidth:0.4)
+                    }
+                }
+            }
+        }
+        func lamp(_ x:Double,_ y:Double) {
+            line([CGPoint(x:x+3,y:y),CGPoint(x:x+3,y:y+8)],ink,0.8)
+            box(x,y+3,6,7,0xF4D17C);box(x-1,y+2,8,2,0x48534A)
+        }
+        c.fill(Path(ellipseIn:CGRect(x:1,y:74,width:110,height:8)),with:.color(.black.opacity(0.18)))
+        switch style {
+        case 0:
+            // Stone cottage: steep slate gables, dormer, arched oak entrance.
+            box(7,30,98,47,0xB9B8A5,2)
+            for row in 0..<6 {
+                for col in 0..<8 {
+                    let xx=9+Double(col*12)+(row%2==0 ? 0 : 6),yy=34+Double(row*7)
+                    if xx<101 {box(xx,yy,min(11,103-xx),5.7,row%2==0 ? 0xCECCB6 : 0xB1B5A4,1)}
+                }
+            }
+            box(87,4,9,23,0xA7AB9C);box(85,3,13,3,0xE4D6B8)
+            let roof=poly([CGPoint(x:1,y:34),CGPoint(x:25,y:4),CGPoint(x:80,y:4),CGPoint(x:111,y:34)],0x586B87)
+            roofTiles(roof,0x586B87)
+            line([CGPoint(x:1,y:35),CGPoint(x:111,y:35)],0xD6D1BE,2)
+            _=poly([CGPoint(x:35,y:33),CGPoint(x:56,y:9),CGPoint(x:77,y:33)],0xDDD8BF)
+            line([CGPoint(x:33,y:33),CGPoint(x:56,y:7),CGPoint(x:79,y:33)],0x3F526F,3)
+            window(50,18,12,14,true)
+            window(15,43,19,22,true);window(78,43,19,22,true)
+            entrance(0x916641,true)
+            lamp(37,48);lamp(68,48)
+            for xx in [12.0,79] {PaintedArt.draw("wildflowers",in:CGRect(x:xx,y:68,width:20,height:9),context:&c,fit:true)}
+        case 1:
+            // Bungalow: low hipped copper roof and a wide porch on white columns.
+            box(7,26,98,50,0xB3C0A0,2)
+            for yy in stride(from:32.0,to:75.0,by:5) {line([CGPoint(x:8,y:yy),CGPoint(x:104,y:yy)],0x7D947B,0.5)}
+            let roof=poly([CGPoint(x:0,y:29),CGPoint(x:19,y:7),CGPoint(x:91,y:7),CGPoint(x:112,y:29)],0x488E7F)
+            roofTiles(roof,0x488E7F,true)
+            line([CGPoint(x:19,y:7),CGPoint(x:26,y:29)],0x2D665C,1.1)
+            line([CGPoint(x:91,y:7),CGPoint(x:87,y:29)],0x2D665C,1.1)
+            box(0,28,112,4,0xEEE2BC)
+            window(17,37,23,21);window(73,37,23,21)
+            entrance(0xA86443,false,true)
+            box(3,71,106,6,0xAD8A60);material("timber",CGRect(x:3,y:71,width:106,height:6))
+            for xx in [8.0,97] {box(xx,38,7,35,0xF2E8C8);box(xx-2,36,11,4,0xD9CEAA);box(xx-2,69,11,5,0xC9B88F)}
+            let awning=poly([CGPoint(x:0,y:41),CGPoint(x:7,y:32),CGPoint(x:105,y:32),CGPoint(x:112,y:41)],0x4D8C7E)
+            roofTiles(awning,0x4D8C7E,true);box(0,40,112,3,0xF2E2BA)
+            for xx in [18.0,78] {box(xx,64,16,2,0xE8D8AD);line([CGPoint(x:xx+2,y:66),CGPoint(x:xx+2,y:71)],0xDED7B2,1);line([CGPoint(x:xx+14,y:66),CGPoint(x:xx+14,y:71)],0xDED7B2,1)}
+            lamp(67,45)
+        case 2:
+            // Terrace villa: stucco, a raised side tower and a planted flat roof.
+            box(7,24,99,53,0xECC99B,2)
+            material("plaster",CGRect(x:7,y:24,width:99,height:53),0.2)
+            box(6,17,100,9,0xD99C6C);box(3,15,106,4,0xF0D8B0)
+            box(11,7,28,23,0xDFAE7C);box(8,5,34,4,0xF4D5A2)
+            for xx in [16.0,29] {window(xx,11,6,11,true)}
+            for xx in [48.0,64,80,96] {box(xx,8,4,8,0xEDC99B)}
+            box(45,8,58,2,0xEAD8B5)
+            window(15,42,20,22,true);window(80,43,18,21,true)
+            entrance(0x426F77,true)
+            let canopy=poly([CGPoint(x:38,y:48),CGPoint(x:43,y:39),CGPoint(x:71,y:39),CGPoint(x:77,y:48)],0xB56746)
+            roofTiles(canopy,0xB56746)
+            line([CGPoint(x:39,y:48),CGPoint(x:76,y:48)],0xF3D5AB,1.5)
+            for xx in [47.0,82] {
+                box(xx,16,17,4,0x9A6546)
+                for i in 0..<5 {shape(Path(ellipseIn:CGRect(x:xx+Double(i)*3,y:11-Double(i%2),width:5,height:7)),0x6D9851,0.3)}
+            }
+            lamp(69,52)
+            for xx in [11.0,94] {box(xx,65,6,11,0xB97A50);shape(Path(ellipseIn:CGRect(x:xx-2,y:58,width:10,height:10)),0x7E9B52)}
+        default:
+            // Original town cottage: timber cabin with gambrel roof and shutters.
+            box(7,29,98,48,0xA97547,2)
+            for yy in stride(from:32.0,to:74.0,by:6) {
+                box(5,yy,102,5.5,0xBE8C54,2)
+                for xx in [8.0,99] {shape(Path(ellipseIn:CGRect(x:xx,y:yy+1,width:3,height:3)),0xD6A76B,0.3)}
+            }
+            let roof=poly([CGPoint(x:0,y:35),CGPoint(x:10,y:18),CGPoint(x:30,y:3),CGPoint(x:82,y:3),CGPoint(x:102,y:18),CGPoint(x:112,y:35)],0x794E3E)
+            roofTiles(roof,0x794E3E)
+            line([CGPoint(x:0,y:36),CGPoint(x:112,y:36)],0xE4BB7E,2)
+            box(83,3,10,17,0x9A9586);box(81,1,14,3,0xC4B7A0)
+            window(15,43,20,20);window(79,43,20,20)
+            for xx in [9.0,36,73,100] {box(xx,43,5,21,0x487B70);line([CGPoint(x:xx+1,y:45),CGPoint(x:xx+4,y:61)],0xB8C8A2,0.6)}
+            entrance(0x688A73,false,true);lamp(68,51)
+        }
+        if !name.isEmpty {PaintedArt.nameplate(name,in:CGRect(x:door-14,y:38,width:28,height:7),context:&c,font:3.5)}
     }
 }

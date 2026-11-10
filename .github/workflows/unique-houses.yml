@@ -1,0 +1,70 @@
+name: Unique house designs IPA
+on:
+  push:
+    branches: ['codex/unique-house-designs']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Swift, saves and game rules
+        run: |
+          set -euo pipefail
+          swiftc -frontend -parse LittleHaven/*.swift LittleHavenUITests/*.swift
+          swiftc LittleHaven/NPCDesign.swift LittleHaven/Management.swift LittleHaven/Office.swift LittleHaven/RPGMap.swift LittleHaven/Game.swift LittleHaven/Motel.swift LittleHaven/MotelWorld.swift Tests/main.swift -o /tmp/little-haven-tests
+          /tmp/little-haven-tests
+          python3 scripts/validate_painted_art.py
+      - name: Build iPhone app
+        run: xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath device-build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Verify home return and walking routes
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if "iPhone" in v["name"]))')
+          echo "SIM_DEVICE=$DEVICE" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project LittleHaven.xcodeproj -scheme LittleHaven -configuration Debug -destination "id=$DEVICE" -derivedDataPath sim-build -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 240 -only-testing:LittleHavenUITests/LittleHavenUITests/testHomeBasementStairsReturnHome -only-testing:LittleHavenUITests/LittleHavenUITests/testWalkBehindRestaurantsAndReturnToEntrance -resultBundlePath HouseDesignResults.xcresult CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES test
+      - name: Capture each distinct house
+        run: |
+          set -euo pipefail
+          xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town || true
+          xcrun simctl install "$SIM_DEVICE" sim-build/Build/Products/Debug-iphonesimulator/LittleHaven.app
+          for MODE in house-home house-0 house-1 house-2 house-town; do
+            xcrun simctl launch "$SIM_DEVICE" com.littlehaven.town "--ui-$MODE" --ui-testing --ui-touch
+            sleep 5
+            xcrun simctl io "$SIM_DEVICE" screenshot "$MODE.png"
+            xcrun simctl terminate "$SIM_DEVICE" com.littlehaven.town
+          done
+      - name: Verify and package device IPA
+        run: |
+          set -euo pipefail
+          APP=device-build/Build/Products/Release-iphoneos/LittleHaven.app
+          test -x "$APP/LittleHaven"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleSupportedPlatforms:0' "$APP/Info.plist")" = iPhoneOS
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")" = 67.0
+          xcrun lipo "$APP/LittleHaven" -verify_arch arm64
+          mkdir -p package/Payload
+          ditto "$APP" package/Payload/LittleHaven.app
+          cd package
+          zip -qry ../BrainstormHaven-67.ipa Payload
+          cd ..
+          unzip -t BrainstormHaven-67.ipa
+          shasum -a 256 BrainstormHaven-67.ipa > BrainstormHaven-67.ipa.sha256
+      - name: Publish updated installer and previews
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create unique-houses-v67 BrainstormHaven-67.ipa BrainstormHaven-67.ipa.sha256 house-*.png --target "$GITHUB_SHA" --title 'Brainstorm Haven 67 - Distinct house designs' --prerelease --notes 'Every house has its own design: the family cottage, a slate-roof stone cottage, a covered-porch bungalow, a stucco terrace villa, and the original town timber cabin. Distinct roof shapes, windows, entrances and materials preserve the existing house footprints and door positions. Thanksgiving decorations, Hacker Chichu and restaurant depth fixes remain included. Game-rule and simulator checks passed. Unsigned arm64 iPhoneOS IPA for SideStore or your sideloading tool.'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Unique-House-Designs
+          path: |
+            HouseDesignResults.xcresult
+            house-*.png
+            BrainstormHaven-67.ipa*
