@@ -933,6 +933,7 @@ struct BasementArt:View {
 
 enum CorralCreatureArt {
     static func draw(context:inout GraphicsContext,kind:Int,facing:Int,walk:Double) {
+        if kind == 14 {drawHacker(context:&context,facing:facing,walk:walk);return}
         if kind == 13 {drawHiCat(context:&context,facing:facing,walk:walk);return}
         if kind == 12 {drawJuan(context:&context,facing:facing,walk:walk);return}
         if (9...11).contains(kind) {drawNewResident(context:&context,kind:kind,facing:facing,walk:walk);return}
@@ -1705,3 +1706,145 @@ extension HavenLifeArt {
     }
 }
 
+
+
+extension CorralCreatureArt {
+    /// Chichu's reference outfit: tabby face, black hoodie, green glasses and laptop.
+    static func drawHacker(context:inout GraphicsContext,facing:Int,walk:Double) {
+        var c=context
+        let green:UInt32=0x6CF39B,ink:UInt32=0x131B1B
+        let bob=max(-1,min(1,walk))*0.4,side=facing == 1 ? -1.2 : facing == 2 ? 1.2 : 0.0
+        func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
+            let p=Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h))
+            c.fill(p,with:.color(Color(hex:color)));c.stroke(p,with:.color(Color(hex:ink)),lineWidth:0.4)
+        }
+        func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32,_ r:Double=1) {
+            let p=Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:r)
+            c.fill(p,with:.color(Color(hex:color)));c.stroke(p,with:.color(Color(hex:ink)),lineWidth:0.4)
+        }
+        func line(_ points:[CGPoint],_ color:UInt32,_ width:Double=0.45) {
+            var p=Path();p.addLines(points);c.stroke(p,with:.color(Color(hex:color)),style:StrokeStyle(lineWidth:width,lineCap:.round))
+        }
+        func ear(_ x:Double,_ mirrored:Bool) {
+            var p=Path();p.addLines([CGPoint(x:x,y:8),CGPoint(x:x+(mirrored ? 4 : 0),y:0.8),CGPoint(x:x+5,y:7)])
+            p.closeSubpath();c.fill(p,with:.color(Color(hex:0x68665C)));c.stroke(p,with:.color(Color(hex:ink)),lineWidth:0.4)
+        }
+        c.fill(Path(ellipseIn:CGRect(x:1,y:25,width:23,height:2.4)),with:.color(.black.opacity(0.2)))
+        oval(16,18,7,8,0x716D61)
+        line([CGPoint(x:19,y:19),CGPoint(x:20,y:23),CGPoint(x:18,y:25)],0x454940,1.2)
+        box(4,14,16,12,0x252B2B,3)
+        oval(3,23+bob,6,3,0x77766B);oval(15,23-bob,6,3,0x77766B)
+        oval(2,1,20,19,0x171E20)
+        ear(3,false);ear(16,true)
+        if facing == 3 {
+            oval(4,3,16,14,0x20292A)
+            line([CGPoint(x:7,y:5),CGPoint(x:12,y:3),CGPoint(x:17,y:5)],0x3D4846,0.6)
+            c.draw(Text("</>").font(.system(size:4,weight:.black,design:.monospaced)).foregroundColor(Color(hex:green)),at:CGPoint(x:12,y:21))
+            return
+        }
+        oval(4+side,5,16,13,0x77776B)
+        oval(6+side,11,12,6,0xB2B6A1)
+        for x in [8.0,12,16] {line([CGPoint(x:x+side,y:5.2),CGPoint(x:12+side+(x-12)*0.4,y:8)],0x3A443B,0.85)}
+        for x in [5.0,13] {
+            box(x+side,8,6,5,0x203B2D,0.9)
+            oval(x+1.3+side,8.6,3.3,3.7,0x83B963)
+            oval(x+2.3+side,9,1.4,3,0x15251B)
+            for row in 0..<3 {
+                line([CGPoint(x:x+0.6+side,y:9.2+Double(row)),CGPoint(x:x+2.0+Double(row%2)+side,y:9.2+Double(row))],green,0.25)
+            }
+        }
+        line([CGPoint(x:11+side,y:9),CGPoint(x:13+side,y:9)],ink,0.65)
+        oval(10.7+side,12.5,2.6,1.8,0x605348)
+        for y in [14.2,15.6] {
+            line([CGPoint(x:1,y:y-0.5),CGPoint(x:8+side,y:y)],0xD1D3BE,0.3)
+            line([CGPoint(x:16+side,y:y),CGPoint(x:23,y:y-0.5)],0xD1D3BE,0.3)
+        }
+        // Headphones rest on the hoodie collar.
+        line([CGPoint(x:4,y:17),CGPoint(x:7,y:20),CGPoint(x:17,y:20),CGPoint(x:20,y:17)],0x3F4B49,1.6)
+        box(3,16,3.6,5,0x111B1B);box(17.4,16,3.6,5,0x111B1B)
+        line([CGPoint(x:4,y:17),CGPoint(x:4,y:20)],green,0.45)
+        line([CGPoint(x:19,y:17),CGPoint(x:19,y:20)],green,0.45)
+        // Laptop travels with Chichu; tiny paw motion suggests typing while idling.
+        box(4+side*0.4,20,16,6.5,0x172523,0.8)
+        line([CGPoint(x:5,y:26.5),CGPoint(x:20,y:26.5)],0x73BA82,0.7)
+        c.draw(Text("</>").font(.system(size:3.5,weight:.black,design:.monospaced)).foregroundColor(Color(hex:green)),at:CGPoint(x:12+side*0.4,y:23.3))
+        oval(2.8,20.2+bob,3,2,0x8A8C7C);oval(18.2,20.2-bob,3,2,0x8A8C7C)
+    }
+}
+
+/// Seasonal scenery shares the native map coordinates and never changes collision or saves.
+enum ThanksgivingArt {
+    static func draw(context:inout GraphicsContext,x:Double,y:Double,kind:Int) {
+        var c=context;c.translateBy(x:x,y:y)
+        func shape(_ p:Path,_ color:UInt32) {c.fill(p,with:.color(Color(hex:color)));c.stroke(p,with:.color(Color(hex:0x614332)),lineWidth:0.45)}
+        func box(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {shape(Path(roundedRect:CGRect(x:x,y:y,width:w,height:h),cornerRadius:1),color)}
+        func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {shape(Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h)),color)}
+        func leaf(_ x:Double,_ y:Double,_ color:UInt32) {
+            var p=Path();p.addLines([CGPoint(x:x,y:y+3),CGPoint(x:x-2,y:y),CGPoint(x:x+1,y:y+0.5),CGPoint(x:x+2,y:y-3),CGPoint(x:x+3,y:y),CGPoint(x:x+6,y:y-1),CGPoint(x:x+4,y:y+3)]);p.closeSubpath();shape(p,color)
+        }
+        func pumpkin(_ x:Double,_ y:Double,_ scale:Double=1) {
+            for rib in 0..<3 {oval(x+Double(rib)*3*scale,y,7*scale,10*scale,rib==1 ? 0xECA23F : 0xCD742B)}
+            box(x+6*scale,y-3*scale,2*scale,4*scale,0x657749)
+        }
+        switch kind {
+        case 0:
+            c.fill(Path(ellipseIn:CGRect(x:-1,y:18,width:31,height:4)),with:.color(.black.opacity(0.17)))
+            pumpkin(1,8);pumpkin(15,12,0.75)
+            leaf(22,7,0xB85532);leaf(5,20,0xD7A43D)
+        case 1:
+            // Woven harvest basket, pears, squash and wheat.
+            oval(0,10,29,13,0xA47443);box(0,10,29,3,0xD1A866)
+            for yy in [16.0,20] {box(3,yy,23,0.7,0xD3A664)}
+            for xx in [6.0,13,20] {box(xx,13,0.6,9,0x6F522F)}
+            pumpkin(2,3,0.7);oval(15,4,7,10,0xA1A84F);oval(22,5,6,8,0xD9AF54)
+            for xx in [19.0,23,27] {
+                var stalk=Path();stalk.move(to:CGPoint(x:xx,y:11));stalk.addLine(to:CGPoint(x:xx-3,y:-4));c.stroke(stalk,with:.color(Color(hex:0xB89A4A)),lineWidth:0.6)
+                for yy in [-3.0,0,3] {oval(xx-5,yy,3,1.5,0xE0C276)}
+            }
+        case 2:
+            var rope=Path();rope.move(to:CGPoint(x:-4,y:0));rope.addQuadCurve(to:CGPoint(x:62,y:0),control:CGPoint(x:29,y:10));c.stroke(rope,with:.color(Color(hex:0x6F5135)),lineWidth:0.7)
+            box(2,3,54,13,0x934C32);box(4,4,50,10,0xB56436)
+            c.draw(Text("GIVE THANKS").font(.system(size:5.6,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xFFE5A5)),at:CGPoint(x:29,y:9))
+            leaf(-2,8,0xC88832);leaf(59,8,0xD9AD49)
+        case 3:
+            // A friendly wooden turkey display makes the holiday unmistakable.
+            for (i,color) in [UInt32(0x8B4F35),0xBF7136,0xD5A044,0xBF7136,0x8B4F35].enumerated() {oval(Double(i)*4,Double(abs(i-2))*2,8,17,color)}
+            oval(5,10,16,12,0x876046);oval(9,6,9,10,0xA57C50)
+            oval(12,8,1.5,1.8,0x252D26);oval(15,11,4,2.5,0xE0B04C);oval(14,13,2,4,0xB9533A)
+            box(9,21,1.4,3,0xD7A044);box(16,21,1.4,3,0xD7A044)
+        case 4:
+            for (i,color) in [UInt32(0xC18035),0xAE4E35,0xE0B54C,0xBA7631,0xC28B4B].enumerated() {leaf(Double(i*7),Double(i%2)*3,color)}
+        default:
+            for i in 0..<10 {
+                let a=Double(i)*Double.pi/5
+                leaf(10+cos(a)*8,9+sin(a)*7,i%2==0 ? 0xB76432 : 0xD1A445)
+            }
+            box(8,15,6,5,0xA84D33)
+        }
+    }
+    static func hotel(context:inout GraphicsContext,motel:Motel) {
+        func at(_ x:Double,_ y:Double,_ kind:Int) {draw(context:&context,x:x,y:y,kind:kind)}
+        let office=motel.creativeOffset("office")
+        let ox=Double(office.x*16),oy=Double(office.y*16)
+        at(78+ox,57+oy,2);at(34+ox,138+oy,1);at(174+ox,140+oy,0)
+        at(35+ox,108+oy,5);at(172+ox,108+oy,5)
+        for id in 0..<min(9,motel.rooms.count) {
+            let o=MotelGrounds.roomOrigin(id),d=motel.creativeOffset("room-\(id)")
+            at(Double((o.x+d.x)*16+4),Double((o.y+d.y)*16+58),0)
+            at(Double((o.x+d.x)*16+67),Double((o.y+d.y)*16+58),1)
+        }
+        at(43,238,3);at(111,240,1);at(40,387,0);at(165,385,1)
+        at(19,490,0);at(91,505,3);at(35,545,4)
+        // Neighborhood lawns and street furniture; the shop entrances stay clear.
+        for (x,y,k) in [(43,21,0),(49,21,1),(59,21,0),(69,21,1),(44,38,0),(50,38,3),(59,38,0),(66,38,1)] {at(Double(x*16),Double(y*16),k)}
+        for (x,y) in [(42,19),(51,19),(61,19),(42,37),(54,37),(64,37),(12,12),(21,12),(29,21)] {at(Double(x*16),Double(y*16),4)}
+        let home=motel.creativeOffset("home")
+        at(825+Double(home.x*16),151+Double(home.y*16),5)
+    }
+    static func town(context:inout GraphicsContext) {
+        for (x,y,k) in [(26.0,145.0,0),(114,145,1),(189,107,3),(254,186,0),(292,245,1),(31,308,3),(198,310,0),(248,309,1)] {draw(context:&context,x:x,y:y,kind:k)}
+        draw(context:&context,x:35,y:104,kind:2)
+        draw(context:&context,x:191,y:312,kind:2)
+        for (x,y) in [(27.0,168.0),(111,274),(204,179),(248,286),(52,310)] {draw(context:&context,x:x,y:y,kind:4)}
+    }
+}

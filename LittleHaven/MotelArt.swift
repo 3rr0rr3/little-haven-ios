@@ -420,6 +420,7 @@ struct MotelGroundsCanvas: View, Animatable {
             rect(15, 505, 62, 25, 0x3E5E50)
             label("BRAINSTORM HAVEN", 46, 514, 4); label("MOTOR INN", 46, 522, 4)
             context=savedmotelsign
+            ThanksgivingArt.hotel(context:&context,motel:motel)
             struct Actor {
                 let x: Double; let y: Double; let color: UInt32; let variant: Int; let facing: Int; let name: String; let isPlayer: Bool
             }

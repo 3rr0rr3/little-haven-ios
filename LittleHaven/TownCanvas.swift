@@ -81,6 +81,7 @@ struct TownCanvas: View, Animatable {
                 PaintedArt.draw("park-bench",in:CGRect(x:185,y:143,width:25,height:11),context:&context)
                 rect(269, 114, 2, 12, 0x6C6550)
                 rect(265, 112, 9, 6, 0xE0C08C)
+                ThanksgivingArt.town(context:&context)
                 let entities = Town.neighbors.map { (Double($0.tile.y), $0.id) } + [(playerY, -1)]
                 for (_, id) in entities.sorted(by: { $0.0 < $1.0 }) {
                     if id == -1 { person(playerX * 16, playerY * 16, 0x6AACA3, true, false) }

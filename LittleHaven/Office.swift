@@ -214,7 +214,7 @@ enum BasementLayout {
     static let homeStairs=Tile(x:1,y:13)
     static let stairs=Tile(x:12,y:40)
     static let arrival=Tile(x:12,y:39)
-    static let titles=["Wizard Chichu","Two-tail fox","Blue Chichu","Shrek Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Messi Chichu","Kawai Tom","Inferno Cat","cosmic cat","Juan the horse","The Hi Cat"]
+    static let titles=["Wizard Chichu","Two-tail fox","Blue Chichu","Shrek Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Messi Chichu","Kawai Tom","Inferno Cat","cosmic cat","Juan the horse","The Hi Cat","Hacker Chichu"]
     static var residents:Range<Int> {titles.indices}
     static func pen(_ id:Int)->RPGRegion {RPGRegion(x:id%2 == 0 ? 2 : 15,y:3+(id/2)*5,width:8,height:4)}
     static func gate(_ id:Int)->Tile {let p=pen(id);return Tile(x:id%2 == 0 ? 10 : 14,y:p.y+2)}
@@ -236,7 +236,7 @@ extension Motel {
     @discardableResult mutating func enterBasement()->Bool {
         guard isAtHome,currentBedroom == nil,actorTile.distance(to:BasementLayout.homeStairs)<=1 else{return false}
         initializeWorld();world!.place = .basement;world!.player=BasementLayout.arrival
-        lastEvent="Welcome to your creature sanctuary. Thirteen corrals, thirteen friends."
+        lastEvent="Welcome to your creature sanctuary. Fourteen corrals, fourteen friends."
         return true
     }
     @discardableResult mutating func leaveBasement()->Bool {

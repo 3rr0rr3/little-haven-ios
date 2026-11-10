@@ -222,7 +222,7 @@ struct BasementView:View {
     }
     var body:some View {
         VStack(spacing:4) {
-            RPGSceneView(mapID:"basement",revision:"sanctuary-53",mapSize:CGSize(width:BasementLayout.width*16,height:BasementLayout.height*16),columns:15,interior:false,actors:actors,lifeProps:motel.natureMotionProps) {AnyView(BasementArt())}
+            RPGSceneView(mapID:"basement",revision:"sanctuary-66",mapSize:CGSize(width:BasementLayout.width*16,height:BasementLayout.height*16),columns:15,interior:false,actors:actors,lifeProps:motel.natureMotionProps) {AnyView(BasementArt())}
                 .accessibilityIdentifier("basementScene")
             ScrollView(.horizontal) {
                 HStack {

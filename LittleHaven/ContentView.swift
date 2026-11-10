@@ -37,6 +37,15 @@ struct ContentView: View {
         if args.contains("--ui-painted-check") {
             for name in ["stone-a","stone-b","timber","lantern","bedding","fence-h","desk","sofa-front","sofa-back","washer","linen","tv-frame","bath-sink","clothes-rack","extinguisher"] {precondition(PaintedArt.image("bh-"+name) != nil,"Missing scenery: "+name)}
         }
+        if args.contains("--ui-thanksgiving-town") {
+            var sample=Game();sample.player=Tile(x:9,y:14);return sample
+        }
+        if args.contains("--ui-thanksgiving-hotel") {
+            var sample=Game();sample.coins=545;sample.wakeUp();sample.motel!.initializeWorld()
+            sample.motel!.waiting=[];sample.motel!.world!.place = .grounds;sample.motel!.world!.player=Tile(x:12,y:10)
+            sample.motel!.operations=MotelOperations();sample.motel!.operations!.nextIncidentTick=10000
+            return sample
+        }
         Motel.randomizeGuestArrivals = !args.contains("--ui-testing")
         if args.contains(where:{$0.hasPrefix("--ui-")}),!args.contains("--ui-restore-menus") {
             for key in ["littlehaven.management.tab","littlehaven.management.scroll","littlehaven.management.offsets","littlehaven.management.roomFilter","littlehaven.management.roomSearch","littlehaven.map.filter","littlehaven.haven.tab"] {UserDefaults.standard.removeObject(forKey:key)}
@@ -307,7 +316,7 @@ struct ContentView: View {
                 _=sample.motel!.enterBasement();sample.motel!.world!.player=Tile(x:12,y:23)
                 for id in BasementLayout.residents where args.contains("--ui-corral-\(id)") {sample.motel!.world!.player=BasementLayout.gate(id)}
             }
-            for (flag,id) in [("--ui-sanctuary-pink",8),("--ui-sanctuary-inferno",9),("--ui-sanctuary-cosmic",10),("--ui-sanctuary-juan",11),("--ui-sanctuary-hi",12)] where args.contains(flag) {sample.motel!.world!.player=BasementLayout.gate(id)}
+            for (flag,id) in [("--ui-sanctuary-pink",8),("--ui-sanctuary-inferno",9),("--ui-sanctuary-cosmic",10),("--ui-sanctuary-juan",11),("--ui-sanctuary-hi",12),("--ui-sanctuary-hacker",13)] where args.contains(flag) {sample.motel!.world!.player=BasementLayout.gate(id)}
             sample.save();return sample
         }
         if args.contains("--ui-creature") {
