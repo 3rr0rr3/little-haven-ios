@@ -136,15 +136,19 @@ struct PaintedSanctuary:View {
             let room=CGRect(x:16,y:32,width:368,height:height-48)
             c.fill(Path(CGRect(x:0,y:0,width:400,height:height)),with:.color(Color(hex:0x554B3D)))
             PaintedArt.texture("walnut",in:CGRect(x:0,y:0,width:400,height:height),context:&c,unit:64)
-            CozyScenery.indoorFloor(context:&c,in:room)
+            CozyScenery.indoorFloor(context:&c,in:room,unit:8)
             for id in BasementLayout.residents {
                 let p=BasementLayout.pen(id),x=Double(p.x*16),y=Double(p.y*16)
                 let pen=CGRect(x:x,y:y,width:128,height:64)
                 c.fill(Path(pen),with:.color(Color(hex:[UInt32(0xBDA785),0xCDBB94,0x9DAF9A,0xA5B18C,0xCEC4AA,0xAEA38E,0xB89F95,0x9EAF9A,0xCEB3BE,0xB7A298,0xA1B69C,0xCBB98D,0xB7AEBB,0x8DAB99][id])))
                 var bed=c;bed.opacity=0.10;PaintedArt.texture("straw",in:pen.insetBy(dx:3,dy:4),context:&bed,unit:32)
-                PaintedArt.draw("bedding",in:CGRect(x:x+7,y:y+14,width:28,height:26),context:&c,fit:true)
-                PaintedArt.draw("feed-bowl",in:CGRect(x:x+98,y:y+15,width:15,height:8),context:&c)
-                PaintedArt.draw("water-bowl",in:CGRect(x:x+97,y:y+36,width:18,height:10),context:&c)
+                let residentScale=BasementLayout.residentScale(id)
+                let furnishingScale=min(1.18,max(0.65,residentScale))
+                PaintedArt.draw("bedding",in:CGRect(x:x+8,y:y+17,width:25*furnishingScale,height:17*furnishingScale),context:&c,fit:true)
+                PaintedArt.draw("feed-bowl",in:CGRect(x:x+103,y:y+20,width:10*furnishingScale,height:5.5*furnishingScale),context:&c)
+                PaintedArt.draw("water-bowl",in:CGRect(x:x+102,y:y+40,width:11*furnishingScale,height:6*furnishingScale),context:&c)
+                let unscaledFurnishings=c,propScale=min(1.0,furnishingScale)
+                c.translateBy(x:x+8,y:y+42);c.scaleBy(x:propScale,y:propScale);c.translateBy(x:-(x+8),y:-(y+42))
                 switch id {
                 case 0:PaintedArt.draw("spellbook",in:CGRect(x:x+8,y:y+42,width:25,height:13),context:&c,fit:true)
                 case 1:
@@ -170,27 +174,28 @@ struct PaintedSanctuary:View {
                     PaintedArt.draw("bedding",in:CGRect(x:x+8,y:y+38,width:30,height:20),context:&c,fit:true)
                     var hay=c;hay.opacity=0.55;PaintedArt.texture("straw",in:CGRect(x:x+11,y:y+43,width:23,height:10),context:&hay,unit:16)
                 }
-                // Rails, plates and posts stay on the original blocked pen boundary.
+                c=unscaledFurnishings
+                // Waist-height rails share the original blocked pen boundary.
                 for edge in [0.0,57] {
-                    for segment in 0..<4 {PaintedArt.draw("fence-h",in:CGRect(x:x+Double(segment*32),y:y+edge-8,width:32,height:17),context:&c)}
+                    for segment in 0..<4 {PaintedArt.draw("fence-h",in:CGRect(x:x+Double(segment*32),y:y+edge-5,width:32,height:12),context:&c)}
                 }
                 for edge in [0.0,124] {
-                    PaintedArt.texture("timber",in:CGRect(x:x+edge,y:y,width:4,height:64),context:&c,unit:32)
-                    for post in [0.0,28,55] {PaintedArt.draw("post",in:CGRect(x:x+edge-2,y:y+post-6,width:9,height:14),context:&c)}
+                    PaintedArt.texture("timber",in:CGRect(x:x+edge,y:y,width:3,height:64),context:&c,unit:32)
+                    for post in [0.0,28,55] {PaintedArt.draw("post",in:CGRect(x:x+edge-2,y:y+post-4,width:7,height:11),context:&c)}
                 }
-                PaintedArt.nameplate("\(id+1)  "+BasementLayout.titles[id].uppercased(),in:CGRect(x:x+5,y:y-7,width:118,height:12),context:&c,font:4.4)
+                PaintedArt.nameplate("\(id+1)  "+BasementLayout.titles[id].uppercased(),in:CGRect(x:x+12,y:y-3,width:104,height:7),context:&c,font:3.5)
                 let lx=id%2==0 ? x+120 : x-5
-                c.fill(Path(ellipseIn:CGRect(x:lx-12,y:y+13,width:35,height:40)),with:.radialGradient(Gradient(colors:[Color(hex:0xFFD184).opacity(0.38),.clear]),center:CGPoint(x:lx+5,y:y+30),startRadius:0,endRadius:22))
-                PaintedArt.draw("lantern",in:CGRect(x:lx,y:y+9,width:12,height:24),context:&c,fit:true)
-                if id%2==0 {PaintedArt.draw("wildflowers",in:CGRect(x:x+2,y:y+43,width:13,height:16),context:&c,fit:true)}
+                c.fill(Path(ellipseIn:CGRect(x:lx-7,y:y+12,width:22,height:24)),with:.radialGradient(Gradient(colors:[Color(hex:0xFFD184).opacity(0.38),.clear]),center:CGPoint(x:lx+4,y:y+24),startRadius:0,endRadius:14))
+                PaintedArt.draw("lantern",in:CGRect(x:lx+2,y:y+18,width:6,height:12),context:&c,fit:true)
+                if id%2==0 {PaintedArt.draw("wildflowers",in:CGRect(x:x+2,y:y+48,width:9,height:11),context:&c,fit:true)}
             }
             for y in stride(from:40.0,to:height-40,by:80) {
                 c.fill(Path(ellipseIn:CGRect(x:192,y:y,width:16,height:8)),with:.radialGradient(Gradient(colors:[Color(hex:0xF0D49B),Color(hex:0xA98651)]),center:CGPoint(x:198,y:y+2),startRadius:0,endRadius:10))
             }
             PaintedArt.sunlight(context:&c,bounds:room)
             PaintedArt.draw("stairs",in:CGRect(x:176,y:height-41,width:48,height:25),context:&c)
-            PaintedArt.nameplate("CREATURE SANCTUARY",in:CGRect(x:75,y:4,width:250,height:24),context:&c,font:9)
-            for x in [22.0,354] {PaintedArt.draw("banner",in:CGRect(x:x,y:2,width:23,height:31),context:&c,fit:true)}
+            PaintedArt.nameplate("CREATURE SANCTUARY",in:CGRect(x:105,y:10,width:190,height:13),context:&c,font:6)
+            for x in [22.0,354] {PaintedArt.draw("banner",in:CGRect(x:x+4,y:6,width:14,height:22),context:&c,fit:true)}
             c.draw(Text("UPSTAIRS").font(.system(size:5,weight:.black,design:.rounded)).foregroundColor(Color(hex:0xF4E3BC)),at:CGPoint(x:200,y:height-9))
         }.frame(width:400,height:CGFloat(BasementLayout.height*16))
     }

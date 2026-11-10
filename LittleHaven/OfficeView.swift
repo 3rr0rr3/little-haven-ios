@@ -217,12 +217,12 @@ struct BasementView:View {
         BasementLayout.residents.map {id in
             let tile=BasementLayout.creature(id,tick:motel.worldState.tick)
             let previous=BasementLayout.creature(id,tick:max(0,motel.worldState.tick-5))
-            return RPGActor(id:"corral-creature-\(id)",tile:tile,color:0x999999,variant:id,facing:tile.x<previous.x ? 1 : tile.x>previous.x ? 2 : tile.y<previous.y ? 3 : 0,duration:MotelCadence.travel*5,corralCreature:id+1,displayScale:0.95)
+            return RPGActor(id:"corral-creature-\(id)",tile:tile,color:0x999999,variant:id,facing:tile.x<previous.x ? 1 : tile.x>previous.x ? 2 : tile.y<previous.y ? 3 : 0,duration:MotelCadence.travel*5,corralCreature:id+1,displayScale:BasementLayout.residentScale(id))
         } + motel.petActors + motel.policeActors
     }
     var body:some View {
         VStack(spacing:4) {
-            RPGSceneView(mapID:"basement",revision:"sanctuary-66",mapSize:CGSize(width:BasementLayout.width*16,height:BasementLayout.height*16),columns:15,interior:false,actors:actors,lifeProps:motel.natureMotionProps) {AnyView(BasementArt())}
+            RPGSceneView(mapID:"basement",revision:"sanctuary-68",mapSize:CGSize(width:BasementLayout.width*16,height:BasementLayout.height*16),columns:15,interior:false,actors:actors,lifeProps:motel.natureMotionProps) {AnyView(BasementArt())}
                 .accessibilityIdentifier("basementScene")
             ScrollView(.horizontal) {
                 HStack {

@@ -1149,6 +1149,10 @@ referenceCompanionRules()
 
 func basementSanctuaryRules() {
     require(BasementLayout.titles.count == 14,"Exactly fourteen distinct corral residents")
+    require(BasementLayout.residentScales.count == BasementLayout.titles.count,"Every sanctuary resident has a defined physical size")
+    require(BasementLayout.residentScale(13)<0.75 && BasementLayout.residentScale(12)<0.75 && BasementLayout.residentScale(2)<0.75,"Companion cats are visibly smaller than adult characters")
+    require(BasementLayout.residentScale(8)==1 && BasementLayout.residentScale(11)>1,"Human Kawai Tom matches adult height and Juan is larger than an adult")
+    require(BasementLayout.residentScale(-1)==1 && BasementLayout.residentScale(14)==1,"Invalid appearance IDs use a safe default size")
     require(Array(BasementLayout.titles.prefix(8)) == ["Wizard Chichu","Two-tail fox","Blue Chichu","Shrek Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Messi Chichu"],"Existing resident save IDs and names retain their order")
     require(Array(BasementLayout.titles.suffix(6)) == ["Kawai Tom","Inferno Cat","cosmic cat","Juan the horse","The Hi Cat","Hacker Chichu"],"Requested spellings and all appended resident save IDs remain stable")
     require(Motel.adventureClues.count == 14 && Motel.adventureSites.count == 14 && Motel.creatureAbilities.count == 14,"All fourteen care and adventure entries are complete")

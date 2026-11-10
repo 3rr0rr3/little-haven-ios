@@ -19,6 +19,7 @@ struct RPGActor {
     var creature = false
     var animal = 0
     var displayScale = 1.0
+    var scaledFootOffset:Double {(animal>0 || creature || corralCreature>0) ? 11*(1-displayScale) : 0}
     var seated = false
     var effect = 0
     var action = ""
@@ -317,7 +318,7 @@ private struct CompatibleOfficeActor: View {
                             }
                         } else {ActorArtwork(actor:actor,stride:stride)}
                     }.scaleEffect(actor.displayScale)
-                        .offset(y:(actor.animal > 0 || actor.creature) ? 11*(1-actor.displayScale) : 0)
+                        .offset(y:actor.scaledFootOffset)
                 } else {
                     WorkingCharacterArtwork(kind:actor.action,frame:actor.action.hasPrefix("care-") ? Int(timeline.date.timeIntervalSinceReferenceDate/0.075)%12 : phase*3,color:actor.color,variant:actor.variant,facing:actor.facing)
                 }
@@ -485,7 +486,7 @@ final class RPGScene: SKScene {
             let name = "actor:" + actor.id
             let existing = world.childNode(withName: name) as? SKSpriteNode
             let node = existing ?? SKSpriteNode()
-            let footOffset = actor.effect == 1 ? -10 : actor.resting ? 10 : (actor.animal > 0 || actor.creature) ? 11 * (1 - actor.displayScale) : 0
+            let footOffset = actor.effect == 1 ? -10 : actor.resting ? 10 : actor.scaledFootOffset
             let target = CGPoint(x: CGFloat(actor.tile.x * 16 + 8), y: -CGFloat(actor.tile.y * 16 + 5) - CGFloat(footOffset))
             let moving = existing != nil && node.userData?["targetX"] as? Int != actor.tile.x || existing != nil && node.userData?["targetY"] as? Int != actor.tile.y
             let diagonal = existing != nil && node.userData?["targetX"] as? Int != actor.tile.x && node.userData?["targetY"] as? Int != actor.tile.y
@@ -1016,7 +1017,7 @@ final class RPGScene: SKScene {
                     node.addChild(palm);node.zPosition=CGFloat(prop.tile.y*16+12)
                     if !UIAccessibility.isReduceMotionEnabled {palm.run(.repeatForever(.animate(with:palmFrames,timePerFrame:0.42)))}
                 } else if prop.kind==91 {
-                    let glow=SKShapeNode(ellipseOf:CGSize(width:22,height:30));glow.fillColor=UIColor(Color(hex:0xF1C16B)).withAlphaComponent(0.12);glow.strokeColor = .clear;glow.blendMode = .add
+                    let glow=SKShapeNode(ellipseOf:CGSize(width:14,height:18));glow.fillColor=UIColor(Color(hex:0xF1C16B)).withAlphaComponent(0.12);glow.strokeColor = .clear;glow.blendMode = .add
                     node.addChild(glow);node.zPosition=CGFloat(prop.tile.y*16+9)
                     if !UIAccessibility.isReduceMotionEnabled {glow.run(.repeatForever(.sequence([.fadeAlpha(to:0.5,duration:0.8),.fadeAlpha(to:1,duration:1.2)])))}
                 } else if prop.kind==92 {

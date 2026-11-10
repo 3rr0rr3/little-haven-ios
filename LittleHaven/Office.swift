@@ -216,6 +216,10 @@ enum BasementLayout {
     static let arrival=Tile(x:12,y:39)
     static let titles=["Wizard Chichu","Two-tail fox","Blue Chichu","Shrek Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Messi Chichu","Kawai Tom","Inferno Cat","cosmic cat","Juan the horse","The Hi Cat","Hacker Chichu"]
     static var residents:Range<Int> {titles.indices}
+    // Relative to the adult player's 28-point sprite; saved resident IDs stay stable.
+    // Kawai Tom is a person, Juan a pony, and the cats are small companions.
+    static let residentScales:[Double]=[0.70,0.72,0.60,0.95,0.82,0.90,0.68,0.64,1.0,0.64,0.64,1.18,0.64,0.64]
+    static func residentScale(_ id:Int)->Double {residentScales.indices.contains(id) ? residentScales[id] : 1.0}
     static func pen(_ id:Int)->RPGRegion {RPGRegion(x:id%2 == 0 ? 2 : 15,y:3+(id/2)*5,width:8,height:4)}
     static func gate(_ id:Int)->Tile {let p=pen(id);return Tile(x:id%2 == 0 ? 10 : 14,y:p.y+2)}
     static func creature(_ id:Int,tick:Int)->Tile {
