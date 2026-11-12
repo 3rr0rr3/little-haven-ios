@@ -933,6 +933,7 @@ struct BasementArt:View {
 
 enum CorralCreatureArt {
     static func draw(context:inout GraphicsContext,kind:Int,facing:Int,walk:Double) {
+        if kind == 15 {drawSirWilliams(context:&context,facing:facing,walk:walk);return}
         if kind == 14 {drawHacker(context:&context,facing:facing,walk:walk);return}
         if kind == 13 {drawHiCat(context:&context,facing:facing,walk:walk);return}
         if kind == 12 {drawJuan(context:&context,facing:facing,walk:walk);return}
@@ -1995,5 +1996,90 @@ enum HouseDesignArt {
             entrance(0x688A73,false,true);lamp(68,51)
         }
         if !name.isEmpty {PaintedArt.nameplate(name,in:CGRect(x:door-14,y:38,width:28,height:7),context:&c,font:3.5)}
+    }
+}
+
+
+extension CorralCreatureArt {
+    /// White plush stag from the reference, with ivory antlers and a velvet bow.
+    static func drawSirWilliams(context:inout GraphicsContext,facing:Int,walk:Double) {
+        var c=context
+        let fur:UInt32=0xF7F6E9,edge:UInt32=0x91988F,red:UInt32=0xB8233D
+        let step=max(-1,min(1,walk))*0.65
+        func oval(_ x:Double,_ y:Double,_ w:Double,_ h:Double,_ color:UInt32) {
+            let p=Path(ellipseIn:CGRect(x:x,y:y,width:w,height:h))
+            c.fill(p,with:.linearGradient(Gradient(colors:[Color(hex:color),CozyScenery.tint(color,0.92)]),startPoint:CGPoint(x:x,y:y),endPoint:CGPoint(x:x+w,y:y+h)))
+            c.stroke(p,with:.color(Color(hex:edge)),lineWidth:0.35)
+        }
+        func poly(_ points:[CGPoint],_ color:UInt32) {
+            var p=Path();p.addLines(points);p.closeSubpath();c.fill(p,with:.color(Color(hex:color)));c.stroke(p,with:.color(Color(hex:edge)),lineWidth:0.25)
+        }
+        func line(_ points:[CGPoint],_ color:UInt32,_ width:Double) {
+            var p=Path();p.addLines(points);c.stroke(p,with:.color(Color(hex:color)),style:StrokeStyle(lineWidth:width,lineCap:.round,lineJoin:.round))
+        }
+        func antler(_ points:[CGPoint]) {line(points,0xA5ABA1,1.7);line(points,0xFFFCEC,1.15)}
+        func bow(_ x:Double,_ y:Double) {
+            // Pine sprigs and little red berries remain visible below the bow.
+            for side in [-1.0,1.0] {
+                line([CGPoint(x:x,y:y+1),CGPoint(x:x+side*6,y:y+5)],0x426F52,0.6)
+                for i in 0..<4 {
+                    let dx=Double(i)*1.3
+                    line([CGPoint(x:x+side*dx,y:y+1+dx*0.6),CGPoint(x:x+side*(dx+1.8),y:y+dx*0.6)],0x477D57,0.45)
+                    line([CGPoint(x:x+side*dx,y:y+1+dx*0.6),CGPoint(x:x+side*dx,y:y+3.5+dx*0.6)],0x5F9267,0.4)
+                }
+                oval(x+side*4-0.7,y+3,1.4,1.4,0xC73347)
+            }
+            poly([CGPoint(x:x,y:y),CGPoint(x:x-5.5,y:y-3.5),CGPoint(x:x-6,y:y+1),CGPoint(x:x-2,y:y+3)],red)
+            poly([CGPoint(x:x,y:y),CGPoint(x:x+5.5,y:y-3.5),CGPoint(x:x+6,y:y+1),CGPoint(x:x+2,y:y+3)],red)
+            poly([CGPoint(x:x-1,y:y+1),CGPoint(x:x-4,y:y+6),CGPoint(x:x-1.3,y:y+5.2),CGPoint(x:x+0.4,y:y+1)],0xC42D43)
+            poly([CGPoint(x:x+1,y:y+1),CGPoint(x:x+4,y:y+5),CGPoint(x:x+1.6,y:y+5.7),CGPoint(x:x-0.2,y:y+1)],0xA91F37)
+            oval(x-1.3,y-1.2,2.6,2.6,0xD94051)
+            line([CGPoint(x:x-4,y:y-1.5),CGPoint(x:x-1.5,y:y)],0xEF6D77,0.4)
+        }
+        c.fill(Path(ellipseIn:CGRect(x:1,y:25.3,width:22,height:2.4)),with:.color(.black.opacity(0.18)))
+        if facing == 1 || facing == 2 {
+            if facing == 2 {c.translateBy(x:24,y:0);c.scaleBy(x:-1,y:1)}
+            oval(20,16,4,4,fur)
+            for (x,d) in [(8.0,step),(11.0,-step),(17.0,-step),(20.0,step)] {
+                oval(x,22+d,2.3,5,fur);oval(x-0.2,25.8+d*0.3,2.7,1.6,0xC4C8BA)
+            }
+            oval(7,15,16,11.5,fur);oval(5,10,7,13,fur)
+            antler([CGPoint(x:8,y:10),CGPoint(x:10,y:5),CGPoint(x:10,y:1)])
+            antler([CGPoint(x:10,y:5),CGPoint(x:15,y:3),CGPoint(x:17,y:0.8)])
+            antler([CGPoint(x:14,y:3.5),CGPoint(x:15,y:0.8)])
+            antler([CGPoint(x:10,y:6),CGPoint(x:6,y:3),CGPoint(x:5,y:0.8)])
+            oval(7,8,7,3.5,fur);oval(3,8.5,9,11,fur)
+            oval(0.5,14,8,5.8,fur)
+            oval(4.5,11.8,2.1,2.6,0x161D1B);oval(4.9,12,0.6,0.7,0xFFFFFF)
+            oval(1,16,1,1.2,0xB2B8AB)
+            line([CGPoint(x:2,y:18),CGPoint(x:5,y:18.6)],0xBDC2B4,0.3)
+            bow(8,20)
+            for i in 0..<5 {line([CGPoint(x:12+Double(i)*1.6,y:17.5),CGPoint(x:12.8+Double(i)*1.6,y:18.3)],0xFFFFFF,0.45)}
+            return
+        }
+        for (x,d) in [(5.0,step),(8.3,-step),(13.4,-step),(17.0,step)] {
+            oval(x,23+d,2.5,4.2,fur);oval(x-0.1,26+d*0.25,2.7,1.4,0xC5C9BB)
+        }
+        oval(4,16,16,11,fur)
+        antler([CGPoint(x:9,y:11),CGPoint(x:6,y:7),CGPoint(x:4.5,y:2),CGPoint(x:3,y:0.8)])
+        antler([CGPoint(x:6,y:7),CGPoint(x:1,y:5),CGPoint(x:0.8,y:2.4)])
+        antler([CGPoint(x:5,y:4),CGPoint(x:8,y:2),CGPoint(x:8,y:0.8)])
+        antler([CGPoint(x:15,y:11),CGPoint(x:18,y:7),CGPoint(x:19.5,y:2),CGPoint(x:21,y:0.8)])
+        antler([CGPoint(x:18,y:7),CGPoint(x:23,y:5),CGPoint(x:23.2,y:2.4)])
+        antler([CGPoint(x:19,y:4),CGPoint(x:16,y:2),CGPoint(x:16,y:0.8)])
+        oval(0.8,9.7,8,4,fur);oval(15.2,9.7,8,4,fur)
+        line([CGPoint(x:2,y:11),CGPoint(x:7,y:11.7)],0xD2D6CA,0.6)
+        line([CGPoint(x:17,y:11.7),CGPoint(x:22,y:11)],0xD2D6CA,0.6)
+        oval(6.2,8.8,11.6,13,fur)
+        if facing == 3 {
+            oval(10,19,4,4,0xFFFFFF)
+            line([CGPoint(x:8,y:13),CGPoint(x:10,y:14),CGPoint(x:12,y:13.2),CGPoint(x:14,y:14),CGPoint(x:16,y:13)],0xFFFFFF,0.6)
+        } else {
+            oval(6.7,16.5,10.6,5.8,fur)
+            for x in [8.2,14.0] {oval(x,13,2.1,2.7,0x161D1B);oval(x+0.3,13.2,0.6,0.7,0xFFFFFF)}
+            for x in [9.4,13.4] {oval(x,18,1,1,0xBAC0B2)}
+            line([CGPoint(x:9.5,y:20),CGPoint(x:12,y:20.5),CGPoint(x:14.5,y:20)],0xC3C9BC,0.3)
+            bow(12,21)
+        }
     }
 }

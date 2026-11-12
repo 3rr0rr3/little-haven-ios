@@ -823,6 +823,23 @@ final class LittleHavenUITests: XCTestCase {
         app.buttons["Pet"].tap()
         capture(app,"Thirteen corral sanctuary and animal care")
     }
+    func testSirWilliamsCareAndQuest() {
+        let app=XCUIApplication()
+        app.launchArguments=["--ui-sanctuary-williams","--ui-corral-14","--ui-testing","--ui-painted-check"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["SIR. WILLIAMS"].waitForExistence(timeout:15))
+        capture(app,"Sir. Williams white fur antlers and red bow")
+        app.buttons["Feed"].tap();app.buttons["worldAction"].tap()
+        XCTAssertTrue(app.buttons["Fed today"].waitForExistence(timeout:5))
+        app.buttons["Pet"].tap();app.buttons["worldAction"].tap()
+        app.buttons["Adventure & ability"].tap()
+        let quest=app.buttons["creatureAdventure14"]
+        for _ in 0..<18 where !quest.isHittable {app.swipeUp()}
+        XCTAssertTrue(quest.isHittable,"Sir. Williams has a reachable scarlet ribbon quest")
+        quest.tap()
+        XCTAssertFalse(app.buttons["creatureAdventure14"].isEnabled)
+        capture(app,"Sir. Williams keepsake quest accepted")
+    }
     func testHackerChichuCareAndQuest() {
         let app=XCUIApplication()
         app.launchArguments=["--ui-sanctuary-hacker","--ui-corral-13","--ui-testing","--ui-painted-check"]

@@ -1148,14 +1148,14 @@ func referenceCompanionRules() {
 referenceCompanionRules()
 
 func basementSanctuaryRules() {
-    require(BasementLayout.titles.count == 14,"Exactly fourteen distinct corral residents")
+    require(BasementLayout.titles.count == 15,"Exactly fifteen distinct corral residents")
     require(BasementLayout.residentScales.count == BasementLayout.titles.count,"Every sanctuary resident has a defined physical size")
     require(BasementLayout.residentScale(13)<0.75 && BasementLayout.residentScale(12)<0.75 && BasementLayout.residentScale(2)<0.75,"Companion cats are visibly smaller than adult characters")
     require(BasementLayout.residentScale(8)==1 && BasementLayout.residentScale(11)>1,"Human Kawai Tom matches adult height and Juan is larger than an adult")
-    require(BasementLayout.residentScale(-1)==1 && BasementLayout.residentScale(14)==1,"Invalid appearance IDs use a safe default size")
+    require(BasementLayout.residentScale(-1)==1 && BasementLayout.residentScale(15)==1,"Invalid appearance IDs use a safe default size")
     require(Array(BasementLayout.titles.prefix(8)) == ["Wizard Chichu","Two-tail fox","Blue Chichu","Shrek Chichu","Shark Chichu","Mighty Chichu","Fang Chichu","Messi Chichu"],"Existing resident save IDs and names retain their order")
-    require(Array(BasementLayout.titles.suffix(6)) == ["Kawai Tom","Inferno Cat","cosmic cat","Juan the horse","The Hi Cat","Hacker Chichu"],"Requested spellings and all appended resident save IDs remain stable")
-    require(Motel.adventureClues.count == 14 && Motel.adventureSites.count == 14 && Motel.creatureAbilities.count == 14,"All fourteen care and adventure entries are complete")
+    require(Array(BasementLayout.titles.suffix(7)) == ["Kawai Tom","Inferno Cat","cosmic cat","Juan the horse","The Hi Cat","Hacker Chichu","Sir. Williams"],"Requested spellings and all appended resident save IDs remain stable")
+    require(Motel.adventureClues.count == 15 && Motel.adventureSites.count == 15 && Motel.creatureAbilities.count == 15,"All fifteen care and adventure entries are complete")
     var reachable:Set<Tile>=[BasementLayout.arrival],queue=[BasementLayout.arrival],cursor=0
     while cursor<queue.count {
         let tile=queue[cursor];cursor+=1
@@ -1192,8 +1192,8 @@ func basementSanctuaryRules() {
     require(!game.careForCorral(0,feed:false),"Cannot interact with a distant animal")
     let saved=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(game))
     require(saved.isAtBasement && saved.corralCare(7).fedDay == game.day && saved.corralCare(7).visits == 1,"Basement location and animal care persist")
-    for id in 8...13 {require(saved.corralCare(id).fedDay == game.day && saved.corralCare(id).visits == 1,"New resident care survives save and reload")}
-    require(!game.careForCorral(14,feed:false) && !game.startCreatureAdventure(14),"An invalid corral ID never indexes the resident arrays")
+    for id in 8...14 {require(saved.corralCare(id).fedDay == game.day && saved.corralCare(id).visits == 1,"New resident care survives save and reload")}
+    require(!game.careForCorral(15,feed:false) && !game.startCreatureAdventure(15),"An invalid corral ID never indexes the resident arrays")
     var legacy=game;legacy.world!.corrals=legacy.world!.corrals?.filter{$0.key<8};legacy.world!.player=Tile(x:12,y:24)
     let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(legacy))
     require(!BasementLayout.blocked(restored.actorTile) && restored.corralCare(7).visits == 1 && restored.corralCare(8).fedDay == -1,"Eight-resident saves retain their care and safely default the added residents")
@@ -1204,10 +1204,15 @@ func basementSanctuaryRules() {
     var thirteen=game;thirteen.world!.corrals=thirteen.world!.corrals?.filter{$0.key<13}
     let previous=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(thirteen))
     require(previous.corralCare(12).visits == 1 && previous.corralCare(13).visits == 0 && previous.corralCare(13).fedDay == -1,"Thirteen-resident saves preserve The Hi Cat and default Hacker Chichu care")
+    var fourteen=game;fourteen.world!.corrals=fourteen.world!.corrals?.filter{$0.key<14};fourteen.world!.player=Tile(x:12,y:39)
+    let oldSanctuary=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(fourteen))
+    require(!BasementLayout.blocked(oldSanctuary.actorTile) && reachable.contains(oldSanctuary.actorTile),"Old sanctuary arrival remains safe and connected after the southern extension")
+    require(oldSanctuary.corralCare(13).visits==1 && oldSanctuary.corralCare(14).fedDay == -1,"Old saves retain Hacker Chichu care and default Sir. Williams safely")
+    require(BasementLayout.gate(13)==Tile(x:14,y:35) && BasementLayout.gate(12)==Tile(x:10,y:35),"Previous sanctuary gates retain their saved coordinates")
     game.togglePet("mochi") // Tuki is upstairs, so remote follow stays disabled.
     require(!game.petState("mochi").following,"Corrals do not alter the home companion")
     require(game.leaveBasement() && game.isAtHome && !game.homeBlocked(game.actorTile),"Upstairs returns to the family home")
-    print("PASS: fourteen enclosed residents, home stairs, feeding, petting, safe movement and saved care")
+    print("PASS: fifteen enclosed residents, home stairs, feeding, petting, safe movement and saved care")
 }
 basementSanctuaryRules()
 
@@ -1582,9 +1587,11 @@ func connectedHavenLifeRules() {
     }
     let snacks=creatures.simulation.stock["snacks",default:0]
     let parts=creatures.simulation.stock["parts",default:0]
+    let towels=creatures.simulation.stock["towels",default:0]
     creatures.day=2;creatures.settleHavenDay()
     require(creatures.simulation.stock["snacks",default:0]==snacks+3,"Shrek and Kawai Tom supply their separate snack rewards")
     require(creatures.simulation.stock["parts",default:0]==parts+2,"Inferno Cat and Hacker Chichu each supply one spare part after their quests")
+    require(creatures.simulation.stock["towels",default:0]==towels+3,"Sir. Williams adds one towel alongside the two original towel rewards")
     let after=creatures.simulation.stock;creatures.settleHavenDay()
     require(creatures.simulation.stock==after,"Creature morning rewards settle once daily")
     creatures.world!.place = .grounds;creatures.world!.player=Tile(x:45,y:17)
@@ -1610,11 +1617,11 @@ func connectedHavenLifeRules() {
     promises.day=4;promises.settleHavenDay()
     require(!promises.neighborState(1).favorPending && promises.neighborState(1).friendship == -2,"Overdue neighbor promises have lasting consequences")
     let restored=try! JSONDecoder().decode(Motel.self,from:JSONEncoder().encode(creatures))
-    require(restored.haven.adventures.count==BasementLayout.titles.count && restored.haven.petFindDays==creatures.haven.petFindDays,"All fourteen creature quests and rewards survive reloading")
+    require(restored.haven.adventures.count==BasementLayout.titles.count && restored.haven.petFindDays==creatures.haven.petFindDays,"All fifteen creature quests and rewards survive reloading")
     var object=try! JSONSerialization.jsonObject(with:JSONEncoder().encode(base())) as! [String:Any]
     object.removeValue(forKey:"havenLife")
     require((try! JSONDecoder().decode(Motel.self,from:JSONSerialization.data(withJSONObject:object))).havenLife==nil,"Older saves remain compatible with Haven life")
-    print("PASS: neighbor friendships and visits, identity guest mix, employee pay and growth, fourteen creature quests, pet discoveries, four weekly games, damage bills, cancellations and saved consequences")
+    print("PASS: neighbor friendships and visits, identity guest mix, employee pay and growth, fifteen creature quests, pet discoveries, four weekly games, damage bills, cancellations and saved consequences")
 }
 connectedHavenLifeRules()
 

@@ -140,7 +140,7 @@ struct PaintedSanctuary:View {
             for id in BasementLayout.residents {
                 let p=BasementLayout.pen(id),x=Double(p.x*16),y=Double(p.y*16)
                 let pen=CGRect(x:x,y:y,width:128,height:64)
-                c.fill(Path(pen),with:.color(Color(hex:[UInt32(0xBDA785),0xCDBB94,0x9DAF9A,0xA5B18C,0xCEC4AA,0xAEA38E,0xB89F95,0x9EAF9A,0xCEB3BE,0xB7A298,0xA1B69C,0xCBB98D,0xB7AEBB,0x8DAB99][id])))
+                c.fill(Path(pen),with:.color(Color(hex:[UInt32(0xBDA785),0xCDBB94,0x9DAF9A,0xA5B18C,0xCEC4AA,0xAEA38E,0xB89F95,0x9EAF9A,0xCEB3BE,0xB7A298,0xA1B69C,0xCBB98D,0xB7AEBB,0x8DAB99,0xC2CEBC][id])))
                 var bed=c;bed.opacity=0.10;PaintedArt.texture("straw",in:pen.insetBy(dx:3,dy:4),context:&bed,unit:32)
                 let residentScale=BasementLayout.residentScale(id)
                 let furnishingScale=min(1.18,max(0.65,residentScale))
@@ -165,6 +165,13 @@ struct PaintedSanctuary:View {
                 case 8:PaintedArt.draw("rug",in:CGRect(x:x+8,y:y+42,width:27,height:13),context:&c)
                 case 9:PaintedArt.draw("spellbook",in:CGRect(x:x+9,y:y+43,width:25,height:12),context:&c,fit:true)
                 case 10:PaintedArt.draw("fern",in:CGRect(x:x+7,y:y+34,width:26,height:23),context:&c,fit:true)
+                case 14:
+                    PaintedArt.draw("fern",in:CGRect(x:x+10,y:y+35,width:20,height:20),context:&c,fit:true)
+                    let ribbon=Path(roundedRect:CGRect(x:x+13,y:y+46,width:15,height:3),cornerRadius:1)
+                    c.fill(ribbon,with:.color(Color(hex:0xBD3045)))
+                    for (dx,dy) in [(11.0,49.0),(27,51),(34,45)] {
+                        c.fill(Path(ellipseIn:CGRect(x:x+dx,y:y+dy,width:2,height:2)),with:.color(Color(hex:0xF8F6E9)))
+                    }
                 case 13:
                     CozyScenery.block(context:&c,x:x+7,y:y+43,w:30,h:12,color:0x4C6052,depth:0.5)
                     CozyScenery.block(context:&c,x:x+9,y:y+32,w:24,h:12,color:0x172E24,depth:0.4)
